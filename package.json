@@ -1,0 +1,34 @@
+{
+  "name": "color-factory",
+  "version": "0.1.0",
+  "description": "Color Card",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "npm-run-all -p watch browse",
+    "clean": "rm -rf dist/*",
+    "watch": "onchange \"src/**/*.{js,tag}\" -d 100 -- npm run build:dev",
+    "browse": "browser-sync start --server --index \"index.html\" --files \"src/**/.css, dist/bundle.js\" --no-notify",
+    "build:dev": "rollup -c",
+    "build": "rollup -c ./rollup.config.production.js"
+  },
+  "keywords": [
+    "Color Card",
+    "Color"
+  ],
+  "author": "techa",
+  "license": "MIT",
+  "devDependencies": {
+    "npm-run-all": "^3.1.1",
+    "onchange": "^3.0.2",
+    "rollup": "^0.36.3",
+    "rollup-plugin-commonjs": "^5.0.5",
+    "rollup-plugin-node-resolve": "^2.0.0",
+    "rollup-plugin-riot": "^0.4.3",
+    "rollup-plugin-uglify": "^1.0.1",
+    "uglify-js": "git+https://github.com/mishoo/UglifyJS2.git#harmony"
+  },
+  "dependencies": {
+    "diff-match-patch": "^1.0.0",
+    "riot": "^2.6.7"
+  }
+}

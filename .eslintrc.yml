@@ -1,0 +1,18 @@
+env:
+  node: true
+  es6: true
+extends:
+  standard # eslint, google, airbnb,
+rules:
+  comma-dangle: 0
+  key-spacing:
+    - 0
+    - align: value
+  # http://eslint.org/docs/rules/no-multi-spaces
+  no-multi-spaces:
+    - 0
+    - exceptions:
+        ImportDeclaration: true
+        VariableDeclarator: true
+  no-console: 0
+  # semi: 0 #
