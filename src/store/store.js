@@ -100,7 +100,7 @@ class Store {
       this.cards.push(param)
       this.trigger('cards_changed', this.cards)
     })
-    this.on('remove_card', (index) => {
+    this.on('remove_card', (index = this.cards.length - 1) => {
       this.cards.splice(index, 1)
       this.trigger('cards_changed', this.cards)
     })
