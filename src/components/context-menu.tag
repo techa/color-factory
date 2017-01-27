@@ -63,10 +63,13 @@ import store from '../store/store.js'
     }
 
     const menuHide = (e) => {
+      store.trigger('menu_close')
+    }
+    store.on('menu_close', (e) => {
       this.isCardMenuOpen = false
       this.isTipMenuOpen = false
       this.update()
-    }
+    })
 
     store.on('menu_open', (e, card, tip) => {
       this.menu.style.left = e.clientX + 'px'
