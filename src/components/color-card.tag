@@ -30,7 +30,6 @@ import store from '../store/store.js'
           beforePositionX = ui.position.left
           beforePositionY = ui.position.top
           rect =  this.box.getBoundingClientRect()
-          store.trigger('card_forward', this.i)
         },
         drag: (e, ui) => {
           ui.position.left = ui.position.left
@@ -48,16 +47,20 @@ import store from '../store/store.js'
           card.css(ui.position)
           store.trigger('card_moved', x, y)
         },
-      }).on('click', (e) => {
-        store.trigger('menu_close')
-        store.trigger('card_forward', this.i)
-      }).on('dblclick', (e) => {
-        store.trigger('set_bgColor', this.color)
-      }).on('contextmenu', (e) => {
-        // デフォルトイベントをキャンセル
-        // これを書くことでコンテキストメニューが表示されなくなります
-        e.preventDefault()
-        store.trigger('menu_open', e, this)
+      }).on({
+        mousedown: (e) => {
+          store.trigger('card_forward', this.i)
+        },
+        click: (e) => {
+          card.toggleClass('card_selected')
+          store.trigger('menu_close')
+        },
+        contextmenu: (e) => {
+          // デフォルトイベントをキャンセル
+          // これを書くことでコンテキストメニューが表示されなくなります
+          e.preventDefault()
+          store.trigger('menu_open', e, this)
+        },
       })
     })
   </script>
