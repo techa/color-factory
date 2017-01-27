@@ -13,7 +13,10 @@ import config from './rollup.config.js'
 
 import fs from 'fs'
 const {name} = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
-config.dest = `dist/bundle.min.js`
+Object.assign(config, {
+  dest: 'dist/bundle.min.js',
+  sourceMap: false,
+})
 config.plugins.push(uglify({
   compress: {
     dead_code: true,
