@@ -5989,7 +5989,7 @@ class Store {
       this.trigger('cards_changed', this.cards);
     });
     this.on('remove_card', (index) => {
-      this.cards.pop();
+      this.cards.splice(index, 1);
       this.trigger('cards_changed', this.cards);
     });
 
@@ -6047,7 +6047,7 @@ class Store {
 }
 var store = new Store();
 
-riot.tag2('app', '<div id="colors"> <div id="form_add"> <input id="color_hex" placeholder="#000000, Black" onsubmit="{addCard_btn}"> <button id="add_btn" onclick="{addCard_btn}">➕</button> </div> <div id="pallete"> <color-tip each="{palette}"></color-tip> </div> <color-lists></color-lists> </div> <div id="box"> <color-card each="{card, i in cards}"></color-card> </div> <context-menu></context-menu>', '#colors { width: 320px; position: absolute; margin:0; padding: 20px; top:0; left:0; } #box { width: 100%; height: 100%; background: #1f2532; } #form_add { margin: 10px 0; display: flex; flex-direction: row;} #color_hex { flex: 1 1 auto; height: 42px; padding: 8px 5px; border-width: 1px 0 1px 1px; border-style: solid; border-top-left-radius: 4px; border-bottom-left-radius: 4px;} #add_btn { height: 42px; text-align: center; border-width: 1px; border-style: solid; border-top-right-radius: 4px; border-bottom-right-radius: 4px;}', '', function(opts) {
+riot.tag2('app', '<div id="colors"> <div id="form_add"> <input id="color_hex" placeholder="#000000, Black" onsubmit="{addCard_btn}"> <button id="add_btn" onclick="{addCard_btn}">➕</button> </div> <div id="pallete"> <color-tip each="{palette}"></color-tip> </div> <color-lists></color-lists> </div> <div id="box"> <color-card each="{card, i in cards}"></color-card> </div> <context-menu></context-menu>', '.ui-selectable-helper { position: absolute; z-index: 100; border: 1px dotted black; } #colors { width: 320px; position: absolute; margin:0; padding: 20px; top:0; left:0; } #box { width: 100%; height: 100%; background: #1f2532; } #form_add { margin: 10px 0; display: flex; flex-direction: row;} #color_hex { flex: 1 1 auto; height: 42px; padding: 8px 5px; border-width: 1px 0 1px 1px; border-style: solid; border-top-left-radius: 4px; border-bottom-left-radius: 4px;} #add_btn { height: 42px; text-align: center; border-width: 1px; border-style: solid; border-top-right-radius: 4px; border-bottom-right-radius: 4px;}', '', function(opts) {
     this.cards = store.cards;
     const palette = () => {
       return this.cards.map((arg) => arg).sort((a, b) => {
@@ -6086,56 +6086,59 @@ riot.tag2('app', '<div id="colors"> <div id="form_add"> <input id="color_hex" pl
       });
 
       store.trigger('set_bgColor', new Color(bgColor));
+
     });
 });
 
-riot.tag2('color-card', '<div class="card" riot-style="background-color: {color};"> <span class="cardtext"><b>{name}</b><br>{color}</span> </div>', '.card { position: absolute; width: 100px; height: 100px; margin: auto; text-align:center; font-size:12px; background: #323a45; } .card.active { z-index: 100; } .cardtext { width: 100px; height: 100px; vertical-align:middle; white-space: pre-wrap; display: table-cell; }', '', function(opts) {
+riot.tag2('color-card', '<div class="card"> <div class="card_inner" riot-style="background-color: {color}; color: {color.lightness < 40 ? \'#eee\': \'#111\'};"> <span class="cardtext"><b>{name}</b><br>{color}</span> </div> </div>', '.card { position: absolute; width: 120px; height: 120px; border-width: 2px; border-color: transparent; border-style: dashed; } .card.card_selected { background-color: black; border-color: white; } .card_inner { width: 116px; height: 116px; margin: auto; text-align:center; font-size:12px; } .card.active { z-index: 100; } .cardtext { width: 116px; height: 116px; vertical-align:middle; white-space: pre-wrap; display: table-cell; }', '', function(opts) {
     Object.assign(this, this.card);
 
-    const on = 'addEventListener';
-
     this.on('mount', ()=> {
-      const card = this.root.getElementsByClassName('card')[0];
-      const rect = this.rect =  this.box.getBoundingClientRect();
+      const card = $(this.root.getElementsByClassName('card')[0]);
+      let rect = this.rect =  this.box.getBoundingClientRect();
 
       const grid = 5;
       function snap (n) {
         return Math.round(n / grid) * grid
       }
 
-      let beforePositionX = card.style.left = snap(this.x || ((rect.width - 100 - 320) * Math.random() + 320)) + 'px';
-      let beforePositionY = card.style.top = snap(this.y || ((rect.height - 100) * Math.random())) + 'px';
+      let beforePositionX = snap(this.x || ((rect.width - 120 - 320) * Math.random() + 320));
+      let beforePositionY = snap(this.y || ((rect.height - 120) * Math.random()));
 
-      if (this.color.lightness < 40) {
-        card.style.color = '#eee';
-      }
-
-      movable(card, {
-        parent: this.box,
-        grid,
-        onDragStart: (x, y) => {
-          beforePositionX = x;
-          beforePositionY = y;
+      card.css({
+        left: beforePositionX,
+        top: beforePositionY,
+      }).draggable({
+        grid: [ 5, 5 ],
+        containment:  this.root.parentElement,
+        start: (e, ui) => {
+          beforePositionX = ui.position.left;
+          beforePositionY = ui.position.top;
+          rect =  this.box.getBoundingClientRect();
           store.trigger('card_forward', this.i);
         },
-        onDrag: (x, y) => {
+        drag: (e, ui) => {
+          ui.position.left = ui.position.left;
+          ui.position.top = ui.position.top;
+        },
+        stop: (e, ui) => {
+          let x = ui.position.left;
+          let y = ui.position.top;
+          if (x < 320) {
+            x = ui.position.left = beforePositionX;
+            y = ui.position.top = beforePositionY;
+          }
           this.x = x;
           this.y = y;
-        },
-        onDragEnd: (x, y) => {
-          if (x < 320) {
-            x = beforePositionX;
-            y = beforePositionY;
-          }
+          card.css(ui.position);
           store.trigger('card_moved', x, y);
-          return [x, y]
         },
-      });
-
-      card[on]('dblclick', (e) => {
+      }).on('click', (e) => {
+        store.trigger('menu_close');
+        store.trigger('card_forward', this.i);
+      }).on('dblclick', (e) => {
         store.trigger('set_bgColor', this.color);
-      });
-      card[on]('contextmenu', (e) => {
+      }).on('contextmenu', (e) => {
 
         e.preventDefault();
         store.trigger('menu_open', e, this);
@@ -6232,10 +6235,13 @@ riot.tag2('context-menu', '<div id="menu" show="{isTipMenuOpen || isCardMenuOpen
     };
 
     const menuHide = (e) => {
+      store.trigger('menu_close');
+    };
+    store.on('menu_close', (e) => {
       this.isCardMenuOpen = false;
       this.isTipMenuOpen = false;
       this.update();
-    };
+    });
 
     store.on('menu_open', (e, card, tip) => {
       this.menu.style.left = e.clientX + 'px';
