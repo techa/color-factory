@@ -101,7 +101,7 @@ class Store {
       this.trigger('cards_changed', this.cards)
     })
     this.on('remove_card', (index) => {
-      this.cards.pop()
+      this.cards.splice(index, 1)
       this.trigger('cards_changed', this.cards)
     })
 
