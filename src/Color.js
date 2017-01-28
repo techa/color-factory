@@ -137,13 +137,30 @@ export default class Color {
           hsl = data
         }
         if (result[8]) this.a = +('0' + result[8])
+      } else if (this.hex = (webcolor.find((arg) => new RegExp(`^${param}$`, 'i').test(arg[1])) || [null, ''])[0]) {
+        rgb = hex2rgb(this.hex)
       } else {
         throw new Error('ERROR! Color string ' + param)
       }
     } else if (typeof param === 'number') {
-      rgb = [param, g, b]
+      if (typeof g === 'number' && typeof b === 'number') {
+        rgb = [param, g, b]
+      } else if (g == null && b == null) {
+        hsl = [param, 100, 50]
+      }
     } else if (Array.isArray(param)) {
       rgb = param
+    } else if ({}.toString(param) === '[object Object]') {
+      if (typeof param.r === 'number' && typeof param.g === 'number' && typeof param.b === 'number') {
+        rgb = [param.r, param.g, param.b]
+      } else if (typeof param.h === 'number' && typeof param.s === 'number' && typeof param.l === 'number') {
+        hsl = [param.h, param.s, param.l]
+      }
+      if (typeof param.a === 'number') {
+        this.a = param.a
+      }
+    } else {
+      throw new TypeError('new Color arguments ERROR!' + arguments)
     }
 
     if (!hsl) {
