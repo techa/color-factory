@@ -121,20 +121,24 @@ export default class Color {
         // hex #000
         rgb = result
         this.hex = param
-      } else if (result = /^rgba?\((\d{1,3}), ?(\d{1,3}), ?(\d{1,3})(?:, ?(1|0?\.\d{1,2}))?\)$/.exec(param)) {
-        // rgb rgba(255,0,0,0.7)
-        rgb = result.slice(1).map(h => +h)
-        this.a = +(rgb[3] || 1)
-      } else if (result = /^rgba?\((\d{1,3})%, ?(\d{1,3})%, ?(\d{1,3})%(?:, ?(1|0?\.\d{1,2}))?\)$/.exec(param)) {
-        // rgb% rgb(100%, 0%, 20%)
-        rgb = result.slice(1).map(h => Math.floor(h / 100 * 255))
-        this.a = +(result[3] || 1)
-      } else if (result = /^hsla?\((\d{1,3}), ?(\d{1,3})%, ?(\d{1,3})%(?:, ?(1|0?\.\d{1,2}))?\)$/.exec(param)) {
-        // hsl hsla(240,100%,50%, 0.4)
-        hsl = result.slice(1).map(h => +h)
-        this.a = +(result[3] || 1)
+      } else if (result = /^(rgb|hsl)a?\((\d{1,3})(%?), ?(\d{1,3})(%?), ?(\d{1,3})(%?)(?:, ?(0|1|0?\.\d{1,2}))?\)$/.exec(param)) {
+        const data = [+result[2], +result[4], +result[6]]
+        const percent = result[3] + result[5] + result[7]
+        if (result[1] === 'rgb') {
+          if (percent === '%%%') {
+            // %を処理
+            rgb = data.map(h => Math.floor(h / 100 * 255))
+          } else if (!percent) {
+            rgb = data
+          } else {
+            throw new Error('ERROR! Don\'t mix up integer and percentage notation. 整数と割合を混在しないでください')
+          }
+        } else if (result[1] === 'hsl' && percent === '%%') {
+          hsl = data
+        }
+        if (result[8]) this.a = +('0' + result[8])
       } else {
-        return TypeError('Color argment string ' + param)
+        throw new Error('ERROR! Color string ' + param)
       }
     } else if (typeof param === 'number') {
       rgb = [param, g, b]
