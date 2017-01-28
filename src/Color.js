@@ -112,6 +112,10 @@ export default class Color {
     })
   }
 
+  static random () {
+    return new Color('#' + Math.random().toString(16).slice(2, 8))
+  }
+
   setColor (param, g, b) {
     this.a = 1
     let rgb, hsl
