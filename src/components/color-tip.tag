@@ -1,6 +1,6 @@
 import store from '../store/store.js'
 <color-tip>
-  <div class="tip" title={title} style="background-color: {color};"></div>
+  <div class="tip" title={title} riot-style="background-color: {color};"></div>
   <script>
     this.title = this.name + ' : ' + this.color
     const on = 'addEventListener'

@@ -1,7 +1,7 @@
 import store from '../store/store.js'
 <color-card>
   <div class="card">
-    <div class="card_inner" style="background-color: {color}; color: {color.lightness < 40 ? '#eee': '#111'};">
+    <div class="card_inner" riot-style="background-color: {color}; color: {color.lightness < 40 ? '#eee': '#111'};">
       <span class="cardtext"><b>{name}</b><br>{color}</span>
     </div>
   </div>
