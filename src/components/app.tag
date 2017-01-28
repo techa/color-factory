@@ -60,9 +60,31 @@ import Color from '../Color.js'
       })
 
       store.trigger('set_bgColor', new Color(bgColor))
+
+      $(box).selectable({
+        appendTo: '#box',
+        filter: '.card',
+        classes: {
+          'ui-selected': 'card_selected'
+        },
+        start: ( e, ui ) => {
+          store.trigger('menu_close')
+          $('.card_selected').removeClass('card_selected')
+        },
+        unselected: ( e, ui ) => {
+          console.log('ddddddddddddd')
+          $('.card_selected').removeClass('card_selected')
+          // store.trigger('menu_close')
+        },
+      })
     })
   </script>
   <style>
+    .ui-selectable-helper {
+      position: absolute;
+      z-index: 100;
+      border: 1px dotted black;
+    }
     #colors {
       width: 320px;
       position: absolute;
