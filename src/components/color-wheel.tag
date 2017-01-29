@@ -1,14 +1,14 @@
 import Color from '../Color.js'
-import {mousePosition} from '../movable.js'
+import {mousePosition, eventRegister} from '../movable.js'
 <color-wheel>
   <div class="color-wheel" riot-style="width: {opts.size}px; height: {opts.size}px;">
-    <canvas class="color-wheel-canvas" width={size} height={size}></canvas>
+    <canvas class="color-wheel-canvas" ref="canvas" width={size} height={size}></canvas>
     <button class="color-wheel-center" riot-style="{centerRadius} background-color: {color}; color:{color2};">
       <div class="color-wheel-text {active: mode == 'hue'}">{color.h}</div>
       <div class="color-wheel-text {active: mode == 'saturation'}">{color.s}%</div>
       <div class="color-wheel-text {active: mode == 'lightness'}">{color.l}%</div>
     </button>
-    <button each={btns} class="color-wheel-btn color-wheel-{className}" riot-style="{style} color:{color2}; border-color:{color2}; background-color:{color};" onclick={click}>
+    <button each={btns} class="color-wheel-btn color-wheel-{className}" ref={className} riot-style="{style} color:{color2}; border-color:{color2}; background-color:{color};" onclick={click}>
       <div class="color-wheel-btn-text">{text}</div>
     </button>
     <div class="color-wheel-handle"></div>
@@ -91,18 +91,22 @@ import {mousePosition} from '../movable.js'
         className: 'saturation',
         style: btnstyle + `top: 0; left: 0;`,
         text: 'S',
-        click: () => {
+        click: (e) => {
           this.mode = this.mode === 'saturation' ? 'hue' : 'saturation'
-          canvasDraw(this.mode)
+          e.target.classList.toggle('active')
+          this.refs.lightness.classList.remove('active')
+          this.canvasDraw(this.mode === 'hue' ? this.mode + 'saturation' : this.mode)
         }
       },
       {
         className: 'lightness',
         style: btnstyle + `top: 0; right: 0;`,
         text: 'L',
-        click: () => {
+        click: (e) => {
           this.mode = this.mode === 'lightness' ? 'hue' : 'lightness'
-          canvasDraw(this.mode)
+          e.target.classList.toggle('active')
+          this.refs.saturation.classList.remove('active')
+          this.canvasDraw(this.mode === 'hue' ? this.mode + 'lightness' : this.mode)
         }
       },
       {
@@ -125,15 +129,29 @@ import {mousePosition} from '../movable.js'
       },
     ]
 
-    let grad, saturation, lightness, canvas, ctx
+    let grad, saturation, lightness, canvas
     this.on('update', () => {
       this.color2 = this.color.l < 45 ? '#eee' : '#111'
     })
     this.on('mount', () => {
-      canvas = this.root.getElementsByClassName('color-wheel-canvas')[0]
-      ctx = canvas.getContext('2d')
-      canvasDraw(this.mode)
-      mousePosition(canvas)
+      canvas = this.refs.canvas.getContext('2d')
+      this.canvasDraw()
+      mousePosition(this.refs.canvas)
+
+      this.btns.slice(2).forEach((data) => {
+        const el = this.refs[data.className]
+        let time
+        function mdown (e) {
+          time = setInterval(data.click, 100)
+          eventRegister(el, true, mup, 'mouseup', 'touchcancel', 'touchend')
+        }
+        function mup (e) {
+          clearInterval(time)
+          time = false
+          eventRegister(el, false, mup, 'mouseup', 'touchcancel', 'touchend')
+        }
+        eventRegister(el, true, mdown, 'mousedown', 'touchstart')
+      })
     })
 
 
@@ -151,13 +169,21 @@ import {mousePosition} from '../movable.js'
         Math.floor((center + r * Math.sin(d)) * 100) / 100,
       ]
     }
-    function canvasDraw (mode) {
+    this.canvasDraw = (mode) => {
       switch (mode) {
         case 'saturation':
           saturation = [0, 50, 100]
-          lightness = [50, 50, 50]
+          lightness = Array(3).fill(this.color.l)
           break
         case 'lightness':
+          saturation = Array(3).fill(this.color.s)
+          lightness = [0, 50, 100]
+          break
+        case 'huesaturation':
+          saturation = [0, 50, 100]
+          lightness = [50, 50, 50]
+          break
+        case 'huelightness':
           saturation = [100, 100, 100]
           lightness = [0, 50, 100]
           break
@@ -168,23 +194,23 @@ import {mousePosition} from '../movable.js'
       }
 
       // http://www.html5.jp/canvas/ref.html
-      ctx.clearRect(0, 0, size, size)
+      canvas.clearRect(0, 0, size, size)
 
       for (let i = 0; i < 360; i++) {
-        ctx.beginPath()
-        grad  = ctx.createLinearGradient(...position(radius, i), ...position(center, i))
+        canvas.beginPath()
+        grad  = canvas.createLinearGradient(...position(radius, i), ...position(center, i))
 
         ;[0, 0.5, 1].forEach((direction, j) => {
           grad.addColorStop(direction, `hsl(${i}, ${saturation[j]}%, ${lightness[j]}%)`)
         })
-        ctx.fillStyle = grad
+        canvas.fillStyle = grad
 
-        ctx.moveTo(...position(radius, i))
-        ctx.lineTo(...position(center, i))
-        ctx.lineTo(...position(center, i + 1.5))
-        ctx.lineTo(...position(radius, i + 1.5))
-        ctx.closePath()
-        ctx.fill()
+        canvas.moveTo(...position(radius, i))
+        canvas.lineTo(...position(center, i))
+        canvas.lineTo(...position(center, i + 1.5))
+        canvas.lineTo(...position(radius, i + 1.5))
+        canvas.closePath()
+        canvas.fill()
       }
     }
   </script>
