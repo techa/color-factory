@@ -1,6 +1,6 @@
 // npm i -D rollup-plugin-riot
 import riot from 'rollup-plugin-riot'
-// npm i -D rollup rollup-plugin-node-resolve rollup-plugin-commonjs rollup-plugin-watch
+// npm i -D rollup rollup-plugin-node-resolve rollup-plugin-commonjs
 import commonjs    from 'rollup-plugin-commonjs'
 import nodeResolve from 'rollup-plugin-node-resolve'
 // npm i -D rollup-plugin-babel babel-preset-es2015-rollup
@@ -17,7 +17,6 @@ const {name} = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
 // NODE_ENV=production, development
 const DEBUG = !(process.env.NODE_ENV === 'production')
 
-console.log('process.env.NODE_ENV', process.env.NODE_ENV, process.env.NODE_ENV === '"production"')
 export default {
   entry: 'src/index.js',
   dest: `dist/bundle.js`,
@@ -40,7 +39,7 @@ export default {
     // }),
     riot({
       include: [
-        'src/components/**.tag',
+        './src/components/**.tag',
       ],
     }),
     nodeResolve({

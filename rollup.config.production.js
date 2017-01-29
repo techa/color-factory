@@ -15,7 +15,6 @@ import fs from 'fs'
 const {name} = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
 Object.assign(config, {
   dest: 'dist/bundle.min.js',
-  sourceMap: false,
 })
 config.plugins.push(uglify({
   compress: {
