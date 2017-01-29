@@ -216,6 +216,28 @@ export default class Color {
     return (this.hex = rgb2hex(hsl2rgb(this.hsl)))
   }
 
+  scheme (param, value) {
+    if (value != null) {
+      param = {[param]: value}
+    }
+    const newparam = {}
+    ;[['r', 'g', 'b'], ['h', 's', 'l'], ['red', 'green', 'blue'], ['hue', 'saturation', 'lightness']].some((keys) => {
+      return keys.some((key) => {
+        if (key in param) {
+          keys.forEach((k) => {
+            culc(k)
+          })
+          newparam.a = param.a != null ? param.a : param.alpha != null ? param.alpha : this.a
+          return true
+        }
+      })
+    })
+    function culc (key) {
+      newparam[key.charAt(0)] = param[key] === void 0 ? this[key] : param[key]
+    }
+    return new Color(newparam)
+  }
+
   toString () {
     return this.hex
   }
