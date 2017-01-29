@@ -81,6 +81,7 @@ import {mousePosition} from '../movable.js'
     this.centerRadius = `width: ${centerRadius}px; height: ${centerRadius}px;border-radius: ${centerRadius}px; font-size: ${centerRadius / 5}px; `
 
     this.color = new Color()
+    this.color2 = this.color.l < 45 ? '#eee' : '#111'
 
     this.mode = 'hue'
 
@@ -126,11 +127,11 @@ import {mousePosition} from '../movable.js'
 
     let grad, saturation, lightness, canvas, ctx
     this.on('update', () => {
-      canvas = this.root.getElementsByClassName('color-wheel-canvas')[0]
-      ctx = canvas.getContext('2d')
       this.color2 = this.color.l < 45 ? '#eee' : '#111'
     })
     this.on('mount', () => {
+      canvas = this.root.getElementsByClassName('color-wheel-canvas')[0]
+      ctx = canvas.getContext('2d')
       canvasDraw(this.mode)
       mousePosition(canvas)
     })

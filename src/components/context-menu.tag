@@ -1,6 +1,6 @@
 import store from '../store/store.js'
 <context-menu>
-  <div id="menu" show={isTipMenuOpen || isCardMenuOpen}>
+  <div id="menu" ref="menu" show={isTipMenuOpen || isCardMenuOpen}>
     <p class="menuitem" onclick={addCard} show={isTipMenuOpen}>ADD CARD</p>
     <p class="menuitem" onclick={removeCard} show={isCardMenuOpen}>DELETE</p>
     <p class="menuitem" onclick={duplicateCard} show={isCardMenuOpen}>DUPLICATE</p>
@@ -72,8 +72,8 @@ import store from '../store/store.js'
     })
 
     store.on('menu_open', (e, card, tip) => {
-      this.menu.style.left = e.clientX + 'px'
-      this.menu.style.top = e.clientY + 'px'
+      this.refs.menu.style.left = e.clientX + 'px'
+      this.refs.menu.style.top = e.clientY + 'px'
 
       activeCard = card
 

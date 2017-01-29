@@ -1,7 +1,7 @@
 import store from '../store/store.js'
 import Color from '../Color.js'
 <app>
-  <div id="colors">
+  <div id="colors" ref="colors">
     <!--<input type="text" id="color-name" placeholder="COLOR NAME">-->
     <color-wheel size="280" oncolorchange={colorchange}/>
     <div id="form_add">
@@ -16,7 +16,7 @@ import Color from '../Color.js'
     <color-lists/>
   </div>
 
-  <div id="box">
+  <div id="box" ref="box">
     <color-card each={card, i in cards}/>
   </div>
 
@@ -57,11 +57,11 @@ import Color from '../Color.js'
     this.on('mount', ()=> {
       const box = store.box = document.getElementById('box')
       const bgColor = store.getItem('bgColor') || '#1f2532'
-      this.box.style.backgroundColor = bgColor
+      this.refs.box.style.backgroundColor = bgColor
 
       store.on('set_bgColor', (color) => {
         const textcolor = color.lightness < 35 ? '#eee' : '#111'
-        this.colors.style.color = textcolor
+        this.refs.colors.style.color = textcolor
         // this['color-name'].style.borderColor = color
       })
 
