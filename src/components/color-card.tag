@@ -1,4 +1,5 @@
 import store from '../store/store.js'
+import {movable} from '../movable.js'
 <color-card>
   <div class="card">
     <div class="card_inner" riot-style="background-color: {color}; color: {color.lightness < 40 ? '#eee': '#111'};">
@@ -9,7 +10,7 @@ import store from '../store/store.js'
     Object.assign(this, this.card)
 
     this.on('mount', ()=> {
-      const card = $(this.root.getElementsByClassName('card')[0])
+      const card = this.root.getElementsByClassName('card')[0]
       let rect = this.rect =  this.box.getBoundingClientRect()
 
       const grid = 5
@@ -20,48 +21,52 @@ import store from '../store/store.js'
       let beforePositionX = snap(this.x || ((rect.width - 120 - 320) * Math.random() + 320))
       let beforePositionY = snap(this.y || ((rect.height - 120) * Math.random()))
 
-      card.css({
-        left: beforePositionX,
-        top: beforePositionY,
-      }).draggable({
-        grid: [ 5, 5 ],
-        containment:  this.root.parentElement,
-        start: (e, ui) => {
-          beforePositionX = ui.position.left
-          beforePositionY = ui.position.top
-          rect =  this.box.getBoundingClientRect()
-        },
-        drag: (e, ui) => {
-          ui.position.left = ui.position.left
-          ui.position.top = ui.position.top
-        },
-        stop: (e, ui) => {
-          let x = ui.position.left
-          let y = ui.position.top
-          if (x < 320) {
-            x = ui.position.left = beforePositionX
-            y = ui.position.top = beforePositionY
-          }
-          this.x = x
-          this.y = y
-          card.css(ui.position)
-          store.trigger('card_moved', x, y)
-        },
-      }).on({
-        mousedown: (e) => {
-          store.trigger('card_forward', this.i)
-        },
-        click: (e) => {
-          card.toggleClass('card_selected')
-          store.trigger('menu_close')
-        },
-        contextmenu: (e) => {
-          // デフォルトイベントをキャンセル
-          // これを書くことでコンテキストメニューが表示されなくなります
-          e.preventDefault()
-          store.trigger('menu_open', e, this)
-        },
+      card.style.left = beforePositionX + 'px'
+      card.style.top = beforePositionY + 'px'
+
+      movable(card, {
+        containment: this.box,
       })
+
+      // card.draggable({
+      //   grid: [ 5, 5 ],
+      //   containment:  this.root.parentElement,
+      //   start: (e, ui) => {
+      //     beforePositionX = ui.position.left
+      //     beforePositionY = ui.position.top
+      //     rect =  this.box.getBoundingClientRect()
+      //   },
+      //   drag: (e, ui) => {
+      //     ui.position.left = ui.position.left
+      //     ui.position.top = ui.position.top
+      //   },
+      //   stop: (e, ui) => {
+      //     let x = ui.position.left
+      //     let y = ui.position.top
+      //     if (x < 320) {
+      //       x = ui.position.left = beforePositionX
+      //       y = ui.position.top = beforePositionY
+      //     }
+      //     this.x = x
+      //     this.y = y
+      //     card.css(ui.position)
+      //     store.trigger('card_moved', x, y)
+      //   },
+      // }).on({
+      //   mousedown: (e) => {
+      //     store.trigger('card_forward', this.i)
+      //   },
+      //   click: (e) => {
+      //     card.toggleClass('card_selected')
+      //     store.trigger('menu_close')
+      //   },
+      //   contextmenu: (e) => {
+      //     // デフォルトイベントをキャンセル
+      //     // これを書くことでコンテキストメニューが表示されなくなります
+      //     e.preventDefault()
+      //     store.trigger('menu_open', e, this)
+      //   },
+      // })
     })
   </script>
   <style>
