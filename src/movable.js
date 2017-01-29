@@ -2,6 +2,13 @@ function noop (e, position) {
   console.log('position', position)
 }
 
+export function eventRegister (el, onoff, callback, ...eventNames) {
+  onoff = onoff ? 'addEventListener' : 'removeEventListener'
+  eventNames.forEach((eventName) => {
+    ;(el || window)[onoff](eventName, callback, false)
+  })
+}
+
 /**
  * マウス座標
  *
@@ -70,12 +77,7 @@ export function mousePosition (options) {
   }
 
   // イベント登録
-  function eventListener (onoff, callback, ...eventNames) {
-    onoff = onoff ? 'addEventListener' : 'removeEventListener'
-    eventNames.forEach((eventName) => {
-      ;(options.containment || window)[onoff](eventName, callback, false)
-    })
-  }
+  const eventListener = eventRegister.bind(null, options.containment)
   ;(options.handle || options.containment).addEventListener('mousedown', mdown, false)
   ;(options.handle || options.containment).addEventListener('touchstart', mdown, false)
 
