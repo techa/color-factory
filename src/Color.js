@@ -112,59 +112,66 @@ export default class Color {
     })
   }
 
-  static random () {
-    return new Color('#' + Math.random().toString(16).slice(2, 8))
-  }
-
   setColor (param, g, b) {
     this.a = 1
     let rgb, hsl
-    if (typeof param === 'string') {
-      let result
-      if (result = hex2rgb(param)) {
-        // hex #000
-        rgb = result
-        this.hex = param
-      } else if (result = /^(rgb|hsl)a?\((\d{1,3})(%?), ?(\d{1,3})(%?), ?(\d{1,3})(%?)(?:, ?(0|1|0?\.\d{1,2}))?\)$/.exec(param)) {
-        const data = [+result[2], +result[4], +result[6]]
-        const percent = result[3] + result[5] + result[7]
-        if (result[1] === 'rgb') {
-          if (percent === '%%%') {
-            // %を処理
-            rgb = data.map(h => Math.floor(h / 100 * 255))
-          } else if (!percent) {
-            rgb = data
-          } else {
-            throw new Error('ERROR! Don\'t mix up integer and percentage notation. 整数と割合を混在しないでください')
+
+    switch ({}.toString.call(param).slice(8, -1)) {
+      case 'String':
+        let result
+        if (result = hex2rgb(param)) {
+          // hex #000
+          rgb = result
+          this.hex = param
+        } else if (result = /^(rgb|hsl)a?\((\d{1,3})(%?), ?(\d{1,3})(%?), ?(\d{1,3})(%?)(?:, ?(0|1|0?\.\d{1,2}))?\)$/.exec(param)) {
+          const data = [+result[2], +result[4], +result[6]]
+          const percent = result[3] + result[5] + result[7]
+          if (result[1] === 'rgb') {
+            if (percent === '%%%') {
+              // %を処理
+              rgb = data.map(h => Math.floor(h / 100 * 255))
+            } else if (!percent) {
+              rgb = data
+            } else {
+              throw new Error('ERROR! Don\'t mix up integer and percentage notation. 整数と割合を混在しないでください')
+            }
+          } else if (result[1] === 'hsl' && percent === '%%') {
+            hsl = data
           }
-        } else if (result[1] === 'hsl' && percent === '%%') {
-          hsl = data
+          if (result[8]) this.a = +('0' + result[8])
+        } else if (this.hex = (webcolor.find((arg) => new RegExp(`^${param}$`, 'i').test(arg[1])) || [null, ''])[0]) {
+          rgb = hex2rgb(this.hex)
+        } else {
+          throw new Error('ERROR! Color string ' + param)
         }
-        if (result[8]) this.a = +('0' + result[8])
-      } else if (this.hex = (webcolor.find((arg) => new RegExp(`^${param}$`, 'i').test(arg[1])) || [null, ''])[0]) {
+        break
+      case 'Number':
+        if (typeof g === 'number' && typeof b === 'number') {
+          rgb = [param, g, b]
+        } else if (g == null && b == null) {
+          hsl = [param, 100, 50]
+        }
+        break
+      case 'Array':
+        rgb = param
+        break
+      case 'Object':
+        if (typeof param.r === 'number' && typeof param.g === 'number' && typeof param.b === 'number') {
+          rgb = [param.r, param.g, param.b]
+        } else if (typeof param.h === 'number' && typeof param.s === 'number' && typeof param.l === 'number') {
+          hsl = [param.h, param.s, param.l]
+        }
+        if (typeof param.a === 'number') {
+          this.a = param.a
+        }
+        break
+      case 'Undefined':
+      case 'Null':
+        this.hex = randomColor()
         rgb = hex2rgb(this.hex)
-      } else {
-        throw new Error('ERROR! Color string ' + param)
-      }
-    } else if (typeof param === 'number') {
-      if (typeof g === 'number' && typeof b === 'number') {
-        rgb = [param, g, b]
-      } else if (g == null && b == null) {
-        hsl = [param, 100, 50]
-      }
-    } else if (Array.isArray(param)) {
-      rgb = param
-    } else if ({}.toString(param) === '[object Object]') {
-      if (typeof param.r === 'number' && typeof param.g === 'number' && typeof param.b === 'number') {
-        rgb = [param.r, param.g, param.b]
-      } else if (typeof param.h === 'number' && typeof param.s === 'number' && typeof param.l === 'number') {
-        hsl = [param.h, param.s, param.l]
-      }
-      if (typeof param.a === 'number') {
-        this.a = param.a
-      }
-    } else {
-      throw new TypeError('new Color arguments ERROR!' + arguments)
+        break
+      default:
+        throw new TypeError('new Color arguments ERROR!' + arguments)
     }
 
     if (!hsl) {
@@ -251,6 +258,10 @@ function nearName (hex) {
   //   }
   // })
   // return nearestName
+}
+
+export function randomColor () {
+  return '#' + Math.random().toString(16).slice(2, 8)
 }
 
 /**
