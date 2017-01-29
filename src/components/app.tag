@@ -3,8 +3,9 @@ import Color from '../Color.js'
 <app>
   <div id="colors">
     <!--<input type="text" id="color-name" placeholder="COLOR NAME">-->
+    <color-wheel size="280" oncolorchange={colorchange}/>
     <div id="form_add">
-      <input id="color_hex" placeholder="#000000, Black" onsubmit={addCard_btn}>
+      <input id="color_hex" placeholder="#000000, Black" onsubmit={addCard_btn} value={colorHexValue}>
       <button id="add_btn" onclick={addCard_btn}>➕</button>
     </div>
 
@@ -38,14 +39,19 @@ import Color from '../Color.js'
     })
 
     this.addCard_btn = () => {
-      const text = /^(#?(?:[a-f\d]{3}|[a-f\d]{6}))(?:\s*\W\s*(.+))/i.exec(this.color_hex.value)
+      const text = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W\s*(.+))?/i.exec(this.colorHexValue)
       if (text) {
         store.trigger('add_card', {
           name: (text[2] || '').trim(),
           color: new Color(text[1])
         })
-        this.color_hex.value = ''
+        this.colorHexValue = ''
       }
+    }
+
+    this.colorchange = (color) => {
+      this.colorHexValue = color.hex
+      this.update()
     }
 
     this.on('mount', ()=> {
