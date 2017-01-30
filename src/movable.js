@@ -1,11 +1,150 @@
-function noop (e, position) {
-  console.log('position', position)
-}
+function noop () {}
 
-export function eventRegister (el, onoff, callback, ...eventNames) {
+/**
+ * constructor PositionManager
+ *
+ * @export
+ * @class PositionManager
+ * @param {object} options
+ */
+export function PositionManager (options) {
+  this.options = Object.assign({
+    containment: document.body,
+    handle: null,
+    grid: 1,
+    percent: false,
+    axis: false, // or 'x' , 'y'
+  }, options)
+
+  let grid = this.options.grid
+  if (!Array.isArray(grid)) {
+    grid = parseFloat(grid, 10) || 1
+    grid = [grid, grid]
+  }
+  this.options.grid = grid
+
+  // containment内に置ける現在のマウス相対位置
+  this.x = 0
+  this.y = 0
+  // this.x、this.yの初期値保存
+  this.startX = 0
+  this.startY = 0
+  // this.x - this.startX
+  this.vectorX = 0
+  this.vectorY = 0
+  // position
+  this.left = 0
+  this.top = 0
+  this.handleRect = {width: 0, height: 0, left: 0, top: 0}
+  const position = {}
+  Object.defineProperties(this, {
+    left: {
+      get () {
+        return position.left
+      },
+      set (val) {
+        position.left = this.adjust(val, true)
+      }
+    },
+    top: {
+      get () {
+        return position.top
+      },
+      set (val) {
+        position.top = this.adjust(val)
+      }
+    },
+  })
+}
+Object.assign(PositionManager.prototype, {
+  init (e) {
+    // ボックスサイズ取得。ここに書くのはresize対策
+    this.parentRect = this.options.containment.getBoundingClientRect()
+    if (this.options.handle) this.handleRect = this.options.handle.getBoundingClientRect()
+    this.set(e, true)
+    return this
+  },
+
+  set (e, startflg) {
+    if (Array.isArray(e)) {
+      [this.x, this.y] = e
+    } else {
+      const event = 'touches' in e ? e.touches[0] : e
+      this.x = event.pageX - this.parentRect.left - window.pageXOffset
+      this.y = event.pageY - this.parentRect.top - window.pageYOffset
+
+      if (!startflg) {
+        this.vectorX = this.x - this.startX
+        this.vectorY = this.y - this.startY
+      }
+    }
+
+    if (startflg) {
+      this.startX = this.x
+      this.startY = this.y
+    }
+    Object.assign(this, this.modify(this.handleRect.left + this.vectorX, this.handleRect.top + this.vectorY))
+    return this
+  },
+
+  setPosition (el = this.options.handle) {
+    switch (this.options.axis) {
+      case 'x':
+        el.style.left = this.left + 'px'
+        break
+      case 'y':
+        el.style.left = this.left + 'px'
+        break
+      default:
+        el.style.left = this.left + 'px'
+        el.style.top  = this.top + 'px'
+        break
+    }
+    return this
+  },
+
+  modify (offsetX, offsetY) {
+    const position = {}
+    offsetX = position.left = offsetX
+    offsetY = position.top = offsetY
+
+    if (this.options.percent) {
+      position.percentLeft = this.percentage(offsetX, true)
+      position.percentTop = this.percentage(offsetY)
+    }
+    return position
+  },
+  adjust (offset, width) {
+    const side = width ? 'width' : 'height'
+    const options = this.options
+    // handlesの動きをcontainmentに制限する
+    if (options.containment !== document.body) {
+      offset = Math.min(Math.max(0, offset), this.parentRect[side] - this.handleRect[side])
+    }
+    const grid = width ? options.grid[0] : options.grid[1]
+    offset = Math.round(offset / grid) * grid
+    return offset
+  },
+  percentage (offset, width) {
+    const side = width ? 'width' : 'height'
+    return Math.min(Math.max(0, offset / (this.parentRect[side] - this.handleRect[side]) * 100), 100)
+  }
+})
+
+/**
+ * addEventListener & removeEventListener
+ *
+ * @export
+ * @param {element}  el
+ * @param {boolean}  onoff      true: addEventListener, false: removeEventListener
+ * @param {string}   eventNames Multiple event registration with space delimiter.スぺース区切りで複数イベント登録
+ * @param {function} callback
+ * @param {boolean}  useCapture http://qiita.com/hosomichi/items/49500fea5fdf43f59c58
+ */
+export function eventRegister (el, onoff, eventNames, callback, useCapture) {
   onoff = onoff ? 'addEventListener' : 'removeEventListener'
-  eventNames.forEach((eventName) => {
-    ;(el || window)[onoff](eventName, callback, false)
+  eventNames.split(' ').forEach((eventName) => {
+    ;(el || window)[onoff](eventName, callback, !!useCapture)
   })
 }
 
@@ -21,127 +160,67 @@ export function mousePosition (options) {
     start: noop,
     drag: noop,
     stop: noop,
-    grid: 1,
-    percent: false,
-    axis: null,
   }, options)
 
-  const grid = options.grid > 0 ? [options.grid, options.grid] : options.grid
-  // handlesの動きをcontainmentに制限するフラグ
-  let contains = options.handle && options.containment
-
-  let barRect
-  let handleRect = {width: 0, height: 0}
-
-  // 値の変更
-  function modify (e, startflg) {
-    const event = 'touches' in e ? e.touches[0] : e
-    let offsetX = event.pageX
-    let offsetY = event.pageY
-
-    if (startflg) {
-      startflg = 'start'
-    } else  {
-      startflg = ''
-      offsetX -= position.startx
-      offsetY -= position.starty
-    }
-
-    if (Array.isArray(event)) {
-      offsetX = event[0]
-      offsetY = event[1]
-    }
-
-    offsetX = position[startflg + 'x'] = adjust(offsetX, 'width')
-    offsetY = position[startflg + 'y'] = adjust(offsetY, 'height')
-
-    if (options.percent && contains) {
-      position[startflg + 'percentX'] = percentage(offsetX, 'width')
-      position[startflg + 'percentY'] = percentage(offsetY, 'height')
-    }
-  }
-  // 値の調整
-  function adjust (offset, side) {
-    if (contains) {
-      offset = Math.min(Math.max(0, offset), barRect[side] - handleRect[side])
-    }
-    offset = Math.round(offset * 100) / 100
-    if (grid) {
-      const gridi = side === 'width' ? grid[0] : grid[1]
-      offset = Math.round(offset / gridi) * gridi
-    }
-    return offset
-  }
-  function percentage (offset, side) {
-    return Math.min(Math.max(0, offset / (barRect[side] - handleRect[side]) * 100), 100)
-  }
-
   // イベント登録
-  const eventListener = eventRegister.bind(null, options.containment)
-  ;(options.handle || options.containment).addEventListener('mousedown', mdown, false)
-  ;(options.handle || options.containment).addEventListener('touchstart', mdown, false)
+  const eventListener = eventRegister.bind(null, window)
+  eventRegister(options.handle || options.containment, true, 'mousedown touchstart', mdown)
 
-  const position = {
-    startx: null,
-    starty: null,
-    x: null,
-    y: null,
-  }
+  const position = new PositionManager(options)
 
   let handleel
 
   // マウスが押された際の関数
   function mdown (e) {
-    // ボックスサイズ取得。ここに書くのはresize対策
-    if (options.containment) barRect = options.containment.getBoundingClientRect()
-    if (options.handle) handleRect = options.handle.getBoundingClientRect()
-
     // マウス座標を保存
-    modify(e, true)
+    position.init(e)
 
     handleel = this
     if (options.start) {
       options.start(e, position, handleel)
-      modify([position.startx, position.starty], true)
+      position.set([position.startX, position.startY])
     }
-
-    eventListener(true, mup, 'mouseup', 'touchcancel', 'touchend')
-    eventListener(true, mmove, 'mousemove', 'touchmove')
+    eventListener(true, 'mouseup touchcancel touchend', mup)
+    eventListener(true, 'mousemove touchmove', mmove)
   }
 
   // マウスカーソルが動いたときに発火
   function mmove (e) {
     // マウスが動いたベクトルを保存
-    modify(e)
+    position.set(e)
     // フリックしたときに画面を動かさないようにデフォルト動作を抑制
     e.preventDefault()
 
     if (options.drag) {
       options.drag(e, position, handleel)
-      modify([position.x, position.y])
-      // ;[position.x, position.y] = gridModify(position.x, position.y)
+      position.set([position.x, position.y])
     }
-
     // カーソルが外れたとき発火
-    eventListener(true, mup, 'mouseleave', 'touchleave')
+    eventListener(true, 'mouseleave touchleave', mup)
   }
 
   // マウスボタンが上がったら発火
   function mup (e) {
     // マウスが動いたベクトルを保存
-    modify(e)
+    position.set(e)
 
     if (options.stop) {
       options.stop(e, position, handleel)
-      modify([position.x, position.y])
+      position.set([position.x, position.y])
     }
-
     // ハンドラの消去
-    eventListener(false, mup, 'mouseup', 'touchend', 'touchcancel', 'mouseleave', 'touchleave')
-    eventListener(false, mmove, 'mousemove', 'touchmove')
+    eventListener(false, 'mouseup touchend touchcancel mouseleave touchleave', mup)
+    eventListener(false, 'mousemove touchmove', mmove)
   }
 }
 
+/**
+ * movable
+ *
+ * @export
+ * @param {element} element
+ * @param {object} options
+ */
 export function movable (element, options) {
   const opts = Object.assign({
     containment: element.parentElement,
@@ -153,9 +232,6 @@ export function movable (element, options) {
     start (e, position, el) {
       // クラス名に .drag を追加
       el.classList.add(opts.draggingClass)
-      // 要素内の相対座標を取得
-      position.startx -= el.offsetLeft
-      position.starty -= el.offsetTop
       if (opts.start) {
         opts.start(e, position, el)
       }
@@ -165,8 +241,7 @@ export function movable (element, options) {
         opts.drag(e, position, el)
       }
       // マウスが動いた場所に要素を動かす
-      el.style.left = position.x + 'px'
-      el.style.top = position.y + 'px'
+      position.setPosition()
     },
     stop (e, position, el) {
       if (opts.stop) {
