@@ -80,6 +80,10 @@ import {movable} from '../movable.js'
       height: 116px;
       vertical-align:middle;
       white-space: pre-wrap;
+      user-select: none;
+      -ms-user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
       /* http://qiita.com/sawadays0118/items/4c329fd05cdff14ffebc
       ブロック要素には vertical-align:middle;が効かないのでtable-cellを使うが、
       table, inline-table, table-cell, table-row, table-row-group）において、min-height,max-heightは効かないのが仕様
