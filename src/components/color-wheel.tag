@@ -159,6 +159,7 @@ import {mousePosition, eventRegister} from '../movable.js'
     this.on('update', () => {
       this.color2 = this.color.l < 45 ? '#eee' : '#111'
       handleSetPosition()
+      opts.oncolorchange(this.color)
     })
     this.on('mount', () => {
       canvas = this.refs.canvas.getContext('2d')
