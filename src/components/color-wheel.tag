@@ -61,6 +61,10 @@ import {mousePosition, eventRegister} from '../movable.js'
       margin: auto;
     }
     .color-wheel-text {
+      user-select: none;
+      -ms-user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
       pointer-events: none;
       opacity: 0.6;
     }
