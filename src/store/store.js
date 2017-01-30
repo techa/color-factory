@@ -1,7 +1,7 @@
 import riot from 'riot'
 import {Undo} from '../undo'
 import Color from '../Color'
-const storage = window.localStorage
+const storage = window.sessionStorage
 
 class Store {
   constructor () {
