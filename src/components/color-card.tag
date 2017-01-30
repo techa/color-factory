@@ -18,28 +18,25 @@ import {movable} from '../movable.js'
         return Math.round(n / grid) * grid
       }
 
-      let beforePositionX = snap(this.x || ((rect.width - 120 - 320) * Math.random() + 320))
-      let beforePositionY = snap(this.y || ((rect.height - 120) * Math.random()))
-
-      card.style.left = beforePositionX + 'px'
-      card.style.top = beforePositionY + 'px'
+      card.style.left = snap(this.x || ((rect.width - 120 - 320) * Math.random() + 320)) + 'px'
+      card.style.top  = snap(this.y || ((rect.height - 120) * Math.random())) + 'px'
 
       movable(card, {
         containment: this.parent.refs.box,
+        grid,
         start: (e, position, el) => {
           store.trigger('card_forward', this.i)
         },
         stop: (e, position, el) => {
-          let x = position.x
-          let y = position.y
+          let x = position.left
+          let y = position.top
           if (x < 320) {
-            x = position.x = beforePositionX
-            y = position.y = beforePositionY
+            x = position.left = position.startX
+            y = position.top  = position.startY
           }
           this.x = x
           this.y = y
-          card.style.left = x + 'px'
-          card.style.top = y + 'px'
+          position.setPosition()
           store.trigger('card_moved', x, y)
         },
       })
