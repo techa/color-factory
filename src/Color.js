@@ -355,23 +355,19 @@ export function rgb2hsl (r, g, b) {
       h = s = 0
       break
     case r:
-      // h = (g - b) / d + (g < b ? 6 : 0); h /= 6
-      h = 60 * (g - b) / d + 0
+      h = (g - b) / d + (g < b ? 6 : 0); h /= 6
       break
     case g:
-      // h = (b - r) / d + 2; h /= 6
-      h = 60 * (b - r) / d + 120
+      h = (b - r) / d + 2; h /= 6
       break
     case b:
-      // h = (r - g) / d + 4; h /= 6
-      h = 60 * (b - r) / d + 240
+      h = (r - g) / d + 4; h /= 6
       break
   }
 
+  h *= 360
   s *= 100
   l *= 100
-
-  // return [Math.round(h), Math.round(s), Math.round(l)]
   return [h, s, l]
 }
 
