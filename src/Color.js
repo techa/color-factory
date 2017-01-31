@@ -122,6 +122,7 @@ export default class Color {
         if (result = hex2rgb(param)) {
           // hex #000
           rgb = result
+          if (param.charAt(0) !== '#') param = '#' + param
           this.hex = param
         } else if (result = /^(rgb|hsl)a?\((\d{1,3})(%?), ?(\d{1,3})(%?), ?(\d{1,3})(%?)(?:, ?(0|1|0?\.\d{1,2}))?\)$/.exec(param)) {
           const data = [+result[2], +result[4], +result[6]]
