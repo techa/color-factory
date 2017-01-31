@@ -29,9 +29,6 @@ export function PositionManager (options) {
   // this.x、this.yの初期値保存
   this.startX = 0
   this.startY = 0
-  // this.x - this.startX
-  this.vectorX = 0
-  this.vectorY = 0
   // position
   this.left = 0
   this.top = 0
@@ -61,14 +58,15 @@ Object.assign(PositionManager.prototype, {
     // ボックスサイズ取得。ここに書くのはresize対策
     this.parentRect = this.options.containment.getBoundingClientRect()
     if (this.options.handle) this.handleRect = this.options.handle.getBoundingClientRect()
+    // this.x - this.startX
+    this.vectorX = 0
+    this.vectorY = 0
     this.set(e, true)
     return this
   },
 
   set (e, startflg) {
-    if (Array.isArray(e)) {
-      [this.x, this.y] = e
-    } else {
+    if ({}.toString.call(e) === '[object MouseEvent]') {
       const event = 'touches' in e ? e.touches[0] : e
       this.x = event.pageX - this.parentRect.left - window.pageXOffset
       this.y = event.pageY - this.parentRect.top - window.pageYOffset
@@ -79,11 +77,14 @@ Object.assign(PositionManager.prototype, {
       }
     }
 
+    Object.assign(this, this.modify(this.handleRect.left + this.vectorX, this.handleRect.top + this.vectorY))
+
     if (startflg) {
       this.startX = this.x
       this.startY = this.y
+      this.startLeft = this.left
+      this.startTop  = this.top
     }
-    Object.assign(this, this.modify(this.handleRect.left + this.vectorX, this.handleRect.top + this.vectorY))
     return this
   },
 
@@ -93,7 +94,7 @@ Object.assign(PositionManager.prototype, {
         el.style.left = this.left + 'px'
         break
       case 'y':
-        el.style.left = this.left + 'px'
+        el.style.top = this.top + 'px'
         break
       default:
         el.style.left = this.left + 'px'
@@ -178,7 +179,7 @@ export function mousePosition (options) {
     handleel = this
     if (options.start) {
       options.start(e, position, handleel)
-      position.set([position.startX, position.startY])
+      position.set()
     }
     eventListener(true, 'mouseup touchcancel touchend', mup)
     eventListener(true, 'mousemove touchmove', mmove)
@@ -193,7 +194,7 @@ export function mousePosition (options) {
 
     if (options.drag) {
       options.drag(e, position, handleel)
-      position.set([position.x, position.y])
+      position.set()
     }
     // カーソルが外れたとき発火
     eventListener(true, 'mouseleave touchleave', mup)
@@ -206,7 +207,7 @@ export function mousePosition (options) {
 
     if (options.stop) {
       options.stop(e, position, handleel)
-      position.set([position.x, position.y])
+      position.set()
     }
     // ハンドラの消去
     eventListener(false, 'mouseup touchend touchcancel mouseleave touchleave', mup)
