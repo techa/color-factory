@@ -5,7 +5,7 @@ import Color from '../Color.js'
     <!--<input type="text" id="color-name" placeholder="COLOR NAME">-->
     <color-wheel size="280" oncolorchange={colorchange}/>
     <div id="form_add">
-      <input id="color_hex" placeholder="#000000, Black" onsubmit={addCard_btn} value={colorHexValue}>
+      <input id="color_hex" ref="color_hex" placeholder="#000000, Black" onsubmit={addCard_btn}>
       <button id="add_btn" onclick={addCard_btn}>➕</button>
     </div>
 
@@ -39,19 +39,18 @@ import Color from '../Color.js'
     })
 
     this.addCard_btn = () => {
-      const text = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W\s*(.+))?/i.exec(this.colorHexValue)
+      const text = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W\s*(.+))?/i.exec(this.refs.color_hex.value)
       if (text) {
         store.trigger('add_card', {
           name: (text[2] || '').trim(),
           color: new Color(text[1])
         })
-        this.colorHexValue = ''
+        this.refs.color_hex.value = ''
       }
     }
 
     this.colorchange = (color) => {
-      this.colorHexValue = color.hex
-      this.update()
+      this.refs.color_hex.value = color.hex
     }
 
     this.on('mount', ()=> {
@@ -62,7 +61,6 @@ import Color from '../Color.js'
       store.on('set_bgColor', (color) => {
         const textcolor = color.lightness < 35 ? '#eee' : '#111'
         this.refs.colors.style.color = textcolor
-        // this['color-name'].style.borderColor = color
       })
 
       store.trigger('set_bgColor', new Color(bgColor))

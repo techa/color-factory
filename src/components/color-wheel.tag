@@ -85,7 +85,7 @@ import {mousePosition, eventRegister} from '../movable.js'
     this.centerRadius = `width: ${centerDiameter}px; height: ${centerDiameter}px;border-radius: ${centerDiameter}px; font-size: ${centerDiameter / 5}px; `
 
     this.color = new Color()
-    this.color2 = this.color.l < 45 ? '#eee' : '#111'
+    this.color2 = this.color.l < 50 ? '#eee' : '#111'
 
     this.mode = 'hue'
     this.submode = 'saturation'
@@ -124,6 +124,7 @@ import {mousePosition, eventRegister} from '../movable.js'
         mdown: (e) => {
           --this.color[this.mode]
           opts.oncolorchange(this.color)
+          this.update()
         }
       },
       {
@@ -133,11 +134,12 @@ import {mousePosition, eventRegister} from '../movable.js'
         mdown: (e) => {
           ++this.color[this.mode]
           opts.oncolorchange(this.color)
+          this.update()
         }
       },
     ]
 
-    // update mount
+    // use update mount
     const handleSetPosition = () => {
       const [mx, my] = positionRd(radius, this.color.hue)
       const [x, y] = positionRd(this.color[this.submode] * (center - radius) / 100, this.color.hue)
@@ -146,20 +148,19 @@ import {mousePosition, eventRegister} from '../movable.js'
     }
     // picker mousePosition
     const handleSetColor = (position) => {
-      const deg = angle(position.x, position.y)
       const r = Math.hypot(size / 2 - position.x, size / 2 - position.y)
-      const percent = Math.round((r - radius) / (center - radius) * 100)
 
-      this.color.hue = deg
-      this.color[this.submode] = percent
+      this.color.hue = Math.round(Math.atan2(size / 2 - position.y, size / 2 - position.x) / Math.PI * 180) - 90
+      this.color[this.submode] = Math.round((r - radius) / (center - radius) * 100)
+      opts.oncolorchange(this.color)
       this.update()
     }
 
+    // update oncolorchange
     let grad, saturation, lightness, canvas
     this.on('update', () => {
-      this.color2 = this.color.l < 45 ? '#eee' : '#111'
+      this.color2 = this.color.l < 50 ? '#eee' : '#111'
       handleSetPosition()
-      opts.oncolorchange(this.color)
     })
     this.on('mount', () => {
       canvas = this.refs.canvas.getContext('2d')
@@ -194,9 +195,6 @@ import {mousePosition, eventRegister} from '../movable.js'
       })
     }) // on mount
 
-    function angle (x, y) {
-      return Math.round(Math.atan2(size / 2 - y, size / 2 - x) / Math.PI * 180) - 90
-    }
     function positionRd (r, deg) {
       const d = (deg - 90) / 180 * Math.PI
       return [
@@ -209,11 +207,9 @@ import {mousePosition, eventRegister} from '../movable.js'
         case 'saturation':
           saturation = [0, 50, 100]
           lightness = [50, 50, 50]
-          // lightness = Array(3).fill(this.color.l)
           break
         case 'lightness':
           saturation = [100, 100, 100]
-          // saturation = Array(3).fill(this.color.s)
           lightness = [0, 50, 100]
           break
       }
