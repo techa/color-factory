@@ -31,11 +31,9 @@ import {movable} from '../movable.js'
           let x = position.left
           let y = position.top
           if (x < 320) {
-            x = position.left = position.startX
-            y = position.top  = position.startY
+            x = position.left = position.startLeft
+            y = position.top  = position.startTop
           }
-          this.x = x
-          this.y = y
           position.setPosition()
           store.trigger('card_moved', x, y)
         },
