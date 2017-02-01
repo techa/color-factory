@@ -1,11 +1,9 @@
-import store from '../store/store.js'
-import Color from '../Color.js'
 <app>
   <div id="colors" ref="colors">
     <!--<input type="text" id="color-name" placeholder="COLOR NAME">-->
     <color-wheel size="280" oncolorchange={colorchange}/>
     <div id="form_add">
-      <input id="color_hex" ref="color_hex" placeholder="#000000, Black" onsubmit={addCard_btn}>
+      <input id="color_hex" ref="color_hex" placeholder="#000000, Black" onsubmit={addCard_btn} oninput={color_hexInput}>
       <button id="add_btn" onclick={addCard_btn}>➕</button>
     </div>
 
@@ -23,6 +21,10 @@ import Color from '../Color.js'
   <context-menu/>
 
   <script>
+    import store from '../store/store.js'
+    import Color from '../Color.js'
+    import Keystroke, {keymaps} from '../Keystroke.js'
+
     this.cards = store.cards
     const palette = () => {
       return this.cards.map((arg) => arg).sort((a, b) => {
@@ -38,14 +40,22 @@ import Color from '../Color.js'
       this.update()
     })
 
+    const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W\s*(.+))?/i
     this.addCard_btn = () => {
-      const text = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W\s*(.+))?/i.exec(this.refs.color_hex.value)
+      const text = validationRegExp.exec(this.refs.color_hex.value)
       if (text) {
         store.trigger('add_card', {
           name: (text[2] || '').trim(),
-          color: new Color(text[1])
+          color: new Color(text[1]),
         })
         this.refs.color_hex.value = ''
+      }
+    }
+    this.color_hexInput = (e) => {
+      const value = this.refs.color_hex.value
+      const text = validationRegExp.exec(value)
+      if (text) {
+        this.tags['color-wheel'].color = new Color(text[1])
       }
     }
 
@@ -53,8 +63,8 @@ import Color from '../Color.js'
       this.refs.color_hex.value = color.hex
     }
 
-    this.on('mount', ()=> {
-      const box = store.box = document.getElementById('box')
+    this.on('mount', () => {
+      store.box = this.refs.box
       const bgColor = store.getItem('bgColor') || '#1f2532'
       this.refs.box.style.backgroundColor = bgColor
 
@@ -64,6 +74,9 @@ import Color from '../Color.js'
       })
 
       store.trigger('set_bgColor', new Color(bgColor))
+      new Keystroke({
+        'default': keymaps,
+      })
     })
   </script>
   <style>

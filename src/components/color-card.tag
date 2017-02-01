@@ -1,5 +1,3 @@
-import store from '../store/store.js'
-import {movable} from '../movable.js'
 <color-card>
   <div class="card" ref="card">
     <div class="card_inner" riot-style="background-color: {color}; color: {color.lightness < 40 ? '#eee': '#111'};">
@@ -7,9 +5,11 @@ import {movable} from '../movable.js'
     </div>
   </div>
   <script>
+    import store     from '../store/store.js'
+    import {movable} from '../movable.js'
     Object.assign(this, this.card)
 
-    this.on('mount', ()=> {
+    this.on('mount', () => {
       const card = this.refs.card
       let rect = this.parent.refs.box.getBoundingClientRect()
 
@@ -36,7 +36,7 @@ import {movable} from '../movable.js'
           }
           position.setPosition()
           store.trigger('card_moved', x, y)
-        },
+        }
       })
 
       card.addEventListener('contextmenu', (e) => {

@@ -3,16 +3,48 @@ env:
   es6: true
 extends:
   standard # eslint, google, airbnb,
+plugins:
+  - html
+settings:
+  html/html-extensions: [.html, .tag]
 rules:
-  comma-dangle: 0
+  camelcase:
+  - 1
+  # - properties: never
+  comma-dangle:
+  - 2
+  - arrays: always-multiline
+    objects: only-multiline
+    imports: only-multiline
+    exports: only-multiline
+    functions: never
+  indent:
+  - 2
+  - 2
+  - SwitchCase: 1
+    VariableDeclarator:
+      var: 2
+      let: 2
+      const: 3
   key-spacing:
-    - 0
-    - align: value
-  # http://eslint.org/docs/rules/no-multi-spaces
+  - 0
+  - align: value
+  - beforeColon: false
+    afterColon: true
   no-multi-spaces:
-    - 0
-    - exceptions:
-        ImportDeclaration: true
-        VariableDeclarator: true
-  no-console: 0
-  # semi: 0 #
+  - 0
+  - exceptions:
+      VariableDeclarator: true
+      ImportDeclaration: true
+  no-multiple-empty-lines:
+  - 2
+  - max: 2
+  no-unused-vars:
+  - 1
+  - vars: all
+    args: none
+  no-var: 1
+  one-var: 0
+  one-var-declaration-per-line:
+  - 2
+  - initializations

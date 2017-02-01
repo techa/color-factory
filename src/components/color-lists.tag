@@ -1,4 +1,3 @@
-import Color from '../Color.js'
 <color-lists>
   <select name="colorlists" id="colorlists" onchange={colorListLord}>
     <option value="webcolor">Web Color</option>
@@ -8,20 +7,25 @@ import Color from '../Color.js'
   </select>
   <color-tip each={colorlists}/>
   <script>
+    import Color           from '../Color.js'
+    import {webcolor}      from '../constants/webcolor'
+    import {jiscolor_en}   from '../constants/jiscolor_en'
+    import {jiscolor_ja}   from '../constants/jiscolor_ja'
+    import {materialcolor} from '../constants/materialcolor'
     const colorlists = {
-      webcolor: Color.webcolor.map(val => ({
+      webcolor: webcolor.map(val => ({
         name: val[1],
         color: new Color(val[0])
       })),
-      jiscolor_en: Color.jiscolor_en.map(val => ({
+      jiscolor_en: jiscolor_en.map(val => ({
         name: val[1],
         color: new Color(val[0])
       })),
-      jiscolor_ja: Color.jiscolor_ja.map(val => ({
+      jiscolor_ja: jiscolor_ja.map(val => ({
         name: `${val[1]}\n(${val[2]})`,
         color: new Color(val[0])
       })),
-      materialcolor: Color.materialcolor.map(val => ({
+      materialcolor: materialcolor.map(val => ({
         name: val[1],
         color: new Color(val[0])
       })),
