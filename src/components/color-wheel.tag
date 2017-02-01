@@ -1,5 +1,3 @@
-import Color from '../Color.js'
-import {mousePosition, eventRegister} from '../movable.js'
 <color-wheel>
   <div class="color-wheel" riot-style="width: {opts.size}px; height: {opts.size}px;">
     <canvas class="color-wheel-canvas" ref="canvas" width={size} height={size}></canvas>
@@ -78,10 +76,13 @@ import {mousePosition, eventRegister} from '../movable.js'
   </style>
 
   <script>
+    /* global opts */
+    import Color from '../Color.js'
+    import {mousePosition, eventRegister} from '../movable.js'
     const size = this.size = opts.size - 10 || 300
     const center = size / 2
     const radius = Math.round(center / 3)
-    const centerDiameter = radius * 2 -10
+    const centerDiameter = radius * 2 - 10
     this.centerRadius = `width: ${centerDiameter}px; height: ${centerDiameter}px;border-radius: ${centerDiameter}px; font-size: ${centerDiameter / 5}px; `
 
     this.color = new Color()
@@ -147,10 +148,15 @@ import {mousePosition, eventRegister} from '../movable.js'
       this.refs.handle.style.top = my + y - center + 'px'
     }
     // picker mousePosition
-    const handleSetColor = (position) => {
-      const r = Math.hypot(size / 2 - position.x, size / 2 - position.y)
+    const handleSetColor = (position, start) => {
+      const x = center - position.x,
+            y = center - position.y,
+            r = Math.hypot(x, y)
 
-      this.color.hue = Math.round(Math.atan2(size / 2 - position.y, size / 2 - position.x) / Math.PI * 180) - 90
+      // 円の外をクリックしたとき
+      if (start && (r - center) > 10) return
+
+      this.color.hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90
       this.color[this.submode] = Math.round((r - radius) / (center - radius) * 100)
       opts.oncolorchange(this.color)
       this.update()
@@ -161,6 +167,7 @@ import {mousePosition, eventRegister} from '../movable.js'
     this.on('update', () => {
       this.color2 = this.color.l < 50 ? '#eee' : '#111'
       handleSetPosition()
+      console.log('this.color.name', this.color.getNearWebColor(20))
     })
     this.on('mount', () => {
       canvas = this.refs.canvas.getContext('2d')
@@ -171,7 +178,7 @@ import {mousePosition, eventRegister} from '../movable.js'
       mousePosition({
         containment: this.refs.canvas,
         start: (e, position) => {
-          handleSetColor(position)
+          handleSetColor(position, true)
         },
         drag: (e, position) => {
           handleSetColor(position)
