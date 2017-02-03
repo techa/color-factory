@@ -618,6 +618,10 @@ function sRGB (num) {
   return (num <= 0.03928) ? num / 12.92 : Math.pow((num + 0.055) / 1.055, 2.4)
 }
 
+function luminance (rgb) {
+  return 0.2126 * sRGB(rgb[0]) + 0.7152 * sRGB(rgb[1]) + 0.0722 * sRGB(rgb[2])
+}
+
 /**
  * color1とcolor2のコントラスト比を計算
  *
@@ -632,21 +636,14 @@ function sRGB (num) {
  * @see http://waic.jp/docs/WCAG20/Overview.html#visual-audio-contrast
  */
 export function contrastRatio (color1, color2) {
-  const [r1, g1, b1] = color1
-  const [r2, g2, b2] = color2
   const l = [
-    0.2126 * sRGB(r1) + 0.7152 * sRGB(g1) + 0.0722 * sRGB(b1),
-    0.2126 * sRGB(r2) + 0.7152 * sRGB(g2) + 0.0722 * sRGB(b2),
+    luminance(color1),
+    luminance(color2),
   ]
   const [l1, l2] = l.sort((a, b) => b - a)
 
   // 1～21
   const cr = (l1 + 0.05) / (l2 + 0.05)
-
-  const bright1 = (299 * r1 + 587 * g1 + 114 * b1) / 1000
-  const bright2 = (299 * r2 + 587 * g2 + 114 * b2) / 1000
-  const c = Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2)
-  const d = Math.abs(bright1 - bright2)
   return {
     sort: l[0] - l[1],
     // WCAG version 2 contrast ratio
@@ -658,6 +655,17 @@ export function contrastRatio (color1, color2) {
     // 大きなテキスト（18ポイント、太字、中国語、日本語および韓国語）
     AA: cr >= 3,
     AAA: cr >= 4.5,
+  }
+}
+export function contrastRatio1 (color1, color2) {
+  const [r1, g1, b1] = color1
+  const [r2, g2, b2] = color2
+
+  const bright1 = (299 * r1 + 587 * g1 + 114 * b1) / 1000
+  const bright2 = (299 * r2 + 587 * g2 + 114 * b2) / 1000
+  const c = Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2)
+  const d = Math.abs(bright1 - bright2)
+  return {
     // WCAG version 1
     // contrast
     c,
@@ -666,3 +674,4 @@ export function contrastRatio (color1, color2) {
     WCAG1: c > 500 && d > 125
   }
 }
+
