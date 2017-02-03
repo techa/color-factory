@@ -172,6 +172,7 @@ export default class Color {
     this.hsv = rgb2hsv(rgb)
 
     this.setParams(rgb, hsl)
+    return this
   }
 
   setParams (rgb, hsl) {
