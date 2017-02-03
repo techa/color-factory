@@ -20,18 +20,19 @@ function reversePatches (patches) {
 export class Undo {
   constructor (initialState, stateChange) {
     this.undoStack = []
-    this.redoStack = []
     this.currentPatches = []
+    this.redoStack = []
 
     this.stringify = typeof initialState !== 'string'
-    this.currentState = JSON.parse(JSON.stringify(initialState))
+    this.currentStateText = JSON.stringify(initialState)
+    this.currentState = JSON.parse(this.currentStateText)
     this.stateChange = typeof stateChange === 'function' ? stateChange : function () {}
 
     this.undoMax = 50
   }
 
   undo () {
-    var patches = this.undoStack.pop()
+    const patches = this.undoStack.pop()
     if (!patches) {
       return
     }
@@ -41,7 +42,7 @@ export class Undo {
     return this.currentState
   }
   redo () {
-    var patches = this.redoStack.pop()
+    const patches = this.redoStack.pop()
     if (!patches) {
       return
     }
@@ -82,7 +83,7 @@ export class Undo {
       this.currentPatches = reversePatches(this.currentPatches)
     }
 
-    var newState = applyPatches(this.currentPatches, this.currentStateText)
+    const newState = applyPatches(this.currentPatches, this.currentStateText)
     this.currentState = JSON.parse(newState)
     this.stateChange()
   }
