@@ -211,18 +211,19 @@ export default class Color {
 Color.webcolor = webcolor
 
 /**
+ * colorlistの内からhexに一番近いデータと返す
  *
- *
- * @param {any} basecolor
- * @param {any} colorlist
- * @returns
+ * @export
+ * @param {string} hex
+ * @param {array}  colorlist
+ * @returns {array}  [_hex, name, _rgb, _score]
  */
-function nearName (hex) {
+export function nearName (hex, colorlist = webcolor) {
   const rgb = hex2rgb(hex)
   let nearest = []
   let minscore = Infinity
 
-  webcolor.forEach(([_hex, name]) => {
+  colorlist.forEach(([_hex, name]) => {
     const _rgb = hex2rgb(_hex)
     const score = _rgb.reduce((p, c, i) => p + Math.abs(rgb[i] - c), 0)
     if (minscore > score) {
