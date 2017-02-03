@@ -1,6 +1,9 @@
 /* eslint camelcase:0, no-cond-assign:0  */
 import {webcolor}      from './constants/webcolor'
 
+const MAX = { r: 255, g: 255, b: 255, h: 360, s: 100, l: 100 }
+const RGB_HSL_KEYS = [['r', 'g', 'b'], ['red', 'green', 'blue'], ['h', 's', 'l'], ['hue', 'saturation', 'lightness']]
+
 /**
  * RGB & RGBA & HSL & HSLA
  *
@@ -20,9 +23,9 @@ class ColorParams extends Array {
    * @memberOf ColorParams
    */
   constructor (type, r, g, b, a) {
-    super(r, g, b, a)
+    // create empty Array
+    super()
     this.type = type
-    const max = { h: 360, s: 100, l: 100 }
     for (let i = 0; i < 3; i++) {
       const chara = type.charAt(i)
       Object.defineProperty(this, chara, {
@@ -34,10 +37,14 @@ class ColorParams extends Array {
             while (val < 0) val += 360
             val %= 360
           }
-          this[i] = Math.min(Math.max(0, Math.round(val)), max[chara] || 255)
+          this[i] = Math.min(Math.max(0, Math.round(val)), MAX[chara])
         }
       })
+      // set init value
+      const arg = arguments[i + 1]
+      this[chara] = typeof arg === 'number' ? arg : r[chara] || r[i] || 0
     }
+    // set alpha
     if (type.charAt(3)) {
       Object.defineProperty(this, 'a', {
         get () {
@@ -47,15 +54,17 @@ class ColorParams extends Array {
           this[3] = Math.min(Math.max(0, val), 1)
         }
       })
+      // set init value
+      this.a = a || r.a || r[3] || g || 0
     }
   }
+  // @returns css string
   toString () {
     const a = this.a == null ? ')' : `, ${this[3]})`
     return this.type + `(${this[0]}, ${this[1]}, ${this[2]}` + a
   }
 }
 
-const rgbHslKeys = [['r', 'g', 'b'], ['red', 'green', 'blue'], ['h', 's', 'l'], ['hue', 'saturation', 'lightness']]
 /**
  * Color
  *
@@ -67,7 +76,7 @@ export default class Color {
   constructor (param, g, b, a) {
     this.setColor(param, g, b, a, true)
 
-    rgbHslKeys.forEach((keys, i) => {
+    RGB_HSL_KEYS.forEach((keys, i) => {
       keys.forEach((key, j) => {
         Object.defineProperty(this, key, {
           get () {
@@ -330,9 +339,9 @@ export function hexToRgb (hex) {
  */
 export function rgb2hex (r, g, b) {
   if (arguments.length === 1) {
-    g = r.g || r[1]
-    b = r.b || r[2]
-    r = r.r || r[0]
+    g = r.g || r[1] || 0
+    b = r.b || r[2] || 0
+    r = r.r || r[0] || 0
   }
   return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
 }
@@ -351,9 +360,9 @@ export function rgb2hex (r, g, b) {
  */
 export function rgb2hsl (r, g, b) {
   if (arguments.length === 1) {
-    g = r.g || r[1]
-    b = r.b || r[2]
-    r = r.r || r[0]
+    g = r.g || r[1] || 0
+    b = r.b || r[2] || 0
+    r = r.r || r[0] || 0
   }
   r /= 255
   g /= 255
@@ -384,6 +393,7 @@ export function rgb2hsl (r, g, b) {
   s *= 100
   l *= 100
   return [h, s, l]
+  // return new ColorParams('hsl', h * 360, s * 100, l * 100)
 }
 
 function hue2rgb (p, q, t) {
@@ -411,9 +421,9 @@ function hue2rgb (p, q, t) {
 export function hsl2rgb (h, s, l) {
   let r, g, b
   if (arguments.length === 1) {
-    s = h.s || h[1]
-    l = h.l || h[2]
-    h = h.h || h[0]
+    s = h.s || h[1] || 0
+    l = h.l || h[2] || 0
+    h = h.h || h[0] || 0
   }
 
   while (h < 0) {
@@ -440,6 +450,7 @@ export function hsl2rgb (h, s, l) {
   g = Math.round(g * 255)
   b = Math.round(b * 255)
   return [r, g, b]
+  // return new ColorParams('rgb', r * 255, g * 255, b * 255)
 }
 
 /**
@@ -453,9 +464,9 @@ export function hsl2rgb (h, s, l) {
  */
 export function rgb2hsv (r, g, b) {
   if (arguments.length === 1) {
-    g = r.g || r[1]
-    b = r.b || r[2]
-    r = r.r || r[0]
+    g = r.g || r[1] || 0
+    b = r.b || r[2] || 0
+    r = r.r || r[0] || 0
   }
   const max = Math.max(r, g, b),
         min = Math.min(r, g, b),
@@ -499,9 +510,9 @@ export function rgb2hsv (r, g, b) {
 export function hsv2rgb (h, s, v) {
   let r, g, b
   if (arguments.length === 1) {
-    s = h.s || h[1]
-    v = h.v || h[2]
-    h = h.h || h[0]
+    s = h.s || h[1] || 0
+    v = h.v || h[2] || 0
+    h = h.h || h[0] || 0
   }
 
   while (h < 0) {
