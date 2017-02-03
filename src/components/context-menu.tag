@@ -1,4 +1,3 @@
-import store from '../store/store.js'
 <context-menu>
   <div id="menu" ref="menu" show={isTipMenuOpen || isCardMenuOpen}>
     <p class="menuitem" onclick={addCard} show={isTipMenuOpen}>ADD CARD</p>
@@ -10,6 +9,8 @@ import store from '../store/store.js'
   </div>
 
   <script>
+    import store from '../store/store.js'
+
     /**
      * クリップボードコピー関数
      *
@@ -19,19 +20,19 @@ import store from '../store/store.js'
      */
     function copyTextToClipboard (textVal) {
       // テキストエリアを用意する
-      var copyFrom = document.createElement('textarea')
+      const copyFrom = document.createElement('textarea')
       // テキストエリアへ値をセット
       copyFrom.textContent = textVal
 
       // bodyタグの要素を取得
-      var bodyElm = document.getElementsByTagName('body')[0]
+      const bodyElm = document.getElementsByTagName('body')[0]
       // 子要素にテキストエリアを配置
       bodyElm.appendChild(copyFrom)
 
       // テキストエリアの値を選択
       copyFrom.select()
       // コピーコマンド発行
-      var retVal = document.execCommand('copy')
+      const retVal = document.execCommand('copy')
       // 追加テキストエリアを削除
       bodyElm.removeChild(copyFrom)
 
