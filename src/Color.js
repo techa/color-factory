@@ -1,6 +1,24 @@
 /* eslint camelcase:0, no-cond-assign:0  */
 import {webcolor}      from './constants/webcolor'
+
+/**
+ * RGB & RGBA & HSL & HSLA
+ *
+ * @class ColorParams
+ * @extends {Array}
+ */
 class ColorParams extends Array {
+  /**
+   * Creates an instance of ColorParams.
+   *
+   * @param {string} type
+   * @param {number} r
+   * @param {number} g
+   * @param {number} b
+   * @param {number} a
+   *
+   * @memberOf ColorParams
+   */
   constructor (type, r, g, b, a) {
     super(r, g, b, a)
     this.type = type
@@ -12,7 +30,10 @@ class ColorParams extends Array {
           return this[i]
         },
         set (val) {
-          if (chara === 'h') while (val < 0) val += 360
+          if (chara === 'h') {
+            while (val < 0) val += 360
+            val %= 360
+          }
           this[i] = Math.min(Math.max(0, Math.round(val)), max[chara] || 255)
         }
       })
@@ -34,6 +55,7 @@ class ColorParams extends Array {
   }
 }
 
+const rgbHslKeys = [['r', 'g', 'b'], ['red', 'green', 'blue'], ['h', 's', 'l'], ['hue', 'saturation', 'lightness']]
 /**
  * Color
  *
@@ -42,10 +64,10 @@ class ColorParams extends Array {
  * @see https://github.com/carloscabo/colz/blob/master/public/js/colz.class.js#L72
  */
 export default class Color {
-  constructor (param, g, b) {
-    this.setColor(param, g, b)
+  constructor (param, g, b, a) {
+    this.setColor(param, g, b, a, true)
 
-    ;[['r', 'g', 'b'], ['red', 'green', 'blue'], ['h', 's', 'l'], ['hue', 'saturation', 'lightness']].forEach((keys, i) => {
+    rgbHslKeys.forEach((keys, i) => {
       keys.forEach((key, j) => {
         Object.defineProperty(this, key, {
           get () {
@@ -66,7 +88,8 @@ export default class Color {
     })
   }
 
-  setColor (param, g, b) {
+  setColor (param, g, b, a, init) {
+    if (!init && param instanceof Color) return param
     this.a = 1
     let rgb, hsl
 
@@ -156,9 +179,9 @@ export default class Color {
     }
   }
 
-  getNearWebColor (score) {
+  getNearWebColor (score, hex) {
     const [, name, , _score] = nearName(this.hex)
-    return score >= _score ? name : this.hex
+    return score >= _score ? name : hex ? this.hex : ''
   }
 
   findColorName (colorlist) {
@@ -171,26 +194,26 @@ export default class Color {
     return (this.hex = rgb2hex(hsl2rgb(this.hsl)))
   }
 
-  scheme (param, value) {
-    if (value != null) {
-      param = {[param]: value}
+  /**
+   * return: Sorted colors in order of strong contrast.
+   * colorsをコントラストが強い順に並び替えして返す
+   *
+   * @param {string|Array} colors Color constructor's arguments[0]
+   * @returns {array}             Sorted contrastColors array. strongest contrast color first
+   *
+   * @memberOf Color
+   */
+  contrastColors (...colors) {
+    if (arguments.length === 1 && Array.isArray(arguments[0])) {
+      colors = arguments[0]
     }
-    const newparam = {}
-    ;[['r', 'g', 'b'], ['h', 's', 'l'], ['red', 'green', 'blue'], ['hue', 'saturation', 'lightness']].some((keys) => {
-      return keys.some((key) => {
-        if (key in param) {
-          keys.forEach((k) => {
-            culc(k)
-          })
-          newparam.a = param.a != null ? param.a : param.alpha != null ? param.alpha : this.a
-          return true
-        }
-      })
+    colors = colors.map((color) => new Color(color))
+    return colors.sort((color1, color2) => {
+      return contrastRatio(this.rgb, color2.rgb).cr - contrastRatio(this.rgb, color1.rgb).cr
     })
-    function culc (key) {
-      newparam[key.charAt(0)] = param[key] === void 0 ? this[key] : param[key]
-    }
-    return new Color(newparam)
+  }
+  contrastColor (...colors) {
+    return this.contrastColors(...colors)[0]
   }
 
   toString () {
@@ -234,6 +257,44 @@ function nearName (hex) {
     }
   })
   return nearestName
+}
+
+const schemeNames = {
+  Complementary: [180],
+  Opornent: [120],
+  Analogous: [-30, 30],
+  SplitComplementary: [150, -150],
+  Triadic: [120, 240],
+  Tretradic: [60, 180, 240],
+  AccentedAnalogous: [-30, 30, 180],
+}
+
+export function scheme (color, angles) {
+  if (typeof angles === 'number') {
+    angles = [angles]
+  } else if (typeof angles === 'string') {
+    const angle = angles.replace(' ', '')
+    if (angle in schemeNames) {
+      angles = schemeNames[angle]
+    } else {
+      Object.keys(schemeNames).some((schemeName) => {
+        if (new RegExp(`${angle}`, 'i').test(schemeName)) {
+          return (angles = schemeNames[schemeName])
+        }
+      })
+    }
+  }
+
+  if (angles === void 0 && Array.isArray(color)) {
+    return color.map((c) => new Color(c))
+  } else if (Array.isArray(angles)) {
+    return angles.map((hue) => {
+      const keyColor = new Color(color)
+      keyColor.h += hue
+      return keyColor
+    })
+  }
+  throw new Error('Error! scheme')
 }
 
 export function randomColor () {
@@ -428,9 +489,9 @@ export function rgb2hsv (r, g, b) {
  * HSV(HSB)色空間からRGB色空間へ変換する
  *
  * @export
- * @param {any} h  (hue)       : 色相/色合い   0-360度の値
- * @param {any} s  (saturation): 彩度/鮮やかさ 0-100%の値
- * @param {any} v  (Value)     : 明度/明るさ   0-100%の値
+ * @param {number} h  (hue)       : 色相/色合い   0-360度の値
+ * @param {number} s  (saturation): 彩度/鮮やかさ 0-100%の値
+ * @param {number} v  (Value)     : 明度/明るさ   0-100%の値
  * @returns
  *
  * @see http://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately
@@ -479,4 +540,56 @@ export function hsv2rgb (h, s, v) {
   g = Math.round(g * 255)
   b = Math.round(b * 255)
   return [r, g, b]
+}
+
+function sRGB (num) {
+  num /= 255
+  return (num <= 0.03928) ? num / 12.92 : Math.pow((num + 0.055) / 1.055, 2.4)
+}
+
+/**
+ * color1とcolor2のコントラスト比を計算
+ *
+ * @export
+ * @param {array|Color} color1
+ * @param {array|Color} color2
+ * @returns {object}
+ *
+ * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#visual-audio-contrast
+ * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
+ * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+ * @see http://waic.jp/docs/WCAG20/Overview.html#visual-audio-contrast
+ */
+export function contrastRatio (color1, color2) {
+  const [r1, g1, b1] = color1
+  const [r2, g2, b2] = color2
+  const [l1, l2] = [
+    0.2126 * sRGB(r1) + 0.7152 * sRGB(g1) + 0.0722 * sRGB(b1),
+    0.2126 * sRGB(r2) + 0.7152 * sRGB(g2) + 0.0722 * sRGB(b2),
+  ].sort((a, b) => b - a)
+
+  // 1～21
+  const cr = (l1 + 0.05) / (l2 + 0.05)
+
+  const bright1 = (299 * r1 + 587 * g1 + 114 * b1) / 1000
+  const bright2 = (299 * r2 + 587 * g2 + 114 * b2) / 1000
+  const c = Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2)
+  const d = Math.abs(bright1 - bright2)
+  return {
+    // WCAG version 2 contrast ratio
+    cr,
+    // 評価
+    // 通常のテキスト（14ポイント）
+    aa: cr >= 4.5,
+    aaa: cr >= 7,
+    // 大きなテキスト（18ポイント、太字、中国語、日本語および韓国語）
+    AA: cr >= 3,
+    AAA: cr >= 4.5,
+    // WCAG version 1
+    // contrast
+    c,
+    // brightness difference
+    d,
+    WCAG1: c > 500 && d > 125
+  }
 }
