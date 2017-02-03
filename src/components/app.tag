@@ -1,7 +1,7 @@
 <app>
   <div id="colors" ref="colors">
     <!--<input type="text" id="color-name" placeholder="COLOR NAME">-->
-    <color-wheel size="280" oncolorchange={colorchange}/>
+    <color-wheel size="280" oncolorchange={colorchange} simple="true"/>
     <div id="form_add">
       <input id="color_hex" ref="color_hex" placeholder="#000000, Black" onsubmit={addCard_btn} oninput={color_hexInput}>
       <button id="add_btn" onclick={addCard_btn}>➕</button>
@@ -23,7 +23,6 @@
   <script>
     import store from '../store/store.js'
     import Color from '../Color.js'
-    import Keystroke, {keymaps} from '../Keystroke.js'
 
     this.cards = store.cards
     const palette = () => {
@@ -40,7 +39,7 @@
       this.update()
     })
 
-    const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W\s*(.+))?/i
+    const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i
     this.addCard_btn = () => {
       const text = validationRegExp.exec(this.refs.color_hex.value)
       if (text) {
@@ -60,7 +59,7 @@
     }
 
     this.colorchange = (color) => {
-      this.refs.color_hex.value = color.hex
+      this.refs.color_hex.value = color.hex + ' ' + color.getNearWebColor(20)
     }
 
     this.on('mount', () => {
@@ -74,9 +73,9 @@
       })
 
       store.trigger('set_bgColor', new Color(bgColor))
-      new Keystroke({
-        'default': keymaps,
-      })
+      // new Keystroke({
+      //   'default': keymaps,
+      // })
     })
   </script>
   <style>

@@ -1,7 +1,7 @@
 <color-wheel>
   <div class="color-wheel" riot-style="width: {opts.size}px; height: {opts.size}px;">
     <canvas class="color-wheel-canvas" ref="canvas" width={size} height={size}></canvas>
-    <button class="color-wheel-center" riot-style="{centerRadius} background-color: {color}; color:{color2};">
+    <button class="color-wheel-center" riot-style="{centerRadius} background-color: {color}; color:{color2};" onclick={centerClick}>
       <div class="color-wheel-text {active: mode == 'hue'}">{color.h}</div>
       <div class="color-wheel-text {active: mode == 'saturation'}">{color.s}%</div>
       <div class="color-wheel-text {active: mode == 'lightness'}">{color.l}%</div>
@@ -64,7 +64,7 @@
       -webkit-user-select: none;
       -moz-user-select: none;
       pointer-events: none;
-      opacity: 0.6;
+      opacity: 0.8;
     }
     .color-wheel-text.active,
     .color-wheel-btn.active,
@@ -77,7 +77,7 @@
 
   <script>
     /* global opts */
-    import Color from '../Color.js'
+    import Color, {contrastColors} from '../Color.js'
     import {mousePosition, eventRegister} from '../movable.js'
     const size = this.size = opts.size - 10 || 300
     const center = size / 2
@@ -85,65 +85,98 @@
     const centerDiameter = radius * 2 - 10
     this.centerRadius = `width: ${centerDiameter}px; height: ${centerDiameter}px;border-radius: ${centerDiameter}px; font-size: ${centerDiameter / 5}px; `
 
-    this.color = new Color()
-    this.color2 = this.color.l < 50 ? '#eee' : '#111'
+    this.color = new Color(opts.color)
+    this.color2 = contrastColors(this.color, '#eee', '#111')[0]
 
-    this.mode = 'hue'
-    this.submode = 'saturation'
-
-    const btnstyle = `width: ${radius}px; height: ${radius}px; line-height: ${radius}px; border-radius: ${radius / 2}px; font-size: ${radius / 2}px; `
-    const btnModeChange = (e) => {
-      this.mode = this.mode === this.submode ? 'hue' : this.submode
-      e.target.classList.toggle('active')
-      this.canvasDraw()
+    this.centerClick = (e) => {
+      if (!opts.simple) {
+        this.color = this.color.setColor()
+        opts.oncolorchange(this.color)
+      } else {
+        btnModeChange(this.wheelmode === 'saturation' ? 'lightness' : 'saturation')
+      }
     }
-    this.btns = [
-      {
-        className: 'saturation',
-        style: btnstyle + `top: 0; left: 0;`,
-        text: 'S',
-        click: (e) => {
-          this.submode = 'saturation'
-          btnModeChange(e)
-          this.refs.lightness.classList.remove('active')
+
+    this.mode = ''
+    this.wheelmode = 'saturation'
+
+    const btnstyle = (r) => {
+      return `width: ${r}px; height: ${r}px; line-height: ${r}px; border-radius: ${r / 2}px; font-size: ${r / 2}px; `
+    }
+    const btnModeChange = (mode) => {
+      if (mode === 'hue') return
+      const wheelmode = mode === 'saturation' ? 'lightness' : 'saturation'
+      if (!opts.simple) {
+        this.refs[mode].classList.add('active')
+        this.refs[wheelmode].classList.remove('active')
+      }
+      if (this.wheelmode !== mode) {
+        this.wheelmode = mode
+        this.canvasDraw()
+      }
+    }
+
+    this.btns = []
+    if (!opts.simple) {
+      this.btns = [
+        {
+          className: 'saturation',
+          style: btnstyle(radius) + `top: 0; left: 0;`,
+          text: 'S',
+          click: (e) => {
+            btnModeChange('saturation')
+          }
+        },
+        {
+          className: 'lightness',
+          style: btnstyle(radius) + `top: 0; right: 0;`,
+          text: 'L',
+          click: (e) => {
+            btnModeChange('lightness')
+          }
+        },
+      ]
+      ;['hue', 'hue-30', 'hue-60', 'saturation', 'lightness'].forEach((key, i) => {
+        const [mode, number] = key.split('-')
+        const y = mode === 'hue' ? 'bottom' : 'top'
+        const radiusby = key === 'hue' ? 1 : 0.6
+
+        const btnAdd = (pm, text, by) => {
+          const xy = [0, 0]
+          let x = (+number)
+          ? pm === 'minus'        ? 'left' : 'right'
+          : mode === 'saturation' ? 'left' : 'right'
+          if (!+number && mode === 'hue' && pm === 'minus') {
+            x = 'left'
+          }
+          if (number === '30' || (mode !== 'hue' && pm === 'plus')) {
+            xy[0] = radius
+          }
+          if (number === '60' || (mode !== 'hue' && pm === 'minus')) {
+            xy[1] = radius
+          }
+          this.btns.push({
+            className: pm + '-' + key,
+            style: btnstyle(radius * radiusby) + `${x}: ${xy[0]}px; ${y}: ${xy[1]}px;`,
+            text:  number || text,
+            mdown: (e) => {
+              this.color[mode] += (number || 1) * by
+              this.mode = mode
+              btnModeChange(mode)
+              opts.oncolorchange(this.color)
+              this.update()
+            }
+          })
         }
-      },
-      {
-        className: 'lightness',
-        style: btnstyle + `top: 0; right: 0;`,
-        text: 'L',
-        click: (e) => {
-          this.submode = 'lightness'
-          btnModeChange(e)
-          this.refs.saturation.classList.remove('active')
-        }
-      },
-      {
-        className: 'minus',
-        style: btnstyle + `bottom: 0; left: 0;`,
-        text: '➖',
-        mdown: (e) => {
-          --this.color[this.mode]
-          opts.oncolorchange(this.color)
-          this.update()
-        }
-      },
-      {
-        className: 'plus',
-        style: btnstyle + `bottom: 0; right: 0;`,
-        text: '➕',
-        mdown: (e) => {
-          ++this.color[this.mode]
-          opts.oncolorchange(this.color)
-          this.update()
-        }
-      },
-    ]
+        btnAdd('minus', '➖', -1)
+        btnAdd('plus', '➕', 1)
+      })
+    }
 
     // use update mount
     const handleSetPosition = () => {
       const [mx, my] = positionRd(radius, this.color.hue)
-      const [x, y] = positionRd(this.color[this.submode] * (center - radius) / 100, this.color.hue)
+      const [x, y] = positionRd(this.color[this.wheelmode] * (center - radius) / 100, this.color.hue)
       this.refs.handle.style.left = mx + x - center + 'px'
       this.refs.handle.style.top = my + y - center + 'px'
     }
@@ -157,7 +190,7 @@
       if (start && (r - center) > 10) return
 
       this.color.hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90
-      this.color[this.submode] = Math.round((r - radius) / (center - radius) * 100)
+      this.color[this.wheelmode] = Math.round((r - radius) / (center - radius) * 100)
       opts.oncolorchange(this.color)
       this.update()
     }
@@ -165,11 +198,11 @@
     // update oncolorchange
     let grad, saturation, lightness, canvas
     this.on('update', () => {
-      this.color2 = this.color.l < 50 ? '#eee' : '#111'
+      this.color2 = contrastColors(this.color, '#eee', '#111')[0]
       handleSetPosition()
-      console.log('this.color.name', this.color.getNearWebColor(20))
     })
     this.on('mount', () => {
+      if (!opts.simple) this.refs[this.wheelmode].classList.add('active')
       canvas = this.refs.canvas.getContext('2d')
       this.canvasDraw()
       handleSetPosition()
@@ -189,14 +222,21 @@
       let time
       this.btns.slice(2).forEach((data) => {
         const el = this.refs[data.className]
-        function mup (e) {
+        const mup = (e) => {
           clearInterval(time)
           time = false
+          this.mode = ''
+          this.update()
           eventRegister(el, false, 'mouseup touchcancel touchend', mup)
         }
         eventRegister(el, true, 'mousedown touchstart', (e) => {
+          const cb = data.mdown.bind(el, e)
+          cb()
           e.stopPropagation()
-          time = setInterval(data.mdown.bind(el, e), 80)
+          time = setTimeout(() => {
+            clearTimeout(time)
+            time = setInterval(cb, 100)
+          }, 300)
           eventRegister(el, true, 'mouseup touchcancel touchend', mup)
         })
       })
@@ -210,7 +250,7 @@
       ]
     }
     this.canvasDraw = () => {
-      switch (this.submode) {
+      switch (this.wheelmode) {
         case 'saturation':
           saturation = [0, 50, 100]
           lightness = [50, 50, 50]
