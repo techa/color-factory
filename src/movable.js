@@ -14,7 +14,7 @@ export function PositionManager (options) {
     grid: 1,
     percent: false,
     axis: false, // or 'x' , 'y'
-  }, options)
+  }, options || {})
 
   let grid = this.options.grid
   if (!Array.isArray(grid)) {
@@ -160,8 +160,8 @@ export function mousePosition (options) {
     handle: null,
     start: noop,
     drag: noop,
-    stop: noop,
-  }, options)
+    stop: noop
+  }, options || {})
 
   // イベント登録
   const eventListener = eventRegister.bind(null, window)
@@ -226,8 +226,8 @@ export function movable (element, options) {
   const opts = Object.assign({
     containment: element.parentElement,
     handle: element,
-    draggingClass: 'dragging',
-  }, options)
+    draggingClass: 'dragging'
+  }, options || {})
 
   mousePosition(Object.assign({}, opts, {
     start (e, position, el) {
