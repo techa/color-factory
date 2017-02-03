@@ -7,7 +7,6 @@
   </select>
   <color-tip each={colorlists}/>
   <script>
-    import Color           from '../Color.js'
     import {webcolor}      from '../constants/webcolor'
     import {jiscolor_en}   from '../constants/jiscolor_en'
     import {jiscolor_ja}   from '../constants/jiscolor_ja'
@@ -15,19 +14,19 @@
     const colorlists = {
       webcolor: webcolor.map(val => ({
         name: val[1],
-        color: new Color(val[0])
+        color: val[0]
       })),
       jiscolor_en: jiscolor_en.map(val => ({
         name: val[1],
-        color: new Color(val[0])
+        color: val[0]
       })),
       jiscolor_ja: jiscolor_ja.map(val => ({
         name: `${val[1]}\n(${val[2]})`,
-        color: new Color(val[0])
+        color: val[0]
       })),
       materialcolor: materialcolor.map(val => ({
         name: val[1],
-        color: new Color(val[0])
+        color: val[0]
       })),
     }
 
