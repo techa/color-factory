@@ -155,7 +155,7 @@ export default class Color {
         break
       case 'Undefined':
       case 'Null':
-        this.hex = randomColor()
+        this.hex = randomHex()
         rgb = hex2rgb(this.hex)
         break
       default:
@@ -366,7 +366,7 @@ export function contrastColors (basecolor, ...colors) {
   })
 }
 
-export function randomColor () {
+export function randomHex () {
   return '#' + Math.random().toString(16).slice(2, 8)
 }
 
