@@ -1,12 +1,12 @@
 <color-wheel>
   <div class="color-wheel" riot-style="width: {opts.size}px; height: {opts.size}px;">
     <canvas class="color-wheel-canvas" ref="canvas" width={size} height={size}></canvas>
-    <button class="color-wheel-center" riot-style="{centerDiameter} background-color: {color}; color:{color2};" onclick={centerClick}>
+    <button class="color-wheel-center" riot-style="{centerDiameter} background-color: {color}; color:{textColor};" onclick={centerClick}>
       <div class="color-wheel-text {active: mode == 'hue'}">{color.h}</div>
       <div class="color-wheel-text {active: mode == 'saturation'}">{color.s}%</div>
       <div class="color-wheel-text {active: mode == 'lightness'}">{color.l}%</div>
     </button>
-    <div each={btns} class="color-wheel-btn color-wheel-{className}" ref={className} riot-style="{style} color:{color2}; border-color:{color2}; background-color:{color};" onclick={click}>
+    <div each={btns} class="color-wheel-btn color-wheel-{className}" ref={className} riot-style="{style} color:{textColor}; border-color:{color2}; background-color:{color};" onclick={click}>
       <div class="color-wheel-text">{text}</div>
     </div>
     <div class="color-wheel-handle" ref="handle"></div>
@@ -86,7 +86,7 @@
     this.centerDiameter = `width: ${centerDiameter}px; height: ${centerDiameter}px;border-radius: ${centerDiameter}px; font-size: ${centerDiameter / 5}px; `
 
     this.color = new Color(opts.color)
-    this.color2 = contrastColors(this.color, '#eee', '#111')[0]
+    this.textColor = contrastColors(this.color, '#eee', '#111')[0]
 
     this.centerClick = (e) => {
       if (!opts.simple) {
@@ -198,7 +198,7 @@
     // update oncolorchange
     let grad, saturation, lightness, canvas
     this.on('update', () => {
-      this.color2 = contrastColors(this.color, '#eee', '#111')[0]
+      this.textColor = contrastColors(this.color, '#eee', '#111')[0]
       handleSetPosition()
     })
     this.on('mount', () => {
