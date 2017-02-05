@@ -1,13 +1,15 @@
 <color-card>
   <div class="card" ref="card">
-    <div class="card_inner" riot-style="background-color: {color}; color: {color.lightness < 40 ? '#eee': '#111'};">
+    <div class="card_inner" riot-style="background-color: {color}; color: {textColor};">
       <span class="cardtext"><b>{name}</b><br>{color}</span>
     </div>
   </div>
   <script>
     import store     from '../store/store.js'
     import {movable} from '../movable.js'
+    import {contrastColors} from '../Color.js'
     Object.assign(this, this.card)
+    this.textColor = contrastColors(this.color, '#eee', '#111')[0]
 
     this.on('mount', () => {
       const card = this.refs.card
