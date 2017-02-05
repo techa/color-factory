@@ -26,6 +26,7 @@
       movable(card, {
         containment: this.parent.refs.box,
         grid,
+        axis: 'shift',
         start: (e, position, el) => {
           store.trigger('card_forward', this.i)
         },
@@ -36,7 +37,7 @@
             x = position.left = position.startLeft
             y = position.top  = position.startTop
           }
-          position.setPosition()
+          position.setPosition(e)
           store.trigger('card_moved', x, y)
         }
       })

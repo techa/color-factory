@@ -13,7 +13,7 @@ export function PositionManager (options) {
     handle: null,
     grid: 1,
     percent: false,
-    axis: false, // or 'x' , 'y'
+    axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
   }, options || {})
 
   let grid = this.options.grid
@@ -88,18 +88,34 @@ Object.assign(PositionManager.prototype, {
     return this
   },
 
-  setPosition (el = this.options.handle) {
+  setPosition (e, el = this.options.handle) {
     switch (this.options.axis) {
       case 'x':
-        el.style.left = this.left + 'px'
-        break
       case 'y':
-        el.style.top = this.top + 'px'
-        break
+        return this.oneWayMove(this.options.axis, el)
+      case 'shift':
+      case 'ctrl':
+      case 'alt':
+        if (e[this.options.axis + 'Key']) {
+          const maxV = Math.abs(this.vectorX) > Math.abs(this.vectorY)
+          return this.oneWayMove(maxV ? 'x' : 'y', el)
+        }
+        // fall through
       default:
         el.style.left = this.left + 'px'
         el.style.top  = this.top + 'px'
         break
+    }
+    return this
+  },
+
+  oneWayMove (either, el = this.options.handle) {
+    if (either === 'x') {
+      el.style.left = this.left + 'px'
+      el.style.top = this.startTop + 'px'
+    } else if (either === 'y') {
+      el.style.left = this.startLeft + 'px'
+      el.style.top = this.top + 'px'
     }
     return this
   },
@@ -242,7 +258,7 @@ export function movable (element, options) {
         opts.drag(e, position, el)
       }
       // マウスが動いた場所に要素を動かす
-      position.setPosition()
+      position.setPosition(e)
     },
     stop (e, position, el) {
       if (opts.stop) {
