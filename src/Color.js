@@ -215,7 +215,7 @@ Color.webcolor = webcolor
  *
  * @export
  * @param {string} hex
- * @param {array}  colorlist
+ * @param {array}  colorlist [colorlist=webcolor]
  * @returns {array}  [_hex, name, _rgb, _score]
  */
 export function nearName (hex, colorlist = webcolor) {
@@ -619,6 +619,13 @@ function sRGB (num) {
   return (num <= 0.03928) ? num / 12.92 : Math.pow((num + 0.055) / 1.055, 2.4)
 }
 
+/**
+ * Relative Luminance: 相対輝度
+ *
+ * @param {array} rgb
+ * @returns {number}   0~1
+ * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+ */
 function luminance (rgb) {
   return 0.2126 * sRGB(rgb[0]) + 0.7152 * sRGB(rgb[1]) + 0.0722 * sRGB(rgb[2])
 }
@@ -633,7 +640,6 @@ function luminance (rgb) {
  *
  * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#visual-audio-contrast
  * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
- * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
  * @see http://waic.jp/docs/WCAG20/Overview.html#visual-audio-contrast
  */
 export function contrastRatio (color1, color2) {
