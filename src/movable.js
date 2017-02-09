@@ -320,3 +320,269 @@ export function movable (element, options) {
     },
   }))
 }
+
+function hitChecker (rect1, rect2, tolerance) {
+  const fitflg = tolerance === 'fit'
+  return hit(rect1, rect2, fitflg, true) && hit(rect1, rect2, fitflg)
+}
+
+function hit (rect1, rect2, fitflg, xflg) {
+  const [x, w] = xflg ? ['left', 'width'] : ['top', 'height']
+  if (fitflg) {
+    // rect1 x1-----------------------------------------------x1+w1
+    // rect2          x2---------------x2+w2
+    if (rect1[x] <= rect2[x] && rect2[x] + rect2[w] <= rect1[x] + rect1[w]) {
+      return true
+    }
+    return false
+  }
+
+  // rect1                x1---------------------------x1+w1
+  // rect2 x2---------------------------------x2+w2
+  if (
+    rect2[x] <= rect1[x] && rect1[x] <= rect2[x] + rect2[w]
+  ) {
+    return true
+  }
+  // rect1 x1---------------------------------x1+w1
+  // rect2               x2----------------------------------------x2+w2
+  if (
+    rect1[x] <= rect2[x] && rect2[x] <= rect1[x] + rect1[w]
+  ) {
+    return true
+  }
+  return false
+}
+
+/**
+ * selectable
+ *
+ * @export
+ * @param {element} element
+ * @param {object} options
+ */
+export function selectable (element, options) {
+  const opts = Object.assign({
+    containment: element,
+    filter: '*',
+    cancel: 'input,textarea,button,select,option',
+    tolerance: 'touch', // or 'fit'
+    selectorClass: '', // 'selector'
+    selectedClass: 'selected',
+    // selecting: noop,
+    // unselecting: noop,
+    // selected: noop,
+  }, options || {})
+
+  const selectorDiv = document.createElement('div')
+
+  if (opts.selectorClass) {
+    selectorDiv.classList.add(opts.selectorClass)
+  } else {
+    selectorDiv.style.position = 'absolute'
+    selectorDiv.style.zIndex = '100'
+    selectorDiv.style.border = '1px dotted black'
+  }
+  const selectorString = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)')
+  let children
+  let childrenRects
+  let selectElements = []
+
+  function unselect (e, position) {
+    children.forEach((child, i) => {
+      if (child.classList.contains(opts.selectedClass)) {
+        child.classList.remove(opts.selectedClass)
+          // Callback
+        if (opts.unselecting) {
+          opts.unselecting(e, position, child, i)
+        }
+      }
+    })
+  }
+
+  mousePosition(Object.assign({}, opts, {
+    start (e, position) {
+      // array init
+      children = Array.from(element.querySelectorAll(selectorString))
+      childrenRects = children.map((el) => el.getBoundingClientRect())
+      // 追加
+      element.appendChild(selectorDiv)
+      if (opts.start) {
+        opts.start(e, position, selectorDiv)
+      }
+      selectorDiv.style.left = position.startX + 'px'
+      selectorDiv.style.top  = position.startY + 'px'
+      selectorDiv.style.width  = '0px'
+      selectorDiv.style.height = '0px'
+      selectElements = []
+      unselect(e, position)
+    },
+    drag (e, position, el) {
+      let left, top, width, height
+      if (position.vectorX < 0) {
+        left  = position.startX + position.vectorX
+      }
+      if (position.vectorX >= 0) {
+        left  = position.startX
+      }
+      if (position.vectorY < 0) {
+        top  = position.startY + position.vectorY
+      }
+      if (position.vectorY >= 0) {
+        top  = position.startY
+      }
+      width  = Math.abs(position.vectorX)
+      height = Math.abs(position.vectorY)
+      // 選択範囲のRectデータ
+      const sdRect = {left, top, width, height}
+
+      // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
+      childrenRects.forEach((rect2, i) => {
+        const indexOf = selectElements.indexOf(children[i])
+        if (hitChecker(sdRect, rect2, opts.tolerance)) {
+          if (indexOf === -1) {
+            children[i].classList.add(opts.selectedClass)
+            selectElements.push(children[i])
+            // Callback
+            if (opts.selecting) {
+              opts.selecting(e, position, children[i], i)
+            }
+          }
+        } else if (indexOf > -1) {
+          children[i].classList.remove(opts.selectedClass)
+          selectElements.splice(indexOf, 1)
+          // Callback
+          if (opts.unselecting) {
+            opts.unselecting(e, position, children[i], i)
+          }
+        }
+      })
+      // Callback
+      if (opts.selected) {
+        opts.selected(e, position, selectorDiv, selectElements)
+      }
+      // マウスが動いた場所にselectorDiv要素を動かす
+      position.left = left
+      position.top = top
+      Object.assign(position, sdRect)
+      position.setPosition(e, selectorDiv)
+      // selectorDiv.style.width  = width + 'px'
+      // selectorDiv.style.height = height + 'px'
+    },
+    stop (e, position, el) {
+      // if (clickflg) unselect(e, position)
+      if (opts.stop) {
+        opts.stop(e, position, selectorDiv)
+      }
+      // 消す
+      element.removeChild(selectorDiv)
+    },
+  }))
+}
+
+/**
+ * elをスクロール
+ *
+ * @param {string|Element}   el ID string or Element
+ * @param {object}           [options={}]
+ * @returns {Element}        scrollbar-body
+ */
+export function scrollbar (element, options = {}) {
+  const wrapper = typeof element === 'string' ? document.getElementById(element) : element
+  let body = wrapper.getElementsByClassName('scrollbar-body')[0]
+  let content = wrapper.getElementsByClassName('scrollbar-content')[0]
+  let bar = wrapper.getElementsByClassName('scrollbar-bar')[0]
+  let handle = wrapper.getElementsByClassName('scrollbar-handle')[0]
+
+  // parts create
+  wrapper.classList.add('scrollbar-wrapper')
+  if (!body) {
+    body = document.createElement('div')
+    body.className = 'scrollbar-body'
+    wrapper.appendChild(body)
+  }
+  if (!content) {
+    content = document.createElement('div')
+    content.className = 'scrollbar-content'
+    body.appendChild(content)
+  }
+  if (!bar) {
+    bar = document.createElement('div')
+    bar.className = 'scrollbar-bar'
+    wrapper.appendChild(bar)
+  }
+  if (!handle) {
+    handle = document.createElement('div')
+    handle.className = 'scrollbar-handle'
+    bar.appendChild(handle)
+  }
+
+  // // elの中身をscrollbar-bodyに移動する
+  // var children = el.children || []
+  // for (let i = 0; i < children.length; i++) {
+  //   body.appendChild(el.removeChild(children[i]))
+  // }
+
+  let wrapperHeight, contentHeight, barHight, parsent
+  let handleHeight = handle.getBoundingClientRect().height
+
+  function resize () {
+    wrapperHeight = wrapper.getBoundingClientRect().height
+    contentHeight = content.getBoundingClientRect().height
+    barHight = bar.getBoundingClientRect().height
+
+    parsent = wrapperHeight / contentHeight
+
+    handleHeight = Math.max(1, barHight * parsent)
+
+    handle.style.height = parsent * 100 + '%'
+    handle.style.visibility = parsent > 0.999 ? 'hidden' : 'visible'
+    handle.style.top = (barHight - handleHeight) * body.scrollTop / (contentHeight - wrapperHeight) + 'px'
+  }
+  resize()
+  window.addEventListener('resize', resize)
+
+  movable(handle, {
+    axis: 'y',
+    drag (e, position) {
+      body.scrollTop = position.percentTop
+    },
+    jump (offsetX, offsetY) {
+      body.scrollTop = Math.min(Math.max(offsetY, 0), barHight - handleHeight) / parsent
+    },
+    onDrag (offsetX, offsetY) {
+      body.scrollTop = Math.min(Math.max(offsetY, 0), barHight - handleHeight) / parsent
+    }
+  })
+
+  const contentObserver = new window.MutationObserver(resize)
+  contentObserver.observe(content, {
+    childList: true,
+    subtree: true,
+    characterData: true
+  })
+
+  let ticking = false
+  body.addEventListener('scroll', function (e) {
+    if (!ticking) {
+      window.requestAnimationFrame(function () {
+        handle.style.top = (barHight - handleHeight) * body.scrollTop / (contentHeight - wrapperHeight) + 'px'
+        ticking = false
+      })
+    }
+    ticking = true
+  }, true)
+  bar.addEventListener('wheel', function (e) {
+    if (!ticking) {
+      window.requestAnimationFrame(function () {
+        body.scrollTop += e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY
+        ticking = false
+      })
+    }
+    ticking = true
+  })
+
+  return {
+    body, content, bar, handle, resize
+  }
+}

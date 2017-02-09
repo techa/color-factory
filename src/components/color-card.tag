@@ -23,12 +23,26 @@
       card.style.left = snap(this.x || ((rect.width - 120 - 320) * Math.random() + 320)) + 'px'
       card.style.top  = snap(this.y || ((rect.height - 120) * Math.random())) + 'px'
 
+      let cards, cardRects
       movable(card, {
         containment: this.parent.refs.box,
         grid,
         axis: 'shift',
-        start: (e, position, el) => {
+        start: (e, position) => {
           store.trigger('card_forward', this.i)
+          e.stopPropagation()
+          cards = Array.from(document.querySelectorAll('.card_selected'))
+          cardRects = cards.map((el) => el.getBoundingClientRect())
+        },
+        drag: (e, position, el) => {
+          if (cards.length) {
+            cards.forEach((cardEl, i) => {
+              if (el !== cardEl) {
+                cardEl.style.left = position.adjust(cardRects[i].left + position.vectorX, true, cardRects[i]) + 'px'
+                cardEl.style.top  = position.adjust(cardRects[i].top  + position.vectorY, false, cardRects[i]) + 'px'
+              }
+            })
+          }
         },
         stop: (e, position, el) => {
           let x = position.left

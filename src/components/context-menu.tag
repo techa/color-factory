@@ -48,7 +48,12 @@
       store.trigger('add_card', activeCard)
     }
     this.removeCard = () => {
-      store.trigger('remove_card')
+      if (this.parent.selecting_cardsIndexs.length) {
+        this.parent.selecting_cardsIndexs.forEach((index) => {
+          store.trigger('remove_card', index)
+        })
+      } else store.trigger('remove_card')
+      // store.trigger('remove_card')
     }
     this.duplicateCard = () => {
       store.trigger('duplicate_card')

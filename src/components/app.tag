@@ -1,7 +1,7 @@
 <app>
   <div id="colors" ref="colors">
     <!--<input type="text" id="color-name" placeholder="COLOR NAME">-->
-    <color-wheel size="280" oncolorchange={colorchange} simple="true"/>
+    <color-wheel size="280" oncolorchange={colorchange} simple=""/>
     <div id="form_add">
       <input id="color_hex" ref="color_hex" placeholder="#000000, Black" onsubmit={addCard_btn} oninput={color_hexInput}>
       <button id="add_btn" onclick={addCard_btn}>➕</button>
@@ -23,8 +23,10 @@
   <script>
     import store from '../store/store.js'
     import Color from '../Color.js'
+    import {selectable} from '../movable.js'
 
     this.cards = store.cards
+    this.selecting_cardsIndexs = []
     const palette = () => {
       return this.cards.map((arg) => arg).sort((a, b) => {
         return a.color.lightness - b.color.lightness
@@ -73,9 +75,21 @@
       })
 
       store.trigger('set_bgColor', new Color(bgColor))
-      // new Keystroke({
-      //   'default': keymaps,
-      // })
+
+      selectable(this.refs.box, {
+        filter: '.card',
+        selectedClass: 'card_selected',
+        tolerance: 'fit',
+        start: (e, position) => {
+          store.trigger('menu_close')
+        },
+        selecting: (e, position, el, i) => {
+          this.selecting_cardsIndexs.push(i)
+        },
+        unselecting: (e, position, el, i) => {
+          this.selecting_cardsIndexs.splice(i, 1)
+        },
+      })
     })
   </script>
   <style>
