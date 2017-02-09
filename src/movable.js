@@ -7,53 +7,63 @@ function noop () {}
  * @class PositionManager
  * @param {object} options
  */
-export function PositionManager (options) {
-  this.options = Object.assign({
-    containment: document.body,
-    handle: null,
-    grid: 1,
-    percent: false,
-    axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
-  }, options || {})
+export class PositionManager {
+  constructor (options) {
+    this.options = Object.assign({
+      containment: document.body,
+      handle: null,
+      grid: 1,
+      percent: false,
+      axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
+    }, options || {})
 
-  let grid = this.options.grid
-  if (!Array.isArray(grid)) {
-    grid = parseFloat(grid, 10) || 1
-    grid = [grid, grid]
+    let grid = this.options.grid
+    if (!Array.isArray(grid)) {
+      grid = parseFloat(grid, 10) || 1
+      grid = [grid, grid]
+    }
+    this.options.grid = grid
+
+    // containment内に置ける現在のマウス相対位置
+    this.x = 0
+    this.y = 0
+    // this.x、this.yの初期値保存
+    this.startX = 0
+    this.startY = 0
+
+    this.handleRect = {width: 0, height: 0, left: 0, top: 0}
+
+    // position
+    const position = { left: 0, top: 0 }
+    // 代入したときにもthis.adjust()したい
+    Object.defineProperties(this, {
+      left: {
+        get () {
+          return position.left
+        },
+        set (val) {
+          position.left = this.adjust(val, true)
+        }
+      },
+      top: {
+        get () {
+          return position.top
+        },
+        set (val) {
+          position.top = this.adjust(val)
+        }
+      },
+    })
   }
-  this.options.grid = grid
 
-  // containment内に置ける現在のマウス相対位置
-  this.x = 0
-  this.y = 0
-  // this.x、this.yの初期値保存
-  this.startX = 0
-  this.startY = 0
-  // position
-  this.left = 0
-  this.top = 0
-  this.handleRect = {width: 0, height: 0, left: 0, top: 0}
-  const position = {}
-  Object.defineProperties(this, {
-    left: {
-      get () {
-        return position.left
-      },
-      set (val) {
-        position.left = this.adjust(val, true)
-      }
-    },
-    top: {
-      get () {
-        return position.top
-      },
-      set (val) {
-        position.top = this.adjust(val)
-      }
-    },
-  })
-}
-Object.assign(PositionManager.prototype, {
+  /**
+   * mousedown
+   *
+   * @param {Event} e
+   * @returns
+   *
+   * @memberOf PositionManager
+   */
   init (e) {
     // ボックスサイズ取得。ここに書くのはresize対策
     this.parentRect = this.options.containment.getBoundingClientRect()
@@ -63,52 +73,84 @@ Object.assign(PositionManager.prototype, {
     this.vectorY = 0
     this.set(e, true)
     return this
-  },
+  }
 
-  set (e, startflg) {
+  /**
+   * mousemove, mouseup
+   *
+   * @param {Event}   e
+   * @param {Boolean} initflg
+   * @returns
+   *
+   * @memberOf PositionManager
+   */
+  set (e, initflg) {
     if ({}.toString.call(e) === '[object MouseEvent]') {
       const event = 'touches' in e ? e.touches[0] : e
       this.x = event.pageX - this.parentRect.left - window.pageXOffset
       this.y = event.pageY - this.parentRect.top - window.pageYOffset
 
-      if (!startflg) {
+      if (!initflg) {
         this.vectorX = this.x - this.startX
         this.vectorY = this.y - this.startY
       }
     }
 
-    Object.assign(this, this.modify(this.handleRect.left + this.vectorX, this.handleRect.top + this.vectorY))
+    // modify
+    this.left = this.handleRect.left + this.vectorX
+    this.top  = this.handleRect.top + this.vectorY
 
-    if (startflg) {
+    if (this.options.percent) {
+      this.percentLeft = this.percentage(this.left, true)
+      this.percentTop  = this.percentage(this.top)
+    }
+
+    if (initflg) {
       this.startX = this.x
       this.startY = this.y
       this.startLeft = this.left
       this.startTop  = this.top
     }
     return this
-  },
+  }
 
+
+  /**
+   * handle move
+   *
+   * @param {Event}    e
+   * @param {Element} [el=this.options.handle]
+   * @returns
+   *
+   * @memberOf PositionManager
+   */
   setPosition (e, el = this.options.handle) {
     switch (this.options.axis) {
       case 'x':
       case 'y':
-        return this.oneWayMove(this.options.axis, el)
+        this.oneWayMove(this.options.axis, el)
+        break
       case 'shift':
       case 'ctrl':
       case 'alt':
         if (e[this.options.axis + 'Key']) {
           const maxV = Math.abs(this.vectorX) > Math.abs(this.vectorY)
-          return this.oneWayMove(maxV ? 'x' : 'y', el)
+          this.oneWayMove(maxV ? 'x' : 'y', el)
+          break
         }
         // fall through
       default:
         el.style.left = this.left + 'px'
         el.style.top  = this.top + 'px'
-        break
+    }
+    if (typeof this.width === 'number') {
+      el.style.width  = this.width + 'px'
+    }
+    if (typeof this.height === 'number') {
+      el.style.height = this.height + 'px'
     }
     return this
-  },
-
+  }
   oneWayMove (either, el = this.options.handle) {
     if (either === 'x') {
       el.style.left = this.left + 'px'
@@ -118,35 +160,44 @@ Object.assign(PositionManager.prototype, {
       el.style.top = this.top + 'px'
     }
     return this
-  },
+  }
 
-  modify (offsetX, offsetY) {
-    const position = {}
-    offsetX = position.left = offsetX
-    offsetY = position.top = offsetY
-
-    if (this.options.percent) {
-      position.percentLeft = this.percentage(offsetX, true)
-      position.percentTop = this.percentage(offsetY)
-    }
-    return position
-  },
-  adjust (offset, width) {
-    const side = width ? 'width' : 'height'
+  /**
+   * Box内に制限しグリッド幅に合わせ計算調整する
+   *
+   * @param {Number}  offset                     this.handleRect.left + this.vectorX
+   * @param {Boolean} [widthflg]
+   * @param {Object}  [rect=this.handleRect]     getBoundingClientRect
+   * @returns {Number}          this.left
+   *
+   * @memberOf PositionManager
+   */
+  adjust (offset, widthflg, rect = this.handleRect) {
+    const side = widthflg ? 'width' : 'height'
     const options = this.options
     // handlesの動きをcontainmentに制限する
     if (options.containment !== document.body) {
-      offset = Math.min(Math.max(0, offset), this.parentRect[side] - this.handleRect[side])
+      offset = Math.min(Math.max(0, offset), this.parentRect[side] - rect[side])
     }
-    const grid = width ? options.grid[0] : options.grid[1]
+    const grid = widthflg ? options.grid[0] : options.grid[1]
     offset = Math.round(offset / grid) * grid
     return offset
-  },
-  percentage (offset, width) {
-    const side = width ? 'width' : 'height'
+  }
+  /**
+   * Boxを基準にした％
+   *
+   * @param {Number}  offset    this.left
+   * @param {Boolean} [widthflg]
+   * @returns {Number} ％
+   *
+   * @memberOf PositionManager
+   */
+  percentage (offset, widthflg) {
+    const side = widthflg ? 'width' : 'height'
     return Math.min(Math.max(0, offset / (this.parentRect[side] - this.handleRect[side]) * 100), 100)
   }
-})
+}
+
 
 /**
  * addEventListener & removeEventListener
@@ -156,7 +207,7 @@ Object.assign(PositionManager.prototype, {
  * @param {boolean}  onoff      true: addEventListener, false: removeEventListener
  * @param {string}   eventNames Multiple event registration with space delimiter.スぺース区切りで複数イベント登録
  * @param {function} callback
- * @param {boolean}  useCapture http://qiita.com/hosomichi/items/49500fea5fdf43f59c58
+ * @param {boolean}  [useCapture] http://qiita.com/hosomichi/items/49500fea5fdf43f59c58
  */
 export function eventRegister (el, onoff, eventNames, callback, useCapture) {
   onoff = onoff ? 'addEventListener' : 'removeEventListener'
@@ -168,7 +219,7 @@ export function eventRegister (el, onoff, eventNames, callback, useCapture) {
 /**
  * マウス座標
  *
- * @param {object|element} options
+ * @param {Object|Element} options
  */
 export function mousePosition (options) {
   options = Object.assign({
