@@ -23,10 +23,9 @@
   <script>
     import store from '../store/store.js'
     import Color from '../Color.js'
-    import {selectable} from '../movable.js'
+    import {Selectable} from '../mouse.js'
 
     this.cards = store.cards
-    this.selecting_cardsIndexs = []
     const palette = () => {
       return this.cards.map((arg) => arg).sort((a, b) => {
         return a.color.lightness - b.color.lightness
@@ -76,18 +75,18 @@
 
       store.trigger('set_bgColor', new Color(bgColor))
 
-      selectable(this.refs.box, {
+      this.selectable = new Selectable(this.refs.box, {
         filter: '.card',
         selectedClass: 'card_selected',
         tolerance: 'fit',
         start: (e, position) => {
           store.trigger('menu_close')
         },
-        selecting: (e, position, el, i) => {
-          this.selecting_cardsIndexs.push(i)
+        selecting: (e, position, el, index) => {
+          store.trigger('card_select', index, true)
         },
-        unselecting: (e, position, el, i) => {
-          this.selecting_cardsIndexs.splice(i, 1)
+        unselecting: (e, position, el, index) => {
+          store.trigger('card_select', index, false)
         },
       })
     })

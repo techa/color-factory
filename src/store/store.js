@@ -6,7 +6,6 @@ const storage = window.sessionStorage
 class Store {
   constructor () {
     riot.observable(this)
-    this.palette = []
     // storage.clear()
     if (storage) {
       this.cards = this.getItem('cards')
@@ -64,7 +63,7 @@ class Store {
         {
           name: 'red4',
           color: '#d74059'
-        }
+        },
       ]
     }
 
@@ -74,7 +73,7 @@ class Store {
 
     this.undo = new Undo(this.getState())
 
-    this.on('undo', (param) => {
+    this.on('undo', () => {
       const state = this.undo.undo()
       console.log('undo_state', state)
       if (!state) {
@@ -82,9 +81,8 @@ class Store {
       }
       this.cards = state.cards
       this.box.style.backgroundColor = state.bgColor
-      this.trigger('cards_changed', this.cards)
     })
-    this.on('redo', (param) => {
+    this.on('redo', () => {
       const state = this.undo.redo()
       console.log('redo_state', state)
       if (!state) {
@@ -92,16 +90,20 @@ class Store {
       }
       this.cards = state.cards
       this.box.style.backgroundColor = state.bgColor
-      this.trigger('cards_changed', this.cards)
     })
 
     // CARDS
     this.on('add_card', (param) => {
+      // param.color = new Color(param.color)
       this.cards.push(param)
       this.trigger('cards_changed', this.cards)
     })
     this.on('remove_card', (index = this.cards.length - 1) => {
       this.cards.splice(index, 1)
+      this.trigger('cards_changed', this.cards)
+    })
+    this.on('remove_cards', () => {
+      this.cards = this.cards.filter((card) => !card.selected)
       this.trigger('cards_changed', this.cards)
     })
 
@@ -123,6 +125,13 @@ class Store {
         card.x = x
         card.y = y
         this.trigger('cards_changed', this.cards)
+      }
+    })
+    this.on('card_select', (index, bool) => {
+      if (bool) {
+        this.cards[index].selected = true
+      } else {
+        delete this.cards[index].selected
       }
     })
 
@@ -157,4 +166,5 @@ class Store {
     this.setItem('cards', this.cards)
   }
 }
+
 export default new Store()

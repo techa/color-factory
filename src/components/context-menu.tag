@@ -48,10 +48,10 @@
       store.trigger('add_card', activeCard)
     }
     this.removeCard = () => {
-      if (this.parent.selecting_cardsIndexs.length) {
-        this.parent.selecting_cardsIndexs.forEach((index) => {
-          store.trigger('remove_card', index)
-        })
+      const selectElements = this.parent.selectable.selectElements
+      if (selectElements.length) {
+        store.trigger('remove_cards')
+        selectElements.length = 0
       } else store.trigger('remove_card')
       // store.trigger('remove_card')
     }

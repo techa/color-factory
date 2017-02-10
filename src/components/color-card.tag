@@ -1,15 +1,15 @@
 <color-card>
-  <div class="card" ref="card">
-    <div class="card_inner" riot-style="background-color: {color}; color: {textColor};">
-      <span class="cardtext"><b>{name}</b><br>{color}</span>
-    </div>
+  <div class="card" ref="card" riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px;">
+    <span class="cardtext"><b>{name}</b><br>{color}</span>
   </div>
   <script>
     import store     from '../store/store.js'
-    import {movable} from '../movable.js'
+    import {Movable} from '../mouse.js'
     import {contrastColors} from '../Color.js'
+
     Object.assign(this, this.card)
     this.textColor = contrastColors(this.color, '#eee', '#111')[0]
+    this.width = this.height = 120
 
     this.on('mount', () => {
       const card = this.refs.card
@@ -24,25 +24,31 @@
       card.style.top  = snap(this.y || ((rect.height - 120) * Math.random())) + 'px'
 
       let cards, cardRects
-      movable(card, {
+      this.movable = new Movable(card, {
         containment: this.parent.refs.box,
         grid,
         axis: 'shift',
         start: (e, position) => {
-          store.trigger('card_forward', this.i)
           e.stopPropagation()
-          cards = Array.from(document.querySelectorAll('.card_selected'))
+
+          store.trigger('card_forward', this.i)
+          if (card.classList.contains('card_selected')) {
+            cards = this.parent.selectable.selectElements
+          } else {
+            this.parent.selectable.unselectAll()
+            this.parent.selectable.select(store.cards.length - 1)
+            cards = []
+          }
           cardRects = cards.map((el) => el.getBoundingClientRect())
         },
         drag: (e, position, el) => {
-          if (cards.length) {
-            cards.forEach((cardEl, i) => {
-              if (el !== cardEl) {
-                cardEl.style.left = position.adjust(cardRects[i].left + position.vectorX, true, cardRects[i]) + 'px'
-                cardEl.style.top  = position.adjust(cardRects[i].top  + position.vectorY, false, cardRects[i]) + 'px'
-              }
-            })
-          }
+          cards.forEach((cardEl, i) => {
+            if (card !== cardEl) {
+              const cardRect = cardRects[i]
+              cardEl.style.left = position.adjust(cardRect.left + position.vectorX, 'width', cardRect) + 'px'
+              cardEl.style.top  = position.adjust(cardRect.top  + position.vectorY, 'height', cardRect) + 'px'
+            }
+          })
         },
         stop: (e, position, el) => {
           let x = position.left
@@ -53,7 +59,10 @@
           }
           position.setPosition(e)
           store.trigger('card_moved', x, y)
-        }
+        },
+        // click: (e, position, el) => {
+        //   this.parent.selectable.select(this.parent.selectable.children.length - 1)
+        // },
       })
 
       card.addEventListener('contextmenu', (e) => {
@@ -67,29 +76,20 @@
   <style>
     .card {
       position: absolute;
-      width: 120px;
-      height: 120px;
-      border-width: 2px;
-      border-color: transparent;
-      border-style: dashed;
-    }
-    .card.card_selected {
-      background-color: black;
-      border-color: white;
-    }
-    .card_inner {
-      width: 116px;
-      height: 116px;
-      margin: auto;
       text-align:center;
       font-size:12px;
+    }
+    .card.card_selected {
+      outline: 1px dashed black;
+      box-shadow: 0 0 0 1px white;
     }
     .card.active {
       z-index: 100;
     }
     .cardtext {
-      width: 116px;
-      height: 116px;
+      width: inherit;
+      height: inherit;
+      margin: auto;
       vertical-align:middle;
       white-space: pre-wrap;
       user-select: none;
