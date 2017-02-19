@@ -252,55 +252,6 @@ export function nearName (hex, colorlist = webcolor) {
 }
 
 
-function nearName2 (basecolor, colorlist = webcolor, options = {s: 10, l: 10, h: 30}) {
-  const base = new Color(basecolor)
-  let nearest = colorlist.map(([hex, name]) => [new Color(hex), name])
-
-  // const val = contrastColors(basecolor, colorlist.map(([hex, name]) => new Color(hex)))
-
-  // Object.keys(options).forEach((k) => {
-  //   nearest = nearscore(k, options[k])
-  // })
-  // if (base.l <= 5) {
-  //   nearest = nearest.filter(([color, name]) => color.l <= 5)
-  // }
-  // if (base.l >= 95) {
-  //   nearest = nearest.filter(([color, name]) => color.l >= 95)
-  // }
-  // if (base.s <= 10) {
-  //   nearest = nearest.filter(([color, name]) => color.l >= 95)
-  // }
-  // console.log('nearest', nearest)
-  nearest = nearestContrast()
-
-  function nearscore (key, score) {
-    let minscore
-    return nearest.reduce((logAry, data, i) => {
-      const [color] = data
-
-      if (Math.abs(base[key] - color[key]) < score) {
-        logAry.push(data)
-      }
-      return logAry
-    }, [])
-  }
-  function nearestContrast () {
-    let minscore = null
-    nearest.forEach(([color, name], i) => {
-      const difference = contrastRatio(base.rgb, color.rgb)
-      if (!i) {
-        minscore = [color, name, difference]
-      }
-      if (difference.cr < minscore[2].cr) {
-        minscore = [color, name, difference]
-      }
-    })
-    return minscore
-  }
-  // console.log('nearest', nearest)
-  return nearest || []
-}
-
 const schemeNames = {
   Complementary: [180],
   Opornent: [120],
@@ -381,7 +332,7 @@ export function randomHex () {
  */
 export function hex2rgb (hex) {
   const result = hex
-    .replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => r + r + g + g + b + b)
+    .replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, '$1$1$2$2$3$3')
     .match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i)
   return result ? result.slice(1).map(h => parseInt(h, 16)) : null
 }
