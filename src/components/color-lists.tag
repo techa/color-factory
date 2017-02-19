@@ -33,6 +33,7 @@
   </div>
   <script>
     import store from '../store/store.js'
+    import Color from '../Color.js'
     import {webcolor}      from '../constants/webcolor'
     import {jiscolor_en}   from '../constants/jiscolor_en'
     import {jiscolor_ja}   from '../constants/jiscolor_ja'
@@ -80,7 +81,7 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          store.trigger('menu_open', e, {name, color}, 'tip')
+          store.trigger('menu_open', e, {name, color: new Color(color)}, 'tip')
         }
       })
     })
