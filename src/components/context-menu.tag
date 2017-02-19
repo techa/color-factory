@@ -45,9 +45,6 @@
       return retVal
     }
 
-    this.isCardMenuOpen = false
-    this.isTipMenuOpen = false
-
     this.mode = false
 
     let activeCard
