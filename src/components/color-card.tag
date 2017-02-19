@@ -36,7 +36,6 @@
             cards = this.parent.selectable.selectElements
           } else {
             this.parent.selectable.unselectAll()
-            this.parent.selectable.select(store.cards.length - 1)
             cards = []
           }
           cardRects = cards.map((el) => el.getBoundingClientRect())
@@ -60,9 +59,9 @@
           position.setPosition(e)
           store.trigger('card_moved', x, y)
         },
-        // click: (e, position, el) => {
-        //   this.parent.selectable.select(this.parent.selectable.children.length - 1)
-        // },
+        click: (e, position, el) => {
+          this.parent.selectable.select(store.cards.length - 1)
+        },
       })
 
       card.addEventListener('contextmenu', (e) => {
