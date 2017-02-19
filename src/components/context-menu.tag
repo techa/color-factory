@@ -8,7 +8,7 @@
       <span>COPY:</span>
       <span each={key in copys} class="menuitem" onclick={copyColor}>{key}</span>
     </p>
-    <p class="menuitem">
+    <p class="menuitem" show={mode == 'card'}>
       <span>SIZE:</span>
       <span each={key in sizes} class="menuitem" onclick={setSize}>{key}</span>
     </p>
@@ -69,14 +69,17 @@
     }
 
     this.copys = 'HEX,RGB,HSL'.split(',')
+
     this.copyColor = (e) => {
       const key = e.target.textContent.toLowerCase()
       copyTextToClipboard(activeCard.color[key])
     }
 
     this.sizes = [120, 240, 360]
+
     this.setSize = (e) => {
       store.trigger('set_card_size', +e.target.textContent)
+      activeCard.update()
     }
 
 

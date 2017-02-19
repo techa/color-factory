@@ -119,6 +119,15 @@ class Store {
       this.trigger('add_card', newCard)
     })
 
+    this.on('set_card_size', (w, h = w) => {
+      let card = this.cards[this.cards.length - 1]
+      if (card.width !== w || card.height !== h) {
+        card.width = w
+        card.height = h
+        this.trigger('cards_changed', this.cards)
+      }
+    })
+
     this.on('card_moved', (x, y) => {
       let card = this.cards[this.cards.length - 1]
       if (card.x !== x || card.y !== y) {

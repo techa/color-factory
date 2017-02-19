@@ -1,5 +1,6 @@
 <color-card>
-  <div class="card" ref="card" riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px;">
+  <div class="card" ref="card"
+  riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px;">
     <span class="cardtext"><b>{name}</b><br>{color}</span>
   </div>
   <script>
@@ -7,26 +8,47 @@
     import {Movable} from '../mouse.js'
     import {contrastColors} from '../Color.js'
 
+    this.width = 120
+    this.height = 120
     Object.assign(this, this.card)
     this.textColor = contrastColors(this.color, '#eee', '#111')[0]
-    this.width = this.height = 120
+
+    function snap (n, grid = 5) {
+      return Math.round(n / grid) * grid
+    }
+
+    this.rectSetter = (init) => {
+      this.width = this.card.width || 120
+      this.height = this.card.height || 120
+
+      const rect = this.parent.refs.box.getBoundingClientRect()
+      const maxW = rect.width - this.width
+      const maxH = rect.height - this.height
+
+      const card = this.refs.card
+      if (init && (this.card.x < 320 || !this.card.y)) {
+        // random positions
+        card.style.left = snap((maxW - 320) * Math.random() + 320) + 'px'
+        card.style.top  = snap((maxH) * Math.random()) + 'px'
+      } else {
+        card.style.left = Math.min(Math.max(320, this.card.x), maxW) + 'px'
+        card.style.top = Math.min(Math.max(0, this.card.y), maxH) + 'px'
+      }
+    }
+
+    this.on('update', () => {
+      this.rectSetter()
+    })
 
     this.on('mount', () => {
       const card = this.refs.card
-      let rect = this.parent.refs.box.getBoundingClientRect()
-
-      const grid = 5
-      function snap (n) {
-        return Math.round(n / grid) * grid
-      }
-
-      card.style.left = snap(this.x || ((rect.width - 120 - 320) * Math.random() + 320)) + 'px'
-      card.style.top  = snap(this.y || ((rect.height - 120) * Math.random())) + 'px'
+      this.rectSetter(true)
 
       let cards, cardRects
+
       this.movable = new Movable(card, {
         containment: this.parent.refs.box,
-        grid,
+        grid: 5,
         axis: 'shift',
         start: (e, position) => {
           e.stopPropagation()
