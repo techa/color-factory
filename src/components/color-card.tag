@@ -69,7 +69,7 @@
         // デフォルトイベントをキャンセル
         // これを書くことでコンテキストメニューが表示されなくなります
         e.preventDefault()
-        store.trigger('menu_open', e, this)
+        store.trigger('menu_open', e, this, 'card')
       }, false)
     })
   </script>

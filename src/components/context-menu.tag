@@ -1,8 +1,8 @@
 <context-menu>
-  <div id="menu" ref="menu" show={isTipMenuOpen || isCardMenuOpen}>
-    <p class="menuitem" onclick={addCard} show={isTipMenuOpen}>ADD CARD</p>
-    <p class="menuitem" onclick={removeCard} show={isCardMenuOpen}>DELETE</p>
-    <p class="menuitem" onclick={duplicateCard} show={isCardMenuOpen}>DUPLICATE</p>
+  <div id="menu" ref="menu" show={mode}>
+    <p class="menuitem" onclick={addCard} show={mode == 'tip'}>ADD CARD</p>
+    <p class="menuitem" onclick={removeCard} show={mode == 'card'}>DELETE</p>
+    <p class="menuitem" onclick={duplicateCard} show={mode == 'card'}>DUPLICATE</p>
     <p class="menuitem" onclick={setBgColor}>SET BACKGROUND</p>
     <p class="menuitem">
       <span>COPY:</span>
@@ -48,6 +48,8 @@
     this.isCardMenuOpen = false
     this.isTipMenuOpen = false
 
+    this.mode = false
+
     let activeCard
 
     this.addCard = () => {
@@ -85,22 +87,18 @@
       store.trigger('menu_close')
     }
     store.on('menu_close', (e) => {
-      this.isCardMenuOpen = false
-      this.isTipMenuOpen = false
+      this.mode = false
       this.update()
     })
 
-    store.on('menu_open', (e, card, tip) => {
+    store.on('menu_open', (e, card, mode) => {
       this.refs.menu.style.left = e.clientX + 'px'
       this.refs.menu.style.top = e.clientY + 'px'
 
       activeCard = card
 
-      if (tip) {
-        this.isTipMenuOpen = true
-      } else {
-        this.isCardMenuOpen = true
-      }
+      // 'tip' or 'card'
+      this.mode = mode
 
       window.addEventListener('blur', menuHide)
       document.addEventListener('click', menuHide)

@@ -80,7 +80,7 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          store.trigger('menu_open', e, {name, color}, true)
+          store.trigger('menu_open', e, {name, color}, 'tip')
         }
       })
     })
