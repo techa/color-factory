@@ -1,3 +1,19 @@
+<color-tip>
+  <div class="tip" title={title} riot-style="background-color: {color};"></div>
+  <script>
+    this.title = this.name + ' : ' + this.color
+  </script>
+  <style>
+    .tip{
+      width: 20px;
+      height: 20px;
+      margin:0;
+      padding:0;
+      display:inline-block;
+    }
+  </style>
+</color-tip>
+
 <color-lists>
   <div class="wrapper">
     <select name="colorlists" id="colorlists" onchange={colorListLord}>
@@ -50,6 +66,24 @@
     this.colorListLord = (e) => {
       this.colorlists = colorlists[e.target.value]
     }
+
+    this.on('mount', () => {
+      this.refs.colortips.addEventListener('click', (e) => {
+        const el = e.target
+        if (el.classList.contains('tip')) {
+          const [name, color] = el.title.split(' : ')
+          store.trigger('add_card', {name, color})
+        }
+      })
+      this.refs.colortips.addEventListener('contextmenu', (e) => {
+        e.preventDefault()
+        const el = e.target
+        if (el.classList.contains('tip')) {
+          const [name, color] = el.title.split(' : ')
+          store.trigger('menu_open', e, {name, color}, true)
+        }
+      })
+    })
   </script>
   <style>
     #colorlists {
