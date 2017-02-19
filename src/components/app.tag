@@ -99,6 +99,7 @@
     }
     #colors {
       width: 320px;
+      height: 100vh;
       position: absolute;
       margin:0;
       padding: 20px;
