@@ -1,7 +1,7 @@
 <color-card>
   <div class="card" ref="card"
   riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px;">
-    <span class="cardtext"><b>{name}</b><br>{color}</span>
+    <div class="cardtext"><b>{name}</b><br>{color}</div>
   </div>
   <script>
     import store     from '../store/store.js'
@@ -99,6 +99,9 @@
       position: absolute;
       text-align:center;
       font-size:12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .card.card_selected {
       outline: 1px dashed black;
@@ -108,20 +111,11 @@
       z-index: 100;
     }
     .cardtext {
-      width: inherit;
-      height: inherit;
-      margin: auto;
-      vertical-align:middle;
       white-space: pre-wrap;
       user-select: none;
       -ms-user-select: none;
       -webkit-user-select: none;
       -moz-user-select: none;
-      /* http://qiita.com/sawadays0118/items/4c329fd05cdff14ffebc
-      ブロック要素には vertical-align:middle;が効かないのでtable-cellを使うが、
-      table, inline-table, table-cell, table-row, table-row-group）において、min-height,max-heightは効かないのが仕様
-        */
-      display: table-cell;
     }
   </style>
 </color-card>
