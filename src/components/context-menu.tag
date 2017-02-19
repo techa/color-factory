@@ -4,8 +4,14 @@
     <p class="menuitem" onclick={removeCard} show={isCardMenuOpen}>DELETE</p>
     <p class="menuitem" onclick={duplicateCard} show={isCardMenuOpen}>DUPLICATE</p>
     <p class="menuitem" onclick={setBgColor}>SET BACKGROUND</p>
-    <p class="menuitem" onclick={copyHex}>COPY HEX</p>
-    <p class="menuitem" onclick={copyRgb}>COPY RGB</p>
+    <p class="menuitem">
+      <span>COPY:</span>
+      <span each={key in copys} class="menuitem" onclick={copyColor}>{key}</span>
+    </p>
+    <p class="menuitem">
+      <span>SIZE:</span>
+      <span each={key in sizes} class="menuitem" onclick={setSize}>{key}</span>
+    </p>
   </div>
 
   <script>
@@ -52,8 +58,9 @@
       if (selectElements.length) {
         store.trigger('remove_cards')
         selectElements.length = 0
-      } else store.trigger('remove_card')
-      // store.trigger('remove_card')
+      } else {
+        store.trigger('remove_card')
+      }
     }
     this.duplicateCard = () => {
       store.trigger('duplicate_card')
@@ -61,12 +68,18 @@
     this.setBgColor = () => {
       store.trigger('set_bgColor', activeCard.color)
     }
-    this.copyHex = () => {
-      copyTextToClipboard(activeCard.color)
+
+    this.copys = 'HEX,RGB,HSL'.split(',')
+    this.copyColor = (e) => {
+      const key = e.target.textContent.toLowerCase()
+      copyTextToClipboard(activeCard.color[key])
     }
-    this.copyRgb = () => {
-      copyTextToClipboard(activeCard.color.rgb)
+
+    this.sizes = [120, 240, 360]
+    this.setSize = (e) => {
+      store.trigger('set_card_size', +e.target.textContent)
     }
+
 
     const menuHide = (e) => {
       store.trigger('menu_close')
@@ -109,6 +122,9 @@
     }
     .menuitem:hover, .menuitem:active {
       background: aquamarine;
+    }
+    .menuitem .menuitem:hover {
+      font-weight: bold;
     }
   </style>
 </context-menu>
