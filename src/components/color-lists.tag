@@ -21,6 +21,7 @@
     import {jiscolor_en}   from '../constants/jiscolor_en'
     import {jiscolor_ja}   from '../constants/jiscolor_ja'
     import {materialcolor} from '../constants/materialcolor'
+    import {pantone_coated} from '../constants/pantone_coated'
     const colorlists = {
       webcolor: webcolor.map(val => ({
         name: val[1],
@@ -36,6 +37,10 @@
       })),
       materialcolor: materialcolor.map(val => ({
         name: `${val[1]}\n(${val[2]})`,
+        color: val[0]
+      })),
+      pantone_coated: pantone_coated.map(val => ({
+        name: val[1],
         color: val[0]
       })),
     }
