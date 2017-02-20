@@ -1,4 +1,4 @@
-<color-tip>
+<color-tip class="tip">
   <div class="tip" title={title} riot-style="background-color: {color};"></div>
   <script>
     this.title = this.name + ' : ' + this.color
@@ -120,7 +120,8 @@
     .scrollbar-content {
       /* 中身のmarginを含めたサイズを取得するのために必要 */
       /*overflow-y: auto;*/
-      /*height: 117px;*/
+      display: flex;
+      flex-wrap: wrap;
     }
     .list {
       height: 100%;
