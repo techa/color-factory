@@ -17,11 +17,7 @@
 <color-lists>
   <div class="wrapper">
     <select name="colorlists" id="colorlists" onchange={colorListLord}>
-      <option value="webcolor">Web Color</option>
-      <option value="jiscolor_ja">JIS JA</option>
-      <option value="jiscolor_en">JIS EN</option>
-      <option value="materialcolor">GOOGLE MATERIAL</option>
-      <option value="pantone_coated">PANTONE COATED</option>
+      <option each={colorlistData} value={name}>{name}</option>
     </select>
     <div class="scrollbar-wrapper">
       <div class="scrollbar-body">
@@ -34,38 +30,60 @@
   <script>
     import store from '../store/store.js'
     import Color from '../Color.js'
-    import {webcolor}      from '../constants/webcolor'
-    import {jiscolor_en}   from '../constants/jiscolor_en'
-    import {jiscolor_ja}   from '../constants/jiscolor_ja'
-    import {materialcolor} from '../constants/materialcolor'
-    import {pantone_coated} from '../constants/pantone_coated'
-    const colorlists = {
-      webcolor: webcolor.map(val => ({
-        name: val[1],
-        color: val[0]
-      })),
-      jiscolor_en: jiscolor_en.map(val => ({
-        name: val[1],
-        color: val[0]
-      })),
-      jiscolor_ja: jiscolor_ja.map(val => ({
-        name: `${val[1]}\n(${val[2]})`,
-        color: val[0]
-      })),
-      materialcolor: materialcolor.map(val => ({
-        name: `${val[1]}\n(${val[2]})`,
-        color: val[0]
-      })),
-      pantone_coated: pantone_coated.map(val => ({
-        name: val[1],
-        color: val[0]
-      })),
-    }
+    import webcolor      from '../constants/webcolor.json'
+    import jiscolor_en   from '../constants/jiscolor_en.json'
+    import jiscolor_ja   from '../constants/jiscolor_ja.json'
+    import materialcolor from '../constants/materialcolor.json'
+    import ralcolour     from '../constants/ralcolour.json'
+    import goe_coated     from '../constants/goe-coated.json'
+    import goe_uncoated   from '../constants/goe-uncoated.json'
+    import solid_coated   from '../constants/solid-coated.json'
+    import solid_uncoated from '../constants/solid-uncoated.json'
 
-    this.colorlists = colorlists.webcolor
+    function parser (list, temp) {
+      return Object.keys(list).map(key => ({
+        name: temp ? temp(key, list[key]) : key,
+        color: list[key][0]
+      }))
+    }
+    function pantone (list) {
+      return Object.keys(list).map(key => ({
+        name: `${key}`,
+        color: list[key]
+      }))
+    }
+    this.colorlistData = [
+      { name: 'Web Color',
+        list: parser(webcolor) },
+      { name: 'JIS EN',
+        list: parser(jiscolor_en) },
+      { name: 'JIS JA',
+        list: parser(jiscolor_ja) },
+      { name: 'GOOGLE MATERIAL',
+        list: Object.keys(materialcolor).reduce((ary, key) => {
+          materialcolor[key].forEach((color, i) => {
+            let name = key
+            if (i === 0)      name += 50
+            else if (i < 10)  name += i * 100
+            else if (i >= 10) name += ['A100', 'A200', 'A400', 'A700'][i % 10]
+            ary.push({name, color})
+          })
+          return ary
+        }, []) },
+      { name: 'PANTONE® Goe™ Coated',
+        list: pantone(goe_coated) },
+      { name: 'PANTONE® Goe™ Uncoated',
+        list: pantone(goe_uncoated) },
+      { name: 'PANTONE® solid Coated',
+        list: pantone(solid_coated) },
+      { name: 'PANTONE® solid Uncoated',
+        list: pantone(solid_uncoated) },
+    ]
+
+    this.colorlists = this.colorlistData[0].list
 
     this.colorListLord = (e) => {
-      this.colorlists = colorlists[e.target.value]
+      this.colorlists = this.colorlistData.find(({name}) => name === e.target.value).list
     }
 
     this.on('mount', () => {

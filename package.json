@@ -27,6 +27,7 @@
     "onchange": "^3.0.2",
     "rollup": "^0.36.3",
     "rollup-plugin-commonjs": "^5.0.5",
+    "rollup-plugin-json": "^2.1.0",
     "rollup-plugin-node-resolve": "^2.0.0",
     "rollup-plugin-riot": "^0.4.3",
     "rollup-plugin-uglify": "^1.0.1",

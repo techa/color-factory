@@ -9,6 +9,9 @@ import nodeResolve from 'rollup-plugin-node-resolve'
 // import postcss from 'rollup-plugin-postcss'
 // import cssnext from 'postcss-cssnext' // http://cssnext.io/
 
+// npm i -D rollup-plugin-json
+import json from 'rollup-plugin-json'
+
 // npm i -D rollup-plugin-uglify
 // import uglify from 'rollup-plugin-uglify'
 
@@ -37,6 +40,9 @@ export default {
     //     cssnext(),
     //   ],
     // }),
+    json({
+      preferConst: true
+    }),
     riot({
       include: [
         './src/components/**.tag',
