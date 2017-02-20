@@ -36,6 +36,10 @@
       }
     }
 
+    this.on('update', () => {
+      this.refs.card.classList.remove('animated', 'bounceIn')
+    })
+
     this.on('mount', () => {
       const card = this.refs.card
       this.rectSetter(true)
