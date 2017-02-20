@@ -30,15 +30,15 @@
   <script>
     import store from '../store/store.js'
     import Color from '../Color.js'
-    import webcolor      from '../constants/webcolor.json'
-    import jiscolor_en   from '../constants/jiscolor_en.json'
-    import jiscolor_ja   from '../constants/jiscolor_ja.json'
-    import materialcolor from '../constants/materialcolor.json'
-    import ralcolour     from '../constants/ralcolour.json'
-    import goe_coated     from '../constants/goe-coated.json'
-    import goe_uncoated   from '../constants/goe-uncoated.json'
-    import solid_coated   from '../constants/solid-coated.json'
-    import solid_uncoated from '../constants/solid-uncoated.json'
+    import WEBCOLOR      from '../constants/webcolor.json'
+    import JISCOLOR_EN   from '../constants/jiscolor_en.json'
+    import JISCOLOR_JA   from '../constants/jiscolor_ja.json'
+    import MATERIALCOLOR from '../constants/materialcolor.json'
+    import RALCOLOUR     from '../constants/ralcolour.json'
+    import GOE_COATED     from '../constants/goe-coated.json'
+    import GOE_UNCOATED   from '../constants/goe-uncoated.json'
+    import SOLID_COATED   from '../constants/solid-coated.json'
+    import SOLID_UNCOATED from '../constants/solid-uncoated.json'
 
     function parser (list, temp) {
       return Object.keys(list).map(key => ({
@@ -54,14 +54,14 @@
     }
     this.colorlistData = [
       { name: 'Web Color',
-        list: parser(webcolor) },
+        list: parser(WEBCOLOR) },
       { name: 'JIS EN',
-        list: parser(jiscolor_en) },
+        list: parser(JISCOLOR_EN) },
       { name: 'JIS JA',
-        list: parser(jiscolor_ja) },
+        list: parser(JISCOLOR_JA) },
       { name: 'GOOGLE MATERIAL',
-        list: Object.keys(materialcolor).reduce((ary, key) => {
-          materialcolor[key].forEach((color, i) => {
+        list: Object.keys(MATERIALCOLOR).reduce((ary, key) => {
+          MATERIALCOLOR[key].forEach((color, i) => {
             let name = key
             if (i === 0)      name += 50
             else if (i < 10)  name += i * 100
@@ -70,14 +70,16 @@
           })
           return ary
         }, []) },
+      { name: 'RAL',
+        list: parser(RALCOLOUR) },
       { name: 'PANTONE® Goe™ Coated',
-        list: pantone(goe_coated) },
+        list: pantone(GOE_COATED) },
       { name: 'PANTONE® Goe™ Uncoated',
-        list: pantone(goe_uncoated) },
+        list: pantone(GOE_UNCOATED) },
       { name: 'PANTONE® solid Coated',
-        list: pantone(solid_coated) },
+        list: pantone(SOLID_COATED) },
       { name: 'PANTONE® solid Uncoated',
-        list: pantone(solid_uncoated) },
+        list: pantone(SOLID_UNCOATED) },
     ]
 
     this.colorlists = this.colorlistData[0].list
