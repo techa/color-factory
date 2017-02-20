@@ -36,10 +36,6 @@
       }
     }
 
-    this.on('update', () => {
-      this.rectSetter()
-    })
-
     this.on('mount', () => {
       const card = this.refs.card
       this.rectSetter(true)

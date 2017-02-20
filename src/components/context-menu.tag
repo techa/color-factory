@@ -79,7 +79,7 @@
 
     this.setSize = (e) => {
       store.trigger('set_card_size', +e.target.textContent)
-      activeCard.update()
+      activeCard.rectSetter()
     }
 
 
