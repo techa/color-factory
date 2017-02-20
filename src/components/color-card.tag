@@ -1,5 +1,5 @@
 <color-card>
-  <div class="card" ref="card"
+  <div class="card animated bounceIn" ref="card"
   riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px;">
     <div class="cardtext"><b>{name}</b><br>{color}</div>
   </div>
