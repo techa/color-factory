@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "diff-match-patch": "^1.0.0",
-    "riot": "^3.0.7"
+    "riot": "^3.3.1"
   }
 }
