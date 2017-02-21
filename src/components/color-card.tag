@@ -1,6 +1,6 @@
 <color-card>
   <div class="card animated bounceIn" ref="card"
-  riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px;">
+    riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px;">
     <div class="cardtext"><b>{name}</b><br>{color}</div>
   </div>
   <script>
@@ -36,8 +36,22 @@
       }
     }
 
-    this.on('update', () => {
+    // only once
+    this.one('update', () => {
       this.refs.card.classList.remove('animated', 'bounceIn')
+    })
+
+    store.on('remove_card_animation', (index, cb) => {
+      let timer
+      if (this.i === index) {
+        this.refs.card.classList.add('animated', 'bounceOut')
+        const style = window.getComputedStyle(this.refs.card)
+        const delay = parseFloat(style.animationDuration) + parseFloat(style.animationDelay)
+        timer = setTimeout(() => {
+          cb()
+          clearTimeout(timer)
+        }, delay * 1000 | 0)
+      }
     })
 
     this.on('mount', () => {

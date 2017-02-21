@@ -99,12 +99,10 @@ class Store {
       this.trigger('cards_changed', this.cards)
     })
     this.on('remove_card', (index = this.cards.length - 1) => {
-      this.cards.splice(index, 1)
-      this.trigger('cards_changed', this.cards)
-    })
-    this.on('remove_cards', () => {
-      this.cards = this.cards.filter((card) => !card.selected)
-      this.trigger('cards_changed', this.cards)
+      this.trigger('remove_card_animation', index, () => {
+        this.cards.splice(index, 1)
+        this.trigger('cards_changed', this.cards)
+      })
     })
 
     this.on('card_forward', (index) => {

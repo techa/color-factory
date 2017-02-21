@@ -1,14 +1,14 @@
 <context-menu>
   <div id="menu" ref="menu" show={mode}>
-    <p class="menuitem" onclick={addCard} show={mode == 'tip'}>ADD CARD</p>
-    <p class="menuitem" onclick={removeCard} show={mode == 'card'}>DELETE</p>
-    <p class="menuitem" onclick={duplicateCard} show={mode == 'card'}>DUPLICATE</p>
+    <p class="menuitem" onclick={addCard} if={mode == 'tip'}>ADD CARD</p>
+    <p class="menuitem" onclick={removeCard} if={mode == 'card'}>DELETE</p>
+    <p class="menuitem" onclick={duplicateCard} if={mode == 'card'}>DUPLICATE</p>
     <p class="menuitem" onclick={setBgColor}>SET BACKGROUND</p>
     <p class="menuitem">
       <span>COPY:</span>
       <span each={key in copys} class="menuitem" onclick={copyColor}>{key}</span>
     </p>
-    <p class="menuitem" show={mode == 'card'}>
+    <p class="menuitem" if={mode == 'card'}>
       <span>SIZE:</span>
       <span each={key in sizes} class="menuitem" onclick={setSize}>{key}</span>
     </p>
@@ -55,7 +55,11 @@
     this.removeCard = () => {
       const selectElements = this.parent.selectable.selectElements
       if (selectElements.length) {
-        store.trigger('remove_cards')
+        store.cards.forEach((card, i) => {
+          if (card.selected) {
+            store.trigger('remove_card', i)
+          }
+        })
         selectElements.length = 0
       } else {
         store.trigger('remove_card')
