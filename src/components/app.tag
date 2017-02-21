@@ -10,7 +10,7 @@
     <div id="pallete">
       <color-tip each={palette}/>
     </div>
-
+    <hr>
     <color-lists/>
   </div>
 
@@ -60,7 +60,7 @@
     }
 
     this.colorchange = (color) => {
-      this.refs.color_hex.value = color.hex + ' ' + color.getNearWebColor(20)
+      this.refs.color_hex.value = color.hex // + ' ' + color.getNearWebColor(20)
     }
 
     this.on('mount', () => {

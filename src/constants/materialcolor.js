@@ -23,26 +23,9 @@ export const materialcolor = Object.keys(material_color).reduce((ary, key) => {
   const val = material_color[key]
   val.forEach((hex, i) => {
     let num
-    switch (i) {
-      case 0:
-        num = 50
-        break
-      case 10:
-        num = 'A100'
-        break
-      case 11:
-        num = 'A200'
-        break
-      case 12:
-        num = 'A400'
-        break
-      case 13:
-        num = 'A700'
-        break
-      default:
-        num = i * 100
-        break
-    }
+    if (i === 0)      num = 50
+    else if (i < 10)  num = i * 100
+    else if (i >= 10) num = ['A100', 'A200', 'A400', 'A700'][i % 10]
     ary.push([hex, `${key} ${num}`])
   })
   return ary
