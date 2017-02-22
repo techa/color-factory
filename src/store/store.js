@@ -96,6 +96,7 @@ class Store {
     // CARDS
     this.on('add_card', (param) => {
       param.color = new Color(param.color)
+      param.zIndex = this.cards.length
       this.cards.push(param)
       this.trigger('cards_changed', this.cards)
     })
