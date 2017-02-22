@@ -62,11 +62,11 @@
         })
         selectElements.length = 0
       } else {
-        store.trigger('remove_card')
+        store.trigger('remove_card', activeCard.i)
       }
     }
     this.duplicateCard = () => {
-      store.trigger('duplicate_card')
+      store.trigger('duplicate_card', activeCard.i)
     }
     this.setBgColor = () => {
       store.trigger('set_bgColor', activeCard.color)
@@ -82,7 +82,7 @@
     this.sizes = [120, 240, 360]
 
     this.setSize = (e) => {
-      store.trigger('set_card_size', +e.target.textContent)
+      store.trigger('set_card_size', activeCard.i, +e.target.textContent)
       activeCard.rectSetter()
     }
 
@@ -116,6 +116,7 @@
       font-size:12px;
       background: #fff;
       border: solid 1px silver;
+      z-index: 100;
     }
     .menuitem {
       min-width: 100px;

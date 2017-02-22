@@ -67,8 +67,9 @@ class Store {
       ]
     }
 
-    this.cards.forEach((param) => {
+    this.cards.forEach((param, index) => {
       param.color = new Color(param.color)
+      param.zIndex = index
     })
 
     this.undo = new Undo(this.getState())
@@ -106,19 +107,26 @@ class Store {
     })
 
     this.on('card_forward', (index) => {
-      this.cards.push(this.cards.splice(index, 1)[0])
+      const currIndex = +this.cards[index].zIndex
+      this.cards.forEach((card, i) => {
+        if (i === index) {
+          card.zIndex = this.cards.length - 1
+        } else if (card.zIndex > currIndex) {
+          --card.zIndex
+        }
+      })
       this.trigger('cards_changed', this.cards)
     })
 
-    this.on('duplicate_card', () => {
-      const newCard = Object.assign({}, this.cards[this.cards.length - 1])
+    this.on('duplicate_card', (index) => {
+      const newCard = Object.assign({}, this.cards[index])
       newCard.x += 10
       newCard.y += 10
       this.trigger('add_card', newCard)
     })
 
-    this.on('set_card_size', (w, h = w) => {
-      let card = this.cards[this.cards.length - 1]
+    this.on('set_card_size', (index, w, h = w) => {
+      let card = this.cards[index]
       if (card.width !== w || card.height !== h) {
         card.width = w
         card.height = h
@@ -126,8 +134,8 @@ class Store {
       }
     })
 
-    this.on('card_moved', (x, y) => {
-      let card = this.cards[this.cards.length - 1]
+    this.on('card_moved', (index, x, y) => {
+      let card = this.cards[index]
       if (card.x !== x || card.y !== y) {
         card.x = x
         card.y = y

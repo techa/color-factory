@@ -1,6 +1,6 @@
 <color-card>
   <div class="card animated bounceIn" ref="card"
-    riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px;">
+    riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px; left: {x}px; top: {y}px; z-index: {+card.zIndex};">
     <div class="cardtext"><b>{name}</b><br>{color}</div>
   </div>
   <script>
@@ -11,11 +11,14 @@
     this.width = 120
     this.height = 120
     Object.assign(this, this.card)
+
     this.textColor = contrastColors(this.color, '#eee', '#111')[0]
 
     function snap (n, grid = 5) {
       return Math.round(n / grid) * grid
     }
+
+    const colorsWidth = 320
 
     this.rectSetter = (init) => {
       this.width = this.card.width || 120
@@ -26,14 +29,16 @@
       const maxH = rect.height - this.height
 
       const card = this.refs.card
-      if (init && (this.card.x < 320 || !this.card.y)) {
+      if (init && (+this.card.x < colorsWidth || !this.card.y)) {
         // random positions
-        card.style.left = snap((maxW - 320) * Math.random() + 320) + 'px'
-        card.style.top  = snap((maxH) * Math.random()) + 'px'
+        this.x = snap((maxW - colorsWidth) * Math.random() + colorsWidth)
+        this.y = snap((maxH) * Math.random())
       } else {
-        card.style.left = Math.min(Math.max(320, this.card.x), maxW) + 'px'
-        card.style.top = Math.min(Math.max(0, this.card.y), maxH) + 'px'
+        this.x = Math.min(Math.max(colorsWidth, this.card.x), maxW)
+        this.y = Math.min(Math.max(0, this.card.y), maxH)
       }
+      card.style.left = this.x + 'px'
+      card.style.top  = this.y + 'px'
     }
 
     // only once
@@ -88,15 +93,17 @@
         stop: (e, position, el) => {
           let x = position.left
           let y = position.top
-          if (x < 320) {
+          if (x < colorsWidth) {
             x = position.left = position.startLeft
             y = position.top  = position.startTop
           }
           position.setPosition(e)
-          store.trigger('card_moved', x, y)
+          this.x = x
+          this.y = y
+          store.trigger('card_moved', this.i, x, y)
         },
         click: (e, position, el) => {
-          this.parent.selectable.select(store.cards.length - 1)
+          this.parent.selectable.select(this.i)
         },
       })
 
