@@ -61,7 +61,8 @@ class ColorParams extends Array {
   // @returns css string
   toString () {
     const a = this.a == null ? ')' : `, ${this[3]})`
-    return this.type + `(${this[0]}, ${this[1]}, ${this[2]}` + a
+    const percent = this.type.startsWith('hsl') ? '%' : ''
+    return this.type + `(${this[0]}, ${this[1] + percent}, ${this[2] + percent}` + a
   }
 }
 
