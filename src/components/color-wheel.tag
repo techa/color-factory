@@ -78,7 +78,7 @@
   <script>
     /* global opts */
     import Color, {contrastColors} from '../Color.js'
-    import {mousePosition, eventRegister} from '../movable.js'
+    import {MousePosition, on, off} from '../mouse.js'
     const size = this.size = opts.size - 10 || 300
     const center = size / 2
     const radius = Math.round(center / 3)
@@ -208,7 +208,7 @@
       handleSetPosition()
 
       // picker
-      mousePosition({
+      this.mousePosition = new MousePosition({
         containment: this.refs.canvas,
         start: (e, position) => {
           handleSetColor(position, true)
@@ -227,9 +227,9 @@
           time = false
           this.mode = ''
           this.update()
-          eventRegister(el, false, 'mouseup touchcancel touchend', mup)
+          off(el, 'mouseup touchcancel touchend', mup)
         }
-        eventRegister(el, true, 'mousedown touchstart', (e) => {
+        on(el, 'mousedown touchstart', (e) => {
           const cb = data.mdown.bind(el, e)
           cb()
           e.stopPropagation()
@@ -237,7 +237,7 @@
             clearTimeout(time)
             time = setInterval(cb, 100)
           }, 300)
-          eventRegister(el, true, 'mouseup touchcancel touchend', mup)
+          on(el, 'mouseup touchcancel touchend', mup)
         })
       })
     }) // on mount

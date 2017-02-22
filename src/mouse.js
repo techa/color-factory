@@ -1,5 +1,3 @@
-function noop () {}
-
 /**
  * constructor PositionManager
  *
@@ -185,16 +183,14 @@ export class PositionManager {
   }
 }
 
-
 /**
  * addEventListener & removeEventListener
  *
  * @export
  * @param {element}  el
- * @param {boolean}  onoff      true: addEventListener, false: removeEventListener
  * @param {string}   eventNames Multiple event registration with space delimiter.スぺース区切りで複数イベント登録
  * @param {function} callback
- * @param {boolean}  [useCapture] http://qiita.com/hosomichi/items/49500fea5fdf43f59c58
+ * @param {boolean}  [useCapture]
  */
 export function on (el, eventNames, callback, useCapture) {
   eventNames.split(' ').forEach((eventName) => {
@@ -217,9 +213,9 @@ export class MousePosition {
     this.options = Object.assign({
       containment: (options.nodeName ? options : document.body),
       handle: null,
-      start: noop,
-      drag: noop,
-      stop: noop
+      // start: noop,
+      // drag: noop,
+      // stop: noop
     }, options || {})
 
     // イベント登録
@@ -336,7 +332,7 @@ function fitHit (rect1, rect2) {
   }
   return false
 }
-function touchHit (rect1, rect2, xflg) {
+function touchHit (rect1, rect2) {
   const [x, y, w, h] = ['left', 'top', 'width', 'height']
   // rect1                x1---------------------------x1+w1
   // rect2 x2---------------------------------x2+w2
@@ -376,11 +372,12 @@ export class Selectable extends MousePosition {
 
     const helper = this.helper = document.createElement('div')
 
+    helper.style.position = 'absolute'
+
     if (opts.selectorClass) {
       helper.classList.add(opts.selectorClass)
     } else {
-      helper.style.position = 'absolute'
-      helper.style.zIndex = '100'
+      helper.style.zIndex = '10000'
       helper.style.border = '1px dotted black'
     }
 
