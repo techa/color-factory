@@ -6,13 +6,13 @@
   <script>
     import store     from '../store/store.js'
     import {Movable} from '../mouse.js'
-    import {contrastColors} from '../Color.js'
+    import tinycolor from 'tinycolor2'
 
     this.width = 120
     this.height = 120
     Object.assign(this, this.card)
 
-    this.textColor = contrastColors(this.color, '#eee', '#111')[0]
+    this.textColor = tinycolor.mostReadable(this.color, ['#eee', '#111'])
 
     function snap (n, grid = 5) {
       return Math.round(n / grid) * grid

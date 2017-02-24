@@ -29,7 +29,7 @@
   </div>
   <script>
     import store from '../store/store.js'
-    import Color from '../Color.js'
+    import tinycolor from 'tinycolor2'
     import WEBCOLOR      from '../constants/webcolor.json'
     import JISCOLOR_EN   from '../constants/jiscolor_en.json'
     import JISCOLOR_JA   from '../constants/jiscolor_ja.json'
@@ -101,7 +101,7 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          store.trigger('menu_open', e, {name, color: new Color(color)}, 'tip')
+          store.trigger('menu_open', e, {name, color: tinycolor(color)}, 'tip')
         }
       })
     })
@@ -142,10 +142,6 @@
       /*overflow-y: auto;*/
       display: flex;
       flex-wrap: wrap;
-    }
-    .list {
-      height: 100%;
-      overflow-y: scroll;
     }
   </style>
 </color-lists>

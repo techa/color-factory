@@ -1,9 +1,10 @@
 <app>
   <div id="colors" ref="colors">
     <!--<input type="text" id="color-name" placeholder="COLOR NAME">-->
-    <color-wheel size="280" oncolorchange={colorchange} simple=""/>
+    <color-picker size="280" oncolorchange={colorchange} simple=""/>
     <div id="form_add">
-      <input id="color_hex" ref="color_hex" placeholder="#000000, Black" onsubmit={addCard_btn} oninput={color_hexInput}>
+      <button id="color_type" onclick={color_typeChange}>{color_type.toUpperCase()}</button>
+      <input id="color_hex" ref="color_hex" placeholder="#000000" onsubmit={addCard_btn} oninput={color_hexInput}>
       <button id="add_btn" onclick={addCard_btn}>➕</button>
     </div>
 
@@ -35,10 +36,22 @@
     }
     this.palette = palette()
     store.on('cards_changed', (cards) => {
-      this.cards = cards
+      // this.cards = cards
       this.palette = palette()
       this.update()
     })
+
+    const COLOR_TYPE = ['hex', 'rgb', 'hsl']
+    let colortypeindex = 0
+    this.color_type = COLOR_TYPE[colortypeindex]
+    this.placeholder = ['#000000', 'rgb(0, 0, 0)', 'hsl(0, 0%, 0%)']
+    this.color_typeChange = () => {
+      ++colortypeindex
+      colortypeindex %= COLOR_TYPE.length
+      this.color_type = COLOR_TYPE[colortypeindex]
+
+      this.refs.color_hex.value = this.tags['color-picker'].color.toString(this.color_type)
+    }
 
     const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i
     this.addCard_btn = () => {
@@ -46,7 +59,7 @@
       if (text) {
         store.trigger('add_card', {
           name: (text[2] || '').trim(),
-          color: new Color(text[1]),
+          color: text[1],
         })
         this.refs.color_hex.value = ''
       }
@@ -55,12 +68,12 @@
       const value = this.refs.color_hex.value
       const text = validationRegExp.exec(value)
       if (text) {
-        this.tags['color-wheel'].color = new Color(text[1])
+        this.tags['color-picker'].color = new Color(text[1])
       }
     }
 
     this.colorchange = (color) => {
-      this.refs.color_hex.value = color.hex // + ' ' + color.getNearWebColor(20)
+      this.refs.color_hex.value = color.toString(this.color_type)
     }
 
     this.on('mount', () => {
@@ -116,15 +129,22 @@
       /*font-size: 16px;*/
       display: flex;
       flex-direction: row;}
+      #color_type {
+        text-align: center;
+        width: 42px;
+        height: 42px;
+        border-width: 1px 0 1px 1px;
+        border-style: solid;
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;}
       #color_hex {
         flex: 1 1 auto; /* width: auto; */
         height: 42px;
         padding: 8px 5px;
         border-width: 1px 0 1px 1px;
-        border-style: solid;
-        border-top-left-radius: 4px;
-        border-bottom-left-radius: 4px;}
+        border-style: solid;}
       #add_btn {
+        width: 42px;
         height: 42px;
         text-align: center;
         border-width: 1px;

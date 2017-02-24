@@ -2,9 +2,9 @@
   <div class="color-wheel" riot-style="width: {opts.size}px; height: {opts.size}px;">
     <canvas class="color-wheel-canvas" ref="canvas" width={size} height={size}></canvas>
     <button class="color-wheel-center" riot-style="{centerDiameter} background-color: {color}; color:{textColor};" onclick={centerClick}>
-      <div class="color-wheel-text {active: mode == 'hue'}">{color.h}</div>
-      <div class="color-wheel-text {active: mode == 'saturation'}">{color.s}%</div>
-      <div class="color-wheel-text {active: mode == 'lightness'}">{color.l}%</div>
+      <div class="color-wheel-text {active: mode == 'hue'}">{color.toHsl().h | 0}</div>
+      <div class="color-wheel-text {active: mode == 'saturation'}">{color.toHsl().s * 100 | 0}%</div>
+      <div class="color-wheel-text {active: mode == 'lightness'}">{color.toHsl().l * 100 | 0}%</div>
     </button>
     <div each={btns} class="color-wheel-btn color-wheel-{className}" ref={className} riot-style="{style} color:{textColor}; border-color:{color2}; background-color:{color};" onclick={click}>
       <div class="color-wheel-text">{text}</div>
@@ -77,7 +77,8 @@
 
   <script>
     /* global opts */
-    import Color, {contrastColors} from '../Color.js'
+    // import Color, {contrastColors} from '../Color.js'
+    import tinycolor from 'tinycolor2'
     import {MousePosition, on, off} from '../mouse.js'
     const size = this.size = opts.size - 10 || 300
     const center = size / 2
@@ -85,12 +86,12 @@
     const centerDiameter = radius * 2 - 10
     this.centerDiameter = `width: ${centerDiameter}px; height: ${centerDiameter}px;border-radius: ${centerDiameter}px; font-size: ${centerDiameter / 5}px; `
 
-    this.color = new Color(opts.color)
-    this.textColor = contrastColors(this.color, '#eee', '#111')[0]
+    this.color = opts.color ? tinycolor(opts.color) : tinycolor.random()
+    this.textColor = this.color.getLuminance() < 0.5 ? '#eee' : '#111'
 
     this.centerClick = (e) => {
       if (!opts.simple) {
-        this.color = this.color.setColor()
+        this.color = tinycolor.random()
         opts.oncolorchange(this.color)
       } else {
         btnModeChange(this.wheelmode === 'saturation' ? 'lightness' : 'saturation')
@@ -160,7 +161,18 @@
             style: btnstyle(radius * radiusby) + `${x}: ${xy[0]}px; ${y}: ${xy[1]}px;`,
             text:  number || text,
             mdown: (e) => {
-              this.color[mode] += (number || 1) * by
+              const num = (number || 1) * by
+              switch (mode) {
+                case 'hue':
+                  this.color.spin(num)
+                  break
+                case 'saturation':
+                  this.color.saturate(num)
+                  break
+                case 'lightness':
+                  this.color.lighten(num)
+                  break
+              }
               this.mode = mode
               btnModeChange(mode)
               opts.oncolorchange(this.color)
@@ -175,8 +187,9 @@
 
     // use update mount
     const handleSetPosition = () => {
-      const [mx, my] = positionRd(radius, this.color.hue)
-      const [x, y] = positionRd(this.color[this.wheelmode] * (center - radius) / 100, this.color.hue)
+      const hsl = this.color.toHsl()
+      const [mx, my] = positionRd(radius, hsl.h)
+      const [x, y] = positionRd(hsl[this.wheelmode[0]] * (center - radius), hsl.h)
       this.refs.handle.style.left = mx + x - center + 'px'
       this.refs.handle.style.top = my + y - center + 'px'
     }
@@ -189,8 +202,12 @@
       // 円の外をクリックしたとき
       if (start && (r - center) > 10) return
 
-      this.color.hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90
-      this.color[this.wheelmode] = Math.round((r - radius) / (center - radius) * 100)
+      const hsl = this.color.toHsl()
+      const hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90
+      hsl.h = hue < 0 ? 360 + hue : hue
+      hsl[this.wheelmode[0]] = (r - radius) / (center - radius)
+
+      this.color = tinycolor(hsl)
       opts.oncolorchange(this.color)
       this.update()
     }
@@ -198,7 +215,7 @@
     // update oncolorchange
     let grad, saturation, lightness, canvas
     this.on('update', () => {
-      this.textColor = contrastColors(this.color, '#eee', '#111')[0]
+      this.textColor =  this.color.getLuminance() < 0.5 ? '#eee' : '#111'
       handleSetPosition()
     })
     this.on('mount', () => {

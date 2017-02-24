@@ -76,7 +76,7 @@
 
     this.copyColor = (e) => {
       const key = e.target.textContent.toLowerCase()
-      copyTextToClipboard(activeCard.color[key])
+      copyTextToClipboard(activeCard.color.toString(key))
     }
 
     this.sizes = [120, 240, 360]
