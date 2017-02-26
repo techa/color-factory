@@ -29,9 +29,9 @@
     this.cards = store.cards
     const palette = () => {
       return this.cards.map((arg) => arg).sort((a, b) => {
-        return a.color.lightness - b.color.lightness
+        return a.color.getLuminance() - b.color.getLuminance()
       }).sort((a, b) => {
-        return a.color.hue - b.color.hue
+        return a.color.toHsl().h - b.color.toHsl().h
       })
     }
     this.palette = palette()
@@ -82,7 +82,7 @@
       this.refs.box.style.backgroundColor = bgColor
 
       store.on('set_bgColor', (color) => {
-        const textcolor = color.lightness < 35 ? '#eee' : '#111'
+        const textcolor = tinycolor.mostReadable(color, ['#eee', '#111'])
         this.refs.colors.style.color = textcolor
       })
 

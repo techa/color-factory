@@ -3,6 +3,10 @@ import {Undo} from '../undo'
 import tinycolor from 'tinycolor2'
 const storage = window.sessionStorage
 
+tinycolor.prototype.toJSON = function (type) {
+  return this.toString(type)
+}
+
 class Store {
   constructor () {
     riot.observable(this)
