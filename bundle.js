@@ -5064,1584 +5064,6 @@ class Undo {
   }
 }
 
-/*
-console.log(
-  JSON.stringify(JSON.parse(
-    JSON.stringify(webcolor).toLowerCase()
-  ), null, 2).replace(/"(\w+)": "(#\w+)",?/g, `$1: '$2',`)
-)
-*/
-// http://htmlcolorcodes.com/color-names/
-const webcolor = [ // eslint-disable-line
-  // Red HTML Color Names
-  ['#CD5C5C', 'IndianRed'],
-  ['#F08080', 'LightCoral'],
-  ['#FA8072', 'Salmon'],
-  ['#E9967A', 'DarkSalmon'],
-  ['#FFA07A', 'LightSalmon'],
-  ['#DC143C', 'Crimson'],
-  ['#FF0000', 'Red'],
-  ['#B22222', 'FireBrick'],
-  ['#8B0000', 'DarkRed'],
-  // Pink HTML Color Names
-  ['#FFC0CB', 'Pink'],
-  ['#FFB6C1', 'LightPink'],
-  ['#FF69B4', 'HotPink'],
-  ['#FF1493', 'DeepPink'],
-  ['#C71585', 'MediumVioletRed'],
-  ['#DB7093', 'PaleVioletRed'],
-  // Orange HTML Color Names
-  ['#FF7F50', 'Coral'],
-  ['#FF6347', 'Tomato'],
-  ['#FF4500', 'OrangeRed'],
-  ['#FF8C00', 'DarkOrange'],
-  ['#FFA500', 'Orange'],
-  // Yellow HTML Color Names
-  ['#FFD700', 'Gold'],
-  ['#FFFF00', 'Yellow'],
-  ['#FFFFE0', 'LightYellow'],
-  ['#FFFACD', 'LemonChiffon'],
-  ['#FAFAD2', 'LightGoldenrodYellow'],
-  ['#FFEFD5', 'PapayaWhip'],
-  ['#FFE4B5', 'Moccasin'],
-  ['#FFDAB9', 'PeachPuff'],
-  ['#EEE8AA', 'PaleGoldenrod'],
-  ['#F0E68C', 'Khaki'],
-  ['#BDB76B', 'DarkKhaki'],
-  // Purple HTML Color Names
-  ['#E6E6FA', 'Lavender'],
-  ['#D8BFD8', 'Thistle'],
-  ['#DDA0DD', 'Plum'],
-  ['#EE82EE', 'Violet'],
-  ['#DA70D6', 'Orchid'],
-  ['#FF00FF', 'Fuchsia'],
-  ['#FF00FF', 'Magenta'],
-  ['#BA55D3', 'MediumOrchid'],
-  ['#9370DB', 'MediumPurple'],
-  ['#663399', 'RebeccaPurple'],
-  ['#8A2BE2', 'BlueViolet'],
-  ['#9400D3', 'DarkViolet'],
-  ['#9932CC', 'DarkOrchid'],
-  ['#8B008B', 'DarkMagenta'],
-  ['#800080', 'Purple'],
-  ['#4B0082', 'Indigo'],
-  ['#6A5ACD', 'SlateBlue'],
-  ['#483D8B', 'DarkSlateBlue'],
-  ['#7B68EE', 'MediumSlateBlue'],
-  // Green HTML Color Names
-  ['#ADFF2F', 'GreenYellow'],
-  ['#7FFF00', 'Chartreuse'],
-  ['#7CFC00', 'LawnGreen'],
-  ['#00FF00', 'Lime'],
-  ['#32CD32', 'LimeGreen'],
-  ['#98FB98', 'PaleGreen'],
-  ['#90EE90', 'LightGreen'],
-  ['#00FA9A', 'MediumSpringGreen'],
-  ['#00FF7F', 'SpringGreen'],
-  ['#3CB371', 'MediumSeaGreen'],
-  ['#2E8B57', 'SeaGreen'],
-  ['#228B22', 'ForestGreen'],
-  ['#008000', 'Green'],
-  ['#006400', 'DarkGreen'],
-  ['#9ACD32', 'YellowGreen'],
-  ['#6B8E23', 'OliveDrab'],
-  ['#808000', 'Olive'],
-  ['#556B2F', 'DarkOliveGreen'],
-  ['#66CDAA', 'MediumAquamarine'],
-  ['#8FBC8B', 'DarkSeaGreen'],
-  ['#20B2AA', 'LightSeaGreen'],
-  ['#008B8B', 'DarkCyan'],
-  ['#008080', 'Teal'],
-  // Blue HTML Color Names
-  ['#00FFFF', 'Aqua'],
-  ['#00FFFF', 'Cyan'],
-  ['#E0FFFF', 'LightCyan'],
-  ['#AFEEEE', 'PaleTurquoise'],
-  ['#7FFFD4', 'Aquamarine'],
-  ['#40E0D0', 'Turquoise'],
-  ['#48D1CC', 'MediumTurquoise'],
-  ['#00CED1', 'DarkTurquoise'],
-  ['#5F9EA0', 'CadetBlue'],
-  ['#4682B4', 'SteelBlue'],
-  ['#B0C4DE', 'LightSteelBlue'],
-  ['#B0E0E6', 'PowderBlue'],
-  ['#ADD8E6', 'LightBlue'],
-  ['#87CEEB', 'SkyBlue'],
-  ['#87CEFA', 'LightSkyBlue'],
-  ['#00BFFF', 'DeepSkyBlue'],
-  ['#1E90FF', 'DodgerBlue'],
-  ['#6495ED', 'CornflowerBlue'],
-  ['#4169E1', 'RoyalBlue'],
-  ['#0000FF', 'Blue'],
-  ['#0000CD', 'MediumBlue'],
-  ['#00008B', 'DarkBlue'],
-  ['#000080', 'Navy'],
-  ['#191970', 'MidnightBlue'],
-  // Brown HTML Color Names
-  ['#FFF8DC', 'Cornsilk'],
-  ['#FFEBCD', 'BlanchedAlmond'],
-  ['#FFE4C4', 'Bisque'],
-  ['#FFDEAD', 'NavajoWhite'],
-  ['#F5DEB3', 'Wheat'],
-  ['#DEB887', 'BurlyWood'],
-  ['#D2B48C', 'Tan'],
-  ['#BC8F8F', 'RosyBrown'],
-  ['#F4A460', 'SandyBrown'],
-  ['#DAA520', 'Goldenrod'],
-  ['#B8860B', 'DarkGoldenrod'],
-  ['#CD853F', 'Peru'],
-  ['#D2691E', 'Chocolate'],
-  ['#8B4513', 'SaddleBrown'],
-  ['#A0522D', 'Sienna'],
-  ['#A52A2A', 'Brown'],
-  ['#800000', 'Maroon'],
-  // White HTML Color Names
-  ['#FFFFFF', 'White'],
-  ['#FFFAFA', 'Snow'],
-  ['#F0FFF0', 'HoneyDew'],
-  ['#F5FFFA', 'MintCream'],
-  ['#F0FFFF', 'Azure'],
-  ['#F0F8FF', 'AliceBlue'],
-  ['#F8F8FF', 'GhostWhite'],
-  ['#F5F5F5', 'WhiteSmoke'],
-  ['#FFF5EE', 'SeaShell'],
-  ['#F5F5DC', 'Beige'],
-  ['#FDF5E6', 'OldLace'],
-  ['#FFFAF0', 'FloralWhite'],
-  ['#FFFFF0', 'Ivory'],
-  ['#FAEBD7', 'AntiqueWhite'],
-  ['#FAF0E6', 'Linen'],
-  ['#FFF0F5', 'LavenderBlush'],
-  ['#FFE4E1', 'MistyRose'],
-  // Gray HTML Color Names
-  ['#DCDCDC', 'Gainsboro'],
-  ['#D3D3D3', 'LightGray'],
-  ['#C0C0C0', 'Silver'],
-  ['#A9A9A9', 'DarkGray'],
-  ['#808080', 'Gray'],
-  ['#696969', 'DimGray'],
-  ['#778899', 'LightSlateGray'],
-  ['#708090', 'SlateGray'],
-  ['#2F4F4F', 'DarkSlateGray'],
-  ['#000000', 'Black'],
-];
-
-/* eslint camelcase:0, no-cond-assign:0  */
-const MAX = { r: 255, g: 255, b: 255, h: 360, s: 100, l: 100 };
-const RGB_HSL_KEYS = [['r', 'g', 'b'], ['red', 'green', 'blue'], ['h', 's', 'l'], ['hue', 'saturation', 'lightness']];
-
-const round = Math.round;
-const abs = Math.abs;
-const mMin = Math.min;
-const mMax = Math.max;
-const floor = Math.floor;
-
-
-function hueModi (h) {
-  while (h < 0) h += 360;
-  return h % 360
-}
-
-function clamp (n, max, min) {
-  return mMax(min || 0, mMin(n, max))
-}
-
-function clamp01 (n) {
-  return mMax(0, mMin(n, 1))
-}
-
-function regReplace (main, obj, space) {
-  let source = main.source;
-  for (let key in obj) {
-    const objsource = obj[key].source.replace(/^\^|\$$/, '');
-    source = source.replace(new RegExp(key, 'g'), objsource);
-  }
-  if (space) {
-    source = source.replace(new RegExp(' ', 'g'), '\\s*');
-  }
-  return new RegExp(source, main.toString().match(/[gimuy]*$/)[0])
-}
-
-const parsers = (function () {
-  const N255 = /^(?:25[0-5]|2[0-4]\d|1\d\d|\d?\d)$/, // 0~255
-        hue = /^(?:[-+]\d+)$/, // degree
-        per = /^(?:100%|\d?\d%)$/, // 0%~100%
-        alpha = /^(?:0|0?\.\d+|1(?:\.0*)?)$/, // 0~1
-        rgbNum = regReplace(/^(?:N255|per)$/, {N255, per});
-
-  const regs = {
-    rgb: /rgb\((rgbNum), (rgbNum), (rgbNum)\)/,
-    rgba: /rgba\((rgbNum), (rgbNum), (rgbNum), (alpha)\)/,
-    hsl: /hsl\((hue), (per), (per)\)/,
-    hsla: /hsla\((hue), (per), (per), (alpha)\)/,
-    hsv: /hsv\((hue), (per), (per)\)/,
-    hsva: /hsva\((hue), (per), (per), (alpha)\)/
-  };
-  for (let key in regs) {
-    regs[key] = regReplace(regs[key], {rgbNum, hue, per, alpha}, true);
-  }
-
-  return Object.assign(regs, {
-    N255,
-    hue,
-    per,
-    alpha,
-    rgbNum,
-    hex3: /^#?([\da-fA-F]{1})([\da-fA-F]{1})([\da-fA-F]{1})$/,
-    hex4: /^#?([\da-fA-F]{1})([\da-fA-F]{1})([\da-fA-F]{1})([\da-fA-F]{1})$/,
-    hex6: /^#?([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})$/,
-    hex8: /^#?([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})$/
-  })
-})();
-
-function string2object (text) {
-  text = text.trim().toLowerCase();
-
-  if (text === 'transparent') {
-    return {r: 0, g: 0, b: 0, a: 0, format: 'name'}
-  }
-
-  // color functions. [rgb, rgba, hsl, hsla, hsv, hsva]
-  const fns = Object.keys(parsers);
-  for (let i = 0; i < 6; i++) {
-    const key = fns[i],
-          reg = parsers[key],
-          match = reg.exec(text);
-
-    if (match) {
-      const obj = {};
-      for (let j = 0; j < key.length; j++) {
-        obj[key[j]] = match[j + 1];
-      }
-      return obj
-    }
-  }
-
-  // color hex. [hex8, hex6, hex4, hex3]
-  const hexs = fns.reverse();
-  for (let i = 0; i < 4; i++) {
-    const key = hexs[i],
-          reg = parsers[key],
-          match = reg.exec(text);
-
-    if (match) {
-      let rgb = match.slice(1, 4).map(n => {
-        if (i > 1) {
-          n += n;
-        }
-        return parseInt(n, 16)
-      });
-
-      const obj = {};
-      for (let j = 0; j < 3; j++) {
-        obj['rgb'[j]] = rgb[j];
-      }
-
-      if (match[4]) {
-        obj.a = parseInt(match[4], 16) / 255;
-      }
-
-      return obj
-    }
-  }
-
-  throw new Error(`Invalid arguments text`)
-}
-
-/**
- * RGB & RGBA & HSL & HSLA
- *
- * @class ColorParams
- * @extends {Array}
- */
-class ColorParams extends Array {
-  /**
-   * Creates an instance of ColorParams.
-   *
-   * @param {string} type
-   * @param {number} r
-   * @param {number} g
-   * @param {number} b
-   * @param {number} a
-   *
-   * @memberOf ColorParams
-   */
-  constructor (type, r, g, b, a) {
-    // create empty Array
-    super();
-    this.type = type;
-    for (let i = 0; i < 3; i++) {
-      const chara = type.charAt(i);
-      Object.defineProperty(this, chara, {
-        get () {
-          return this[i]
-        },
-        set (val) {
-          if (chara === 'h') {
-            val = hueModi(val);
-          }
-          this[i] = clamp(round(val), MAX[chara]);
-        }
-      });
-      // set init value
-      const arg = arguments[i + 1];
-      this[chara] = typeof arg === 'number' ? arg : r[chara] || r[i] || 0;
-    }
-    // set alpha
-    if (type.charAt(3)) {
-      Object.defineProperty(this, 'a', {
-        get () {
-          return this[3]
-        },
-        set (val) {
-          this[3] = clamp01(val);
-        }
-      });
-      // set init value
-      this.a = a || r.a || r[3] || g || 1;
-    }
-  }
-  // @returns css string
-  toString () {
-    const a = this.a == null ? ')' : `, ${this[3]})`;
-    const percent = this.type.startsWith('hsl') ? '%' : '';
-    return this.type + `(${this[0]}, ${this[1] + percent}, ${this[2] + percent}` + a
-  }
-}
-
-/**
- * Color
- *
- * @export
- * @class Color
- * @see https://github.com/carloscabo/colz/blob/master/public/js/colz.class.js#L72
- */
-class Color {
-  constructor (param, g, b, a) {
-    RGB_HSL_KEYS.forEach((keys, i) => {
-      keys.forEach((key, j) => {
-        Object.defineProperty(this, key, {
-          get () {
-            return round(i < 2 ? this.rgb[j] : this.hsl[j])
-          },
-          set (val) {
-            if (i < 2) {
-              this.rgb[key[0]] = val;
-              this.setParams(this.rgb, rgb2hsl(...this.rgb));
-            } else {
-              this.hsl[key[0]] = val;
-              this.setParams(hsl2rgb(...this.hsl), this.hsl);
-            }
-            this.hex = rgb2hex(this.rgb);
-          }
-        });
-      });
-    });
-    this.setColor(param, g, b, a, true);
-  }
-
-  setColor (param, g, b, a, init) {
-    if (!init && param instanceof Color) return param
-    this.a = 1;
-    let rgb, hsl;
-
-    switch ({}.toString.call(param).slice(8, -1)) {
-      case 'String':
-        let result;
-        if (result = hex2rgb(param)) {
-          // hex #000
-          rgb = result;
-          if (param.charAt(0) !== '#') param = '#' + param;
-          this.hex = param;
-        } else if (result = /^(rgb|hsl)a?\((\d{1,3})(%?), ?(\d{1,3})(%?), ?(\d{1,3})(%?)(?:, ?(0|1|0?\.\d{1,2}))?\)$/.exec(param)) {
-          const data = [+result[2], +result[4], +result[6]];
-          const percent = result[3] + result[5] + result[7];
-          if (result[1] === 'rgb') {
-            if (percent === '%%%') {
-              // %を処理
-              rgb = data.map(h => floor(h / 100 * 255));
-            } else if (!percent) {
-              rgb = data;
-            } else {
-              throw new Error("ERROR! Don't mix up integer and percentage notation. 整数と割合を混在しないでください")
-            }
-          } else if (result[1] === 'hsl' && percent === '%%') {
-            hsl = data;
-          }
-          if (result[8]) this.a = +('0' + result[8]);
-        } else if (this.hex = (webcolor.find((arg) => new RegExp(`^${param}$`, 'i').test(arg[1])) || [null, ''])[0]) {
-          rgb = hex2rgb(this.hex);
-        } else {
-          throw new Error('ERROR! Color string ' + param)
-        }
-        break
-      case 'Number':
-        if (typeof g === 'number' && typeof b === 'number') {
-          rgb = [param, g, b];
-        } else if (g == null && b == null) {
-          hsl = [param, 100, 50];
-        }
-        break
-      case 'Array':
-        rgb = param;
-        break
-      case 'Object':
-        if (param instanceof Color) {
-          rgb = hex2rgb(param.hex);
-        } else if (typeof param.r === 'number' && typeof param.g === 'number' && typeof param.b === 'number') {
-          rgb = [param.r, param.g, param.b];
-        } else if (typeof param.h === 'number' && typeof param.s === 'number' && typeof param.l === 'number') {
-          hsl = [param.h, param.s, param.l];
-        }
-        if (typeof param.a === 'number') {
-          this.a = param.a;
-        }
-        break
-      case 'Undefined':
-      case 'Null':
-        this.hex = randomHex();
-        rgb = hex2rgb(this.hex);
-        break
-      default:
-        throw new TypeError('new Color arguments ERROR!' + arguments)
-    }
-
-    if (!hsl) {
-      hsl = rgb2hsl(rgb);
-    }
-    if (!rgb) {
-      rgb = hsl2rgb(hsl);
-    }
-
-    this.hsv = rgb2hsv(rgb);
-
-    this.setParams(rgb, hsl);
-    return this
-  }
-
-  setParams (rgb, hsl) {
-    this.rgb = new ColorParams('rgb', ...rgb);
-    this.rgba = new ColorParams('rgba', ...rgb, this.a);
-    this.hsl = new ColorParams('hsl', ...hsl);
-    this.hsla = new ColorParams('hsla', ...hsl, this.a);
-    if (!this.hex) {
-      this.toHex();
-    }
-  }
-
-  getNearWebColor (score, hex) {
-    const [color, name] = nearName(this.hex);
-    return color ? name : hex ? this.hex : ''
-  }
-
-  findColorName (colorlist) {
-    return (colorlist.find((arg) => arg[0] === this.hex.toUpperCase()) || [0, ''])[1]
-  }
-  /**
-   * hsl変換を経由することで安定したHEXを出力する
-   */
-  toHex () {
-    return (this.hex = rgb2hex(hsl2rgb(this.hsl)))
-  }
-
-  toString () {
-    return this.hex
-  }
-  toJSON () {
-    return this.hex
-  }
-}
-
-Color.webcolor = webcolor;
-
-/**
- * colorlistの内からhexに一番近いデータと返す
- *
- * @export
- * @param {string} hex
- * @param {array}  colorlist [colorlist=webcolor]
- * @returns {array}  [_hex, name, _rgb, _score]
- */
-function nearName (hex, colorlist = webcolor) {
-  const rgb = hex2rgb(hex);
-  let nearest = [];
-  let minscore = Infinity;
-
-  colorlist.forEach(([_hex, name]) => {
-    const _rgb = hex2rgb(_hex);
-    const score = _rgb.reduce((p, c, i) => p + abs(rgb[i] - c), 0);
-    if (minscore > score) {
-      minscore = score;
-      nearest = [[_hex, name, _rgb, score]];
-    } else if (minscore === score) {
-      minscore = score;
-      nearest.push([_hex, name, _rgb, score]);
-    }
-  });
-  if (nearest.length === 1) {
-    return [...nearest[0], rgb2hex(hsl2rgb(rgb2hsl(...nearest[0][2])))]
-  }
-  const hsl = rgb2hsl(...rgb);
-  let nearestName = [];
-  minscore = Infinity;
-  nearest.forEach(([_hex, name, _rgb, score]) => {
-    const _hsl = rgb2hsl(_rgb);
-    const _score = score - abs(_hsl[0] - hsl[0]);
-    if (minscore > _score) {
-      minscore = score;
-      nearestName = [_hex, name, _rgb, _score];
-    }
-  });
-  return nearestName
-}
-
-const schemeNames = {
-  Complementary: [180],
-  Opornent: [120],
-  Analogous: [-30, 30],
-  SplitComplementary: [150, -150],
-  Triadic: [120, 240],
-  Tretradic: [60, 180, 240],
-  AccentedAnalogous: [-30, 30, 180]
-};
-
-/**
- * Base color から生成した配色配列を返す
- *
- * @export
- * @param {any}           basecolor  Base color
- * @param {string|number} angle
- * @returns {array}
- */
-
-
-/**
- * return: Sorted colors in order of strong contrast.
- * colorsをコントラストが強い順に並び替えして返す
- *
- * @export
- * @param {any}          basecolor  Base color
- * @param {string|Color} colors     Color or color hex string
- * @returns {array}                 Sorted contrastColors array. strongest contrast color first
- */
-
-
-function randomHex () {
-  return '#' + Math.random().toString(16).slice(2, 8)
-}
-
-/**
- * カラーコード変換
- *
- * @param {string} hex
- * @returns {array}  [r,g,b]
- * @see http://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
- */
-function hex2rgb (hex) {
-  const result = hex
-    .replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, '$1$1$2$2$3$3')
-    .match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
-  return result ? result.slice(1).map(h => parseInt(h, 16)) : null
-}
-
-
-
-/**
- * カラーコード変換
- *
- * @export
- * @param {number} r
- * @param {number} g
- * @param {number} b
- * @returns {string} hex
- */
-function rgb2hex (r, g, b) {
-  if (arguments.length === 1) {
-    g = r.g || r[1] || 0;
-    b = r.b || r[2] || 0;
-    r = r.r || r[0] || 0;
-  }
-  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
-}
-
-/**
- * RGB色空間からHSL色空間へ変換する
- *
- * @export
- * @param {number} r 0-255
- * @param {number} g 0-255
- * @param {number} b 0-255
- * @returns {Array.<number>}  [h, s, l] h: 0-360 , s: 0-100 , l: 0-100
- *
- * @see http://www.petitmonte.com/javascript/rgb_hsl_convert.html
- * @see https://ja.wikipedia.org/wiki/HLS色空間
- */
-function rgb2hsl (r, g, b) {
-  if (arguments.length === 1) {
-    g = r.g || r[1] || 0;
-    b = r.b || r[2] || 0;
-    r = r.r || r[0] || 0;
-  }
-  r /= 255;
-  g /= 255;
-  b /= 255;
-  const max = Math.max(r, g, b),
-        min = Math.min(r, g, b),
-        d = max - min;
-  let h,
-      l = (max + min) / 2,
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-  switch (max) {
-    case min:
-      h = s = 0;
-      break
-    case r:
-      h = (g - b) / d + (g < b ? 6 : 0); h /= 6;
-      break
-    case g:
-      h = (b - r) / d + 2; h /= 6;
-      break
-    case b:
-      h = (r - g) / d + 4; h /= 6;
-      break
-  }
-
-  h *= 360;
-  s *= 100;
-  l *= 100;
-  return [h, s, l]
-}
-
-function hue2rgb (p, q, t) {
-  if (t < 0) t += 1;
-  if (t > 1) t -= 1;
-  if (t < 1 / 6) return p + (q - p) * 6 * t
-  if (t < 1 / 2) return q
-  if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
-  return p
-}
-/**
- * HSL色空間からRGB色空間へ変換する
- *
- * @export
- * @param {number} h  (hue)       : 色相    0-360度の値
- * @param {number} s  (saturation): 彩度    0-100%の値   彩度は100%が純色となり、彩度を落としていくと徐々に灰色になります
- * @param {number} l  (lightness) : 明度    0-100%の値   明度は中間の50%が純色で0%になると黒色、100%は白色となります
- * @returns {Array.<number>}  [r, g, b]
- *
- * @see http://axonflux.com/handy-rgb-to-hsl-and-rgb-to-hsv-color-model-c
- * @see http://www.petitmonte.com/javascript/rgb_hsl_convert.html
- * @see http://d.hatena.ne.jp/ja9/20100907/1283840213
- * @see https://ja.wikipedia.org/wiki/HLS色空間
- */
-function hsl2rgb (h, s, l) {
-  let r, g, b;
-  if (arguments.length === 1) {
-    s = h.s || h[1] || 0;
-    l = h.l || h[2] || 0;
-    h = h.h || h[0] || 0;
-  }
-
-  h = hueModi(h);
-  s = clamp(s, 100);
-  l = clamp(l, 100);
-  h /= 360;
-  s /= 100;
-  l /= 100;
-
-  if (s === 0) {
-    r = g = b = l; // achromatic
-  } else {
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s,
-          p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1 / 3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1 / 3);
-  }
-
-  r = round(r * 255);
-  g = round(g * 255);
-  b = round(b * 255);
-  return [r, g, b]
-}
-
-/**
- * RGB色空間からHSV色空間へ変換する
- *
- * @export
- * @param {number} r 0-255
- * @param {number} g 0-255
- * @param {number} b 0-255
- * @returns {Array.<number>}  [h, s, l] h: 0-360 , s: 0-100 , l: 0-100
- */
-function rgb2hsv (r, g, b) {
-  if (arguments.length === 1) {
-    g = r.g || r[1] || 0;
-    b = r.b || r[2] || 0;
-    r = r.r || r[0] || 0;
-  }
-  const max = Math.max(r, g, b),
-        min = Math.min(r, g, b),
-        d = max - min;
-  let h = max,
-      s = (max === 0 ? 0 : d / max),
-      v = max / 255;
-
-  switch (max) {
-    case min:
-      h = 0;
-      break
-    case r:
-      h = (g - b) + d * (g < b ? 6 : 0); h /= 6 * d;
-      break
-    case g:
-      h = (b - r) + d * 2; h /= 6 * d;
-      break
-    case b:
-      h = (r - g) + d * 4; h /= 6 * d;
-      break
-  }
-
-  h = round(h * 360);
-  s = round(s * 100);
-  v = round(v * 100);
-  return [h, s, v]
-}
-
-/**
- * HSV(HSB)色空間からRGB色空間へ変換する
- *
- * @export
- * @param {number} h  (hue)       : 色相/色合い   0-360度の値
- * @param {number} s  (saturation): 彩度/鮮やかさ 0-100%の値
- * @param {number} v  (Value)     : 明度/明るさ   0-100%の値
- * @returns
- *
- * @see http://stackoverflow.com/questions/17242144/javascript-convert-hsb-hsv-color-to-rgb-accurately
- */
-
-
-function sRGB (num) {
-  num /= 255;
-  return (num <= 0.03928) ? num / 12.92 : Math.pow((num + 0.055) / 1.055, 2.4)
-}
-
-/**
- * Relative Luminance: 相対輝度
- *
- * @param {array} rgb
- * @returns {number}   0~1
- * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
- */
-function luminance ([r, g, b]) {
-  return 0.2126 * sRGB(r) + 0.7152 * sRGB(g) + 0.0722 * sRGB(b)
-}
-
-/**
- * color1とcolor2のコントラスト比を計算
- *
- * @export
- * @param {array|Color} color1  rgb color array
- * @param {array|Color} color2  rgb color array
- * @returns {object}
- *
- * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#visual-audio-contrast
- * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
- * @see http://waic.jp/docs/WCAG20/Overview.html#visual-audio-contrast
- */
-function contrastRatio (color1, color2) {
-  const l = [
-    luminance(color1),
-    luminance(color2),
-  ];
-  const [l1, l2] = l.sort((a, b) => b - a);
-
-  // 1～21
-  const cr = (l1 + 0.05) / (l2 + 0.05);
-  return {
-    sort: l[0] - l[1],
-    // WCAG version 2 contrast ratio
-    cr,
-    // 評価
-    // 通常のテキスト（14ポイント）
-    aa: cr >= 4.5,
-    aaa: cr >= 7,
-    // 大きなテキスト（18ポイント、太字、中国語、日本語および韓国語）
-    AA: cr >= 3,
-    AAA: cr >= 4.5
-  }
-}
-
-const storage = window.sessionStorage;
-
-class Store {
-  constructor () {
-    riot$1.observable(this);
-    // storage.clear()
-    if (storage) {
-      this.cards = this.getItem('cards');
-    }
-    if (!this.cards) {
-      this.cards = [
-        {
-          name: 'turquoise',
-          color: '#40E0D0'
-        },
-        {
-          name: 'salmon',
-          color: '#FA8072'
-        },
-        {
-          name: 'red',
-          color: '#ff5555'
-        },
-        {
-          name: 'red2',
-          color: '#fc0e49'
-        },
-        {
-          name: 'red3',
-          color: '#fe3265'
-        },
-        {
-          name: 'yellow',
-          color: '#FFD54F'
-        },
-        {
-          name: 'teal',
-          color: '#11c1b0'
-        },
-        {
-          name: 'navy',
-          color: '#1f2532'
-        },
-        {
-          name: 'light',
-          color: '#7F8C9A'
-        },
-        {
-          name: 'dark',
-          color: '#323a45'
-        },
-        {
-          name: 'ivy',
-          color: '#514a56'
-        },
-        {
-          name: 'purple',
-          color: '#a234d5'
-        },
-        {
-          name: 'red4',
-          color: '#d74059'
-        },
-      ];
-    }
-
-    this.cards.forEach((param, index) => {
-      param.color = new Color(param.color);
-      param.zIndex = index;
-    });
-
-    this.undo = new Undo(this.getState());
-
-    this.on('undo', () => {
-      const state = this.undo.undo();
-      console.log('undo_state', state);
-      if (!state) {
-        return
-      }
-      this.cards = state.cards;
-      this.box.style.backgroundColor = state.bgColor;
-    });
-    this.on('redo', () => {
-      const state = this.undo.redo();
-      console.log('redo_state', state);
-      if (!state) {
-        return
-      }
-      this.cards = state.cards;
-      this.box.style.backgroundColor = state.bgColor;
-    });
-
-    // CARDS
-    this.on('add_card', (param) => {
-      param.color = new Color(param.color);
-      param.zIndex = this.cards.length;
-      this.cards.push(param);
-      this.trigger('cards_changed', this.cards);
-    });
-    this.on('remove_card', (index = this.cards.length - 1) => {
-      this.trigger('remove_card_animation', index, () => {
-        this.cards.splice(index, 1);
-        this.trigger('cards_changed', this.cards);
-      });
-    });
-
-    this.on('card_forward', (index) => {
-      const currIndex = +this.cards[index].zIndex;
-      this.cards.forEach((card, i) => {
-        if (i === index) {
-          card.zIndex = this.cards.length - 1;
-        } else if (card.zIndex > currIndex) {
-          --card.zIndex;
-        }
-      });
-      this.trigger('cards_changed', this.cards);
-    });
-
-    this.on('duplicate_card', (index) => {
-      const newCard = Object.assign({}, this.cards[index]);
-      newCard.x += 10;
-      newCard.y += 10;
-      this.trigger('add_card', newCard);
-    });
-
-    this.on('set_card_size', (index, w, h = w) => {
-      let card = this.cards[index];
-      if (card.width !== w || card.height !== h) {
-        card.width = w;
-        card.height = h;
-        this.trigger('cards_changed', this.cards);
-      }
-    });
-
-    this.on('card_moved', (index, x, y) => {
-      let card = this.cards[index];
-      if (card.x !== x || card.y !== y) {
-        card.x = x;
-        card.y = y;
-        this.trigger('cards_changed', this.cards);
-      }
-    });
-    this.on('card_select', (index, bool) => {
-      if (bool) {
-        this.cards[index].selected = true;
-      } else {
-        delete this.cards[index].selected;
-      }
-    });
-
-    this.on('cards_changed', () => {
-      this.save();
-      this.undo.saveState(this.getState());
-    });
-
-    // BACKGROUND
-    this.on('set_bgColor', (color) => {
-      this.box.style.backgroundColor = color;
-      this.setItem('bgColor', color);
-      this.undo.saveState(this.getState());
-    });
-  }
-
-  getState () {
-    return {
-      cards: this.cards,
-      bgColor: this.box && this.box.style.backgroundColor || 'rgb(31, 37, 50)'
-    }
-  }
-
-  getItem (key) {
-    const val = storage.getItem(key);
-    return val ? JSON.parse(val) : val
-  }
-  setItem (key, value) {
-    storage.setItem(key, JSON.stringify(value));
-  }
-  save () {
-    this.setItem('cards', this.cards);
-  }
-}
-
-var store = new Store();
-
-/**
- * constructor PositionManager
- *
- * @export
- * @class PositionManager
- * @param {object} options
- */
-class PositionManager {
-  constructor (options) {
-    this.options = Object.assign({
-      containment: document.body,
-      handle: null,
-      grid: 1,
-      percent: false,
-      axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
-    }, options || {});
-
-    let grid = this.options.grid;
-    if (!Array.isArray(grid)) {
-      grid = parseFloat(grid, 10) || 1;
-      grid = [grid, grid];
-    }
-    this.options.grid = grid;
-
-    // containment内に置ける現在のマウス相対位置
-    this.x = 0;
-    this.y = 0;
-    // this.x、this.yの初期値保存
-    this.startX = 0;
-    this.startY = 0;
-
-    this.handleRect = {width: 0, height: 0, left: 0, top: 0};
-
-    // position
-    const position = { left: 0, top: 0 };
-    // 代入したときにもthis.adjust()したい
-    Object.defineProperties(this, {
-      left: {
-        get () {
-          return position.left
-        },
-        set (val) {
-          position.left = this.adjust(val, 'width');
-        }
-      },
-      top: {
-        get () {
-          return position.top
-        },
-        set (val) {
-          position.top = this.adjust(val, 'height');
-        }
-      },
-    });
-  }
-
-  /**
-   * mousemove, mouseup
-   *
-   * @param {Event}   e
-   * @param {Boolean} [initflg]
-   * @param {Element} [handle=this.options.handle]
-   * @returns
-   *
-   * @memberOf PositionManager
-   */
-  set (e, initflg, handle = this.options.handle) {
-    if (initflg) {
-      // ボックスサイズ取得。ここに書くのはresize対策
-      this.parentRect = this.options.containment.getBoundingClientRect();
-      if (handle) this.handleRect = handle.getBoundingClientRect();
-    }
-
-    const event = 'touches' in e ? e.touches[0] : e;
-    this.x = event.pageX - this.parentRect.left - window.pageXOffset;
-    this.y = event.pageY - this.parentRect.top - window.pageYOffset;
-
-    if (initflg) {
-      this.startX = this.x;
-      this.startY = this.y;
-      this.vectorX = 0;
-      this.vectorY = 0;
-    } else {
-      this.vectorX = this.x - this.startX;
-      this.vectorY = this.y - this.startY;
-    }
-
-    // modify
-    this.left = this.handleRect.left + this.vectorX;
-    this.top  = this.handleRect.top + this.vectorY;
-
-    if (this.options.percent) {
-      this.percentLeft = this.percentage(this.left, 'width');
-      this.percentTop  = this.percentage(this.top, 'height');
-    }
-
-    if (initflg) {
-      this.startLeft = this.left;
-      this.startTop  = this.top;
-    }
-    return this
-  }
-
-
-  /**
-   * handle move
-   *
-   * @param {Event}    e
-   * @param {Element} [el=this.options.handle]
-   * @returns
-   *
-   * @memberOf PositionManager
-   */
-  setPosition (e, el = this.options.handle) {
-    switch (this.options.axis) {
-      case 'x':
-      case 'y':
-        this.oneWayMove(this.options.axis, el);
-        break
-      case 'shift':
-      case 'ctrl':
-      case 'alt':
-        if (e[this.options.axis + 'Key']) {
-          const maxV = Math.abs(this.vectorX) > Math.abs(this.vectorY);
-          this.oneWayMove(maxV ? 'x' : 'y', el);
-          break
-        }
-        // fall through
-      default:
-        el.style.left = this.left + 'px';
-        el.style.top  = this.top + 'px';
-    }
-    if (typeof this.width === 'number') {
-      el.style.width  = this.width + 'px';
-    }
-    if (typeof this.height === 'number') {
-      el.style.height = this.height + 'px';
-    }
-    return this
-  }
-  oneWayMove (either, el = this.options.handle) {
-    if (either === 'x') {
-      el.style.left = this.left + 'px';
-      el.style.top = this.startTop + 'px';
-    } else if (either === 'y') {
-      el.style.left = this.startLeft + 'px';
-      el.style.top = this.top + 'px';
-    }
-    return this
-  }
-
-  /**
-   * Box内に制限しグリッド幅に合わせ計算調整する
-   *
-   * @param {Number}  offset                     this.handleRect.left + this.vectorX
-   * @param {String}  side
-   * @param {Object}  [rect=this.handleRect]     getBoundingClientRect
-   * @returns {Number}          this.left
-   *
-   * @memberOf PositionManager
-   */
-  adjust (offset, side, rect = this.handleRect) {
-    const options = this.options;
-    // handlesの動きをcontainmentに制限する
-    if (options.containment !== document.body) {
-      offset = Math.min(Math.max(0, offset), this.parentRect[side] - rect[side]);
-    }
-    const grid = side === 'width' ? options.grid[0] : options.grid[1];
-    offset = Math.round(offset / grid) * grid;
-    return offset
-  }
-  /**
-   * Boxを基準にした％
-   *
-   * @param {Number}  offset    this.left
-   * @param {String}  side
-   * @returns {Number} ％
-   *
-   * @memberOf PositionManager
-   */
-  percentage (offset, side) {
-    return Math.min(Math.max(0, offset / (this.parentRect[side] - this.handleRect[side]) * 100), 100)
-  }
-}
-
-/**
- * addEventListener & removeEventListener
- *
- * @export
- * @param {element}  el
- * @param {string}   eventNames Multiple event registration with space delimiter.スぺース区切りで複数イベント登録
- * @param {function} callback
- * @param {boolean}  [useCapture]
- */
-function on (el, eventNames, callback, useCapture) {
-  eventNames.split(' ').forEach((eventName) => {
-    (el || window).addEventListener(eventName, callback, !!useCapture);
-  });
-}
-function off (el, eventNames, callback, useCapture) {
-  eventNames.split(' ').forEach((eventName) => {
-    (el || window).removeEventListener(eventName, callback, !!useCapture);
-  });
-}
-
-/**
- * マウス座標
- *
- * @param {Object|Element} options
- */
-class MousePosition {
-  constructor (options) {
-    this.options = Object.assign({
-      containment: (options.nodeName ? options : document.body),
-      handle: null,
-      // start: noop,
-      // drag: noop,
-      // stop: noop
-    }, options || {});
-
-    // イベント登録
-    this._event = {
-      mdown: (e) => { this.mdown(e); },
-      mmove: (e) => { this.mmove(e); },
-      mup: (e) => { this.mup(e); },
-    };
-    on(options.handle || options.containment, 'mousedown touchstart', this._event.mdown);
-
-    this.position = new PositionManager(options);
-
-    this._clickFlg = false;
-  }
-
-  destroy () {
-    off(0, 'mousedown touchstart', this._event.mdown);
-  }
-
-  // マウスが押された際の関数
-  mdown (e, handle) {
-    const {options, position} = this;
-    // マウス座標を保存
-    position.set(e, true, handle);
-
-    if (options.start) {
-      options.start(e, position, handle);
-    }
-    on(0, 'mouseup touchcancel touchend', this._event.mup);
-    on(0, 'mousemove touchmove', this._event.mmove);
-    this._clickFlg = true;
-  }
-  // マウスカーソルが動いたときに発火
-  mmove (e) {
-    const {options, position} = this;
-    // マウスが動いたベクトルを保存
-    position.set(e);
-    // フリックしたときに画面を動かさないようにデフォルト動作を抑制
-    e.preventDefault();
-
-    if (options.drag) {
-      options.drag(e, position);
-    }
-    // カーソルが外れたとき発火
-    on(0, 'mouseleave touchleave', this._event.mup);
-    this._clickFlg = false;
-  }
-  // マウスボタンが上がったら発火
-  mup (e) {
-    const {options, position} = this;
-    // マウスが動いたベクトルを保存
-    position.set(e);
-
-    if (this._clickFlg && options.click) {
-      options.click(e, position);
-    } else if (options.stop) {
-      options.stop(e, position);
-    }
-    // ハンドラの消去
-    off(0, 'mouseup touchend touchcancel mouseleave touchleave', this._event.mup);
-    off(0, 'mousemove touchmove', this._event.mmove);
-  }
-}
-
-/**
- * movable
- *
- * @export
- * @param {element} element
- * @param {object} options
- */
-class Movable extends MousePosition {
-  constructor (element, options) {
-    super(Object.assign({
-      containment: element.parentElement,
-      handle: element,
-      draggingClass: 'dragging',
-    }, options || {}));
-  }
-  // マウスが押された際の関数
-  mdown (e) {
-    super.mdown(e);
-    // クラス名に .drag を追加
-    this.options.handle.classList.add(this.options.draggingClass);
-  }
-  // マウスカーソルが動いたときに発火
-  mmove (e) {
-    super.mmove(e);
-    // マウスが動いた場所に要素を動かす
-    this.position.setPosition(e);
-  }
-  // マウスボタンが上がったら発火
-  mup (e) {
-    super.mup(e);
-    // クラス名 .drag も消す
-    this.options.handle.classList.remove(this.options.draggingClass);
-  }
-}
-
-
-function hitChecker (rect1, rect2, tolerance) {
-  return tolerance === 'fit' ? fitHit(rect1, rect2) : touchHit(rect1, rect2)
-}
-
-function fitHit (rect1, rect2) {
-  const [x, y, w, h] = ['left', 'top', 'width', 'height'];
-  // rect1 x1-----------------------------------------------x1+w1
-  // rect2          x2---------------x2+w2
-  if (
-    rect1[x] <= rect2[x] && rect2[x] + rect2[w] <= rect1[x] + rect1[w] &&
-    rect1[y] <= rect2[y] && rect2[y] + rect2[h] <= rect1[y] + rect1[h]
-  ) {
-    return true
-  }
-  return false
-}
-function touchHit (rect1, rect2) {
-  const [x, y, w, h] = ['left', 'top', 'width', 'height'];
-  // rect1                x1---------------------------x1+w1
-  // rect2 x2---------------------------------x2+w2
-  if (
-    rect2[x] <= rect1[x] && rect1[x] <= rect2[x] + rect2[w] &&
-    rect2[y] <= rect1[y] && rect1[y] <= rect2[y] + rect2[h]
-  ) {
-    return true
-  }
-  // rect1 x1---------------------------------x1+w1
-  // rect2               x2----------------------------------------x2+w2
-  if (
-    rect1[x] <= rect2[x] && rect2[x] <= rect1[x] + rect1[w] &&
-    rect1[y] <= rect2[y] && rect2[y] <= rect1[y] + rect1[h]
-  ) {
-    return true
-  }
-  return false
-}
-
-
-class Selectable extends MousePosition {
-  constructor (element, options) {
-    super(Object.assign({
-      containment: element,
-      filter: '*',
-      cancel: 'input,textarea,button,select,option',
-      tolerance: 'touch', // or 'fit'
-      selectorClass: '', // 'selector'
-      selectedClass: 'selected',
-      // selecting: noop,
-      // unselecting: noop,
-      // selected: noop,
-    }, options || {}));
-
-    const opts = this.options;
-
-    const helper = this.helper = document.createElement('div');
-
-    helper.style.position = 'absolute';
-
-    if (opts.selectorClass) {
-      helper.classList.add(opts.selectorClass);
-    } else {
-      helper.style.zIndex = '10000';
-      helper.style.border = '1px dotted black';
-    }
-
-    this.selectorString = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)');
-    this.children = [];
-    this.childrenRects = [];
-    this.selectElements = [];
-  }
-
-
-  select (i, e) {
-    const opts = this.options;
-    if (!e) {
-      this.children = Array.from(opts.containment.querySelectorAll(this.selectorString));
-    }
-    const child = this.children[i];
-    child.classList.add(opts.selectedClass);
-
-    const indexOf = this.selectElements.indexOf(child);
-    if (indexOf === -1) {
-      this.selectElements.push(child);
-    }
-    // Callback
-    if (opts.selecting) {
-      opts.selecting(e, this.position, child, i);
-    }
-  }
-  selectAll (e) {
-    this.children.forEach((child, i) => {
-      this.select(i, e);
-    });
-  }
-  unselect (i, e) {
-    const opts = this.options;
-    if (!e) {
-      this.children = Array.from(opts.containment.querySelectorAll(this.selectorString));
-    }
-    const child = this.children[i];
-    child.classList.remove(opts.selectedClass);
-
-    const indexOf = this.selectElements.indexOf(child);
-    if (indexOf > -1) {
-      this.selectElements.splice(indexOf, 1);
-    }
-    // Callback
-    if (opts.unselecting) {
-      opts.unselecting(e, this.position, child, i);
-    }
-  }
-  unselectAll (e) {
-    this.selectElements.length = 0;
-    this.children.forEach((child, i) => {
-      this.unselect(i, e);
-    });
-  }
-
-  helperRect (position) {
-    let left, top, width, height;
-    if (position.vectorX < 0) {
-      left  = position.startX + position.vectorX;
-    }
-    if (position.vectorX >= 0) {
-      left  = position.startX;
-    }
-    if (position.vectorY < 0) {
-      top  = position.startY + position.vectorY;
-    }
-    if (position.vectorY >= 0) {
-      top  = position.startY;
-    }
-    width  = Math.abs(position.vectorX);
-    height = Math.abs(position.vectorY);
-    // 選択範囲のRectデータ
-    return {left, top, width, height}
-  }
-
-  mdown (e, handle) {
-    super.mdown(e, handle);
-    const el = this.options.containment;
-    const {position, helper} = this;
-    // array init
-    this.children = Array.from(el.querySelectorAll(this.selectorString));
-    this.childrenRects = this.children.map((el) => el.getBoundingClientRect());
-    // 追加
-    el.appendChild(helper);
-    helper.style.left = position.startX + 'px';
-    helper.style.top  = position.startY + 'px';
-    helper.style.width  = '0px';
-    helper.style.height = '0px';
-    this.unselectAll(e);
-  }
-
-  // マウスカーソルが動いたときに発火
-  mmove (e) {
-    super.mmove(e);
-    const opts = this.options;
-    const {position, helper} = this;
-    // 選択範囲のRectデータ
-    const helperRect = this.helperRect(position);
-
-    // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
-    this.childrenRects.forEach((rect2, i) => {
-      if (hitChecker(helperRect, rect2, opts.tolerance)) {
-        this.select(i, e);
-      } else {
-        this.unselect(i, e);
-      }
-    });
-    // Callback
-    if (opts.selected) {
-      opts.selected(e, position, helper, this.selectElements);
-    }
-    // マウスが動いた場所にhelper要素を動かす
-    Object.assign(position, helperRect);
-    position.setPosition(e, helper);
-  }
-  // マウスボタンが上がったら発火
-  mup (e) {
-    super.mup(e);
-      // helper要素を消す
-    this.options.containment.removeChild(this.helper);
-  }
-}
-
-riot$1.tag2('app', '<div id="colors" ref="colors"> <color-picker size="280" oncolorchange="{colorchange}" simple=""></color-picker> <div id="form_add"> <button id="color_type" onclick="{color_typeChange}">{color_type.toUpperCase()}</button> <input id="color_hex" ref="color_hex" placeholder="#000000" onsubmit="{addCard_btn}" oninput="{color_hexInput}"> <button id="add_btn" onclick="{addCard_btn}">➕</button> </div> <div id="pallete"> <color-tip each="{palette}"></color-tip> </div> <hr> <color-lists></color-lists> </div> <div id="box" ref="box"> <color-card each="{card, i in cards}"></color-card> </div> <context-menu></context-menu>', '.ui-selectable-helper { position: absolute; z-index: 100; border: 1px dotted black; } #colors { width: 320px; height: 100vh; position: absolute; margin:0; padding: 20px; top:0; left:0; } #box { width: 100%; height: 100%; background: #1f2532; } #form_add { margin: 10px 0; display: flex; flex-direction: row;} #color_type { text-align: center; width: 42px; height: 42px; border-width: 1px 0 1px 1px; border-style: solid; border-top-left-radius: 4px; border-bottom-left-radius: 4px;} #color_hex { flex: 1 1 auto; height: 42px; padding: 8px 5px; border-width: 1px 0 1px 1px; border-style: solid;} #add_btn { width: 42px; height: 42px; text-align: center; border-width: 1px; border-style: solid; border-top-right-radius: 4px; border-bottom-right-radius: 4px;}', '', function(opts) {
-
-    this.cards = store.cards;
-    const palette = () => {
-      return this.cards.map((arg) => arg).sort((a, b) => {
-        return a.color.lightness - b.color.lightness
-      }).sort((a, b) => {
-        return a.color.hue - b.color.hue
-      })
-    };
-    this.palette = palette();
-    store.on('cards_changed', (cards) => {
-
-      this.palette = palette();
-      this.update();
-    });
-
-    const COLOR_TYPE = ['hex', 'rgb', 'hsl'];
-    let colortypeindex = 0;
-    this.color_type = COLOR_TYPE[colortypeindex];
-    this.placeholder = ['#000000', 'rgb(0, 0, 0)', 'hsl(0, 0%, 0%)'];
-    this.color_typeChange = () => {
-      ++colortypeindex;
-      colortypeindex %= COLOR_TYPE.length;
-      this.color_type = COLOR_TYPE[colortypeindex];
-
-      this.refs.color_hex.value = this.tags['color-picker'].color.toString(this.color_type);
-    };
-
-    const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i;
-    this.addCard_btn = () => {
-      const text = validationRegExp.exec(this.refs.color_hex.value);
-      if (text) {
-        store.trigger('add_card', {
-          name: (text[2] || '').trim(),
-          color: text[1],
-        });
-        this.refs.color_hex.value = '';
-      }
-    };
-    this.color_hexInput = (e) => {
-      const value = this.refs.color_hex.value;
-      const text = validationRegExp.exec(value);
-      if (text) {
-        this.tags['color-picker'].color = new Color(text[1]);
-      }
-    };
-
-    this.colorchange = (color) => {
-      this.refs.color_hex.value = color.toString(this.color_type);
-    };
-
-    this.on('mount', () => {
-      store.box = this.refs.box;
-      const bgColor = store.getItem('bgColor') || '#1f2532';
-      this.refs.box.style.backgroundColor = bgColor;
-
-      store.on('set_bgColor', (color) => {
-        const textcolor = color.lightness < 35 ? '#eee' : '#111';
-        this.refs.colors.style.color = textcolor;
-      });
-
-      store.trigger('set_bgColor', new Color(bgColor));
-
-      this.selectable = new Selectable(this.refs.box, {
-        filter: '.card',
-        selectedClass: 'card_selected',
-        tolerance: 'fit',
-        start: (e, position) => {
-          store.trigger('menu_close');
-        },
-        selecting: (e, position, el, index) => {
-          store.trigger('card_select', index, true);
-        },
-        unselecting: (e, position, el, index) => {
-          store.trigger('card_select', index, false);
-        },
-      });
-    });
-});
-
 var tinycolor = createCommonjsModule(function (module) {
 // TinyColor v1.4.1
 // https://github.com/bgrins/TinyColor
@@ -7838,6 +6260,779 @@ else {
 }
 
 })(Math);
+});
+
+const storage = window.sessionStorage;
+
+tinycolor.prototype.toJSON = function (type) {
+  return this.toString(type)
+};
+
+class Store {
+  constructor () {
+    riot$1.observable(this);
+    // storage.clear()
+    if (storage) {
+      this.cards = this.getItem('cards');
+    }
+    if (!this.cards) {
+      this.cards = [
+        {
+          name: 'turquoise',
+          color: '#40E0D0'
+        },
+        {
+          name: 'salmon',
+          color: '#FA8072'
+        },
+        {
+          name: 'red',
+          color: '#ff5555'
+        },
+        {
+          name: 'red2',
+          color: '#fc0e49'
+        },
+        {
+          name: 'red3',
+          color: '#fe3265'
+        },
+        {
+          name: 'yellow',
+          color: '#FFD54F'
+        },
+        {
+          name: 'teal',
+          color: '#11c1b0'
+        },
+        {
+          name: 'navy',
+          color: '#1f2532'
+        },
+        {
+          name: 'light',
+          color: '#7F8C9A'
+        },
+        {
+          name: 'dark',
+          color: '#323a45'
+        },
+        {
+          name: 'ivy',
+          color: '#514a56'
+        },
+        {
+          name: 'purple',
+          color: '#a234d5'
+        },
+        {
+          name: 'red4',
+          color: '#d74059'
+        },
+      ];
+    }
+
+    this.cards.forEach((param, index) => {
+      param.color = tinycolor(param.color);
+      param.zIndex = index;
+    });
+
+    this.undo = new Undo(this.getState());
+
+    this.on('undo', () => {
+      const state = this.undo.undo();
+      console.log('undo_state', state);
+      if (!state) {
+        return
+      }
+      this.cards = state.cards;
+      this.box.style.backgroundColor = state.bgColor;
+    });
+    this.on('redo', () => {
+      const state = this.undo.redo();
+      console.log('redo_state', state);
+      if (!state) {
+        return
+      }
+      this.cards = state.cards;
+      this.box.style.backgroundColor = state.bgColor;
+    });
+
+    // CARDS
+    this.on('add_card', (param) => {
+      param.color = tinycolor(param.color);
+      param.zIndex = this.cards.length;
+      this.cards.push(param);
+      this.trigger('cards_changed', this.cards);
+    });
+    this.on('remove_card', (index = this.cards.length - 1) => {
+      this.trigger('remove_card_animation', index, () => {
+        this.cards.splice(index, 1);
+        this.trigger('cards_changed', this.cards);
+      });
+    });
+
+    this.on('card_forward', (index) => {
+      const currIndex = +this.cards[index].zIndex;
+      this.cards.forEach((card, i) => {
+        if (i === index) {
+          card.zIndex = this.cards.length - 1;
+        } else if (card.zIndex > currIndex) {
+          --card.zIndex;
+        }
+      });
+      this.trigger('cards_changed', this.cards);
+    });
+
+    this.on('duplicate_card', (index) => {
+      const newCard = Object.assign({}, this.cards[index]);
+      newCard.x += 10;
+      newCard.y += 10;
+      this.trigger('add_card', newCard);
+    });
+
+    this.on('set_card_size', (index, w, h = w) => {
+      let card = this.cards[index];
+      if (card.width !== w || card.height !== h) {
+        card.width = w;
+        card.height = h;
+        this.trigger('cards_changed', this.cards);
+      }
+    });
+
+    this.on('card_moved', (index, x, y) => {
+      let card = this.cards[index];
+      if (card.x !== x || card.y !== y) {
+        card.x = x;
+        card.y = y;
+        this.trigger('cards_changed', this.cards);
+      }
+    });
+    this.on('card_select', (index, bool) => {
+      if (bool) {
+        this.cards[index].selected = true;
+      } else {
+        delete this.cards[index].selected;
+      }
+    });
+
+    this.on('cards_changed', () => {
+      this.save();
+      this.undo.saveState(this.getState());
+    });
+
+    // BACKGROUND
+    this.on('set_bgColor', (color) => {
+      this.box.style.backgroundColor = color;
+      this.setItem('bgColor', color);
+      this.undo.saveState(this.getState());
+    });
+  }
+
+  getState () {
+    return {
+      cards: this.cards,
+      bgColor: this.box && this.box.style.backgroundColor || 'rgb(31, 37, 50)'
+    }
+  }
+
+  getItem (key) {
+    const val = storage.getItem(key);
+    return val ? JSON.parse(val) : val
+  }
+  setItem (key, value) {
+    storage.setItem(key, JSON.stringify(value));
+  }
+  save () {
+    this.setItem('cards', this.cards);
+  }
+}
+
+var store = new Store();
+
+/**
+ * constructor PositionManager
+ *
+ * @export
+ * @class PositionManager
+ * @param {object} options
+ */
+class PositionManager {
+  constructor (options) {
+    this.options = Object.assign({
+      containment: document.body,
+      handle: null,
+      grid: 1,
+      percent: false,
+      axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
+    }, options || {});
+
+    let grid = this.options.grid;
+    if (!Array.isArray(grid)) {
+      grid = parseFloat(grid, 10) || 1;
+      grid = [grid, grid];
+    }
+    this.options.grid = grid;
+
+    // containment内に置ける現在のマウス相対位置
+    this.x = 0;
+    this.y = 0;
+    // this.x、this.yの初期値保存
+    this.startX = 0;
+    this.startY = 0;
+
+    this.handleRect = {width: 0, height: 0, left: 0, top: 0};
+
+    // position
+    const position = { left: 0, top: 0 };
+    // 代入したときにもthis.adjust()したい
+    Object.defineProperties(this, {
+      left: {
+        get () {
+          return position.left
+        },
+        set (val) {
+          position.left = this.adjust(val, 'width');
+        }
+      },
+      top: {
+        get () {
+          return position.top
+        },
+        set (val) {
+          position.top = this.adjust(val, 'height');
+        }
+      },
+    });
+  }
+
+  /**
+   * mousemove, mouseup
+   *
+   * @param {Event}   e
+   * @param {Boolean} [initflg]
+   * @param {Element} [handle=this.options.handle]
+   * @returns
+   *
+   * @memberOf PositionManager
+   */
+  set (e, initflg, handle = this.options.handle) {
+    if (initflg) {
+      // ボックスサイズ取得。ここに書くのはresize対策
+      this.parentRect = this.options.containment.getBoundingClientRect();
+      if (handle) this.handleRect = handle.getBoundingClientRect();
+    }
+
+    const event = 'touches' in e ? e.touches[0] : e;
+    this.x = event.pageX - this.parentRect.left - window.pageXOffset;
+    this.y = event.pageY - this.parentRect.top - window.pageYOffset;
+
+    if (initflg) {
+      this.startX = this.x;
+      this.startY = this.y;
+      this.vectorX = 0;
+      this.vectorY = 0;
+    } else {
+      this.vectorX = this.x - this.startX;
+      this.vectorY = this.y - this.startY;
+    }
+
+    // modify
+    this.left = this.handleRect.left + this.vectorX;
+    this.top  = this.handleRect.top + this.vectorY;
+
+    if (this.options.percent) {
+      this.percentLeft = this.percentage(this.left, 'width');
+      this.percentTop  = this.percentage(this.top, 'height');
+    }
+
+    if (initflg) {
+      this.startLeft = this.left;
+      this.startTop  = this.top;
+    }
+    return this
+  }
+
+
+  /**
+   * handle move
+   *
+   * @param {Event}    e
+   * @param {Element} [el=this.options.handle]
+   * @returns
+   *
+   * @memberOf PositionManager
+   */
+  setPosition (e, el = this.options.handle) {
+    switch (this.options.axis) {
+      case 'x':
+      case 'y':
+        this.oneWayMove(this.options.axis, el);
+        break
+      case 'shift':
+      case 'ctrl':
+      case 'alt':
+        if (e[this.options.axis + 'Key']) {
+          const maxV = Math.abs(this.vectorX) > Math.abs(this.vectorY);
+          this.oneWayMove(maxV ? 'x' : 'y', el);
+          break
+        }
+        // fall through
+      default:
+        el.style.left = this.left + 'px';
+        el.style.top  = this.top + 'px';
+    }
+    if (typeof this.width === 'number') {
+      el.style.width  = this.width + 'px';
+    }
+    if (typeof this.height === 'number') {
+      el.style.height = this.height + 'px';
+    }
+    return this
+  }
+  oneWayMove (either, el = this.options.handle) {
+    if (either === 'x') {
+      el.style.left = this.left + 'px';
+      el.style.top = this.startTop + 'px';
+    } else if (either === 'y') {
+      el.style.left = this.startLeft + 'px';
+      el.style.top = this.top + 'px';
+    }
+    return this
+  }
+
+  /**
+   * Box内に制限しグリッド幅に合わせ計算調整する
+   *
+   * @param {Number}  offset                     this.handleRect.left + this.vectorX
+   * @param {String}  side
+   * @param {Object}  [rect=this.handleRect]     getBoundingClientRect
+   * @returns {Number}          this.left
+   *
+   * @memberOf PositionManager
+   */
+  adjust (offset, side, rect = this.handleRect) {
+    const options = this.options;
+    // handlesの動きをcontainmentに制限する
+    if (options.containment !== document.body) {
+      offset = Math.min(Math.max(0, offset), this.parentRect[side] - rect[side]);
+    }
+    const grid = side === 'width' ? options.grid[0] : options.grid[1];
+    offset = Math.round(offset / grid) * grid;
+    return offset
+  }
+  /**
+   * Boxを基準にした％
+   *
+   * @param {Number}  offset    this.left
+   * @param {String}  side
+   * @returns {Number} ％
+   *
+   * @memberOf PositionManager
+   */
+  percentage (offset, side) {
+    return Math.min(Math.max(0, offset / (this.parentRect[side] - this.handleRect[side]) * 100), 100)
+  }
+}
+
+/**
+ * addEventListener & removeEventListener
+ *
+ * @export
+ * @param {element}  el
+ * @param {string}   eventNames Multiple event registration with space delimiter.スぺース区切りで複数イベント登録
+ * @param {function} callback
+ * @param {boolean}  [useCapture]
+ */
+function on (el, eventNames, callback, useCapture) {
+  eventNames.split(' ').forEach((eventName) => {
+    (el || window).addEventListener(eventName, callback, !!useCapture);
+  });
+}
+function off (el, eventNames, callback, useCapture) {
+  eventNames.split(' ').forEach((eventName) => {
+    (el || window).removeEventListener(eventName, callback, !!useCapture);
+  });
+}
+
+/**
+ * マウス座標
+ *
+ * @param {Object|Element} options
+ */
+class MousePosition {
+  constructor (options) {
+    this.options = Object.assign({
+      containment: (options.nodeName ? options : document.body),
+      handle: null,
+      // start: noop,
+      // drag: noop,
+      // stop: noop
+    }, options || {});
+
+    // イベント登録
+    this._event = {
+      mdown: (e) => { this.mdown(e); },
+      mmove: (e) => { this.mmove(e); },
+      mup: (e) => { this.mup(e); },
+    };
+    on(options.handle || options.containment, 'mousedown touchstart', this._event.mdown);
+
+    this.position = new PositionManager(options);
+
+    this._clickFlg = false;
+  }
+
+  destroy () {
+    off(0, 'mousedown touchstart', this._event.mdown);
+  }
+
+  // マウスが押された際の関数
+  mdown (e, handle) {
+    const {options, position} = this;
+    // マウス座標を保存
+    position.set(e, true, handle);
+
+    if (options.start) {
+      options.start(e, position, handle);
+    }
+    on(0, 'mouseup touchcancel touchend', this._event.mup);
+    on(0, 'mousemove touchmove', this._event.mmove);
+    this._clickFlg = true;
+  }
+  // マウスカーソルが動いたときに発火
+  mmove (e) {
+    const {options, position} = this;
+    // マウスが動いたベクトルを保存
+    position.set(e);
+    // フリックしたときに画面を動かさないようにデフォルト動作を抑制
+    e.preventDefault();
+
+    if (options.drag) {
+      options.drag(e, position);
+    }
+    // カーソルが外れたとき発火
+    on(0, 'mouseleave touchleave', this._event.mup);
+    this._clickFlg = false;
+  }
+  // マウスボタンが上がったら発火
+  mup (e) {
+    const {options, position} = this;
+    // マウスが動いたベクトルを保存
+    position.set(e);
+
+    if (this._clickFlg && options.click) {
+      options.click(e, position);
+    } else if (options.stop) {
+      options.stop(e, position);
+    }
+    // ハンドラの消去
+    off(0, 'mouseup touchend touchcancel mouseleave touchleave', this._event.mup);
+    off(0, 'mousemove touchmove', this._event.mmove);
+  }
+}
+
+/**
+ * movable
+ *
+ * @export
+ * @param {element} element
+ * @param {object} options
+ */
+class Movable extends MousePosition {
+  constructor (element, options) {
+    super(Object.assign({
+      containment: element.parentElement,
+      handle: element,
+      draggingClass: 'dragging',
+    }, options || {}));
+  }
+  // マウスが押された際の関数
+  mdown (e) {
+    super.mdown(e);
+    // クラス名に .drag を追加
+    this.options.handle.classList.add(this.options.draggingClass);
+  }
+  // マウスカーソルが動いたときに発火
+  mmove (e) {
+    super.mmove(e);
+    // マウスが動いた場所に要素を動かす
+    this.position.setPosition(e);
+  }
+  // マウスボタンが上がったら発火
+  mup (e) {
+    super.mup(e);
+    // クラス名 .drag も消す
+    this.options.handle.classList.remove(this.options.draggingClass);
+  }
+}
+
+
+function hitChecker (rect1, rect2, tolerance) {
+  return tolerance === 'fit' ? fitHit(rect1, rect2) : touchHit(rect1, rect2)
+}
+
+function fitHit (rect1, rect2) {
+  const [x, y, w, h] = ['left', 'top', 'width', 'height'];
+  // rect1 x1-----------------------------------------------x1+w1
+  // rect2          x2---------------x2+w2
+  if (
+    rect1[x] <= rect2[x] && rect2[x] + rect2[w] <= rect1[x] + rect1[w] &&
+    rect1[y] <= rect2[y] && rect2[y] + rect2[h] <= rect1[y] + rect1[h]
+  ) {
+    return true
+  }
+  return false
+}
+function touchHit (rect1, rect2) {
+  const [x, y, w, h] = ['left', 'top', 'width', 'height'];
+  // rect1                x1---------------------------x1+w1
+  // rect2 x2---------------------------------x2+w2
+  if (
+    rect2[x] <= rect1[x] && rect1[x] <= rect2[x] + rect2[w] &&
+    rect2[y] <= rect1[y] && rect1[y] <= rect2[y] + rect2[h]
+  ) {
+    return true
+  }
+  // rect1 x1---------------------------------x1+w1
+  // rect2               x2----------------------------------------x2+w2
+  if (
+    rect1[x] <= rect2[x] && rect2[x] <= rect1[x] + rect1[w] &&
+    rect1[y] <= rect2[y] && rect2[y] <= rect1[y] + rect1[h]
+  ) {
+    return true
+  }
+  return false
+}
+
+
+class Selectable extends MousePosition {
+  constructor (element, options) {
+    super(Object.assign({
+      containment: element,
+      filter: '*',
+      cancel: 'input,textarea,button,select,option',
+      tolerance: 'touch', // or 'fit'
+      selectorClass: '', // 'selector'
+      selectedClass: 'selected',
+      // selecting: noop,
+      // unselecting: noop,
+      // selected: noop,
+    }, options || {}));
+
+    const opts = this.options;
+
+    const helper = this.helper = document.createElement('div');
+
+    helper.style.position = 'absolute';
+
+    if (opts.selectorClass) {
+      helper.classList.add(opts.selectorClass);
+    } else {
+      helper.style.zIndex = '10000';
+      helper.style.border = '1px dotted black';
+    }
+
+    this.selectorString = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)');
+    this.children = [];
+    this.childrenRects = [];
+    this.selectElements = [];
+  }
+
+
+  select (i, e) {
+    const opts = this.options;
+    if (!e) {
+      this.children = Array.from(opts.containment.querySelectorAll(this.selectorString));
+    }
+    const child = this.children[i];
+    child.classList.add(opts.selectedClass);
+
+    const indexOf = this.selectElements.indexOf(child);
+    if (indexOf === -1) {
+      this.selectElements.push(child);
+    }
+    // Callback
+    if (opts.selecting) {
+      opts.selecting(e, this.position, child, i);
+    }
+  }
+  selectAll (e) {
+    this.children.forEach((child, i) => {
+      this.select(i, e);
+    });
+  }
+  unselect (i, e) {
+    const opts = this.options;
+    if (!e) {
+      this.children = Array.from(opts.containment.querySelectorAll(this.selectorString));
+    }
+    const child = this.children[i];
+    child.classList.remove(opts.selectedClass);
+
+    const indexOf = this.selectElements.indexOf(child);
+    if (indexOf > -1) {
+      this.selectElements.splice(indexOf, 1);
+    }
+    // Callback
+    if (opts.unselecting) {
+      opts.unselecting(e, this.position, child, i);
+    }
+  }
+  unselectAll (e) {
+    this.selectElements.length = 0;
+    this.children.forEach((child, i) => {
+      this.unselect(i, e);
+    });
+  }
+
+  helperRect (position) {
+    let left, top, width, height;
+    if (position.vectorX < 0) {
+      left  = position.startX + position.vectorX;
+    }
+    if (position.vectorX >= 0) {
+      left  = position.startX;
+    }
+    if (position.vectorY < 0) {
+      top  = position.startY + position.vectorY;
+    }
+    if (position.vectorY >= 0) {
+      top  = position.startY;
+    }
+    width  = Math.abs(position.vectorX);
+    height = Math.abs(position.vectorY);
+    // 選択範囲のRectデータ
+    return {left, top, width, height}
+  }
+
+  mdown (e, handle) {
+    super.mdown(e, handle);
+    const el = this.options.containment;
+    const {position, helper} = this;
+    // array init
+    this.children = Array.from(el.querySelectorAll(this.selectorString));
+    this.childrenRects = this.children.map((el) => el.getBoundingClientRect());
+    // 追加
+    el.appendChild(helper);
+    helper.style.left = position.startX + 'px';
+    helper.style.top  = position.startY + 'px';
+    helper.style.width  = '0px';
+    helper.style.height = '0px';
+    this.unselectAll(e);
+  }
+
+  // マウスカーソルが動いたときに発火
+  mmove (e) {
+    super.mmove(e);
+    const opts = this.options;
+    const {position, helper} = this;
+    // 選択範囲のRectデータ
+    const helperRect = this.helperRect(position);
+
+    // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
+    this.childrenRects.forEach((rect2, i) => {
+      if (hitChecker(helperRect, rect2, opts.tolerance)) {
+        this.select(i, e);
+      } else {
+        this.unselect(i, e);
+      }
+    });
+    // Callback
+    if (opts.selected) {
+      opts.selected(e, position, helper, this.selectElements);
+    }
+    // マウスが動いた場所にhelper要素を動かす
+    Object.assign(position, helperRect);
+    position.setPosition(e, helper);
+  }
+  // マウスボタンが上がったら発火
+  mup (e) {
+    super.mup(e);
+      // helper要素を消す
+    this.options.containment.removeChild(this.helper);
+  }
+}
+
+riot$1.tag2('app', '<div id="colors" ref="colors"> <color-picker size="280" oncolorchange="{colorchange}" simple=""></color-picker> <div id="form_add"> <button id="color_type" onclick="{color_typeChange}">{color_type.toUpperCase()}</button> <input id="color_hex" ref="color_hex" placeholder="#000000" onsubmit="{addCard_btn}" oninput="{color_hexInput}"> <button id="add_btn" onclick="{addCard_btn}">➕</button> </div> <div id="pallete"> <color-tip each="{palette}"></color-tip> </div> <hr> <color-lists></color-lists> </div> <div id="box" ref="box"> <color-card each="{card, i in cards}"></color-card> </div> <context-menu></context-menu>', '.ui-selectable-helper { position: absolute; z-index: 100; border: 1px dotted black; } #colors { width: 320px; height: 100vh; position: absolute; margin:0; padding: 20px; top:0; left:0; } #box { width: 100%; height: 100%; background: #1f2532; } #form_add { margin: 10px 0; display: flex; flex-direction: row;} #color_type { text-align: center; width: 42px; height: 42px; border-width: 1px 0 1px 1px; border-style: solid; border-top-left-radius: 4px; border-bottom-left-radius: 4px;} #color_hex { flex: 1 1 auto; height: 42px; padding: 8px 5px; border-width: 1px 0 1px 1px; border-style: solid;} #add_btn { width: 42px; height: 42px; text-align: center; border-width: 1px; border-style: solid; border-top-right-radius: 4px; border-bottom-right-radius: 4px;}', '', function(opts) {
+
+    this.cards = store.cards;
+    const palette = () => {
+      return this.cards.map((arg) => arg).sort((a, b) => {
+        return a.color.getLuminance() - b.color.getLuminance()
+      }).sort((a, b) => {
+        return a.color.toHsl().h - b.color.toHsl().h
+      })
+    };
+    this.palette = palette();
+    store.on('cards_changed', (cards) => {
+
+      this.palette = palette();
+      this.update();
+    });
+
+    const COLOR_TYPE = ['hex', 'rgb', 'hsl'];
+    let colortypeindex = 0;
+    this.color_type = COLOR_TYPE[colortypeindex];
+    this.placeholder = ['#000000', 'rgb(0, 0, 0)', 'hsl(0, 0%, 0%)'];
+    this.color_typeChange = () => {
+      ++colortypeindex;
+      colortypeindex %= COLOR_TYPE.length;
+      this.color_type = COLOR_TYPE[colortypeindex];
+
+      this.refs.color_hex.value = this.tags['color-picker'].color.toString(this.color_type);
+    };
+
+    const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i;
+    this.addCard_btn = () => {
+      const text = validationRegExp.exec(this.refs.color_hex.value);
+      if (text) {
+        store.trigger('add_card', {
+          name: (text[2] || '').trim(),
+          color: text[1],
+        });
+        this.refs.color_hex.value = '';
+      }
+    };
+    this.color_hexInput = (e) => {
+      const value = this.refs.color_hex.value;
+      const text = validationRegExp.exec(value);
+      if (text) {
+        this.tags['color-picker'].color = tinycolor(text[1]);
+      }
+    };
+
+    this.colorchange = (color) => {
+      this.refs.color_hex.value = color.toString(this.color_type);
+    };
+
+    this.on('mount', () => {
+      store.box = this.refs.box;
+      const bgColor = store.getItem('bgColor') || '#1f2532';
+      this.refs.box.style.backgroundColor = bgColor;
+
+      store.on('set_bgColor', (color) => {
+        const textcolor = tinycolor.mostReadable(color, ['#eee', '#111']);
+        this.refs.colors.style.color = textcolor;
+      });
+
+      store.trigger('set_bgColor', tinycolor(bgColor));
+
+      this.selectable = new Selectable(this.refs.box, {
+        filter: '.card',
+        selectedClass: 'card_selected',
+        tolerance: 'fit',
+        start: (e, position) => {
+          store.trigger('menu_close');
+        },
+        selecting: (e, position, el, index) => {
+          store.trigger('card_select', index, true);
+        },
+        unselecting: (e, position, el, index) => {
+          store.trigger('card_select', index, false);
+        },
+      });
+    });
 });
 
 riot$1.tag2('color-card', '<div class="card animated bounceIn" ref="card" riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px; left: {x}px; top: {y}px; z-index: {+card.zIndex};"> <div class="cardtext"><b>{name}</b><br>{color}</div> </div>', '.card { position: absolute; text-align:center; font-size:12px; display: flex; align-items: center; justify-content: center; } .card.card_selected { outline: 1px dashed black; box-shadow: 0 0 0 1px white; } .card.active { z-index: 100; } .cardtext { white-space: pre-wrap; user-select: none; -ms-user-select: none; -webkit-user-select: none; -moz-user-select: none; }', '', function(opts) {
@@ -15621,165 +14816,6 @@ riot$1.tag2('color-picker', '<div class="color-picker" riot-style="width: {opts.
       ]
     }
 });
-
-function keydownHandler (handler) {
-  return function (e) {
-    if (
-      e.which !== 17 && // Ctrl
-      e.which !== 91 && // Cmd
-      e.which !== 18 && // Alt
-      e.which !== 16 // Shift
-    ) {
-      handler(e);
-    }
-  }
-}
-
-
-
-class RiotManager {
-  constructor (options) {
-    this.options = Object.assign({
-      defaultMode: 'default'
-    }, options || {});
-
-    this.mode = [];
-    this.stores = options.stores || [];
-    this.onMode(this.options.defaultMode)
-
-    ;['on', 'one', 'off', 'trigger'].forEach((api) => {
-      this[api] = (...args) => {
-        this.stores.forEach((store) => {
-          store[api].apply(store, args);
-        });
-      };
-    });
-  }
-  addStore (store) {
-    this.stores.push(store);
-  }
-
-  modeCheck (modeStr) {
-    return modeStr.split(' ').some((mode) => this.mode.indexOf(mode) > -1)
-  }
-  onMode (modeStr) {
-    return modeStr.split(' ').reduce((added, mode) => {
-      if (this.mode.indexOf(mode) === -1) {
-        this.mode.push(mode);
-        added.push(mode);
-      }
-      return added
-    }, [])
-  }
-  offMode (modeStr) {
-    return modeStr.split(' ').reduce((removed, mode) => {
-      const index = this.mode.indexOf(mode);
-      if (index > -1) {
-        this.mode.splice(index, 1);
-        removed.push(mode);
-      }
-      return removed
-    }, [])
-  }
-}
-
-
-
-class RiotKeyManager extends RiotManager {
-  constructor (options, keymapsData) {
-    super(options);
-    this.options = Object.assign({
-      element: window,
-    }, this.options);
-
-    this.keymaps = [];
-
-    if (keymapsData) {
-      this.addKeymaps(keymapsData);
-    }
-
-    // ADD Event
-    this.options.element.addEventListener('keydown', keydownHandler((e) => {
-      const inputTags = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
-      if (inputTags) {
-        // brackets
-        return
-      }
-      this.keymaps.some((keymap) => {
-        const action = this.getAction(e, keymap);
-        if (action) {
-          let returnBoolean = false;
-          try {
-            returnBoolean = this.trigger(action, e);
-          } catch (error) {
-            console.error(error.message, error.stack);
-          }
-          // if (returnBoolean) {
-          //   e.preventDefault()
-          // }
-          // return returnBoolean
-          e.preventDefault();
-          return true
-        }
-      });
-    }));
-  }
-
-  getAction (e, keymap) {
-    const {key, action, mode} = keymap;
-    if (!this.modeCheck(mode)) return
-    if (e.shiftKey !== /\bshift\b/i.test(key)) return
-    if (e.ctrlKey !== /\bctrl\b/i.test(key)) return
-    if (e.altKey !== /\balt\b/i.test(key)) return
-    // if (e.shiftKey !== key.includes('shift')) return
-    // if (e.ctrlKey !== key.includes('ctrl')) return
-    // if (e.altKey !== key.includes('alt')) return
-    if (e.metaKey !== /\bcommand\b|\bcmd\b/i.test(key)) return
-
-    const eKey = e.key.replace('Arrow', '').toLowerCase(),
-          keyReg = keymap.key.replace(/\b(shift|ctrl|alt|command|cmd)[-+]/ig, '');
-    console.log(keyReg, eKey);
-    if (!new RegExp(`${keyReg}$`).test(eKey)) return
-
-    // var keyCode = e.charCode || e.keyCode
-    // var keyCodeChar = String.fromCharCode(keyCode).toLowerCase()
-    // let actioncb = typeof action === 'string' ? listenerMap[action] : action
-    return action
-  }
-
-  addKeymaps (keymapsData) {
-    if (Array.isArray(keymapsData)) {
-      keymapsData.forEach((keymaps) => {
-        this.addKeymap(this.options.defaultMode, keymaps);
-      });
-    } else {
-      Object.keys(keymapsData).forEach((key) => {
-        this.addKeymap(key, keymapsData[key]);
-      });
-    }
-  }
-  addKeymap (modeStr, keymaps) {
-    keymaps.forEach((keymap) => {
-      keymap.mode = modeStr;
-      this.keymaps.push(keymap);
-    });
-  }
-}
-
-const keyManager = new RiotKeyManager({});
-
-keyManager.addStore(store);
-keyManager.addKeymap('default', [
-  { key: 'ctrl+z',
-    action: 'undo',
-    mode: 'default' },
-  { key: 'ctrl+y',
-    action: 'redo',
-    mode: 'default' },
-  { key: 'ctrl+shift+z',
-    action: 'redo',
-    mode: 'default' },
-]);
 
 riot$1.mount('#root', 'app');
 
