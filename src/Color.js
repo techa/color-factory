@@ -4,6 +4,165 @@ import { webcolor } from './constants/webcolor'
 const MAX = { r: 255, g: 255, b: 255, h: 360, s: 100, l: 100 }
 const RGB_HSL_KEYS = [['r', 'g', 'b'], ['red', 'green', 'blue'], ['h', 's', 'l'], ['hue', 'saturation', 'lightness']]
 
+const round = Math.round,
+      abs = Math.abs,
+      mMin = Math.min,
+      mMax = Math.max,
+      floor = Math.floor
+
+
+function parseNum01 (val, max) {
+  // isPercentage
+  const percentFlg = typeof val === 'string' && val.substr(-1) === '%'
+  val = parseFloat(val)
+
+  if (max === 360) {
+    val = hueModi(val)
+  }
+
+  val = clamp(val, max)
+
+  if (percentFlg) {
+    val = parseInt(val * max, 10) / 100
+  }
+  // Handle floating point rounding errors
+  if (abs(val - max) < 0.000001) {
+    return 1
+  }
+  // Convert into [0, 1] range if it isn't already
+  return (val % max) / parseFloat(max)
+}
+
+function hueModi (h) {
+  while (h < 0) h += 360
+  return h % 360
+}
+
+function clamp (n, max, min) {
+  return mMax(min || 0, mMin(n, max))
+}
+
+function clamp01 (n) {
+  return mMax(0, mMin(n, 1))
+}
+
+function regReplace (main, obj, space) {
+  let source = main.source
+  for (let key in obj) {
+    const objsource = obj[key].source.replace(/^\^|\$$/, '')
+    source = source.replace(new RegExp(key, 'g'), objsource)
+  }
+  if (space) {
+    source = source.replace(new RegExp(' ', 'g'), '\\s*')
+  }
+  return new RegExp(source, main.toString().match(/[gimuy]*$/)[0])
+}
+
+const parsers = (function () {
+  const N255 = /^(?:25[0-5]|2[0-4]\d|1\d\d|\d?\d)$/, // 0~255
+        hue = /^(?:[-+]\d+)$/, // degree
+        per = /^(?:100%|\d?\d%)$/, // 0%~100%
+        alpha = /^(?:0|0?\.\d+|1(?:\.0*)?)$/, // 0~1
+        rgbNum = regReplace(/^(?:N255|per)$/, {N255, per})
+
+  const regs = {
+    rgb: /rgb\((rgbNum), (rgbNum), (rgbNum)\)/,
+    rgba: /rgba\((rgbNum), (rgbNum), (rgbNum), (alpha)\)/,
+    hsl: /hsl\((hue), (per), (per)\)/,
+    hsla: /hsla\((hue), (per), (per), (alpha)\)/,
+    hsv: /hsv\((hue), (per), (per)\)/,
+    hsva: /hsva\((hue), (per), (per), (alpha)\)/
+  }
+  for (let key in regs) {
+    regs[key] = regReplace(regs[key], {rgbNum, hue, per, alpha}, true)
+  }
+
+  return Object.assign(regs, {
+    N255,
+    hue,
+    per,
+    alpha,
+    rgbNum,
+    hex3: /^#?([\da-fA-F]{1})([\da-fA-F]{1})([\da-fA-F]{1})$/,
+    hex4: /^#?([\da-fA-F]{1})([\da-fA-F]{1})([\da-fA-F]{1})([\da-fA-F]{1})$/,
+    hex6: /^#?([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})$/,
+    hex8: /^#?([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})([\da-fA-F]{2})$/
+  })
+})()
+
+function string2object (text) {
+  text = text.trim().toLowerCase()
+
+  if (text === 'transparent') {
+    return {r: 0, g: 0, b: 0, a: 0, format: 'name'}
+  }
+
+  // color functions. [rgb, rgba, hsl, hsla, hsv, hsva]
+  const fns = Object.keys(parsers)
+  for (let i = 0; i < 6; i++) {
+    const key = fns[i],
+          reg = parsers[key],
+          match = reg.exec(text)
+
+    if (match) {
+      const obj = {}
+      for (let j = 0; j < key.length; j++) {
+        obj[key[j]] = match[j + 1]
+      }
+      return obj
+    }
+  }
+
+  // color hex. [hex8, hex6, hex4, hex3]
+  const hexs = fns.reverse()
+  for (let i = 0; i < 4; i++) {
+    const key = hexs[i],
+          reg = parsers[key],
+          match = reg.exec(text)
+
+    if (match) {
+      let rgb = match.slice(1, 4).map(n => {
+        if (i > 1) {
+          n += n
+        }
+        return parseInt(n, 16)
+      })
+
+      const obj = {}
+      for (let j = 0; j < 3; j++) {
+        obj['rgb'[j]] = rgb[j]
+      }
+
+      if (match[4]) {
+        obj.a = parseInt(match[4], 16) / 255
+      }
+
+      return obj
+    }
+  }
+
+  throw new Error(`Invalid arguments text`)
+}
+
+function input2rgb (input) {
+  if (typeof input === 'string') {
+    input = string2object(input)
+  }
+
+  const obj = {}
+
+  if (typeof input === 'object') {
+    const {r, g, b, h, s, l, v} = input
+    if (parsers.rgbNum.test(r) && parsers.rgbNum.test(g) && parsers.rgbNum.test(b)) {
+
+    } else if (parsers.hue.test(h) && parsers.per.test(s) && parsers.per.test(v)) {
+
+    } else if (parsers.hue.test(h) && parsers.per.test(s) && parsers.per.test(l)) {
+
+    }
+  }
+}
+
 /**
  * RGB & RGBA & HSL & HSLA
  *
@@ -34,10 +193,9 @@ class ColorParams extends Array {
         },
         set (val) {
           if (chara === 'h') {
-            while (val < 0) val += 360
-            val %= 360
+            val = hueModi(val)
           }
-          this[i] = Math.min(Math.max(0, Math.round(val)), MAX[chara])
+          this[i] = clamp(round(val), MAX[chara])
         }
       })
       // set init value
@@ -51,11 +209,11 @@ class ColorParams extends Array {
           return this[3]
         },
         set (val) {
-          this[3] = Math.min(Math.max(0, val), 1)
+          this[3] = clamp01(val)
         }
       })
       // set init value
-      this.a = a || r.a || r[3] || g || 0
+      this.a = a || r.a || r[3] || g || 1
     }
   }
   // @returns css string
@@ -79,7 +237,7 @@ export default class Color {
       keys.forEach((key, j) => {
         Object.defineProperty(this, key, {
           get () {
-            return Math.round(i < 2 ? this.rgb[j] : this.hsl[j])
+            return round(i < 2 ? this.rgb[j] : this.hsl[j])
           },
           set (val) {
             if (i < 2) {
@@ -116,7 +274,7 @@ export default class Color {
           if (result[1] === 'rgb') {
             if (percent === '%%%') {
               // %を処理
-              rgb = data.map(h => Math.floor(h / 100 * 255))
+              rgb = data.map(h => floor(h / 100 * 255))
             } else if (!percent) {
               rgb = data
             } else {
@@ -177,9 +335,9 @@ export default class Color {
   }
 
   setParams (rgb, hsl) {
-    this.rgb  = new ColorParams('rgb', ...rgb)
+    this.rgb = new ColorParams('rgb', ...rgb)
     this.rgba = new ColorParams('rgba', ...rgb, this.a)
-    this.hsl  = new ColorParams('hsl', ...hsl)
+    this.hsl = new ColorParams('hsl', ...hsl)
     this.hsla = new ColorParams('hsla', ...hsl, this.a)
     if (!this.hex) {
       this.toHex()
@@ -226,7 +384,7 @@ export function nearName (hex, colorlist = webcolor) {
 
   colorlist.forEach(([_hex, name]) => {
     const _rgb = hex2rgb(_hex)
-    const score = _rgb.reduce((p, c, i) => p + Math.abs(rgb[i] - c), 0)
+    const score = _rgb.reduce((p, c, i) => p + abs(rgb[i] - c), 0)
     if (minscore > score) {
       minscore = score
       nearest = [[_hex, name, _rgb, score]]
@@ -243,7 +401,7 @@ export function nearName (hex, colorlist = webcolor) {
   minscore = Infinity
   nearest.forEach(([_hex, name, _rgb, score]) => {
     const _hsl = rgb2hsl(_rgb)
-    const _score = score - Math.abs(_hsl[0] - hsl[0])
+    const _score = score - abs(_hsl[0] - hsl[0])
     if (minscore > _score) {
       minscore = score
       nearestName = [_hex, name, _rgb, _score]
@@ -252,7 +410,6 @@ export function nearName (hex, colorlist = webcolor) {
   return nearestName
 }
 
-
 const schemeNames = {
   Complementary: [180],
   Opornent: [120],
@@ -260,7 +417,7 @@ const schemeNames = {
   SplitComplementary: [150, -150],
   Triadic: [120, 240],
   Tretradic: [60, 180, 240],
-  AccentedAnalogous: [-30, 30, 180],
+  AccentedAnalogous: [-30, 30, 180]
 }
 
 /**
@@ -440,12 +597,9 @@ export function hsl2rgb (h, s, l) {
     h = h.h || h[0] || 0
   }
 
-  while (h < 0) {
-    h += 360
-  }
-  h %= 360
-  s = Math.max(0, Math.min(s, 100))
-  l = Math.max(0, Math.min(l, 100))
+  h = hueModi(h)
+  s = clamp(s, 100)
+  l = clamp(l, 100)
   h /= 360
   s /= 100
   l /= 100
@@ -460,9 +614,9 @@ export function hsl2rgb (h, s, l) {
     b = hue2rgb(p, q, h - 1 / 3)
   }
 
-  r = Math.round(r * 255)
-  g = Math.round(g * 255)
-  b = Math.round(b * 255)
+  r = round(r * 255)
+  g = round(g * 255)
+  b = round(b * 255)
   return [r, g, b]
 }
 
@@ -483,7 +637,7 @@ export function rgb2hsv (r, g, b) {
   }
   const max = Math.max(r, g, b),
         min = Math.min(r, g, b),
-        d   = max - min
+        d = max - min
   let h = max,
       s = (max === 0 ? 0 : d / max),
       v = max / 255
@@ -503,9 +657,9 @@ export function rgb2hsv (r, g, b) {
       break
   }
 
-  h = Math.round(h * 360)
-  s = Math.round(s * 100)
-  v = Math.round(v * 100)
+  h = round(h * 360)
+  s = round(s * 100)
+  v = round(v * 100)
   return [h, s, v]
 }
 
@@ -528,12 +682,9 @@ export function hsv2rgb (h, s, v) {
     h = h.h || h[0] || 0
   }
 
-  while (h < 0) {
-    h += 360
-  }
-  h %= 360
+  h = hueModi(h)
 
-  const i = Math.floor(h * 6),
+  const i = floor(h * 6),
         f = h * 6 - i,
         p = v * (1 - s),
         q = v * (1 - f * s),
@@ -560,9 +711,9 @@ export function hsv2rgb (h, s, v) {
       break
   }
 
-  r = Math.round(r * 255)
-  g = Math.round(g * 255)
-  b = Math.round(b * 255)
+  r = round(r * 255)
+  g = round(g * 255)
+  b = round(b * 255)
   return [r, g, b]
 }
 
@@ -578,8 +729,8 @@ function sRGB (num) {
  * @returns {number}   0~1
  * @see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
  */
-function luminance (rgb) {
-  return 0.2126 * sRGB(rgb[0]) + 0.7152 * sRGB(rgb[1]) + 0.0722 * sRGB(rgb[2])
+function luminance ([r, g, b]) {
+  return 0.2126 * sRGB(r) + 0.7152 * sRGB(g) + 0.0722 * sRGB(b)
 }
 
 /**
@@ -613,7 +764,7 @@ export function contrastRatio (color1, color2) {
     aaa: cr >= 7,
     // 大きなテキスト（18ポイント、太字、中国語、日本語および韓国語）
     AA: cr >= 3,
-    AAA: cr >= 4.5,
+    AAA: cr >= 4.5
   }
 }
 export function contrastRatio1 (color1, color2) {
@@ -622,8 +773,8 @@ export function contrastRatio1 (color1, color2) {
 
   const bright1 = (299 * r1 + 587 * g1 + 114 * b1) / 1000
   const bright2 = (299 * r2 + 587 * g2 + 114 * b2) / 1000
-  const c = Math.abs(r1 - r2) + Math.abs(g1 - g2) + Math.abs(b1 - b2)
-  const d = Math.abs(bright1 - bright2)
+  const c = abs(r1 - r2) + abs(g1 - g2) + abs(b1 - b2)
+  const d = abs(bright1 - bright2)
   return {
     // WCAG version 1
     // contrast
