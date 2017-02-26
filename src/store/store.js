@@ -1,6 +1,6 @@
 import riot from 'riot'
 import {Undo} from '../undo'
-import Color from '../Color'
+import tinycolor from 'tinycolor2'
 const storage = window.sessionStorage
 
 class Store {
@@ -68,7 +68,7 @@ class Store {
     }
 
     this.cards.forEach((param, index) => {
-      param.color = new Color(param.color)
+      param.color = tinycolor(param.color)
       param.zIndex = index
     })
 
@@ -95,7 +95,7 @@ class Store {
 
     // CARDS
     this.on('add_card', (param) => {
-      param.color = new Color(param.color)
+      param.color = tinycolor(param.color)
       param.zIndex = this.cards.length
       this.cards.push(param)
       this.trigger('cards_changed', this.cards)

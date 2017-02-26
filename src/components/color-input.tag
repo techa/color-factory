@@ -6,7 +6,7 @@
   </div>
   <script>
     import store from '../store/store.js'
-    import Color from '../Color.js'
+    import tinycolor from 'tinycolor2'
     function regReplace (main, obj) {
       let source = main.source
       for (let key in obj) {
@@ -49,7 +49,7 @@
       if (text) {
         store.trigger('add_card', {
           name: (text[2] || '').trim(),
-          color: new Color(text[1]),
+          color: tinycolor(text[1]),
         })
         this.refs.color_hex.value = ''
       }
@@ -58,7 +58,7 @@
       const value = this.refs.color_hex.value
       const text = validationRegExp.exec(value)
       if (text) {
-        this.tags['color-wheel'].color = new Color(text[1])
+        this.tags['color-wheel'].color = tinycolor(text[1])
       }
     }
 

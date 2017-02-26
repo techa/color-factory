@@ -77,7 +77,6 @@
 
   <script>
     /* global opts */
-    // import Color, {contrastColors} from '../Color.js'
     import tinycolor from 'tinycolor2'
     import {MousePosition, on, off} from '../mouse.js'
     const size = this.size = opts.size - 10 || 300

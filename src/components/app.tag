@@ -23,7 +23,7 @@
 
   <script>
     import store from '../store/store.js'
-    import Color from '../Color.js'
+    import tinycolor from 'tinycolor2'
     import {Selectable} from '../mouse.js'
 
     this.cards = store.cards
@@ -68,7 +68,7 @@
       const value = this.refs.color_hex.value
       const text = validationRegExp.exec(value)
       if (text) {
-        this.tags['color-picker'].color = new Color(text[1])
+        this.tags['color-picker'].color = tinycolor(text[1])
       }
     }
 
@@ -86,7 +86,7 @@
         this.refs.colors.style.color = textcolor
       })
 
-      store.trigger('set_bgColor', new Color(bgColor))
+      store.trigger('set_bgColor', tinycolor(bgColor))
 
       this.selectable = new Selectable(this.refs.box, {
         filter: '.card',
