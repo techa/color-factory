@@ -1,0 +1,122 @@
+<div ref:card class="card animated bounceIn"
+  style="background-color: {{card.color}}; color: {{textColor}}; width: {{width}}px; height: {{height}}px; left: {{left}}px; top: {{top}}px; z-index: {{card.zIndex}};">
+  <div class="cardtext"><b>{{card.name}}</b><br>{{card.color}}</div>
+</div>
+<script>
+  import tinycolor from 'tinycolor2'
+  import {Movable} from '../mouse'
+  import store from '../store'
+
+  const colorsWidth = 320
+
+  export default {
+    computed: {
+      textColor: card => tinycolor.mostReadable(card.color, ['#eee', '#111']),
+      width: card => card.width || 120,
+      height: card => card.height || 120,
+    },
+    onrender () {
+      console.log('card-render')
+      const cardEl = this.refs.card
+      const box = cardEl.parentElement
+
+      const {card, index} = this.get()
+
+      let selected
+
+      this.movable = new Movable(cardEl, {
+        containment: box,
+        grid: 5,
+        axis: 'shift',
+        start: (e, position) => {
+          e.stopPropagation()
+
+          store.trigger('cards.CARD_FORWARD', index, false)
+          selected = store.get('cards')
+        },
+        drag: (e, position, el) => {
+          // cards.forEach((cardEl, i) => {
+          //   if (card !== cardEl) {
+          //     const cardRect = cardRects[i]
+          //     cardEl.style.left = position.adjust(cardRect.left + position.vectorX, 'width', cardRect) + 'px'
+          //     cardEl.style.top  = position.adjust(cardRect.top  + position.vectorY, 'height', cardRect) + 'px'
+          //   }
+          // })
+        },
+        stop: (e, position, el) => {
+          const pos = this.adjust(position)
+          this.set(pos)
+          store.trigger('cards.TRANSLATE_CARD', index, pos.left, pos.top)
+        },
+        click: (e, position, el) => {
+          store.memo('cards')
+          // this.parent.selectable.select(this.i)
+        },
+      })
+      cardEl.addEventListener('contextmenu', (e) => {
+        // デフォルトイベントをキャンセル
+        // これを書くことでコンテキストメニューが表示されなくなります
+        e.preventDefault()
+        store.trigger('menu_open', e, {
+          name: card.name,
+          color: card.color,
+        }, 'card')
+      }, false)
+
+      // styler(cardEl, position(card, true))
+      // this.position(card, true)
+      this.set(this.adjust(card, true))
+    },
+    methods: {
+      adjust (card, init) {
+        const rect = this.refs.card.parentElement.getBoundingClientRect()
+        const maxW = rect.width - this.get('width')
+        const maxH = rect.height - this.get('height')
+        let left, top
+
+        if (init && (+card.left < colorsWidth || !card.top)) {
+          // random positions
+          left = snap((maxW - colorsWidth) * Math.random() + colorsWidth)
+          top = snap((maxH) * Math.random())
+        } else {
+          left = clamp(card.left, maxW, colorsWidth)
+          top = clamp(card.top, maxH)
+        }
+        return {left, top}
+      }
+    }
+  }
+
+  // Utilities
+
+  function snap (n, grid = 5) {
+    return Math.round(n / grid) * grid
+  }
+  function clamp (val, max, min = 0) {
+    return Math.min(Math.max(min, val), max)
+  }
+</script>
+<style>
+  .card {
+    position: absolute;
+    text-align:center;
+    font-size:12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card.selected {
+    outline: 1px dashed black;
+    box-shadow: 0 0 0 1px white;
+  }
+  .card.active {
+    z-index: 100;
+  }
+  .cardtext {
+    white-space: pre-wrap;
+    user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+  }
+</style>

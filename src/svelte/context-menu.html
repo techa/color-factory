@@ -1,0 +1,137 @@
+<div ref:menu id="menu">
+  {{#if mode == 'tip'}}
+    <p class="menuitem" on:click="add()">ADD CARD</p>
+  {{elseif mode == 'card'}}
+    <p class="menuitem" on:click="remove()">DELETE</p>
+    <p class="menuitem" on:click="duplicate()">DUPLICATE</p>
+  {{/if}}
+  <p class="menuitem" on:click="setBgColor()">SET BACKGROUND</p>
+  <p class="menuitem">
+    <span>COPY:</span>
+    {{#each copys as key}}
+      <span class="menuitem" on:click="copyColor(this)">{{key}}</span>
+    {{/each}}
+  </p>
+  {{#if mode == 'card'}}
+    <p class="menuitem">
+      <span>SIZE:</span>
+      {{#each sizes as key}}
+        <span class="menuitem" on:click="setSize(this)">{{key}}</span>
+      {{/each}}
+    </p>
+  {{/if}}
+</div>
+
+<script>
+  import store from '../store'
+  import {styler, copyTextToClipboard} from '../utils'
+
+  function activeIndex () {
+    const cards = store.get('cards')
+    for (let i = 0; i < cards.length; i++) {
+      cards[i]
+      if (cards[i].zIndex === cards.length - 1) {
+        return i
+      }
+    }
+  }
+  export default {
+    data () {
+      return {
+        mode: false,
+        activeCard: null,
+        copys: 'HEX,RGB,HSL'.split(','),
+        sizes: [120, 240, 360],
+      }
+    },
+    onrender () {
+      console.log('menu-render')
+      const menu = this.refs.menu
+
+      const menuHide = (e) => {
+        if (this.get('mode')) {
+          store.trigger('menu_close')
+        }
+      }
+
+      store.on('menu_open', (e, card, mode) => {
+        styler(menu, {
+          left: e.clientX,
+          top: e.clientY,
+          display: 'block'
+        })
+
+        // 'tip' or 'card'
+        console.log('card', card)
+        this.set({mode, activeCard: card})
+
+
+        window.addEventListener('blur', menuHide)
+        document.addEventListener('click', menuHide)
+      })
+
+      store.on('menu_close', (e) => {
+        menu.style.display = 'none'
+        this.set({mode: false})
+        window.removeEventListener('blur', menuHide)
+        document.removeEventListener('click', menuHide)
+      })
+    },
+    methods: {
+      add () {
+        store.trigger('cards.ADD_CARD', this.get('activeCard'))
+      },
+      duplicate () {
+        store.trigger('cards.DUPLICATE_CARD', this.get('activeCard'))
+      },
+      remove () {
+        const cards = store.get('cards')
+
+        if (cards.some((card) => card.selected)) {
+          console.log('removeselected', activeIndex())
+          cards.forEach((card, i) => {
+            if (card.selected) {
+              store.trigger('cards.REMOVE_CARD', i)
+            }
+          })
+        } else {
+          console.log('remove', activeIndex())
+          store.trigger('cards.REMOVE_CARD', activeIndex())
+        }
+      },
+
+      setBgColor () {
+        store.set('bgColor', this.get('activeCard').color)
+      },
+      copyColor (el) {
+        const key = el.textContent.toLowerCase()
+        copyTextToClipboard(this.get('activeCard').color.toString(key))
+      },
+      setSize (el) {
+        store.trigger('cards.RESIZE_CARD', activeIndex(), +el.textContent)
+        // this.get('activeCard').rectSetter()
+      }
+    }
+  }
+</script>
+
+<style>
+  #menu {
+    position: absolute;
+    font-size:12px;
+    background: #fff;
+    border: solid 1px silver;
+    z-index: 100;
+  }
+  .menuitem {
+    min-width: 100px;
+    padding: 4px;
+    margin: 0;
+  }
+  .menuitem:hover, .menuitem:active {
+    background: aquamarine;
+  }
+  .menuitem .menuitem:hover {
+    font-weight: bold;
+  }
+</style>

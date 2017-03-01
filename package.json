@@ -19,8 +19,12 @@
     "clean": "rm -rf dist/*",
     "watch": "onchange \"src/**/*.{js,tag}\" -d 100 -- npm run build:dev",
     "browse": "browser-sync start --server --index \"index.html\" --files \"src/**/.css, dist/bundle.js\" --no-notify",
+    "build": "rollup -c ./rollup.config.production.js",
     "build:dev": "rollup -c",
-    "build": "rollup -c ./rollup.config.production.js"
+    "build:svelte": "rollup -c ./rollup.config.svelte.js",
+    "svelte:watch": "onchange \"src/**/*.{js,html}\" -d 100 -- npm run build:svelte",
+    "svelte:browse": "browser-sync start --server --index \"svelte.html\" --files \"src/**/.css, dist/bundle.svelte.js\" --no-notify --port 4000",
+    "svelte": "npm-run-all -p svelte:*"
   },
   "devDependencies": {
     "npm-run-all": "^3.1.1",
@@ -29,7 +33,9 @@
     "rollup-plugin-commonjs": "^5.0.5",
     "rollup-plugin-json": "^2.1.0",
     "rollup-plugin-node-resolve": "^2.0.0",
+    "rollup-plugin-replace": "^1.1.1",
     "rollup-plugin-riot": "^0.4.3",
+    "rollup-plugin-svelte": "^1.6.0",
     "rollup-plugin-uglify": "^1.0.1",
     "uglify-js": "git+https://github.com/mishoo/UglifyJS2.git#harmony"
   },
