@@ -382,55 +382,43 @@ export class Selectable extends MousePosition {
     }
 
     this.selectorString = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)')
-    this.children = []
-    this.childrenRects = []
+    this.children = Array.from(this.options.containment.querySelectorAll(this.selectorString))
+    this.childrenRects = this.children.map((el) => el.getBoundingClientRect())
+    this.selectIndexs = new Set()
     this.selectElements = []
   }
 
 
-  select (i, e) {
-    const opts = this.options
-    if (!e) {
-      this.children = Array.from(opts.containment.querySelectorAll(this.selectorString))
-    }
-    const child = this.children[i]
-    child.classList.add(opts.selectedClass)
-
-    const indexOf = this.selectElements.indexOf(child)
-    if (indexOf === -1) {
-      this.selectElements.push(child)
-    }
+  select (i) {
+    const opts = this.options,
+          selectEl = this.children[i]
+    selectEl.classList.add(opts.selectedClass)
+    this.selectIndexs.add(i)
     // Callback
     if (opts.selecting) {
-      opts.selecting(e, this.position, child, i)
+      this.position.options.handle = selectEl
+      opts.selecting(this.position, i)
     }
   }
-  selectAll (e) {
-    this.children.forEach((child, i) => {
-      this.select(i, e)
+  selectAll () {
+    this.children.forEach((selectEl, i) => {
+      this.select(i)
     })
   }
-  unselect (i, e) {
-    const opts = this.options
-    if (!e) {
-      this.children = Array.from(opts.containment.querySelectorAll(this.selectorString))
-    }
-    const child = this.children[i]
-    child.classList.remove(opts.selectedClass)
-
-    const indexOf = this.selectElements.indexOf(child)
-    if (indexOf > -1) {
-      this.selectElements.splice(indexOf, 1)
-    }
+  unselect (i) {
+    const opts = this.options,
+          selectEl = this.children[i]
+    selectEl.classList.remove(opts.selectedClass)
+    this.selectIndexs.delete(i)
     // Callback
     if (opts.unselecting) {
-      opts.unselecting(e, this.position, child, i)
+      this.position.options.handle = selectEl
+      opts.unselecting(this.position, i)
     }
   }
-  unselectAll (e) {
-    this.selectElements.length = 0
-    this.children.forEach((child, i) => {
-      this.unselect(i, e)
+  unselectAll () {
+    this.children.forEach((selectEl, i) => {
+      this.unselect(i)
     })
   }
 
@@ -461,13 +449,16 @@ export class Selectable extends MousePosition {
     // array init
     this.children = Array.from(el.querySelectorAll(this.selectorString))
     this.childrenRects = this.children.map((el) => el.getBoundingClientRect())
-    // 追加
+    this.selectIndexs.clear()
+    this.selectElements.length = 0
+    // helper追加
     el.appendChild(helper)
     helper.style.left = position.startX + 'px'
     helper.style.top  = position.startY + 'px'
     helper.style.width  = '0px'
     helper.style.height = '0px'
-    this.unselectAll(e)
+    // 選択解除
+    this.unselectAll()
   }
 
   // マウスカーソルが動いたときに発火
@@ -481,23 +472,27 @@ export class Selectable extends MousePosition {
     // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
     this.childrenRects.forEach((rect2, i) => {
       if (hitChecker(helperRect, rect2, opts.tolerance)) {
-        this.select(i, e)
+        this.select(i)
       } else {
-        this.unselect(i, e)
+        this.unselect(i)
       }
     })
-    // Callback
-    if (opts.selected) {
-      opts.selected(e, position, helper, this.selectElements)
-    }
     // マウスが動いた場所にhelper要素を動かす
-    Object.assign(position, helperRect)
-    position.setPosition(e, helper)
+    helper.style.left = helperRect.left + 'px'
+    helper.style.top  = helperRect.top + 'px'
+    helper.style.width  = helperRect.width + 'px'
+    helper.style.height = helperRect.height + 'px'
   }
   // マウスボタンが上がったら発火
   mup (e) {
     super.mup(e)
+    const opts = this.options
       // helper要素を消す
-    this.options.containment.removeChild(this.helper)
+    opts.containment.removeChild(this.helper)
+    // Callback
+    if (opts.selected) {
+      this.selectIndexs.forEach((i) => this.selectElements.push(this.children[i]))
+      opts.selected(this.position, this.selectIndexs, this.selectElements)
+    }
   }
 }

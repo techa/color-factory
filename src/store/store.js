@@ -154,6 +154,15 @@ class Store {
         delete this.cards[index].selected
       }
     })
+    this.on('cards_select', (indexs, bool) => {
+      this.cards.forEach((card, i) => {
+        if (indexs.has(i)) {
+          card.selected = true
+        } else {
+          delete card.selected
+        }
+      })
+    })
 
     this.on('cards_changed', () => {
       this.save()

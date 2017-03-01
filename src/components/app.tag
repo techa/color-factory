@@ -95,11 +95,8 @@
         start: (e, position) => {
           store.trigger('menu_close')
         },
-        selecting: (e, position, el, index) => {
-          store.trigger('card_select', index, true)
-        },
-        unselecting: (e, position, el, index) => {
-          store.trigger('card_select', index, false)
+        selected: (position, indexs) => {
+          store.trigger('cards_select', indexs, true)
         },
       })
     })
