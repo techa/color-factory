@@ -1,6 +1,7 @@
 env:
-  node: true
+  commonjs: true
   es6: true
+  amd: true
 extends:
   standard # eslint, google, airbnb,
 plugins:
@@ -31,6 +32,14 @@ rules:
   - align: value
   - beforeColon: false
     afterColon: true
+  no-mixed-operators:
+  - 1
+  - groups:
+      # - ["+", "-", "*", "/", "%", "**"]
+      - ["&", "|", "^", "~", "<<", ">>", ">>>"]
+      - ["==", "!=", "===", "!==", ">", ">=", "<", "<="]
+      - ["&&", "||"]
+      - ["in", "instanceof"]
   no-multi-spaces:
   - 0
   - exceptions:
@@ -43,6 +52,11 @@ rules:
   - 1
   - vars: all
     args: none
+  object-curly-newline:
+  - 2
+  - multiline: true
+    minProperties: 2
+    consistent: true
   no-var: 1
   one-var: 0
   one-var-declaration-per-line:
