@@ -2,6 +2,7 @@
   let initDone, storage, undoLimt, memorizeDefault, eventNameSeperator
   let undoKeys = [],
       redoKeys = [],
+      events = [],
       listeners = []
   const states = {},
         stringify = JSON.stringify,
@@ -14,20 +15,17 @@
    * @param {object} data
    * @param {object} [opts={}]
    */
-  function Histore (data, opts = {}) {
+  function Histore (defaultData, opts = {}) {
     if (!(this instanceof Histore)) {
-      return new Histore(data, opts)
+      return new Histore(defaultData, opts)
     }
     if (initDone) {
       throw new Error('Histore is already created.')
     }
     initDone = true
     this.setOptions(opts)
-    this.set(data)
-  }
-  Histore.getItem = function (keys, defaultData = {}, opts = {}) {
-    storage = opts.storage || window.sessionStorage
-    const data = keys.reduce((obj, key) => {
+
+    const data = Object.keys(defaultData).reduce((obj, key) => {
       let val = storage.getItem(key)
       val = val ? parse(val) : defaultData[key]
       if (val === void 0) {
@@ -36,13 +34,17 @@
       obj[key] = val
       return obj
     }, {})
-    return new Histore(data, opts)
+
+    this.set(data)
   }
+
   Histore.prototype = {
     setOptions (opts) {
       opts = opts || {}
-      storage = opts.storage || window.sessionStorage
-      memorizeDefault = typeof opts.memorizeDefault === 'boolean' ? memorizeDefault :  true
+      storage = opts.storage
+      memorizeDefault = typeof opts.memorizeDefault === 'boolean'
+        ? memorizeDefault
+        : !!storage
       undoLimt = opts.undoLimt || 50
       eventNameSeperator = opts.eventNameSeperator || '.'
       return this
@@ -156,8 +158,8 @@
     },
     one (eventName, handler) {
       const onehandler = (...args) => {
-        handler(...args)
         this.off(eventName, onehandler)
+        handler(...args)
       }
       eventEmit(eventName, onehandler, addEvent)
       return this
@@ -166,17 +168,14 @@
       const names = eventName.split('.')
 
       if (names.length === 1) {
+        fire(events[names[0]], args)
+      } else if (names[0] === '*') {
+        // run all
         for (let stateName in states) {
-          ;(states[stateName].events[names[0]] || []).forEach((handler) => {
-            console.log('trigger', stateName, names[0], ...args)
-            handler(...args)
-          })
+          fire(states[stateName].events[names[0]], args)
         }
-      } else {
-        ;(states[names[0]].events[names[1]] || []).forEach((handler) => {
-          console.log('trigger', names[0], names[1], ...args)
-          handler(...args)
-        })
+      } else if (states[names[0]]) {
+        fire(states[names[0]].events[names[1]], args)
       }
       return this
     },
@@ -204,26 +203,31 @@
   function eventEmit (eventName, handler, emitter) {
     const names = eventName.split('.')
     if (names.length === 1) {
+      // emit Histore
+      emitter(events, names[0], handler)
+    } else if (names[0] === '*') {
+      // emit All states
       for (let stateName in states) {
-        emitter(stateName, names[0], handler)
+        emitter(states[stateName].events, names[1], handler)
       }
-    } else {
-      emitter(names[0], names[1], handler)
+    } else if (states[names[0]])  {
+      // emit one states
+      emitter(states[names[0]].events, names[1], handler)
     }
   }
-  function addEvent (stateName, eventName, handler) {
-    const ary = states[stateName].events[eventName]
-    if (ary) {
-      ary.push(handler)
-    } else {
-      states[stateName].events[eventName] = [handler]
-    }
+  function addEvent (eventlist, eventName, handler) {
+    (eventlist[eventName] = eventlist[eventName] || []).push(handler)
   }
-  function removeEvent (stateName, eventName, handler) {
-    const ary = states[stateName].events[eventName]
+  function removeEvent (eventlist, eventName, handler) {
+    const ary = eventlist[eventName]
     const index = ary.indexOf(handler)
     if (index > -1) {
-      states[stateName].events[eventName].splice(index, 1)
+      eventlist[eventName].splice(index, 1)
+    }
+  }
+  function fire (eventlist, args) {
+    if (eventlist) {
+      eventlist.forEach((handler) => handler(...args))
     }
   }
 
@@ -260,6 +264,7 @@
         } else {
           this.current = value
         }
+        console.log('---don\'t memory set---')
       } else {
         const oldstr = stringify(this.current)
         if (typeof value === 'function') {
@@ -328,39 +333,9 @@
       }
       return this
     },
-    on (eventName, handler) {
-      if (this.events[eventName]) {
-        this.events[eventName].push(handler)
-      } else {
-        this.events[eventName] = [handler]
-      }
-    },
-    one (eventName, handler) {
-      const onehandler = (...args) => {
-        handler(...args)
-        this.off(eventName, onehandler)
-      }
-      if (this.events[eventName]) {
-        this.events[eventName].push(onehandler)
-      } else {
-        this.events[eventName] = [onehandler]
-      }
-    },
-    off (eventName, handler) {
-      const ary = this.events[eventName]
-      const index = ary.indexOf(handler)
-      if (index > -1) {
-        this.events[eventName].splice(index, 1)
-      }
-    },
-    trigger (eventName, ...args) {
-      ;(this.events[eventName] || []).forEach((handler) => {
-        handler(...args)
-      })
-    },
   }
 
-  // Node: Export function
+  // CommonJS: Export function
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = Histore
     /* global define */
