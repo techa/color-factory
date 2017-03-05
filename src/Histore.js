@@ -156,11 +156,15 @@
       return this
     },
     on (eventName, handler) {
-      eventEmit(eventName, handler, addEvent)
+      (events[eventName] = events[eventName] || []).push(handler)
       return this
     },
     off (eventName, handler) {
-      eventEmit(eventName, handler, removeEvent)
+      const ary = events[eventName]
+      const index = ary.indexOf(handler)
+      if (index !== -1) {
+        events[eventName].splice(index, 1)
+      }
       return this
     },
     one (eventName, handler) {
@@ -168,21 +172,12 @@
         this.off(eventName, onehandler)
         handler(...args)
       }
-      eventEmit(eventName, onehandler, addEvent)
+      (events[eventName] = events[eventName] || []).push(onehandler)
       return this
     },
     trigger (eventName, ...args) {
-      const names = eventName.split('.')
-
-      if (names.length === 1) {
-        fire(events[names[0]], args)
-      } else if (names[0] === '*') {
-        // run all
-        for (let stateName in states) {
-          fire(states[stateName].events[names[0]], args)
-        }
-      } else if (states[names[0]]) {
-        fire(states[names[0]].events[names[1]], args)
+      if (events[eventName]) {
+        events.forEach((handler) => handler(...args))
       }
       return this
     },
@@ -197,45 +192,6 @@
       }
       return this
     },
-  }
-
-  /**
-   * Histore.on() & Histore.off()
-   *
-   * @param {string}     eventName - stateName + eventName
-   * @param {function}   handler   - event handler
-   * @param {function}   emitter   - addEvent or removeEvent
-   * @returns
-   */
-  function eventEmit (eventName, handler, emitter) {
-    const names = eventName.split('.')
-    if (names.length === 1) {
-      // emit Histore
-      emitter(events, names[0], handler)
-    } else if (names[0] === '*') {
-      // emit All states
-      for (let stateName in states) {
-        emitter(states[stateName].events, names[1], handler)
-      }
-    } else if (states[names[0]])  {
-      // emit one states
-      emitter(states[names[0]].events, names[1], handler)
-    }
-  }
-  function addEvent (eventlist, eventName, handler) {
-    (eventlist[eventName] = eventlist[eventName] || []).push(handler)
-  }
-  function removeEvent (eventlist, eventName, handler) {
-    const ary = eventlist[eventName]
-    const index = ary.indexOf(handler)
-    if (index > -1) {
-      eventlist[eventName].splice(index, 1)
-    }
-  }
-  function fire (eventlist, args) {
-    if (eventlist) {
-      eventlist.forEach((handler) => handler(...args))
-    }
   }
 
 
