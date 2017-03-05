@@ -77,6 +77,13 @@
           }
           return obj
         }, {})
+      } else if (Object.prototype.toString.call(key) === '[object RegExp]') {
+        return Object.keys(states).reduce((obj, _key) => {
+          if (key.test(_key) && states[_key]) {
+            obj[_key] = states[_key].current
+          }
+          return obj
+        }, {})
       }
       return states[key].current
     },
@@ -258,37 +265,66 @@
       }
     },
     set (value, memo) {
-      if (!memo) {
-        if (typeof value === 'function') {
-          this.current = value(this.current)
-        } else {
-          this.current = value
-        }
-        console.log('---don\'t memory set---')
+      const remember = new Promise((resolve, reject) => {
+        resolve(stringify(this.current))
+      })
+      if (typeof value === 'function') {
+        this.current = value(this.current)
       } else {
-        const oldstr = stringify(this.current)
-        if (typeof value === 'function') {
-          this.current = value(this.current)
-        } else {
-          this.current = value
-        }
-        const valstr = stringify(this.current)
-
-        if (oldstr !== valstr) {
-          this.redoStock.length = 0
-          this.undoStock.push(oldstr)
-          while (this.undoStock.length > undoLimt) {
-            this.undoStock.shift()
-          }
-          this.setItem(valstr)
-          console.log('---memory set---')
-        }
+        this.current = value
       }
 
-      // subscribe
-      this.listeners.forEach((listener) => {
-        listener(this.current)
+      remember.then((oldstr) => {
+        const newstr = stringify(this.current)
+
+        if (oldstr !== newstr) {
+          if (memo) {
+            this.redoStock.length = 0
+            this.undoStock.push(oldstr)
+            while (this.undoStock.length > undoLimt) {
+              this.undoStock.shift()
+            }
+            new Promise(() => { // eslint-disable-line
+              this.setItem(newstr)
+            })
+            console.log('---memory set---')
+          }
+
+          // subscribe
+          this.listeners.forEach((listener) => {
+            listener(this.current)
+          })
+        }
       })
+      // let oldstr, newstr
+      // if (memo || this.listeners.length) {
+      //   oldstr = stringify(this.current)
+      // }
+      // if (typeof value === 'function') {
+      //   this.current = value(this.current)
+      // } else {
+      //   this.current = value
+      // }
+      // if (memo || this.listeners.length) {
+      //   newstr = stringify(this.current)
+      // }
+      // if (oldstr !== newstr) {
+      //   if (memo) {
+      //     this.redoStock.length = 0
+      //     this.undoStock.push(oldstr)
+      //     while (this.undoStock.length > undoLimt) {
+      //       this.undoStock.shift()
+      //     }
+
+      //     this.setItem(newstr)
+      //     console.log('---memory set---')
+      //   }
+
+      //   // subscribe
+      //   this.listeners.forEach((listener) => {
+      //     listener(this.current)
+      //   })
+      // }
       // Do not write processing after here
       return this
     },
