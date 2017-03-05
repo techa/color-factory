@@ -35,7 +35,7 @@
       return obj
     }, {})
 
-    this.set(data)
+    this.set(data, false)
   }
 
   Histore.prototype = {
@@ -43,7 +43,7 @@
       opts = opts || {}
       storage = opts.storage
       memorizeDefault = typeof opts.memorizeDefault === 'boolean'
-        ? memorizeDefault
+        ? opts.memorizeDefault
         : !!storage
       undoLimt = opts.undoLimt || 50
       eventNameSeperator = opts.eventNameSeperator || '.'
@@ -87,6 +87,23 @@
       }
       return states[key].current
     },
+    getlib (libkey) {
+      const [lib, key] = libkey.split('/')
+      return Object.keys(states).reduce((obj, _key) => {
+        if (states[_key]) {
+          obj[_key] = states[_key].current
+        }
+        return obj
+      }, {})
+    },
+    setlib (libkey, value) {
+      return Object.keys(states).reduce((obj, _key) => {
+        if (states[_key]) {
+          obj[_key] = states[_key].current
+        }
+        return obj
+      }, {})
+    },
     /**
      * Histore.set()
      *
@@ -96,39 +113,50 @@
      * @returns this
      */
     set (key, value, memo = memorizeDefault) {
+      let p
       if (typeof key === 'string' && value !== void 0) {
         _setter(key, value, memo)
       } else if (typeof key === 'object') {
         // key = object
+        memo = value == null ? memorizeDefault : value
         for (let _key in key) {
-          _setter(_key, key[_key], value)
+          _setter(_key, key[_key], memo)
         }
       } else {
         throw new TypeError(`Histore.set(key): ${key} is Invalid`)
       }
       function _setter (key, value, memo) {
-        states[key] = (states[key] || new State(key)).set(value, memo)
+        p = (states[key] = states[key] || new State(key)).set(value, memo)
       }
-
-      if (memo) {
-        redoKeys.length = 0
-        undoKeys.push(key)
-      }
+      p.then((memoflg) => {
+        console.log('memoflg', memoflg)
+        if (memoflg) {
+          redoKeys.length = 0
+          undoKeys.push(key)
+        }
+      })
       listeners.forEach((listener) => {
-        listener(this.get())
+        listener()
       })
       return this
     },
     memo (key) {
-      states[key].memo()
-      redoKeys.length = 0
-      undoKeys.push(key)
+      if (!key || !states[key]) {
+        throw new TypeError(`.memo(key) ${key} missing or states[key] is undefind!`)
+      }
+      states[key].memo().then((memoflg) => {
+        if (memoflg) {
+          redoKeys.length = 0
+          undoKeys.push(key)
+        }
+      })
       return this
     },
     undo (key) {
       const len = undoKeys.length
       if (!len) {
-        throw new Error('undoKeys.length == 0')
+        // throw new Error('undoKeys.length == 0')
+        console.info('undoKeys.length == 0')
       }
       if (len) {
         key = key || undoKeys.pop()
@@ -143,7 +171,8 @@
     redo (key) {
       const len = redoKeys.length
       if (!len) {
-        throw new Error('redoKeys.length == 0')
+        // throw new Error('redoKeys.length == 0')
+        console.info('redoKeys.length == 0')
       }
       if (len) {
         key = key || redoKeys.pop()
@@ -177,7 +206,10 @@
     },
     trigger (eventName, ...args) {
       if (events[eventName]) {
-        events.forEach((handler) => handler(...args))
+        console.log('trigger', eventName, ...args)
+        events[eventName].forEach((handler) => handler(...args))
+      } else {
+        console.error(`trigger: ${eventName} is undefind`)
       }
       return this
     },
@@ -221,16 +253,17 @@
       }
     },
     set (value, memo) {
-      const remember = new Promise((resolve, reject) => {
+      this.remember = new Promise((resolve, reject) => {
         resolve(stringify(this.current))
       })
+
       if (typeof value === 'function') {
         this.current = value(this.current)
       } else {
         this.current = value
       }
 
-      remember.then((oldstr) => {
+      return this.remember.then((oldstr) => {
         const newstr = stringify(this.current)
 
         if (oldstr !== newstr) {
@@ -251,6 +284,7 @@
             listener(this.current)
           })
         }
+        return oldstr !== newstr && memo
       })
       // let oldstr, newstr
       // if (memo || this.listeners.length) {
@@ -282,20 +316,23 @@
       //   })
       // }
       // Do not write processing after here
-      return this
+      // return this
     },
     memo () {
-      const len = this.undoStock.length
-      const prevstr = stringify(this.undoStock[len - 1])
-      const currstr = stringify(this.current)
-      if (!len || prevstr !== currstr) {
-        this.undoStock.push(currstr)
-        while (this.undoStock.length > undoLimt) {
-          this.undoStock.shift()
+      return new Promise((resolve) => {
+        const len = this.undoStock.length
+        const prevstr = stringify(this.undoStock[len - 1])
+        const currstr = stringify(this.current)
+        if (!len || prevstr !== currstr) {
+          this.undoStock.push(currstr)
+          while (this.undoStock.length > undoLimt) {
+            this.undoStock.shift()
+          }
+          this.setItem(currstr)
+          console.log('---memory memo---')
         }
-        this.setItem(currstr)
-        console.log('---memory memo---')
-      }
+        resolve(!len || prevstr !== currstr)
+      })
     },
     canUndo () {
       return !!this.undoStock.length
@@ -311,8 +348,11 @@
       if (len) {
         this.redoStock.push(stringify(this.current))
         this.current = parse(this.undoStock.pop())
+        this.listeners.forEach((listener) => {
+          listener(this.current)
+        })
       }
-      return this
+      return this.current
     },
     redo (err) {
       const len = this.redoStock.length
@@ -322,8 +362,11 @@
       if (len) {
         this.undoStock.push(stringify(this.current))
         this.current = parse(this.redoStock.pop())
+        this.listeners.forEach((listener) => {
+          listener(this.current)
+        })
       }
-      return this
+      return this.current
     },
   }
 
