@@ -7,11 +7,11 @@ function createCommonjsModule(fn, module) {
 
 var Histore = createCommonjsModule(function (module) {
 (function () {
-  let initDone, storage, undoLimt, memorizeDefault, eventNameSeperator;
-  let undoKeys = [],
+  var initDone, storage, undoLimt, memorizeDefault, eventNameSeperator;
+  var undoKeys = [],
       redoKeys = [],
       listeners = [];
-  const states = {},
+  var states = {},
         stringify = JSON.stringify,
         parse = JSON.parse;
 
@@ -22,51 +22,54 @@ var Histore = createCommonjsModule(function (module) {
    * @param {object} data
    * @param {object} [opts={}]
    */
-  function Histore (data, opts = {}) {
+  function Histore (defaultData, opts) {
+    if ( opts === void 0 ) opts = {};
+
     if (!(this instanceof Histore)) {
-      return new Histore(data, opts)
+      return new Histore(defaultData, opts)
     }
     if (initDone) {
       throw new Error('Histore is already created.')
     }
     initDone = true;
     this.setOptions(opts);
-    this.set(data);
-  }
-  Histore.getItem = function (keys, defaultData = {}, opts = {}) {
-    storage = opts.storage || window.sessionStorage;
-    const data = keys.reduce((obj, key) => {
-      let val = storage.getItem(key);
+
+    var data = Object.keys(defaultData).reduce(function (obj, key) {
+      var val = storage.getItem(key);
       val = val ? parse(val) : defaultData[key];
       if (val === void 0) {
-        throw new Error(`Histore.getItem: ${key} is undefind`)
+        throw new Error(("Histore.getItem: " + key + " is undefind"))
       }
       obj[key] = val;
       return obj
     }, {});
-    return new Histore(data, opts)
-  };
+
+    this.set(data);
+  }
+
   Histore.prototype = {
-    setOptions (opts) {
+    setOptions: function setOptions (opts) {
       opts = opts || {};
-      storage = opts.storage || window.sessionStorage;
-      memorizeDefault = typeof opts.memorizeDefault === 'boolean' ? memorizeDefault :  true;
+      storage = opts.storage;
+      memorizeDefault = typeof opts.memorizeDefault === 'boolean'
+        ? memorizeDefault
+        : !!storage;
       undoLimt = opts.undoLimt || 50;
       eventNameSeperator = opts.eventNameSeperator || '.';
       return this
     },
-    toJSON () {
+    toJSON: function toJSON () {
       return states
     },
-    clear (key) {
+    clear: function clear (key) {
       if (key) {
         delete states[key];
-        undoKeys = undoKeys.filter((k) => key !== k);
-        redoKeys = redoKeys.filter((k) => key !== k);
+        undoKeys = undoKeys.filter(function (k) { return key !== k; });
+        redoKeys = redoKeys.filter(function (k) { return key !== k; });
         storage.removeItem(key);
       } else {
         // clear all
-        for (let _key in states) {
+        for (var _key in states) {
           delete states[_key];
         }
         undoKeys.length = 0;
@@ -75,9 +78,9 @@ var Histore = createCommonjsModule(function (module) {
       }
       return this
     },
-    get (key) {
+    get: function get (key) {
       if (!key) {
-        return Object.keys(states).reduce((obj, _key) => {
+        return Object.keys(states).reduce(function (obj, _key) {
           if (states[_key]) {
             obj[_key] = states[_key].current;
           }
@@ -94,16 +97,19 @@ var Histore = createCommonjsModule(function (module) {
      * @param {any} [memo=memorizeDefault]
      * @returns this
      */
-    set (key, value, memo = memorizeDefault) {
+    set: function set (key, value, memo) {
+      var this$1 = this;
+      if ( memo === void 0 ) memo = memorizeDefault;
+
       if (typeof key === 'string' && value !== void 0) {
         _setter(key, value, memo);
       } else if (typeof key === 'object') {
         // key = object
-        for (let _key in key) {
+        for (var _key in key) {
           _setter(_key, key[_key], value);
         }
       } else {
-        throw new TypeError(`Histore.set(key): ${key} is Invalid`)
+        throw new TypeError(("Histore.set(key): " + key + " is Invalid"))
       }
       function _setter (key, value, memo) {
         states[key] = (states[key] || new State(key)).set(value, memo);
@@ -113,25 +119,25 @@ var Histore = createCommonjsModule(function (module) {
         redoKeys.length = 0;
         undoKeys.push(key);
       }
-      listeners.forEach((listener) => {
-        listener(this.get());
+      listeners.forEach(function (listener) {
+        listener(this$1.get());
       });
       return this
     },
-    memo (key) {
+    memo: function memo (key) {
       states[key].memo();
       redoKeys.length = 0;
       undoKeys.push(key);
       return this
     },
-    undo (key) {
-      const len = undoKeys.length;
+    undo: function undo (key) {
+      var len = undoKeys.length;
       if (!len) {
         throw new Error('undoKeys.length == 0')
       }
       if (len) {
         key = key || undoKeys.pop();
-        const stat = states[key];
+        var stat = states[key];
         if (stat.canUndo()) {
           stat.undo();
           redoKeys.push(key);
@@ -139,14 +145,14 @@ var Histore = createCommonjsModule(function (module) {
       }
       return this
     },
-    redo (key) {
-      const len = redoKeys.length;
+    redo: function redo (key) {
+      var len = redoKeys.length;
       if (!len) {
         throw new Error('redoKeys.length == 0')
       }
       if (len) {
         key = key || redoKeys.pop();
-        const stat = states[key];
+        var stat = states[key];
         if (stat.canRedo()) {
           stat.redo();
           undoKeys.push(key);
@@ -154,44 +160,58 @@ var Histore = createCommonjsModule(function (module) {
       }
       return this
     },
-    on (eventName, handler) {
+    on: function on (eventName, handler) {
       eventEmit(eventName, handler, addEvent);
       return this
     },
-    off (eventName, handler) {
+    off: function off (eventName, handler) {
       eventEmit(eventName, handler, removeEvent);
       return this
     },
-    one (eventName, handler) {
-      const onehandler = (...args) => {
-        handler(...args);
-        this.off(eventName, onehandler);
+    one: function one (eventName, handler) {
+      var this$1 = this;
+
+      var onehandler = function () {
+        var args = [], len = arguments.length;
+        while ( len-- ) args[ len ] = arguments[ len ];
+
+        this$1.off(eventName, onehandler);
+        handler.apply(void 0, args);
       };
       eventEmit(eventName, onehandler, addEvent);
       return this
     },
-    trigger (eventName, ...args) {
-      const names = eventName.split('.');
+    trigger: function trigger (eventName) {
+      var args = [], len = arguments.length - 1;
+      while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
+
+      var names = eventName.split('.');
 
       if (names.length === 1) {
-        for (let stateName in states) {
-          (states[stateName].events[names[0]] || []).forEach((handler) => {
-            console.log('trigger', stateName, names[0], ...args);
-            handler(...args);
+        var loop = function ( stateName ) {
+          (states[stateName].events[names[0]] || []).forEach(function (handler) {
+            console.log.apply(console, [ 'trigger', stateName, names[0] ].concat( args ));
+            handler.apply(void 0, args);
           });
-        }
+        };
+
+        for (var stateName in states) loop( stateName );
       } else {
-        (states[names[0]].events[names[1]] || []).forEach((handler) => {
-          console.log('trigger', names[0], names[1], ...args);
-          handler(...args);
+        (states[names[0]].events[names[1]] || []).forEach(function (handler) {
+          console.log.apply(console, [ 'trigger', names[0], names[1] ].concat( args ));
+          handler.apply(void 0, args);
         });
       }
       return this
     },
-    fire (eventName, ...args) {
-      return this.trigger(eventName, ...args)
+    fire: function fire (eventName) {
+      var args = [], len = arguments.length - 1;
+      while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
+
+      return (ref = this).trigger.apply(ref, [ eventName ].concat( args ))
+      var ref;
     },
-    subscribe (key, handler) {
+    subscribe: function subscribe (key, handler) {
       if (typeof key === 'function') {
         listeners.push(key);
       } else {
@@ -210,9 +230,9 @@ var Histore = createCommonjsModule(function (module) {
    * @returns
    */
   function eventEmit (eventName, handler, emitter) {
-    const names = eventName.split('.');
+    var names = eventName.split('.');
     if (names.length === 1) {
-      for (let stateName in states) {
+      for (var stateName in states) {
         emitter(stateName, names[0], handler);
       }
     } else {
@@ -220,16 +240,11 @@ var Histore = createCommonjsModule(function (module) {
     }
   }
   function addEvent (stateName, eventName, handler) {
-    const ary = states[stateName].events[eventName];
-    if (ary) {
-      ary.push(handler);
-    } else {
-      states[stateName].events[eventName] = [handler];
-    }
+    (states[stateName].events[eventName] = states[stateName].events[eventName] || []).push(handler);
   }
   function removeEvent (stateName, eventName, handler) {
-    const ary = states[stateName].events[eventName];
-    const index = ary.indexOf(handler);
+    var ary = states[stateName].events[eventName];
+    var index = ary.indexOf(handler);
     if (index > -1) {
       states[stateName].events[eventName].splice(index, 1);
     }
@@ -253,15 +268,17 @@ var Histore = createCommonjsModule(function (module) {
     this.listeners = [];
   }
   State.prototype = {
-    toJSON () {
+    toJSON: function toJSON () {
       return this.current
     },
-    setItem (value) {
+    setItem: function setItem (value) {
       if (storage) {
         storage.setItem(this.key, value);
       }
     },
-    set (value, memo) {
+    set: function set (value, memo) {
+      var this$1 = this;
+
       if (!memo) {
         if (typeof value === 'function') {
           this.current = value(this.current);
@@ -269,19 +286,19 @@ var Histore = createCommonjsModule(function (module) {
           this.current = value;
         }
       } else {
-        const oldstr = stringify(this.current);
+        var oldstr = stringify(this.current);
         if (typeof value === 'function') {
           this.current = value(this.current);
         } else {
           this.current = value;
         }
-        const valstr = stringify(this.current);
+        var valstr = stringify(this.current);
 
         if (oldstr !== valstr) {
           this.redoStock.length = 0;
           this.undoStock.push(oldstr);
           while (this.undoStock.length > undoLimt) {
-            this.undoStock.shift();
+            this$1.undoStock.shift();
           }
           this.setItem(valstr);
           console.log('---memory set---');
@@ -289,33 +306,35 @@ var Histore = createCommonjsModule(function (module) {
       }
 
       // subscribe
-      this.listeners.forEach((listener) => {
-        listener(this.current);
+      this.listeners.forEach(function (listener) {
+        listener(this$1.current);
       });
       // Do not write processing after here
       return this
     },
-    memo () {
-      const len = this.undoStock.length;
-      const prevstr = stringify(this.undoStock[len - 1]);
-      const currstr = stringify(this.current);
+    memo: function memo () {
+      var this$1 = this;
+
+      var len = this.undoStock.length;
+      var prevstr = stringify(this.undoStock[len - 1]);
+      var currstr = stringify(this.current);
       if (!len || prevstr !== currstr) {
         this.undoStock.push(currstr);
         while (this.undoStock.length > undoLimt) {
-          this.undoStock.shift();
+          this$1.undoStock.shift();
         }
         this.setItem(currstr);
         console.log('---memory memo---');
       }
     },
-    canUndo () {
+    canUndo: function canUndo () {
       return !!this.undoStock.length
     },
-    canRedo () {
+    canRedo: function canRedo () {
       return !!this.redoStock.length
     },
-    undo (err) {
-      const len = this.undoStock.length;
+    undo: function undo (err) {
+      var len = this.undoStock.length;
       if (err && !len) {
         throw new Error('State.undoStock.length == 0')
       }
@@ -325,8 +344,8 @@ var Histore = createCommonjsModule(function (module) {
       }
       return this
     },
-    redo (err) {
-      const len = this.redoStock.length;
+    redo: function redo (err) {
+      var len = this.redoStock.length;
       if (err && !len) {
         throw new Error('State.redoStock.length == 0')
       }
@@ -336,39 +355,39 @@ var Histore = createCommonjsModule(function (module) {
       }
       return this
     },
-    on (eventName, handler) {
-      if (this.events[eventName]) {
-        this.events[eventName].push(handler);
-      } else {
-        this.events[eventName] = [handler];
-      }
+    on: function on (eventName, handler) {
+      (this.events[eventName] = this.events[eventName] || []).push(handler);
     },
-    one (eventName, handler) {
-      const onehandler = (...args) => {
-        handler(...args);
-        this.off(eventName, onehandler);
-      };
-      if (this.events[eventName]) {
-        this.events[eventName].push(onehandler);
-      } else {
-        this.events[eventName] = [onehandler];
+    one: function one (eventName, handler) {
+      var this$1 = this;
+
+      var onehandler = function () {
+        var args = [], len = arguments.length;
+        while ( len-- ) args[ len ] = arguments[ len ];
+
+        this$1.off(eventName, onehandler);
+        handler.apply(void 0, args);
       }
+      (this.events[eventName] = this.events[eventName] || []).push(onehandler);
     },
-    off (eventName, handler) {
-      const ary = this.events[eventName];
-      const index = ary.indexOf(handler);
-      if (index > -1) {
+    off: function off (eventName, handler) {
+      var ary = this.events[eventName];
+      var index = ary.indexOf(handler);
+      if (index !== -1) {
         this.events[eventName].splice(index, 1);
       }
     },
-    trigger (eventName, ...args) {
-      (this.events[eventName] || []).forEach((handler) => {
-        handler(...args);
+    trigger: function trigger (eventName) {
+      var args = [], len = arguments.length - 1;
+      while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
+
+      (this.events[eventName] || []).forEach(function (handler) {
+        handler.apply(void 0, args);
       });
     },
   };
 
-  // Node: Export function
+  // CommonJS: Export function
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = Histore;
     /* global define */
@@ -382,62 +401,175 @@ var Histore = createCommonjsModule(function (module) {
 })();
 });
 
+var KeyManager = createCommonjsModule(function (module) {
+(function () {
+  /**
+   * @type {object}
+   */
+  var keymap = {
+    key: 'ctrl+z',
+    action: 'undo',
+    mode: '',
+    payload: {}
+  };
+  var vcvfhnfgnhg = function vcvfhnfgnhg () {
+    this.g = 9;
+  };
+
+  var prototypeAccessors = { kj: {} };
+  prototypeAccessors.kj.get = function () {
+
+  };
+  vcvfhnfgnhg.prototype.hj = function hj () {
+    return j
+  };
+
+  Object.defineProperties( vcvfhnfgnhg.prototype, prototypeAccessors );
+
+  /**
+   * keydown
+   *
+   * @param {function} handler
+   * @returns {function}
+   */
+  function keydownHandler (handler) {
+    return function (e) {
+      if (
+        e.which !== 17 && // Ctrl
+        e.which !== 91 && // Cmd
+        e.which !== 18 && // Alt
+        e.which !== 16 && // Shift
+        !(/^\w$/.test(e.key) && !(e.ctrlKey || e.altKey || e.metaKey)) // [a-zA-Z]
+      ) {
+        handler(e);
+      }
+    }
+  }
+
+  /**
+   * Class KeyManager constructor
+   *
+   * @param {Histore} store     Histore instance
+   * @param {object}  keymaps   keymap
+   * @param {object}  [options] element
+   */
+  function KeyManager (store, keymaps, options) {
+    var this$1 = this;
+
+    this.options = Object.assign({element: window}, options || {});
+    this.mode = undefined;
+    this.keymaps = [];
+    this.options.element.addEventListener('keydown', keydownHandler(function (e) {
+      console.log('e.key', e.key);
+      var inputTags = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+      if (inputTags) {
+        // brackets
+        return ("fd" + inputTags)
+      }
+      this$1.keymaps.some(function (keymap) {
+        var action = this$1.getAction(e, keymap);
+        if (action) {
+          try {
+            this$1.trigger(action, e, keymap.payload);
+          } catch (err) {
+            console.error(err.message, err.stack);
+          }
+          e.preventDefault();
+          return true
+        }
+      });
+    }));
+  }
+  KeyManager.prototype = {
+    getAction: function getAction (e, keymap) {
+      var key = keymap.key;
+      var action = keymap.action;
+      var mode = keymap.mode;
+      if (!this.modeCheck(mode)) { return }
+      if (e.shiftKey !== /\bshift\b/i.test(key)) { return }
+      if (e.ctrlKey !== /\bctrl\b/i.test(key)) { return }
+      if (e.altKey !== /\balt\b/i.test(key)) { return }
+      if (e.metaKey !== /\b(command|cmd)\b/i.test(key)) { return }
+
+      var eKey = e.key.replace('Arrow', '').toLowerCase(),
+            keyReg = keymap.key.replace(/\b(shift|ctrl|alt|command|cmd)[-+]/ig, '');
+      console.log(keyReg, eKey);
+      if (!new RegExp((keyReg + "$")).test(eKey)) { return Number.EPSILON }
+      return action
+    }
+  };
+  // CommonJS: Export function
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = KeyManager;
+  } else if (typeof define === 'function' && define.amd) {
+  // AMD/requirejs: Define the module
+    define(function () { return KeyManager });
+  } else {
+  // Browser: Expose to window
+    window.KeyManager = KeyManager;
+  }
+})();
+});
+
 var defaultpalette = {
   cards: [
     {
-      name: 'turquoise',
-      color: '#40E0D0'
+      name: 'Comment',
+      color: '#75715E'
     },
     {
-      name: 'salmon',
-      color: '#FA8072'
+      name: 'String',
+      color: '#EEA9A9'
     },
     {
-      name: 'red',
-      color: '#ff5555'
+      name: 'Class,Function,Tag attribute',
+      color: '#86C166'
     },
     {
-      name: 'red2',
-      color: '#fc0e49'
+      name: 'Function argument',
+      color: '#EFBB24'
     },
     {
-      name: 'red3',
-      color: '#fe3265'
+      name: 'Library function,Library constant,Library class/type',
+      color: '#8B81C3'
     },
     {
-      name: 'yellow',
-      color: '#FFD54F'
+      name: 'Keyword, Storage, Tag name, Invalid',
+      color: '#778A33'
     },
     {
-      name: 'teal',
-      color: '#11c1b0'
+      name: 'Number, Built-in constant',
+      color: '#D05A6E'
     },
     {
-      name: 'navy',
-      color: '#1f2532'
+      name: 'Variable',
+      color: '#9B90C2'
     },
     {
-      name: 'light',
-      color: '#7F8C9A'
+      name: 'background',
+      color: '#261C29'
     },
     {
-      name: 'dark',
-      color: '#323a45'
+      name: 'invisibles',
+      color: '#2C283C'
     },
     {
-      name: 'ivy',
-      color: '#514a56'
+      name: 'selection',
+      color: '#45553C'
     },
     {
-      name: 'purple',
-      color: '#a234d5'
+      name: 'text',
+      color: '#F7F1D5'
     },
     {
-      name: 'red4',
-      color: '#d74059'
+      name: 'text',
+      color: '#f0ebdb'
     },
-  ],
-  bgColor: '#1f2532'
+    {
+      name: 'text',
+      color: '#c28fa5'
+    } ],
+  bgColor: '#261C29'
 };
 
 var tinycolor = createCommonjsModule(function (module) {
@@ -860,11 +992,11 @@ function hslToRgb(h, s, l) {
     l = bound01(l, 100);
 
     function hue2rgb(p, q, t) {
-        if(t < 0) t += 1;
-        if(t > 1) t -= 1;
-        if(t < 1/6) return p + (q - p) * 6 * t;
-        if(t < 1/2) return q;
-        if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        if(t < 0) { t += 1; }
+        if(t > 1) { t -= 1; }
+        if(t < 1/6) { return p + (q - p) * 6 * t; }
+        if(t < 1/2) { return q; }
+        if(t < 2/3) { return p + (q - p) * (2/3 - t) * 6; }
         return p;
     }
 
@@ -1641,10 +1773,13 @@ else {
 tinycolor.prototype.toJSON = function (type) {
   return this.toString(type)
 };
-// storage.clear()
-const store = Histore.getItem(['cards', 'bgColor'], defaultpalette);
-store.set('cards', (cards) => {
-  cards.forEach((card, i) => {
+var storage$1 = window.sessionStorage;
+
+storage$1.clear();
+var store = new Histore(defaultpalette, {storage: storage$1});
+// init
+store.set('cards', function (cards) {
+  cards.forEach(function (card, i) {
     card.color = tinycolor(card.color);
     card.zIndex = card.zIndex == null ? i : card.zIndex;
     return card
@@ -1652,40 +1787,42 @@ store.set('cards', (cards) => {
   return cards
 }, false);
 
-store.on('cards.ADD_CARD', (card, memo) => {
-  store.set('cards', (cards) => {
+store.on('cards.ADD_CARD', function (card, memo) {
+  store.set('cards', function (cards) {
     card.color = tinycolor(card.color);
     card.zIndex = cards.length;
-    return [...cards, card]
+    return cards.concat( [card])
   }, memo);
 });
-store.on('cards.DUPLICATE_CARD', (index, memo) => {
-  const newCard = typeof index === 'number' ? store.get('cards')[index] : index;
-  newCard.x += 10;
-  newCard.y += 10;
+store.on('cards.DUPLICATE_CARD', function (index, memo) {
+  var newCard = typeof index === 'number' ? store.get('cards')[index] : index;
+  newCard.left += 10;
+  newCard.top += 10;
   store.trigger('cards.ADD_CARD', newCard, memo);
 });
 
-store.on('cards.RESIZE_CARD', (index, w, h = w, memo) => {
-  store.set('cards', (cards) => {
-    const card = cards[index];
+store.on('cards.RESIZE_CARD', function (index, w, h, memo) {
+  if ( h === void 0 ) h = w;
+
+  store.set('cards', function (cards) {
+    var card = cards[index];
     card.width = w;
     card.height = h;
     return cards
   }, memo);
 });
-store.on('cards.TRANSLATE_CARD', (index, left, top, memo) => {
-  store.set('cards', (cards) => {
-    const card = cards[index];
+store.on('cards.TRANSLATE_CARD', function (index, left, top, memo) {
+  store.set('cards', function (cards) {
+    var card = cards[index];
     card.left = left;
     card.top = top;
     return cards
   }, memo);
 });
 // Don't momorize
-store.on('cards.SELECT_CARDS', (indexs) => {
-  store.set('cards', (cards) => {
-    cards.forEach((card, i) => {
+store.on('cards.SELECT_CARDS', function (indexs) {
+  store.set('cards', function (cards) {
+    cards.forEach(function (card, i) {
       if (indexs.has(i)) {
         card.selected = true;
       } else {
@@ -1697,16 +1834,16 @@ store.on('cards.SELECT_CARDS', (indexs) => {
 });
 
 
-store.on('cards.REMOVE_CARD', (index, memo) => {
-  store.set('cards', (cards) => {
+store.on('cards.REMOVE_CARD', function (index, memo) {
+  store.set('cards', function (cards) {
     // cards.splice(index, 1)
     return cards.slice(0, index).concat(cards.slice(index + 1))
   }, memo);
 });
-store.on('cards.CARD_FORWARD', (index, memo) => {
-  store.set('cards', (cards) => {
-    const currIndex = +cards[index].zIndex;
-    cards.forEach((card, i) => {
+store.on('cards.CARD_FORWARD', function (index, memo) {
+  store.set('cards', function (cards) {
+    var currIndex = +cards[index].zIndex;
+    cards.forEach(function (card, i) {
       if (i === index) {
         card.zIndex = cards.length - 1;
       } else if (card.zIndex > currIndex) {
@@ -1718,9 +1855,11 @@ store.on('cards.CARD_FORWARD', (index, memo) => {
 });
 
 
-store.subscribe('cards', (cards) => {
+store.subscribe('cards', function (cards) {
   console.log('cards', cards);
 });
+
+store.keyManager = new KeyManager(store);
 
 /**
  * constructor PositionManager
@@ -1729,183 +1868,189 @@ store.subscribe('cards', (cards) => {
  * @class PositionManager
  * @param {object} options
  */
-class PositionManager {
-  constructor (options) {
-    this.options = Object.assign({
-      containment: document.body,
-      handle: null,
-      grid: 1,
-      percent: false,
-      axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
-    }, options || {});
+var PositionManager = function PositionManager (options) {
+  this.options = Object.assign({
+    containment: document.body,
+    handle: null,
+    grid: 1,
+    percent: false,
+    axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
+  }, options || {});
 
-    let grid = this.options.grid;
-    if (!Array.isArray(grid)) {
-      grid = parseFloat(grid, 10) || 1;
-      grid = [grid, grid];
-    }
-    this.options.grid = grid;
+  var grid = this.options.grid;
+  if (!Array.isArray(grid)) {
+    grid = parseFloat(grid, 10) || 1;
+    grid = [grid, grid];
+  }
+  this.options.grid = grid;
 
-    // containment内に置ける現在のマウス相対位置
-    this.x = 0;
-    this.y = 0;
-    // this.x、this.yの初期値保存
-    this.startX = 0;
-    this.startY = 0;
+  // containment内に置ける現在のマウス相対位置
+  this.x = 0;
+  this.y = 0;
+  // this.x、this.yの初期値保存
+  this.startX = 0;
+  this.startY = 0;
 
-    this.handleRect = {width: 0, height: 0, left: 0, top: 0};
+  this.handleRect = {width: 0, height: 0, left: 0, top: 0};
 
-    // position
-    const position = { left: 0, top: 0 };
-    // 代入したときにもthis.adjust()したい
-    Object.defineProperties(this, {
-      left: {
-        get () {
-          return position.left
-        },
-        set (val) {
-          position.left = this.adjust(val, 'width');
-        }
+  // position
+  var position = { left: 0, top: 0 };
+  // 代入したときにもthis.adjust()したい
+  Object.defineProperties(this, {
+    left: {
+      get: function get () {
+        return position.left
       },
-      top: {
-        get () {
-          return position.top
-        },
-        set (val) {
-          position.top = this.adjust(val, 'height');
-        }
+      set: function set (val) {
+        position.left = this.adjust(val, 'width');
+      }
+    },
+    top: {
+      get: function get () {
+        return position.top
       },
-    });
+      set: function set (val) {
+        position.top = this.adjust(val, 'height');
+      }
+    },
+  });
+};
+
+/**
+ * mousemove, mouseup
+ *
+ * @param {Event} e
+ * @param {Boolean} [initflg]
+ * @param {Element} [handle=this.options.handle]
+ * @returns
+ *
+ * @memberOf PositionManager
+ */
+PositionManager.prototype.set = function set (e, initflg, handle) {
+    if ( handle === void 0 ) handle = this.options.handle;
+
+  if (initflg) {
+    // ボックスサイズ取得。ここに書くのはresize対策
+    this.parentRect = this.options.containment.getBoundingClientRect();
+    if (handle) { this.handleRect = handle.getBoundingClientRect(); }
   }
 
-  /**
-   * mousemove, mouseup
-   *
-   * @param {Event}   e
-   * @param {Boolean} [initflg]
-   * @param {Element} [handle=this.options.handle]
-   * @returns
-   *
-   * @memberOf PositionManager
-   */
-  set (e, initflg, handle = this.options.handle) {
-    if (initflg) {
-      // ボックスサイズ取得。ここに書くのはresize対策
-      this.parentRect = this.options.containment.getBoundingClientRect();
-      if (handle) this.handleRect = handle.getBoundingClientRect();
-    }
+  var event = 'touches' in e ? e.touches[0] : e;
+  this.x = event.pageX - this.parentRect.left - window.pageXOffset;
+  this.y = event.pageY - this.parentRect.top - window.pageYOffset;
 
-    const event = 'touches' in e ? e.touches[0] : e;
-    this.x = event.pageX - this.parentRect.left - window.pageXOffset;
-    this.y = event.pageY - this.parentRect.top - window.pageYOffset;
-
-    if (initflg) {
-      this.startX = this.x;
-      this.startY = this.y;
-      this.vectorX = 0;
-      this.vectorY = 0;
-    } else {
-      this.vectorX = this.x - this.startX;
-      this.vectorY = this.y - this.startY;
-    }
-
-    // modify
-    this.left = this.handleRect.left + this.vectorX;
-    this.top  = this.handleRect.top + this.vectorY;
-
-    if (this.options.percent) {
-      this.percentLeft = this.percentage(this.left, 'width');
-      this.percentTop  = this.percentage(this.top, 'height');
-    }
-
-    if (initflg) {
-      this.startLeft = this.left;
-      this.startTop  = this.top;
-    }
-    return this
+  if (initflg) {
+    this.startX = this.x;
+    this.startY = this.y;
+    this.vectorX = 0;
+    this.vectorY = 0;
+  } else {
+    this.vectorX = this.x - this.startX;
+    this.vectorY = this.y - this.startY;
   }
 
+  // modify
+  this.left = this.handleRect.left + this.vectorX;
+  this.top= this.handleRect.top + this.vectorY;
 
-  /**
-   * handle move
-   *
-   * @param {Event}    e
-   * @param {Element} [el=this.options.handle]
-   * @returns
-   *
-   * @memberOf PositionManager
-   */
-  setPosition (e, el = this.options.handle) {
-    switch (this.options.axis) {
-      case 'x':
-      case 'y':
-        this.oneWayMove(this.options.axis, el);
+  if (this.options.percent) {
+    this.percentLeft = this.percentage(this.left, 'width');
+    this.percentTop= this.percentage(this.top, 'height');
+  }
+
+  if (initflg) {
+    this.startLeft = this.left;
+    this.startTop= this.top;
+  }
+  return this
+};
+
+
+/**
+ * handle move
+ *
+ * @param {Event}  e
+ * @param {Element} [el=this.options.handle]
+ * @returns
+ *
+ * @memberOf PositionManager
+ */
+PositionManager.prototype.setPosition = function setPosition (e, el) {
+    if ( el === void 0 ) el = this.options.handle;
+
+  switch (this.options.axis) {
+    case 'x':
+    case 'y':
+      this.oneWayMove(this.options.axis, el);
+      break
+    case 'shift':
+    case 'ctrl':
+    case 'alt':
+      if (e[this.options.axis + 'Key']) {
+        var maxV = Math.abs(this.vectorX) > Math.abs(this.vectorY);
+        this.oneWayMove(maxV ? 'x' : 'y', el);
         break
-      case 'shift':
-      case 'ctrl':
-      case 'alt':
-        if (e[this.options.axis + 'Key']) {
-          const maxV = Math.abs(this.vectorX) > Math.abs(this.vectorY);
-          this.oneWayMove(maxV ? 'x' : 'y', el);
-          break
-        }
-        // fall through
-      default:
-        el.style.left = this.left + 'px';
-        el.style.top  = this.top + 'px';
-    }
-    if (typeof this.width === 'number') {
-      el.style.width  = this.width + 'px';
-    }
-    if (typeof this.height === 'number') {
-      el.style.height = this.height + 'px';
-    }
-    return this
-  }
-  oneWayMove (either, el = this.options.handle) {
-    if (either === 'x') {
+      }
+      // fall through
+    default:
       el.style.left = this.left + 'px';
-      el.style.top = this.startTop + 'px';
-    } else if (either === 'y') {
-      el.style.left = this.startLeft + 'px';
-      el.style.top = this.top + 'px';
-    }
-    return this
+      el.style.top= this.top + 'px';
   }
+  if (typeof this.width === 'number') {
+    el.style.width= this.width + 'px';
+  }
+  if (typeof this.height === 'number') {
+    el.style.height = this.height + 'px';
+  }
+  return this
+};
+PositionManager.prototype.oneWayMove = function oneWayMove (either, el) {
+    if ( el === void 0 ) el = this.options.handle;
 
-  /**
-   * Box内に制限しグリッド幅に合わせ計算調整する
-   *
-   * @param {Number}  offset                     this.handleRect.left + this.vectorX
-   * @param {String}  side
-   * @param {Object}  [rect=this.handleRect]     getBoundingClientRect
-   * @returns {Number}          this.left
-   *
-   * @memberOf PositionManager
-   */
-  adjust (offset, side, rect = this.handleRect) {
-    const options = this.options;
-    // handlesの動きをcontainmentに制限する
-    if (options.containment !== document.body) {
-      offset = Math.min(Math.max(0, offset), this.parentRect[side] - rect[side]);
-    }
-    const grid = side === 'width' ? options.grid[0] : options.grid[1];
-    offset = Math.round(offset / grid) * grid;
-    return offset
+  if (either === 'x') {
+    el.style.left = this.left + 'px';
+    el.style.top = this.startTop + 'px';
+  } else if (either === 'y') {
+    el.style.left = this.startLeft + 'px';
+    el.style.top = this.top + 'px';
   }
-  /**
-   * Boxを基準にした％
-   *
-   * @param {Number}  offset    this.left
-   * @param {String}  side
-   * @returns {Number} ％
-   *
-   * @memberOf PositionManager
-   */
-  percentage (offset, side) {
-    return Math.min(Math.max(0, offset / (this.parentRect[side] - this.handleRect[side]) * 100), 100)
+  return this
+};
+
+/**
+ * Box内に制限しグリッド幅に合わせ計算調整する
+ *
+ * @param {Number}offset                   this.handleRect.left + this.vectorX
+ * @param {String}side
+ * @param {Object}[rect=this.handleRect]   getBoundingClientRect
+ * @returns {Number}        this.left
+ *
+ * @memberOf PositionManager
+ */
+PositionManager.prototype.adjust = function adjust (offset, side, rect) {
+    if ( rect === void 0 ) rect = this.handleRect;
+
+  var options = this.options;
+  // handlesの動きをcontainmentに制限する
+  if (options.containment !== document.body) {
+    offset = Math.min(Math.max(0, offset), this.parentRect[side] - rect[side]);
   }
-}
+  var grid = side === 'width' ? options.grid[0] : options.grid[1];
+  offset = Math.round(offset / grid) * grid;
+  return offset
+};
+/**
+ * Boxを基準にした％
+ *
+ * @param {Number}offset  this.left
+ * @param {String}side
+ * @returns {Number} ％
+ *
+ * @memberOf PositionManager
+ */
+PositionManager.prototype.percentage = function percentage (offset, side) {
+  return Math.min(Math.max(0, offset / (this.parentRect[side] - this.handleRect[side]) * 100), 100)
+};
 
 /**
  * addEventListener & removeEventListener
@@ -1916,13 +2061,13 @@ class PositionManager {
  * @param {function} callback
  * @param {boolean}  [useCapture]
  */
-function on (el, eventNames, callback, useCapture) {
-  eventNames.split(' ').forEach((eventName) => {
+function on$1 (el, eventNames, callback, useCapture) {
+  eventNames.split(' ').forEach(function (eventName) {
     (el || window).addEventListener(eventName, callback, !!useCapture);
   });
 }
-function off (el, eventNames, callback, useCapture) {
-  eventNames.split(' ').forEach((eventName) => {
+function off$1 (el, eventNames, callback, useCapture) {
+  eventNames.split(' ').forEach(function (eventName) {
     (el || window).removeEventListener(eventName, callback, !!useCapture);
   });
 }
@@ -1932,77 +2077,83 @@ function off (el, eventNames, callback, useCapture) {
  *
  * @param {Object|Element} options
  */
-class MousePosition {
-  constructor (options) {
-    this.options = Object.assign({
-      containment: (options.nodeName ? options : document.body),
-      handle: null,
-      // start: noop,
-      // drag: noop,
-      // stop: noop
-    }, options || {});
+var MousePosition = function MousePosition (options) {
+  var this$1 = this;
 
-    // イベント登録
-    this._event = {
-      mdown: (e) => { this.mdown(e); },
-      mmove: (e) => { this.mmove(e); },
-      mup: (e) => { this.mup(e); },
-    };
-    on(options.handle || options.containment, 'mousedown touchstart', this._event.mdown);
+  this.options = Object.assign({
+    containment: (options.nodeName ? options : document.body),
+    handle: null,
+    // start: noop,
+    // drag: noop,
+    // stop: noop
+  }, options || {});
 
-    this.position = new PositionManager(options);
+  // イベント登録
+  this._event = {
+    mdown: function (e) { this$1.mdown(e); },
+    mmove: function (e) { this$1.mmove(e); },
+    mup: function (e) { this$1.mup(e); },
+  };
+  on$1(options.handle || options.containment, 'mousedown touchstart', this._event.mdown);
 
-    this._clickFlg = false;
+  this.position = new PositionManager(options);
+
+  this._clickFlg = false;
+};
+
+MousePosition.prototype.destroy = function destroy () {
+  off$1(0, 'mousedown touchstart', this._event.mdown);
+};
+
+// マウスが押された際の関数
+MousePosition.prototype.mdown = function mdown (e, handle) {
+  var ref = this;
+    var options = ref.options;
+    var position = ref.position;
+  // マウス座標を保存
+  position.set(e, true, handle);
+
+  if (options.start) {
+    options.start(e, position, handle);
   }
+  on$1(0, 'mouseup touchcancel touchend', this._event.mup);
+  on$1(0, 'mousemove touchmove', this._event.mmove);
+  this._clickFlg = true;
+};
+// マウスカーソルが動いたときに発火
+MousePosition.prototype.mmove = function mmove (e) {
+  var ref = this;
+    var options = ref.options;
+    var position = ref.position;
+  // マウスが動いたベクトルを保存
+  position.set(e);
+  // フリックしたときに画面を動かさないようにデフォルト動作を抑制
+  e.preventDefault();
 
-  destroy () {
-    off(0, 'mousedown touchstart', this._event.mdown);
+  if (options.drag) {
+    options.drag(e, position);
   }
+  // カーソルが外れたとき発火
+  on$1(0, 'mouseleave touchleave', this._event.mup);
+  this._clickFlg = false;
+};
+// マウスボタンが上がったら発火
+MousePosition.prototype.mup = function mup (e) {
+  var ref = this;
+    var options = ref.options;
+    var position = ref.position;
+  // マウスが動いたベクトルを保存
+  position.set(e);
 
-  // マウスが押された際の関数
-  mdown (e, handle) {
-    const {options, position} = this;
-    // マウス座標を保存
-    position.set(e, true, handle);
-
-    if (options.start) {
-      options.start(e, position, handle);
-    }
-    on(0, 'mouseup touchcancel touchend', this._event.mup);
-    on(0, 'mousemove touchmove', this._event.mmove);
-    this._clickFlg = true;
+  if (this._clickFlg && options.click) {
+    options.click(e, position);
+  } else if (options.stop) {
+    options.stop(e, position);
   }
-  // マウスカーソルが動いたときに発火
-  mmove (e) {
-    const {options, position} = this;
-    // マウスが動いたベクトルを保存
-    position.set(e);
-    // フリックしたときに画面を動かさないようにデフォルト動作を抑制
-    e.preventDefault();
-
-    if (options.drag) {
-      options.drag(e, position);
-    }
-    // カーソルが外れたとき発火
-    on(0, 'mouseleave touchleave', this._event.mup);
-    this._clickFlg = false;
-  }
-  // マウスボタンが上がったら発火
-  mup (e) {
-    const {options, position} = this;
-    // マウスが動いたベクトルを保存
-    position.set(e);
-
-    if (this._clickFlg && options.click) {
-      options.click(e, position);
-    } else if (options.stop) {
-      options.stop(e, position);
-    }
-    // ハンドラの消去
-    off(0, 'mouseup touchend touchcancel mouseleave touchleave', this._event.mup);
-    off(0, 'mousemove touchmove', this._event.mmove);
-  }
-}
+  // ハンドラの消去
+  off$1(0, 'mouseup touchend touchcancel mouseleave touchleave', this._event.mup);
+  off$1(0, 'mousemove touchmove', this._event.mmove);
+};
 
 /**
  * movable
@@ -2011,33 +2162,39 @@ class MousePosition {
  * @param {element} element
  * @param {object} options
  */
-class Movable extends MousePosition {
-  constructor (element, options) {
-    super(Object.assign({
+var Movable = (function (MousePosition) {
+  function Movable (element, options) {
+    MousePosition.call(this, Object.assign({
       containment: element.parentElement,
       handle: element,
       draggingClass: 'dragging',
     }, options || {}));
   }
+
+  if ( MousePosition ) Movable.__proto__ = MousePosition;
+  Movable.prototype = Object.create( MousePosition && MousePosition.prototype );
+  Movable.prototype.constructor = Movable;
   // マウスが押された際の関数
-  mdown (e) {
-    super.mdown(e);
+  Movable.prototype.mdown = function mdown (e) {
+    MousePosition.prototype.mdown.call(this, e);
     // クラス名に .drag を追加
     this.options.handle.classList.add(this.options.draggingClass);
-  }
+  };
   // マウスカーソルが動いたときに発火
-  mmove (e) {
-    super.mmove(e);
+  Movable.prototype.mmove = function mmove (e) {
+    MousePosition.prototype.mmove.call(this, e);
     // マウスが動いた場所に要素を動かす
     this.position.setPosition(e);
-  }
+  };
   // マウスボタンが上がったら発火
-  mup (e) {
-    super.mup(e);
+  Movable.prototype.mup = function mup (e) {
+    MousePosition.prototype.mup.call(this, e);
     // クラス名 .drag も消す
     this.options.handle.classList.remove(this.options.draggingClass);
-  }
-}
+  };
+
+  return Movable;
+}(MousePosition));
 
 
 function hitChecker (rect1, rect2, tolerance) {
@@ -2045,7 +2202,11 @@ function hitChecker (rect1, rect2, tolerance) {
 }
 
 function fitHit (rect1, rect2) {
-  const [x, y, w, h] = ['left', 'top', 'width', 'height'];
+  var ref = ['left', 'top', 'width', 'height'];
+  var x = ref[0];
+  var y = ref[1];
+  var w = ref[2];
+  var h = ref[3];
   // rect1 x1-----------------------------------------------x1+w1
   // rect2          x2---------------x2+w2
   if (
@@ -2057,7 +2218,11 @@ function fitHit (rect1, rect2) {
   return false
 }
 function touchHit (rect1, rect2) {
-  const [x, y, w, h] = ['left', 'top', 'width', 'height'];
+  var ref = ['left', 'top', 'width', 'height'];
+  var x = ref[0];
+  var y = ref[1];
+  var w = ref[2];
+  var h = ref[3];
   // rect1                x1---------------------------x1+w1
   // rect2 x2---------------------------------x2+w2
   if (
@@ -2078,9 +2243,9 @@ function touchHit (rect1, rect2) {
 }
 
 
-class Selectable extends MousePosition {
-  constructor (element, options) {
-    super(Object.assign({
+var Selectable = (function (MousePosition) {
+  function Selectable (element, options) {
+    MousePosition.call(this, Object.assign({
       containment: element,
       filter: '*',
       cancel: 'input,textarea,button,select,option',
@@ -2092,9 +2257,9 @@ class Selectable extends MousePosition {
       // selected: noop,
     }, options || {}));
 
-    const opts = this.options;
+    var opts = this.options;
 
-    const helper = this.helper = document.createElement('div');
+    var helper = this.helper = document.createElement('div');
 
     helper.style.position = 'absolute';
 
@@ -2107,14 +2272,18 @@ class Selectable extends MousePosition {
 
     this.selectorString = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)');
     this.children = Array.from(this.options.containment.querySelectorAll(this.selectorString));
-    this.childrenRects = this.children.map((el) => el.getBoundingClientRect());
+    this.childrenRects = this.children.map(function (el) { return el.getBoundingClientRect(); });
     this.selectIndexs = new Set();
     this.selectElements = [];
   }
 
+  if ( MousePosition ) Selectable.__proto__ = MousePosition;
+  Selectable.prototype = Object.create( MousePosition && MousePosition.prototype );
+  Selectable.prototype.constructor = Selectable;
 
-  select (i) {
-    const opts = this.options,
+
+  Selectable.prototype.select = function select (i) {
+    var opts = this.options,
           selectEl = this.children[i];
     selectEl.classList.add(opts.selectedClass);
     this.selectIndexs.add(i);
@@ -2123,14 +2292,16 @@ class Selectable extends MousePosition {
       this.position.options.handle = selectEl;
       opts.selecting(this.position, i);
     }
-  }
-  selectAll () {
-    this.children.forEach((selectEl, i) => {
-      this.select(i);
+  };
+  Selectable.prototype.selectAll = function selectAll () {
+    var this$1 = this;
+
+    this.children.forEach(function (selectEl, i) {
+      this$1.select(i);
     });
-  }
-  unselect (i) {
-    const opts = this.options,
+  };
+  Selectable.prototype.unselect = function unselect (i) {
+    var opts = this.options,
           selectEl = this.children[i];
     selectEl.classList.remove(opts.selectedClass);
     this.selectIndexs.delete(i);
@@ -2139,15 +2310,17 @@ class Selectable extends MousePosition {
       this.position.options.handle = selectEl;
       opts.unselecting(this.position, i);
     }
-  }
-  unselectAll () {
-    this.children.forEach((selectEl, i) => {
-      this.unselect(i);
-    });
-  }
+  };
+  Selectable.prototype.unselectAll = function unselectAll () {
+    var this$1 = this;
 
-  helperRect (position) {
-    let left, top, width, height;
+    this.children.forEach(function (selectEl, i) {
+      this$1.unselect(i);
+    });
+  };
+
+  Selectable.prototype.helperRect = function helperRect (position) {
+    var left, top, width, height;
     if (position.vectorX < 0) {
       left  = position.startX + position.vectorX;
     }
@@ -2163,16 +2336,18 @@ class Selectable extends MousePosition {
     width  = Math.abs(position.vectorX);
     height = Math.abs(position.vectorY);
     // 選択範囲のRectデータ
-    return {left, top, width, height}
-  }
+    return {left: left, top: top, width: width, height: height}
+  };
 
-  mdown (e, handle) {
-    super.mdown(e, handle);
-    const el = this.options.containment;
-    const {position, helper} = this;
+  Selectable.prototype.mdown = function mdown (e, handle) {
+    MousePosition.prototype.mdown.call(this, e, handle);
+    var el = this.options.containment;
+    var ref = this;
+    var position = ref.position;
+    var helper = ref.helper;
     // array init
     this.children = Array.from(el.querySelectorAll(this.selectorString));
-    this.childrenRects = this.children.map((el) => el.getBoundingClientRect());
+    this.childrenRects = this.children.map(function (el) { return el.getBoundingClientRect(); });
     this.selectIndexs.clear();
     this.selectElements.length = 0;
     // helper追加
@@ -2183,22 +2358,26 @@ class Selectable extends MousePosition {
     helper.style.height = '0px';
     // 選択解除
     this.unselectAll();
-  }
+  };
 
   // マウスカーソルが動いたときに発火
-  mmove (e) {
-    super.mmove(e);
-    const opts = this.options;
-    const {position, helper} = this;
+  Selectable.prototype.mmove = function mmove (e) {
+    var this$1 = this;
+
+    MousePosition.prototype.mmove.call(this, e);
+    var opts = this.options;
+    var ref = this;
+    var position = ref.position;
+    var helper = ref.helper;
     // 選択範囲のRectデータ
-    const helperRect = this.helperRect(position);
+    var helperRect = this.helperRect(position);
 
     // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
-    this.childrenRects.forEach((rect2, i) => {
+    this.childrenRects.forEach(function (rect2, i) {
       if (hitChecker(helperRect, rect2, opts.tolerance)) {
-        this.select(i);
+        this$1.select(i);
       } else {
-        this.unselect(i);
+        this$1.unselect(i);
       }
     });
     // マウスが動いた場所にhelper要素を動かす
@@ -2206,20 +2385,24 @@ class Selectable extends MousePosition {
     helper.style.top  = helperRect.top + 'px';
     helper.style.width  = helperRect.width + 'px';
     helper.style.height = helperRect.height + 'px';
-  }
+  };
   // マウスボタンが上がったら発火
-  mup (e) {
-    super.mup(e);
-    const opts = this.options;
+  Selectable.prototype.mup = function mup (e) {
+    var this$1 = this;
+
+    MousePosition.prototype.mup.call(this, e);
+    var opts = this.options;
       // helper要素を消す
     opts.containment.removeChild(this.helper);
     // Callback
     if (opts.selected) {
-      this.selectIndexs.forEach((i) => this.selectElements.push(this.children[i]));
+      this.selectIndexs.forEach(function (i) { return this$1.selectElements.push(this$1.children[i]); });
       opts.selected(this.position, this.selectIndexs, this.selectElements);
     }
-  }
-}
+  };
+
+  return Selectable;
+}(MousePosition));
 
 function appendNode ( node, target ) {
 	target.appendChild( node );
@@ -2263,16 +2446,18 @@ function setAttribute ( node, attribute, value ) {
 	node.setAttribute ( attribute, value );
 }
 
-function get ( key ) {
+function get$1 ( key ) {
 	return key ? this._state[ key ] : this._state;
 }
 
-function fire ( eventName, data ) {
+function fire$1 ( eventName, data ) {
+	var this$1 = this;
+
 	var handlers = eventName in this._handlers && this._handlers[ eventName ].slice();
-	if ( !handlers ) return;
+	if ( !handlers ) { return; }
 
 	for ( var i = 0; i < handlers.length; i += 1 ) {
-		handlers[i].call( this, data );
+		handlers[i].call( this$1, data );
 	}
 }
 
@@ -2290,33 +2475,35 @@ function observe ( key, callback, options ) {
 	return {
 		cancel: function () {
 			var index = group[ key ].indexOf( callback );
-			if ( ~index ) group[ key ].splice( index, 1 );
+			if ( ~index ) { group[ key ].splice( index, 1 ); }
 		}
 	};
 }
 
-function on$1 ( eventName, handler ) {
+function on$2 ( eventName, handler ) {
 	var handlers = this._handlers[ eventName ] || ( this._handlers[ eventName ] = [] );
 	handlers.push( handler );
 
 	return {
 		cancel: function () {
 			var index = handlers.indexOf( handler );
-			if ( ~index ) handlers.splice( index, 1 );
+			if ( ~index ) { handlers.splice( index, 1 ); }
 		}
 	};
 }
 
-function set ( newState ) {
+function set$1 ( newState ) {
 	this._set( newState );
 	( this._root || this )._flush();
 }
 
 function _flush () {
-	if ( !this._renderHooks ) return;
+	var this$1 = this;
+
+	if ( !this._renderHooks ) { return; }
 
 	while ( this._renderHooks.length ) {
-		var hook = this._renderHooks.pop();
+		var hook = this$1._renderHooks.pop();
 		hook.fn.call( hook.context );
 	}
 }
@@ -2325,19 +2512,19 @@ function noop () {}
 
 function dispatchObservers ( component, group, newState, oldState ) {
 	for ( var key in group ) {
-		if ( !( key in newState ) ) continue;
+		if ( !( key in newState ) ) { continue; }
 
 		var newValue = newState[ key ];
 		var oldValue = oldState[ key ];
 
-		if ( newValue === oldValue && typeof newValue !== 'object' ) continue;
+		if ( newValue === oldValue && typeof newValue !== 'object' ) { continue; }
 
 		var callbacks = group[ key ];
-		if ( !callbacks ) continue;
+		if ( !callbacks ) { continue; }
 
 		for ( var i = 0; i < callbacks.length; i += 1 ) {
 			var callback = callbacks[i];
-			if ( callback.__calling ) continue;
+			if ( callback.__calling ) { continue; }
 
 			callback.__calling = true;
 			callback.call( component, newValue, oldValue );
@@ -2361,34 +2548,38 @@ function applyComputations$1 ( state, newState, oldState, isInitial ) {
 }
 
 var template$1 = (function () {
-  const colorsWidth = 320;
+  var colorsWidth = 320;
 
   var template = {
     computed: {
-      textColor: card => tinycolor.mostReadable(card.color, ['#eee', '#111']),
-      width: card => card.width || 120,
-      height: card => card.height || 120,
+      textColor: function (card) { return tinycolor.mostReadable(card.color, ['#eee', '#111']); },
+      width: function (card) { return card.width || 120; },
+      height: function (card) { return card.height || 120; },
     },
-    onrender () {
+    onrender: function onrender () {
+      var this$1 = this;
+
       console.log('card-render');
-      const cardEl = this.refs.card;
-      const box = cardEl.parentElement;
+      var cardEl = this.refs.card;
+      var box = cardEl.parentElement;
 
-      const {card, index} = this.get();
+      var ref = this.get();
+      var card = ref.card;
+      var index = ref.index;
 
-      let selected;
+      var selected;
 
       this.movable = new Movable(cardEl, {
         containment: box,
         grid: 5,
         axis: 'shift',
-        start: (e, position) => {
+        start: function (e, position) {
           e.stopPropagation();
 
           store.trigger('cards.CARD_FORWARD', index, false);
           selected = store.get('cards');
         },
-        drag: (e, position, el) => {
+        drag: function (e, position, el) {
           // cards.forEach((cardEl, i) => {
           //   if (card !== cardEl) {
           //     const cardRect = cardRects[i]
@@ -2397,17 +2588,17 @@ var template$1 = (function () {
           //   }
           // })
         },
-        stop: (e, position, el) => {
-          const pos = this.adjust(position);
-          this.set(pos);
+        stop: function (e, position, el) {
+          var pos = this$1.adjust(position);
+          this$1.set(pos);
           store.trigger('cards.TRANSLATE_CARD', index, pos.left, pos.top);
         },
-        click: (e, position, el) => {
+        click: function (e, position, el) {
           store.memo('cards');
           // this.parent.selectable.select(this.i)
         },
       });
-      cardEl.addEventListener('contextmenu', (e) => {
+      cardEl.addEventListener('contextmenu', function (e) {
         // デフォルトイベントをキャンセル
         // これを書くことでコンテキストメニューが表示されなくなります
         e.preventDefault();
@@ -2422,11 +2613,11 @@ var template$1 = (function () {
       this.set(this.adjust(card, true));
     },
     methods: {
-      adjust (card, init) {
-        const rect = this.refs.card.parentElement.getBoundingClientRect();
-        const maxW = rect.width - this.get('width');
-        const maxH = rect.height - this.get('height');
-        let left, top;
+      adjust: function adjust (card, init) {
+        var rect = this.refs.card.parentElement.getBoundingClientRect();
+        var maxW = rect.width - this.get('width');
+        var maxH = rect.height - this.get('height');
+        var left, top;
 
         if (init && (+card.left < colorsWidth || !card.top)) {
           // random positions
@@ -2436,17 +2627,21 @@ var template$1 = (function () {
           left = clamp(card.left, maxW, colorsWidth);
           top = clamp(card.top, maxH);
         }
-        return {left, top}
+        return {left: left, top: top}
       }
     }
   };
 
   // Utilities
 
-  function snap (n, grid = 5) {
+  function snap (n, grid) {
+    if ( grid === void 0 ) grid = 5;
+
     return Math.round(n / grid) * grid
   }
-  function clamp (val, max, min = 0) {
+  function clamp (val, max, min) {
+    if ( min === void 0 ) min = 0;
+
     return Math.min(Math.max(min, val), max)
   }
 
@@ -2455,7 +2650,7 @@ var template$1 = (function () {
   return template;
 }());
 
-let addedCss$1 = false;
+var addedCss$1 = false;
 function addCss$1 () {
 	var style = createElement( 'style' );
 	style.textContent = "\n  [svelte-1441899067].card, [svelte-1441899067] .card {\n    position: absolute;\n    text-align:center;\n    font-size:12px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n  }\n  [svelte-1441899067].card.selected, [svelte-1441899067] .card.selected {\n    outline: 1px dashed black;\n    box-shadow: 0 0 0 1px white;\n  }\n  [svelte-1441899067].card.active, [svelte-1441899067] .card.active {\n    z-index: 100;\n  }\n  [svelte-1441899067].cardtext, [svelte-1441899067] .cardtext {\n    white-space: pre-wrap;\n    user-select: none;\n    -ms-user-select: none;\n    -webkit-user-select: none;\n    -moz-user-select: none;\n  }\n";
@@ -2513,7 +2708,7 @@ function renderMainFragment$1 ( root, component ) {
 		},
 		
 		teardown: function ( detach ) {
-			if ( component.refs.card === div ) component.refs.card = null;
+			if ( component.refs.card === div ) { component.refs.card = null; }
 			
 			if ( detach ) {
 				detachNode( div );
@@ -2540,10 +2735,10 @@ applyComputations$1( this._state, this._state, {}, true );
 	this._yield = options._yield;
 
 	this._torndown = false;
-	if ( !addedCss$1 ) addCss$1();
+	if ( !addedCss$1 ) { addCss$1(); }
 	
 	this._fragment = renderMainFragment$1( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
+	if ( options.target ) { this._fragment.mount( options.target, null ); }
 	
 	if ( options._root ) {
 		options._root._renderHooks.push({ fn: template$1.onrender, context: this });
@@ -2554,11 +2749,11 @@ applyComputations$1( this._state, this._state, {}, true );
 
 color_card.prototype = template$1.methods;
 
-color_card.prototype.get = get;
-color_card.prototype.fire = fire;
+color_card.prototype.get = get$1;
+color_card.prototype.fire = fire$1;
 color_card.prototype.observe = observe;
-color_card.prototype.on = on$1;
-color_card.prototype.set = set;
+color_card.prototype.on = on$2;
+color_card.prototype.set = set$1;
 color_card.prototype._flush = _flush;
 
 color_card.prototype._set = function _set ( newState ) {
@@ -2567,7 +2762,7 @@ color_card.prototype._set = function _set ( newState ) {
 	applyComputations$1( this._state, newState, oldState, false );
 	
 	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
+	if ( this._fragment ) { this._fragment.update( newState, this._state ); }
 	dispatchObservers( this, this._observers.post, newState, oldState );
 };
 
@@ -2581,147 +2776,147 @@ color_card.prototype.teardown = function teardown ( detach ) {
 	this._torndown = true;
 };
 
-const IndianRed = ["#CD5C5C"];
-const LightCoral = ["#F08080"];
-const Salmon = ["#FA8072"];
-const DarkSalmon = ["#E9967A"];
-const LightSalmon = ["#FFA07A"];
-const Crimson = ["#DC143C"];
-const Red = ["#FF0000"];
-const FireBrick = ["#B22222"];
-const DarkRed = ["#8B0000"];
-const Pink = ["#FFC0CB"];
-const LightPink = ["#FFB6C1"];
-const HotPink = ["#FF69B4"];
-const DeepPink = ["#FF1493"];
-const MediumVioletRed = ["#C71585"];
-const PaleVioletRed = ["#DB7093"];
-const Coral = ["#FF7F50"];
-const Tomato = ["#FF6347"];
-const OrangeRed = ["#FF4500"];
-const DarkOrange = ["#FF8C00"];
-const Orange = ["#FFA500"];
-const Gold = ["#FFD700"];
-const Yellow = ["#FFFF00"];
-const LightYellow = ["#FFFFE0"];
-const LemonChiffon = ["#FFFACD"];
-const LightGoldenrodYellow = ["#FAFAD2"];
-const PapayaWhip = ["#FFEFD5"];
-const Moccasin = ["#FFE4B5"];
-const PeachPuff = ["#FFDAB9"];
-const PaleGoldenrod = ["#EEE8AA"];
-const Khaki = ["#F0E68C"];
-const DarkKhaki = ["#BDB76B"];
-const Lavender = ["#E6E6FA"];
-const Thistle = ["#D8BFD8"];
-const Plum = ["#DDA0DD"];
-const Violet = ["#EE82EE"];
-const Orchid = ["#DA70D6"];
-const Fuchsia = ["#FF00FF"];
-const Magenta = ["#FF00FF"];
-const MediumOrchid = ["#BA55D3"];
-const MediumPurple = ["#9370DB"];
-const RebeccaPurple = ["#663399"];
-const BlueViolet = ["#8A2BE2"];
-const DarkViolet = ["#9400D3"];
-const DarkOrchid = ["#9932CC"];
-const DarkMagenta = ["#8B008B"];
-const Purple = ["#800080"];
-const Indigo = ["#4B0082"];
-const SlateBlue = ["#6A5ACD"];
-const DarkSlateBlue = ["#483D8B"];
-const MediumSlateBlue = ["#7B68EE"];
-const GreenYellow = ["#ADFF2F"];
-const Chartreuse = ["#7FFF00"];
-const LawnGreen = ["#7CFC00"];
-const Lime = ["#00FF00"];
-const LimeGreen = ["#32CD32"];
-const PaleGreen = ["#98FB98"];
-const LightGreen = ["#90EE90"];
-const MediumSpringGreen = ["#00FA9A"];
-const SpringGreen = ["#00FF7F"];
-const MediumSeaGreen = ["#3CB371"];
-const SeaGreen = ["#2E8B57"];
-const ForestGreen = ["#228B22"];
-const Green = ["#008000"];
-const DarkGreen = ["#006400"];
-const YellowGreen = ["#9ACD32"];
-const OliveDrab = ["#6B8E23"];
-const Olive = ["#808000"];
-const DarkOliveGreen = ["#556B2F"];
-const MediumAquamarine = ["#66CDAA"];
-const DarkSeaGreen = ["#8FBC8B"];
-const LightSeaGreen = ["#20B2AA"];
-const DarkCyan = ["#008B8B"];
-const Teal = ["#008080"];
-const Aqua = ["#00FFFF"];
-const Cyan = ["#00FFFF"];
-const LightCyan = ["#E0FFFF"];
-const PaleTurquoise = ["#AFEEEE"];
-const Aquamarine = ["#7FFFD4"];
-const Turquoise = ["#40E0D0"];
-const MediumTurquoise = ["#48D1CC"];
-const DarkTurquoise = ["#00CED1"];
-const CadetBlue = ["#5F9EA0"];
-const SteelBlue = ["#4682B4"];
-const LightSteelBlue = ["#B0C4DE"];
-const PowderBlue = ["#B0E0E6"];
-const LightBlue = ["#ADD8E6"];
-const SkyBlue = ["#87CEEB"];
-const LightSkyBlue = ["#87CEFA"];
-const DeepSkyBlue = ["#00BFFF"];
-const DodgerBlue = ["#1E90FF"];
-const CornflowerBlue = ["#6495ED"];
-const RoyalBlue = ["#4169E1"];
-const Blue = ["#0000FF"];
-const MediumBlue = ["#0000CD"];
-const DarkBlue = ["#00008B"];
-const Navy = ["#000080"];
-const MidnightBlue = ["#191970"];
-const Cornsilk = ["#FFF8DC"];
-const BlanchedAlmond = ["#FFEBCD"];
-const Bisque = ["#FFE4C4"];
-const NavajoWhite = ["#FFDEAD"];
-const Wheat = ["#F5DEB3"];
-const BurlyWood = ["#DEB887"];
-const Tan = ["#D2B48C"];
-const RosyBrown = ["#BC8F8F"];
-const SandyBrown = ["#F4A460"];
-const Goldenrod = ["#DAA520"];
-const DarkGoldenrod = ["#B8860B"];
-const Peru = ["#CD853F"];
-const Chocolate = ["#D2691E"];
-const SaddleBrown = ["#8B4513"];
-const Sienna = ["#A0522D"];
-const Brown = ["#A52A2A"];
-const Maroon = ["#800000"];
-const White = ["#FFFFFF"];
-const Snow = ["#FFFAFA"];
-const HoneyDew = ["#F0FFF0"];
-const MintCream = ["#F5FFFA"];
-const Azure = ["#F0FFFF"];
-const AliceBlue = ["#F0F8FF"];
-const GhostWhite = ["#F8F8FF"];
-const WhiteSmoke = ["#F5F5F5"];
-const SeaShell = ["#FFF5EE"];
-const Beige = ["#F5F5DC"];
-const OldLace = ["#FDF5E6"];
-const FloralWhite = ["#FFFAF0"];
-const Ivory = ["#FFFFF0"];
-const AntiqueWhite = ["#FAEBD7"];
-const Linen = ["#FAF0E6"];
-const LavenderBlush = ["#FFF0F5"];
-const MistyRose = ["#FFE4E1"];
-const Gainsboro = ["#DCDCDC"];
-const LightGray = ["#D3D3D3"];
-const Silver = ["#C0C0C0"];
-const DarkGray = ["#A9A9A9"];
-const Gray = ["#808080"];
-const DimGray = ["#696969"];
-const LightSlateGray = ["#778899"];
-const SlateGray = ["#708090"];
-const DarkSlateGray = ["#2F4F4F"];
-const Black = ["#000000"];
+var IndianRed = ["#CD5C5C"];
+var LightCoral = ["#F08080"];
+var Salmon = ["#FA8072"];
+var DarkSalmon = ["#E9967A"];
+var LightSalmon = ["#FFA07A"];
+var Crimson = ["#DC143C"];
+var Red = ["#FF0000"];
+var FireBrick = ["#B22222"];
+var DarkRed = ["#8B0000"];
+var Pink = ["#FFC0CB"];
+var LightPink = ["#FFB6C1"];
+var HotPink = ["#FF69B4"];
+var DeepPink = ["#FF1493"];
+var MediumVioletRed = ["#C71585"];
+var PaleVioletRed = ["#DB7093"];
+var Coral = ["#FF7F50"];
+var Tomato = ["#FF6347"];
+var OrangeRed = ["#FF4500"];
+var DarkOrange = ["#FF8C00"];
+var Orange = ["#FFA500"];
+var Gold = ["#FFD700"];
+var Yellow = ["#FFFF00"];
+var LightYellow = ["#FFFFE0"];
+var LemonChiffon = ["#FFFACD"];
+var LightGoldenrodYellow = ["#FAFAD2"];
+var PapayaWhip = ["#FFEFD5"];
+var Moccasin = ["#FFE4B5"];
+var PeachPuff = ["#FFDAB9"];
+var PaleGoldenrod = ["#EEE8AA"];
+var Khaki = ["#F0E68C"];
+var DarkKhaki = ["#BDB76B"];
+var Lavender = ["#E6E6FA"];
+var Thistle = ["#D8BFD8"];
+var Plum = ["#DDA0DD"];
+var Violet = ["#EE82EE"];
+var Orchid = ["#DA70D6"];
+var Fuchsia = ["#FF00FF"];
+var Magenta = ["#FF00FF"];
+var MediumOrchid = ["#BA55D3"];
+var MediumPurple = ["#9370DB"];
+var RebeccaPurple = ["#663399"];
+var BlueViolet = ["#8A2BE2"];
+var DarkViolet = ["#9400D3"];
+var DarkOrchid = ["#9932CC"];
+var DarkMagenta = ["#8B008B"];
+var Purple = ["#800080"];
+var Indigo = ["#4B0082"];
+var SlateBlue = ["#6A5ACD"];
+var DarkSlateBlue = ["#483D8B"];
+var MediumSlateBlue = ["#7B68EE"];
+var GreenYellow = ["#ADFF2F"];
+var Chartreuse = ["#7FFF00"];
+var LawnGreen = ["#7CFC00"];
+var Lime = ["#00FF00"];
+var LimeGreen = ["#32CD32"];
+var PaleGreen = ["#98FB98"];
+var LightGreen = ["#90EE90"];
+var MediumSpringGreen = ["#00FA9A"];
+var SpringGreen = ["#00FF7F"];
+var MediumSeaGreen = ["#3CB371"];
+var SeaGreen = ["#2E8B57"];
+var ForestGreen = ["#228B22"];
+var Green = ["#008000"];
+var DarkGreen = ["#006400"];
+var YellowGreen = ["#9ACD32"];
+var OliveDrab = ["#6B8E23"];
+var Olive = ["#808000"];
+var DarkOliveGreen = ["#556B2F"];
+var MediumAquamarine = ["#66CDAA"];
+var DarkSeaGreen = ["#8FBC8B"];
+var LightSeaGreen = ["#20B2AA"];
+var DarkCyan = ["#008B8B"];
+var Teal = ["#008080"];
+var Aqua = ["#00FFFF"];
+var Cyan = ["#00FFFF"];
+var LightCyan = ["#E0FFFF"];
+var PaleTurquoise = ["#AFEEEE"];
+var Aquamarine = ["#7FFFD4"];
+var Turquoise = ["#40E0D0"];
+var MediumTurquoise = ["#48D1CC"];
+var DarkTurquoise = ["#00CED1"];
+var CadetBlue = ["#5F9EA0"];
+var SteelBlue = ["#4682B4"];
+var LightSteelBlue = ["#B0C4DE"];
+var PowderBlue = ["#B0E0E6"];
+var LightBlue = ["#ADD8E6"];
+var SkyBlue = ["#87CEEB"];
+var LightSkyBlue = ["#87CEFA"];
+var DeepSkyBlue = ["#00BFFF"];
+var DodgerBlue = ["#1E90FF"];
+var CornflowerBlue = ["#6495ED"];
+var RoyalBlue = ["#4169E1"];
+var Blue = ["#0000FF"];
+var MediumBlue = ["#0000CD"];
+var DarkBlue = ["#00008B"];
+var Navy = ["#000080"];
+var MidnightBlue = ["#191970"];
+var Cornsilk = ["#FFF8DC"];
+var BlanchedAlmond = ["#FFEBCD"];
+var Bisque = ["#FFE4C4"];
+var NavajoWhite = ["#FFDEAD"];
+var Wheat = ["#F5DEB3"];
+var BurlyWood = ["#DEB887"];
+var Tan = ["#D2B48C"];
+var RosyBrown = ["#BC8F8F"];
+var SandyBrown = ["#F4A460"];
+var Goldenrod = ["#DAA520"];
+var DarkGoldenrod = ["#B8860B"];
+var Peru = ["#CD853F"];
+var Chocolate = ["#D2691E"];
+var SaddleBrown = ["#8B4513"];
+var Sienna = ["#A0522D"];
+var Brown = ["#A52A2A"];
+var Maroon = ["#800000"];
+var White = ["#FFFFFF"];
+var Snow = ["#FFFAFA"];
+var HoneyDew = ["#F0FFF0"];
+var MintCream = ["#F5FFFA"];
+var Azure = ["#F0FFFF"];
+var AliceBlue = ["#F0F8FF"];
+var GhostWhite = ["#F8F8FF"];
+var WhiteSmoke = ["#F5F5F5"];
+var SeaShell = ["#FFF5EE"];
+var Beige = ["#F5F5DC"];
+var OldLace = ["#FDF5E6"];
+var FloralWhite = ["#FFFAF0"];
+var Ivory = ["#FFFFF0"];
+var AntiqueWhite = ["#FAEBD7"];
+var Linen = ["#FAF0E6"];
+var LavenderBlush = ["#FFF0F5"];
+var MistyRose = ["#FFE4E1"];
+var Gainsboro = ["#DCDCDC"];
+var LightGray = ["#D3D3D3"];
+var Silver = ["#C0C0C0"];
+var DarkGray = ["#A9A9A9"];
+var Gray = ["#808080"];
+var DimGray = ["#696969"];
+var LightSlateGray = ["#778899"];
+var SlateGray = ["#708090"];
+var DarkSlateGray = ["#2F4F4F"];
+var Black = ["#000000"];
 var WEBCOLOR = {
 	IndianRed: IndianRed,
 	LightCoral: LightCoral,
@@ -2866,54 +3061,54 @@ var WEBCOLOR = {
 	Black: Black
 };
 
-const Vermilion = ["#EF454A","バーミリオン"];
-const Maroon$1 = ["#662B2C","マルーン"];
-const Pink$1 = ["#EA9198","ピンク"];
-const Bordeaux = ["#533638","ボルドー"];
-const Red$1 = ["#DF3447","レッド"];
-const Burgundy = ["#442E31","バーガンディー"];
-const Rose = ["#DB3561","ローズ"];
-const Carmine = ["#BE0039","カーマイン"];
-const Strawberry = ["#BB004B","ストロベリー"];
-const Magenta$1 = ["#D13A84","マゼンタ"];
-const Orchid$1 = ["#C69CC5","オーキッド"];
-const Purple$1 = ["#A757A8","パープル"];
-const Lilac = ["#C29DC8","ライラック"];
-const Lavender$1 = ["#9A8A9F","ラベンダー"];
-const Mauve = ["#855896","モーブ"];
-const Violet$1 = ["#714C99","バイオレット"];
-const Heliotrope = ["#8865B2","ヘリオトロープ"];
-const Pansy = ["#433171","パンジー"];
-const Wistaria = ["#7967C3","ウイスタリア"];
-const Hyacinth = ["#6E82AD","ヒヤシンス"];
-const Blue$1 = ["#006FAB","ブルー"];
-const Cyan$1 = ["#009CD1","シアン"];
-const Viridian = ["#006D56","ビリジアン"];
-const Green$1 = ["#009A57","グリーン"];
-const Yellow$1 = ["#F4D500","イエロー"];
-const Olive$1 = ["#5C5424","オリーブ"];
-const Marigold = ["#FFA400","マリーゴールド"];
-const Leghorn = ["#DFC291","レグホーン"];
-const Ivory$1 = ["#DED2BF","アイボリー"];
-const Sepia = ["#483C2C","セピア"];
-const Bronze = ["#7A592F","ブロンズ"];
-const Beige$1 = ["#BCA78D","ベージュ"];
-const Amber = ["#AA7A40","アンバー"];
-const Buff = ["#C09567","バフ"];
-const Orange$1 = ["#EF810F","オレンジ"];
-const Tan$1 = ["#9E6C3F","タン"];
-const Apricot = ["#D89F6D","アプリコット"];
-const Cork = ["#9F7C5C","コルク"];
-const Brown$1 = ["#6D4C33","ブラウン"];
-const Peach = ["#E8BDA5","ピーチ"];
-const Blond = ["#F6A57D","ブロンド"];
-const Khaki$1 = ["#A36851","カーキー"];
-const Chocolate$1 = ["#503830","チョコレート"];
-const Terracotta = ["#A95045","テラコッタ"];
-const Scarlet = ["#DE3838","スカーレット"];
-const White$1 = ["#F0F0F0","ホワイト"];
-const Grey = ["#767676","グレイ"];
-const Black$1 = ["#212121","ブラック"];
+var Vermilion = ["#EF454A","バーミリオン"];
+var Maroon$1 = ["#662B2C","マルーン"];
+var Pink$1 = ["#EA9198","ピンク"];
+var Bordeaux = ["#533638","ボルドー"];
+var Red$1 = ["#DF3447","レッド"];
+var Burgundy = ["#442E31","バーガンディー"];
+var Rose = ["#DB3561","ローズ"];
+var Carmine = ["#BE0039","カーマイン"];
+var Strawberry = ["#BB004B","ストロベリー"];
+var Magenta$1 = ["#D13A84","マゼンタ"];
+var Orchid$1 = ["#C69CC5","オーキッド"];
+var Purple$1 = ["#A757A8","パープル"];
+var Lilac = ["#C29DC8","ライラック"];
+var Lavender$1 = ["#9A8A9F","ラベンダー"];
+var Mauve = ["#855896","モーブ"];
+var Violet$1 = ["#714C99","バイオレット"];
+var Heliotrope = ["#8865B2","ヘリオトロープ"];
+var Pansy = ["#433171","パンジー"];
+var Wistaria = ["#7967C3","ウイスタリア"];
+var Hyacinth = ["#6E82AD","ヒヤシンス"];
+var Blue$1 = ["#006FAB","ブルー"];
+var Cyan$1 = ["#009CD1","シアン"];
+var Viridian = ["#006D56","ビリジアン"];
+var Green$1 = ["#009A57","グリーン"];
+var Yellow$1 = ["#F4D500","イエロー"];
+var Olive$1 = ["#5C5424","オリーブ"];
+var Marigold = ["#FFA400","マリーゴールド"];
+var Leghorn = ["#DFC291","レグホーン"];
+var Ivory$1 = ["#DED2BF","アイボリー"];
+var Sepia = ["#483C2C","セピア"];
+var Bronze = ["#7A592F","ブロンズ"];
+var Beige$1 = ["#BCA78D","ベージュ"];
+var Amber = ["#AA7A40","アンバー"];
+var Buff = ["#C09567","バフ"];
+var Orange$1 = ["#EF810F","オレンジ"];
+var Tan$1 = ["#9E6C3F","タン"];
+var Apricot = ["#D89F6D","アプリコット"];
+var Cork = ["#9F7C5C","コルク"];
+var Brown$1 = ["#6D4C33","ブラウン"];
+var Peach = ["#E8BDA5","ピーチ"];
+var Blond = ["#F6A57D","ブロンド"];
+var Khaki$1 = ["#A36851","カーキー"];
+var Chocolate$1 = ["#503830","チョコレート"];
+var Terracotta = ["#A95045","テラコッタ"];
+var Scarlet = ["#DE3838","スカーレット"];
+var White$1 = ["#F0F0F0","ホワイト"];
+var Grey = ["#767676","グレイ"];
+var Black$1 = ["#212121","ブラック"];
 var JISCOLOR_EN = {
 	Vermilion: Vermilion,
 	Maroon: Maroon$1,
@@ -3186,25 +3381,25 @@ var JISCOLOR_JA = {
 	"黒": ["#2A2A2A","くろ"]
 };
 
-const Red$2 = ["#ffebee","#ffcdd2","#ef9a9a","#e57373","#ef5350","#f44336","#e53935","#d32f2f","#c62828","#b71c1c","#ff8a80","#ff5252","#ff1744","#d50000"];
-const Pink$2 = ["#fce4ec","#f8bbd0","#f48fb1","#f06292","#ec407a","#e91e63","#d81b60","#c2185b","#ad1457","#880e4f","#ff80ab","#ff4081","#f50057","#c51162"];
-const Purple$2 = ["#f3e5f5","#e1bee7","#ce93d8","#ba68c8","#ab47bc","#9c27b0","#8e24aa","#7b1fa2","#6a1b9a","#4a148c","#ea80fc","#e040fb","#d500f9","#aa00ff"];
-const DeepPurple = ["#ede7f6","#d1c4e9","#b39ddb","#9575cd","#7e57c2","#673ab7","#5e35b1","#512da8","#4527a0","#311b92","#b388ff","#7c4dff","#651fff","#6200ea"];
-const Indigo$1 = ["#e8eaf6","#c5cae9","#9fa8da","#7986cb","#5c6bc0","#3f51b5","#3949ab","#303f9f","#283593","#1a237e","#8c9eff","#536dfe","#3d5afe","#304ffe"];
-const Blue$2 = ["#e3f2fd","#bbdefb","#90caf9","#64b5f6","#42a5f5","#2196f3","#1e88e5","#1976d2","#1565c0","#0d47a1","#82b1ff","#448aff","#2979ff","#2962ff"];
-const LightBlue$1 = ["#e1f5fe","#b3e5fc","#81d4fa","#4fc3f7","#29b6f6","#03a9f4","#039be5","#0288d1","#0277bd","#01579b","#80d8ff","#40c4ff","#00b0ff","#0091ea"];
-const Cyan$2 = ["#e0f7fa","#b2ebf2","#80deea","#4dd0e1","#26c6da","#00bcd4","#00acc1","#0097a7","#00838f","#006064","#84ffff","#18ffff","#00e5ff","#00b8d4"];
-const Teal$1 = ["#e0f2f1","#b2dfdb","#80cbc4","#4db6ac","#26a69a","#009688","#00897b","#00796b","#00695c","#004d40","#a7ffeb","#64ffda","#1de9b6","#00bfa5"];
-const Green$2 = ["#e8f5e9","#c8e6c9","#a5d6a7","#81c784","#66bb6a","#4caf50","#43a047","#388e3c","#2e7d32","#1b5e20","#b9f6ca","#69f0ae","#00e676","#00c853"];
-const LightGreen$1 = ["#f1f8e9","#dcedc8","#c5e1a5","#aed581","#9ccc65","#8bc34a","#7cb342","#689f38","#558b2f","#33691e","#ccff90","#b2ff59","#76ff03","#64dd17"];
-const Lime$1 = ["#f9fbe7","#f0f4c3","#e6ee9c","#dce775","#d4e157","#cddc39","#c0ca33","#afb42b","#9e9d24","#827717","#f4ff81","#eeff41","#c6ff00","#aeea00"];
-const Yellow$2 = ["#fffde7","#fff9c4","#fff59d","#fff176","#ffee58","#ffeb3b","#fdd835","#fbc02d","#f9a825","#f57f17","#ffff8d","#ffff00","#ffea00","#ffd600"];
-const Amber$1 = ["#fff8e1","#ffecb3","#ffe082","#ffd54f","#ffca28","#ffc107","#ffb300","#ffa000","#ff8f00","#ff6f00","#ffe57f","#ffd740","#ffc400","#ffab00"];
-const Orange$2 = ["#fff3e0","#ffe0b2","#ffcc80","#ffb74d","#ffa726","#ff9800","#fb8c00","#f57c00","#ef6c00","#e65100","#ffd180","#ffab40","#ff9100","#ff6d00"];
-const DeepOrange = ["#fbe9e7","#ffccbc","#ffab91","#ff8a65","#ff7043","#ff5722","#f4511e","#e64a19","#d84315","#bf360c","#ff9e80","#ff6e40","#ff3d00","#dd2c00"];
-const Brown$2 = ["#efebe9","#d7ccc8","#bcaaa4","#a1887f","#8d6e63","#795548","#6d4c41","#5d4037","#4e342e","#3e2723"];
-const Grey$1 = ["#fafafa","#f5f5f5","#eeeeee","#e0e0e0","#bdbdbd","#9e9e9e","#757575","#616161","#424242","#212121"];
-const BlueGrey = ["#eceff1","#cfd8dc","#b0bec5","#90a4ae","#78909c","#607d8b","#546e7a","#455a64","#37474f","#263238"];
+var Red$2 = ["#ffebee","#ffcdd2","#ef9a9a","#e57373","#ef5350","#f44336","#e53935","#d32f2f","#c62828","#b71c1c","#ff8a80","#ff5252","#ff1744","#d50000"];
+var Pink$2 = ["#fce4ec","#f8bbd0","#f48fb1","#f06292","#ec407a","#e91e63","#d81b60","#c2185b","#ad1457","#880e4f","#ff80ab","#ff4081","#f50057","#c51162"];
+var Purple$2 = ["#f3e5f5","#e1bee7","#ce93d8","#ba68c8","#ab47bc","#9c27b0","#8e24aa","#7b1fa2","#6a1b9a","#4a148c","#ea80fc","#e040fb","#d500f9","#aa00ff"];
+var DeepPurple = ["#ede7f6","#d1c4e9","#b39ddb","#9575cd","#7e57c2","#673ab7","#5e35b1","#512da8","#4527a0","#311b92","#b388ff","#7c4dff","#651fff","#6200ea"];
+var Indigo$1 = ["#e8eaf6","#c5cae9","#9fa8da","#7986cb","#5c6bc0","#3f51b5","#3949ab","#303f9f","#283593","#1a237e","#8c9eff","#536dfe","#3d5afe","#304ffe"];
+var Blue$2 = ["#e3f2fd","#bbdefb","#90caf9","#64b5f6","#42a5f5","#2196f3","#1e88e5","#1976d2","#1565c0","#0d47a1","#82b1ff","#448aff","#2979ff","#2962ff"];
+var LightBlue$1 = ["#e1f5fe","#b3e5fc","#81d4fa","#4fc3f7","#29b6f6","#03a9f4","#039be5","#0288d1","#0277bd","#01579b","#80d8ff","#40c4ff","#00b0ff","#0091ea"];
+var Cyan$2 = ["#e0f7fa","#b2ebf2","#80deea","#4dd0e1","#26c6da","#00bcd4","#00acc1","#0097a7","#00838f","#006064","#84ffff","#18ffff","#00e5ff","#00b8d4"];
+var Teal$1 = ["#e0f2f1","#b2dfdb","#80cbc4","#4db6ac","#26a69a","#009688","#00897b","#00796b","#00695c","#004d40","#a7ffeb","#64ffda","#1de9b6","#00bfa5"];
+var Green$2 = ["#e8f5e9","#c8e6c9","#a5d6a7","#81c784","#66bb6a","#4caf50","#43a047","#388e3c","#2e7d32","#1b5e20","#b9f6ca","#69f0ae","#00e676","#00c853"];
+var LightGreen$1 = ["#f1f8e9","#dcedc8","#c5e1a5","#aed581","#9ccc65","#8bc34a","#7cb342","#689f38","#558b2f","#33691e","#ccff90","#b2ff59","#76ff03","#64dd17"];
+var Lime$1 = ["#f9fbe7","#f0f4c3","#e6ee9c","#dce775","#d4e157","#cddc39","#c0ca33","#afb42b","#9e9d24","#827717","#f4ff81","#eeff41","#c6ff00","#aeea00"];
+var Yellow$2 = ["#fffde7","#fff9c4","#fff59d","#fff176","#ffee58","#ffeb3b","#fdd835","#fbc02d","#f9a825","#f57f17","#ffff8d","#ffff00","#ffea00","#ffd600"];
+var Amber$1 = ["#fff8e1","#ffecb3","#ffe082","#ffd54f","#ffca28","#ffc107","#ffb300","#ffa000","#ff8f00","#ff6f00","#ffe57f","#ffd740","#ffc400","#ffab00"];
+var Orange$2 = ["#fff3e0","#ffe0b2","#ffcc80","#ffb74d","#ffa726","#ff9800","#fb8c00","#f57c00","#ef6c00","#e65100","#ffd180","#ffab40","#ff9100","#ff6d00"];
+var DeepOrange = ["#fbe9e7","#ffccbc","#ffab91","#ff8a65","#ff7043","#ff5722","#f4511e","#e64a19","#d84315","#bf360c","#ff9e80","#ff6e40","#ff3d00","#dd2c00"];
+var Brown$2 = ["#efebe9","#d7ccc8","#bcaaa4","#a1887f","#8d6e63","#795548","#6d4c41","#5d4037","#4e342e","#3e2723"];
+var Grey$1 = ["#fafafa","#f5f5f5","#eeeeee","#e0e0e0","#bdbdbd","#9e9e9e","#757575","#616161","#424242","#212121"];
+var BlueGrey = ["#eceff1","#cfd8dc","#b0bec5","#90a4ae","#78909c","#607d8b","#546e7a","#455a64","#37474f","#263238"];
 var MATERIALCOLOR = {
 	Red: Red$2,
 	Pink: Pink$2,
@@ -3227,17 +3422,17 @@ var MATERIALCOLOR = {
 	BlueGrey: BlueGrey
 };
 
-const Beige$2 = ["#D0B084",1001];
-const Ivory$2 = ["#E1CC4F",1014];
-const Curry = ["#9D9101",1027];
-const Vermilion$1 = ["#CB2821",2002];
-const Cored = ["#B32821",3016];
-const Rose$1 = ["#E63244",3017];
-const Luminous = ["#FE0000",3026];
-const Telemagenta = ["#CF3476",4010];
-const braun = ["#45322E",8017];
-const Cream = ["#FDF4E3",9001];
-const schwarz = ["#1E1E1E",9017];
+var Beige$2 = ["#D0B084",1001];
+var Ivory$2 = ["#E1CC4F",1014];
+var Curry = ["#9D9101",1027];
+var Vermilion$1 = ["#CB2821",2002];
+var Cored = ["#B32821",3016];
+var Rose$1 = ["#E63244",3017];
+var Luminous = ["#FE0000",3026];
+var Telemagenta = ["#CF3476",4010];
+var braun = ["#45322E",8017];
+var Cream = ["#FDF4E3",9001];
+var schwarz = ["#1E1E1E",9017];
 var RALCOLOUR = {
 	Beige: Beige$2,
 	Ivory: Ivory$2,
@@ -3454,16 +3649,16 @@ var RALCOLOUR = {
 	"Pearl dark grey": ["#828282",9023]
 };
 
-const MediumYellowC = "#fbd800";
-const BrightOrangeC = "#ff5d00";
-const BrightRedC = "#f33633";
-const StrongRedC = "#cc0066";
-const PinkC = "#cf2197";
-const MediumPurpleC = "#4c008f";
-const DarkBlueC = "#002297";
-const MediumBlueC = "#0088ce";
-const BrightGreenC = "#00ad83";
-const NeutralBlackC = "#19191a";
+var MediumYellowC = "#fbd800";
+var BrightOrangeC = "#ff5d00";
+var BrightRedC = "#f33633";
+var StrongRedC = "#cc0066";
+var PinkC = "#cf2197";
+var MediumPurpleC = "#4c008f";
+var DarkBlueC = "#002297";
+var MediumBlueC = "#0088ce";
+var BrightGreenC = "#00ad83";
+var NeutralBlackC = "#19191a";
 var GOE_COATED = {
 	MediumYellowC: MediumYellowC,
 	BrightOrangeC: BrightOrangeC,
@@ -7596,52 +7791,52 @@ var GOE_UNCOATED = {
 	"165-2-7U": "#78726d"
 };
 
-const Black2C = "#3c3625";
-const Black3C = "#252c26";
-const Black4C = "#382d24";
-const Black5C = "#443135";
-const Black6C = "#111c24";
-const Black7C = "#363534";
-const BlackC = "#2a2623";
-const Blue072C = "#0018a8";
-const CoolGray1C = "#e0e1dd";
-const CoolGray10C = "#616365";
-const CoolGray11C = "#4d4f53";
-const CoolGray2C = "#d5d6d2";
-const CoolGray3C = "#c9cac8";
-const CoolGray4C = "#bcbdbc";
-const CoolGray5C = "#b2b4b3";
-const CoolGray6C = "#adafaf";
-const CoolGray7C = "#9a9b9c";
-const CoolGray8C = "#8b8d8e";
-const CoolGray9C = "#747678";
-const GreenC = "#00ad83";
-const Orange021C = "#ff5800";
-const ProcessBlackC = "#1e1e1e";
-const ProcessBlueC = "#0088ce";
-const ProcessCyanC = "#009fda";
-const ProcessMagentaC = "#d10074";
-const ProcessYellowC = "#f9e300";
-const PurpleC = "#b634bb";
-const Red032C = "#ed2939";
-const ReflexBlueC = "#002395";
-const RhodamineRedC = "#e0119d";
-const RubineRedC = "#ca005d";
-const VioletC = "#4b08a1";
-const WarmGray1C = "#e0ded8";
-const WarmGray10C = "#766a62";
-const WarmGray11C = "#675c53";
-const WarmGray2C = "#d5d2ca";
-const WarmGray3C = "#c7c2ba";
-const WarmGray4C = "#b7b1a9";
-const WarmGray5C = "#aea79f";
-const WarmGray6C = "#a59d95";
-const WarmGray7C = "#988f86";
-const WarmGray8C = "#8b8178";
-const WarmGray9C = "#82786f";
-const WarmRedC = "#f7403a";
-const Yellow012C = "#ffd500";
-const YellowC = "#fedf00";
+var Black2C = "#3c3625";
+var Black3C = "#252c26";
+var Black4C = "#382d24";
+var Black5C = "#443135";
+var Black6C = "#111c24";
+var Black7C = "#363534";
+var BlackC = "#2a2623";
+var Blue072C = "#0018a8";
+var CoolGray1C = "#e0e1dd";
+var CoolGray10C = "#616365";
+var CoolGray11C = "#4d4f53";
+var CoolGray2C = "#d5d6d2";
+var CoolGray3C = "#c9cac8";
+var CoolGray4C = "#bcbdbc";
+var CoolGray5C = "#b2b4b3";
+var CoolGray6C = "#adafaf";
+var CoolGray7C = "#9a9b9c";
+var CoolGray8C = "#8b8d8e";
+var CoolGray9C = "#747678";
+var GreenC = "#00ad83";
+var Orange021C = "#ff5800";
+var ProcessBlackC = "#1e1e1e";
+var ProcessBlueC = "#0088ce";
+var ProcessCyanC = "#009fda";
+var ProcessMagentaC = "#d10074";
+var ProcessYellowC = "#f9e300";
+var PurpleC = "#b634bb";
+var Red032C = "#ed2939";
+var ReflexBlueC = "#002395";
+var RhodamineRedC = "#e0119d";
+var RubineRedC = "#ca005d";
+var VioletC = "#4b08a1";
+var WarmGray1C = "#e0ded8";
+var WarmGray10C = "#766a62";
+var WarmGray11C = "#675c53";
+var WarmGray2C = "#d5d2ca";
+var WarmGray3C = "#c7c2ba";
+var WarmGray4C = "#b7b1a9";
+var WarmGray5C = "#aea79f";
+var WarmGray6C = "#a59d95";
+var WarmGray7C = "#988f86";
+var WarmGray8C = "#8b8178";
+var WarmGray9C = "#82786f";
+var WarmRedC = "#f7403a";
+var Yellow012C = "#ffd500";
+var YellowC = "#fedf00";
 var SOLID_COATED = {
 	Black2C: Black2C,
 	Black3C: Black3C,
@@ -8769,52 +8964,52 @@ var SOLID_COATED = {
 	"HEXACHROME®YellowC": "#ffe000"
 };
 
-const Black2U = "#625e51";
-const Black3U = "#595c59";
-const Black4U = "#635a52";
-const Black5U = "#66585b";
-const Black6U = "#51565f";
-const Black7U = "#6c6a68";
-const BlackU = "#605b55";
-const Blue072U = "#3945a6";
-const CoolGray1U = "#e2e1dc";
-const CoolGray10U = "#7f8184";
-const CoolGray11U = "#75777b";
-const CoolGray2U = "#d4d4d0";
-const CoolGray3U = "#c5c6c4";
-const CoolGray4U = "#b5b6b6";
-const CoolGray5U = "#acadae";
-const CoolGray6U = "#a3a5a6";
-const CoolGray7U = "#98999b";
-const CoolGray8U = "#8f9193";
-const CoolGray9U = "#85878a";
-const GreenU = "#00aa87";
-const Orange021U = "#ff7334";
-const ProcessBlackU = "#555150";
-const ProcessBlueU = "#0083c5";
-const ProcessCyanU = "#009fd6";
-const ProcessMagentaU = "#d74d84";
-const ProcessYellowU = "#ffe623";
-const PurpleU = "#bd55bb";
-const Red032U = "#f35562";
-const ReflexBlueU = "#354793";
-const RhodamineRedU = "#e351a2";
-const RubineRedU = "#d4487e";
-const VioletU = "#7557b1";
-const WarmGray1U = "#e5e0d9";
-const WarmGray10U = "#7e7774";
-const WarmGray11U = "#78716e";
-const WarmGray2U = "#d7d1c9";
-const WarmGray3U = "#c3bcb4";
-const WarmGray4U = "#b5ada6";
-const WarmGray5U = "#a8a19b";
-const WarmGray6U = "#9e9791";
-const WarmGray7U = "#958e89";
-const WarmGray8U = "#8d8682";
-const WarmGray9U = "#87807c";
-const WarmRedU = "#fe615c";
-const Yellow012U = "#ffda00";
-const YellowU = "#ffe600";
+var Black2U = "#625e51";
+var Black3U = "#595c59";
+var Black4U = "#635a52";
+var Black5U = "#66585b";
+var Black6U = "#51565f";
+var Black7U = "#6c6a68";
+var BlackU = "#605b55";
+var Blue072U = "#3945a6";
+var CoolGray1U = "#e2e1dc";
+var CoolGray10U = "#7f8184";
+var CoolGray11U = "#75777b";
+var CoolGray2U = "#d4d4d0";
+var CoolGray3U = "#c5c6c4";
+var CoolGray4U = "#b5b6b6";
+var CoolGray5U = "#acadae";
+var CoolGray6U = "#a3a5a6";
+var CoolGray7U = "#98999b";
+var CoolGray8U = "#8f9193";
+var CoolGray9U = "#85878a";
+var GreenU = "#00aa87";
+var Orange021U = "#ff7334";
+var ProcessBlackU = "#555150";
+var ProcessBlueU = "#0083c5";
+var ProcessCyanU = "#009fd6";
+var ProcessMagentaU = "#d74d84";
+var ProcessYellowU = "#ffe623";
+var PurpleU = "#bd55bb";
+var Red032U = "#f35562";
+var ReflexBlueU = "#354793";
+var RhodamineRedU = "#e351a2";
+var RubineRedU = "#d4487e";
+var VioletU = "#7557b1";
+var WarmGray1U = "#e5e0d9";
+var WarmGray10U = "#7e7774";
+var WarmGray11U = "#78716e";
+var WarmGray2U = "#d7d1c9";
+var WarmGray3U = "#c3bcb4";
+var WarmGray4U = "#b5ada6";
+var WarmGray5U = "#a8a19b";
+var WarmGray6U = "#9e9791";
+var WarmGray7U = "#958e89";
+var WarmGray8U = "#8d8682";
+var WarmGray9U = "#87807c";
+var WarmRedU = "#fe615c";
+var Yellow012U = "#ffda00";
+var YellowU = "#ffe600";
 var SOLID_UNCOATED = {
 	Black2U: Black2U,
 	Black3U: Black3U,
@@ -9950,7 +10145,7 @@ function applyComputations$2 ( state, newState, oldState, isInitial ) {
 
 var template$2 = (function () {
   var template = {
-    data () {
+    data: function data () {
       return {
         colorlists: [
           { name: 'Web Color',
@@ -9960,13 +10155,13 @@ var template$2 = (function () {
           { name: 'JIS JA',
             list: parser(JISCOLOR_JA) },
           { name: 'GOOGLE MATERIAL',
-            list: Object.keys(MATERIALCOLOR).reduce((ary, key) => {
-              MATERIALCOLOR[key].forEach((color, i) => {
-                let name = key;
-                if (i === 0)      name += 50;
-                else if (i < 10)  name += i * 100;
-                else if (i >= 10) name += ['A100', 'A200', 'A400', 'A700'][i % 10];
-                ary.push({name, color});
+            list: Object.keys(MATERIALCOLOR).reduce(function (ary, key) {
+              MATERIALCOLOR[key].forEach(function (color, i) {
+                var name = key;
+                if (i === 0)      { name += 50; }
+                else if (i < 10)  { name += i * 100; }
+                else if (i >= 10) { name += ['A100', 'A200', 'A400', 'A700'][i % 10]; }
+                ary.push({name: name, color: color});
               });
               return ary
             }, []) },
@@ -9979,30 +10174,33 @@ var template$2 = (function () {
           { name: 'PANTONE® solid Coated',
             list: pantone(SOLID_COATED) },
           { name: 'PANTONE® solid Uncoated',
-            list: pantone(SOLID_UNCOATED) },
-        ],
+            list: pantone(SOLID_UNCOATED) } ],
         colorlistsIndex: 0
       }
     },
     computed: {
-      list: (colorlists, colorlistsIndex) => colorlists[colorlistsIndex].list,
+      list: function (colorlists, colorlistsIndex) { return colorlists[colorlistsIndex].list; },
     },
-    onrender () {
-      const colortips = this.refs.colortips;
-      colortips.addEventListener('click', (e) => {
-        const el = e.target;
+    onrender: function onrender () {
+      var colortips = this.refs.colortips;
+      colortips.addEventListener('click', function (e) {
+        var el = e.target;
         if (el.classList.contains('tip')) {
-          const [name, color] = el.title.split(' : ');
-          store.trigger('cards.ADD_CARD', {name, color});
+          var ref = el.title.split(' : ');
+          var name = ref[0];
+          var color = ref[1];
+          store.trigger('cards.ADD_CARD', {name: name, color: color});
         }
       });
-      colortips.addEventListener('contextmenu', (e) => {
+      colortips.addEventListener('contextmenu', function (e) {
         e.preventDefault();
-        const el = e.target;
+        var el = e.target;
         if (el.classList.contains('tip')) {
-          const [name, color] = el.title.split(' : ');
+          var ref = el.title.split(' : ');
+          var name = ref[0];
+          var color = ref[1];
           store.trigger('menu_open', e, {
-            name,
+            name: name,
             color: tinycolor(color)
           }, 'tip');
         }
@@ -10011,23 +10209,23 @@ var template$2 = (function () {
     methods: {
     },
     helpers: {
-      title (tip) {
+      title: function title (tip) {
         return tip.name + ' : ' + tip.color
       },
     }
   };
 
   function parser (list, temp) {
-    return Object.keys(list).map(key => ({
+    return Object.keys(list).map(function (key) { return ({
       name: temp ? temp(key, list[key]) : key,
       color: list[key][0]
-    }))
+    }); })
   }
   function pantone (list) {
-    return Object.keys(list).map(key => ({
-      name: `${key}`,
+    return Object.keys(list).map(function (key) { return ({
+      name: ("" + key),
       color: list[key]
-    }))
+    }); })
   }
 
 
@@ -10035,7 +10233,7 @@ var template$2 = (function () {
   return template;
 }());
 
-let addedCss$2 = false;
+var addedCss$2 = false;
 function addCss$2 () {
 	var style = createElement( 'style' );
 	style.textContent = "\n  [svelte-1984938225]#colorlists, [svelte-1984938225] #colorlists {\n    width: 280px;\n    font-size: 20px;\n    margin: 10px 0;\n    display: block;\n  }\n  [svelte-1984938225]#colorlists option, [svelte-1984938225] #colorlists option {\n    background: #fff;\n    color: #111;\n  }\n  [svelte-1984938225]#colorlists option:hover, [svelte-1984938225] #colorlists option:hover {\n    background: aquamarine;\n  }\n  [svelte-1984938225].tip, [svelte-1984938225] .tip{\n    width: 20px;\n    height: 20px;\n    margin:0;\n    padding:0;\n    display:inline-block;\n  }\n  [svelte-1984938225].wrapper, [svelte-1984938225] .wrapper {\n    position: relative;\n    height: calc(100% - 420px);\n    margin: 0;\n  }\n  [svelte-1984938225].scrollbar-wrapper, [svelte-1984938225] .scrollbar-wrapper {\n    position: relative;\n    height: 100%;\n    overflow: hidden;\n  }\n  [svelte-1984938225].scrollbar-body, [svelte-1984938225] .scrollbar-body {\n    \n    width: calc(100% + 17px);\n    height: 100%;\n    \n    overflow-y: scroll;\n  }\n  [svelte-1984938225].scrollbar-content, [svelte-1984938225] .scrollbar-content {\n    \n    \n    display: flex;\n    flex-wrap: wrap;\n  }\n";
@@ -10144,7 +10342,7 @@ function renderMainFragment$2 ( root, component ) {
 			
 			teardownEach( eachBlock_iterations, false );
 			
-			if ( component.refs.colortips === div3 ) component.refs.colortips = null;
+			if ( component.refs.colortips === div3 ) { component.refs.colortips = null; }
 			
 			teardownEach( eachBlock1_iterations, false );
 			
@@ -10244,10 +10442,10 @@ applyComputations$2( this._state, this._state, {}, true );
 	this._yield = options._yield;
 
 	this._torndown = false;
-	if ( !addedCss$2 ) addCss$2();
+	if ( !addedCss$2 ) { addCss$2(); }
 	
 	this._fragment = renderMainFragment$2( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
+	if ( options.target ) { this._fragment.mount( options.target, null ); }
 	
 	if ( options._root ) {
 		options._root._renderHooks.push({ fn: template$2.onrender, context: this });
@@ -10258,11 +10456,11 @@ applyComputations$2( this._state, this._state, {}, true );
 
 color_lists.prototype = template$2.methods;
 
-color_lists.prototype.get = get;
-color_lists.prototype.fire = fire;
+color_lists.prototype.get = get$1;
+color_lists.prototype.fire = fire$1;
 color_lists.prototype.observe = observe;
-color_lists.prototype.on = on$1;
-color_lists.prototype.set = set;
+color_lists.prototype.on = on$2;
+color_lists.prototype.set = set$1;
 color_lists.prototype._flush = _flush;
 
 color_lists.prototype._set = function _set ( newState ) {
@@ -10271,7 +10469,7 @@ color_lists.prototype._set = function _set ( newState ) {
 	applyComputations$2( this._state, newState, oldState, false );
 	
 	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
+	if ( this._fragment ) { this._fragment.update( newState, this._state ); }
 	dispatchObservers( this, this._observers.post, newState, oldState );
 };
 
@@ -10285,27 +10483,15 @@ color_lists.prototype.teardown = function teardown ( detach ) {
 	this._torndown = true;
 };
 
-function kebabCase (str) {
-  return str.replace(/^([A-Z])|.([A-Z])/g, (r, m1, m2) => {
-    if (m1) {
-      return m1.toLowerCase()
-    } else if (m2) {
-      return '-' + m2.toLowerCase()
-    }
-  })
-}
-
-
-
-const numStylekey = ['width', 'height', 'top', 'left'];
+var numStylekey = ['width', 'height', 'top', 'left'];
 function styler (dom, data) {
   if (dom[0] === void 0) {
     dom = [dom];
   }
-  dom.forEach((el) => {
-    const style = el.style;
-    for (let key in data) {
-      const val = data[key];
+  dom.forEach(function (el) {
+    var style = el.style;
+    for (var key in data) {
+      var val = data[key];
       if (typeof val === 'number' && numStylekey.indexOf(key) !== -1) {
         style[key] = val + 'px';
       } else if (val != null) {
@@ -10325,19 +10511,19 @@ function styler (dom, data) {
  */
 function copyTextToClipboard (textVal) {
   // テキストエリアを用意する
-  const copyFrom = document.createElement('textarea');
+  var copyFrom = document.createElement('textarea');
   // テキストエリアへ値をセット
   copyFrom.textContent = textVal;
 
   // bodyタグの要素を取得
-  const bodyElm = document.getElementsByTagName('body')[0];
+  var bodyElm = document.getElementsByTagName('body')[0];
   // 子要素にテキストエリアを配置
   bodyElm.appendChild(copyFrom);
 
   // テキストエリアの値を選択
   copyFrom.select();
   // コピーコマンド発行
-  const retVal = document.execCommand('copy');
+  var retVal = document.execCommand('copy');
   // 追加テキストエリアを削除
   bodyElm.removeChild(copyFrom);
 
@@ -10346,16 +10532,15 @@ function copyTextToClipboard (textVal) {
 
 var template$3 = (function () {
   function activeIndex () {
-    const cards = store.get('cards');
-    for (let i = 0; i < cards.length; i++) {
-      cards[i];
+    var cards = store.get('cards');
+    for (var i = 0; i < cards.length; i++) {
       if (cards[i].zIndex === cards.length - 1) {
         return i
       }
     }
   }
   return {
-    data () {
+    data: function data () {
       return {
         mode: false,
         activeCard: null,
@@ -10363,17 +10548,19 @@ var template$3 = (function () {
         sizes: [120, 240, 360],
       }
     },
-    onrender () {
-      console.log('menu-render');
-      const menu = this.refs.menu;
+    onrender: function onrender () {
+      var this$1 = this;
 
-      const menuHide = (e) => {
-        if (this.get('mode')) {
+      console.log('menu-render');
+      var menu = this.refs.menu;
+
+      var menuHide = function (e) {
+        if (this$1.get('mode')) {
           store.trigger('menu_close');
         }
       };
 
-      store.on('menu_open', (e, card, mode) => {
+      store.on('menu_open', function (e, card, mode) {
         styler(menu, {
           left: e.clientX,
           top: e.clientY,
@@ -10382,33 +10569,33 @@ var template$3 = (function () {
 
         // 'tip' or 'card'
         console.log('card', card);
-        this.set({mode, activeCard: card});
+        this$1.set({mode: mode, activeCard: card});
 
 
         window.addEventListener('blur', menuHide);
         document.addEventListener('click', menuHide);
       });
 
-      store.on('menu_close', (e) => {
+      store.on('menu_close', function (e) {
         menu.style.display = 'none';
-        this.set({mode: false});
+        this$1.set({mode: false});
         window.removeEventListener('blur', menuHide);
         document.removeEventListener('click', menuHide);
       });
     },
     methods: {
-      add () {
+      add: function add () {
         store.trigger('cards.ADD_CARD', this.get('activeCard'));
       },
-      duplicate () {
+      duplicate: function duplicate () {
         store.trigger('cards.DUPLICATE_CARD', this.get('activeCard'));
       },
-      remove () {
-        const cards = store.get('cards');
+      remove: function remove () {
+        var cards = store.get('cards');
 
-        if (cards.some((card) => card.selected)) {
+        if (cards.some(function (card) { return card.selected; })) {
           console.log('removeselected', activeIndex());
-          cards.forEach((card, i) => {
+          cards.forEach(function (card, i) {
             if (card.selected) {
               store.trigger('cards.REMOVE_CARD', i);
             }
@@ -10419,14 +10606,14 @@ var template$3 = (function () {
         }
       },
 
-      setBgColor () {
+      setBgColor: function setBgColor () {
         store.set('bgColor', this.get('activeCard').color);
       },
-      copyColor (el) {
-        const key = el.textContent.toLowerCase();
+      copyColor: function copyColor (el) {
+        var key = el.textContent.toLowerCase();
         copyTextToClipboard(this.get('activeCard').color.toString(key));
       },
-      setSize (el) {
+      setSize: function setSize (el) {
         store.trigger('cards.RESIZE_CARD', activeIndex(), +el.textContent);
         // this.get('activeCard').rectSetter()
       }
@@ -10434,10 +10621,10 @@ var template$3 = (function () {
   }
 }());
 
-let addedCss$3 = false;
+var addedCss$3 = false;
 function addCss$3 () {
 	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-605779974]#menu, [svelte-605779974] #menu {\n    position: absolute;\n    font-size:12px;\n    background: #fff;\n    border: solid 1px silver;\n    z-index: 100;\n  }\n  [svelte-605779974].menuitem, [svelte-605779974] .menuitem {\n    min-width: 100px;\n    padding: 4px;\n    margin: 0;\n  }\n  [svelte-605779974].menuitem:hover, [svelte-605779974] .menuitem:hover, [svelte-605779974].menuitem:active, [svelte-605779974] .menuitem:active {\n    background: aquamarine;\n  }\n  [svelte-605779974].menuitem .menuitem:hover, [svelte-605779974] .menuitem .menuitem:hover {\n    font-weight: bold;\n  }\n";
+	style.textContent = "\n  [svelte-4231919172]#menu, [svelte-4231919172] #menu {\n    position: absolute;\n    font-size:12px;\n    background: #fff;\n    border: solid 1px silver;\n    z-index: 100;\n  }\n  [svelte-4231919172].menuitem, [svelte-4231919172] .menuitem {\n    min-width: 100px;\n    padding: 4px;\n    margin: 0;\n  }\n  [svelte-4231919172].menuitem:hover, [svelte-4231919172] .menuitem:hover, [svelte-4231919172].menuitem:active, [svelte-4231919172] .menuitem:active {\n    background: aquamarine;\n  }\n  [svelte-4231919172].menuitem .menuitem:hover, [svelte-4231919172] .menuitem .menuitem:hover {\n    font-weight: bold;\n  }\n";
 	appendNode( style, document.head );
 
 	addedCss$3 = true;
@@ -10445,7 +10632,7 @@ function addCss$3 () {
 
 function renderMainFragment$3 ( root, component ) {
 	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-605779974', '' );
+	setAttribute( div, 'svelte-4231919172', '' );
 	component.refs.menu = div;
 	div.id = "menu";
 	
@@ -10453,19 +10640,19 @@ function renderMainFragment$3 ( root, component ) {
 	appendNode( ifBlock_anchor, div );
 	
 	function getBlock ( root ) {
-		if ( root.mode == 'tip' ) return renderIfBlock_0;
-		if ( root.mode == 'card' ) return renderIfBlock_1;
+		if ( root.mode == 'tip' ) { return renderIfBlock_0; }
+		if ( root.mode == 'card' ) { return renderIfBlock_1; }
 		return null;
 	}
 	
 	var currentBlock = getBlock( root );
 	var ifBlock = currentBlock && currentBlock( root, component );
 	
-	if ( ifBlock ) ifBlock.mount( ifBlock_anchor.parentNode, ifBlock_anchor );
+	if ( ifBlock ) { ifBlock.mount( ifBlock_anchor.parentNode, ifBlock_anchor ); }
 	appendNode( createText( "\n  " ), div );
 	
 	var p = createElement( 'p' );
-	setAttribute( p, 'svelte-605779974', '' );
+	setAttribute( p, 'svelte-4231919172', '' );
 	p.className = "menuitem";
 	
 	function clickHandler ( event ) {
@@ -10479,13 +10666,13 @@ function renderMainFragment$3 ( root, component ) {
 	appendNode( createText( "\n  " ), div );
 	
 	var p1 = createElement( 'p' );
-	setAttribute( p1, 'svelte-605779974', '' );
+	setAttribute( p1, 'svelte-4231919172', '' );
 	p1.className = "menuitem";
 	
 	appendNode( p1, div );
 	
 	var span = createElement( 'span' );
-	setAttribute( span, 'svelte-605779974', '' );
+	setAttribute( span, 'svelte-4231919172', '' );
 	
 	appendNode( span, p1 );
 	appendNode( createText( "COPY:" ), span );
@@ -10505,14 +10692,14 @@ function renderMainFragment$3 ( root, component ) {
 	appendNode( ifBlock1_anchor, div );
 	
 	function getBlock1 ( root ) {
-		if ( root.mode == 'card' ) return renderIfBlock1_0;
+		if ( root.mode == 'card' ) { return renderIfBlock1_0; }
 		return null;
 	}
 	
 	var currentBlock1 = getBlock1( root );
 	var ifBlock1 = currentBlock1 && currentBlock1( root, component );
 	
-	if ( ifBlock1 ) ifBlock1.mount( ifBlock1_anchor.parentNode, ifBlock1_anchor );
+	if ( ifBlock1 ) { ifBlock1.mount( ifBlock1_anchor.parentNode, ifBlock1_anchor ); }
 
 	return {
 		mount: function ( target, anchor ) {
@@ -10527,9 +10714,9 @@ function renderMainFragment$3 ( root, component ) {
 			if ( _currentBlock === currentBlock && ifBlock) {
 				ifBlock.update( changed, root );
 			} else {
-				if ( ifBlock ) ifBlock.teardown( true );
+				if ( ifBlock ) { ifBlock.teardown( true ); }
 				ifBlock = currentBlock && currentBlock( root, component );
-				if ( ifBlock ) ifBlock.mount( ifBlock_anchor.parentNode, ifBlock_anchor );
+				if ( ifBlock ) { ifBlock.mount( ifBlock_anchor.parentNode, ifBlock_anchor ); }
 			}
 			
 			var eachBlock_value = root.copys;
@@ -10552,20 +10739,20 @@ function renderMainFragment$3 ( root, component ) {
 			if ( _currentBlock1 === currentBlock1 && ifBlock1) {
 				ifBlock1.update( changed, root );
 			} else {
-				if ( ifBlock1 ) ifBlock1.teardown( true );
+				if ( ifBlock1 ) { ifBlock1.teardown( true ); }
 				ifBlock1 = currentBlock1 && currentBlock1( root, component );
-				if ( ifBlock1 ) ifBlock1.mount( ifBlock1_anchor.parentNode, ifBlock1_anchor );
+				if ( ifBlock1 ) { ifBlock1.mount( ifBlock1_anchor.parentNode, ifBlock1_anchor ); }
 			}
 		},
 		
 		teardown: function ( detach ) {
-			if ( component.refs.menu === div ) component.refs.menu = null;
-			if ( ifBlock ) ifBlock.teardown( false );
+			if ( component.refs.menu === div ) { component.refs.menu = null; }
+			if ( ifBlock ) { ifBlock.teardown( false ); }
 			removeEventListener( p, 'click', clickHandler );
 			
 			teardownEach( eachBlock_iterations, false );
 			
-			if ( ifBlock1 ) ifBlock1.teardown( false );
+			if ( ifBlock1 ) { ifBlock1.teardown( false ); }
 			
 			if ( detach ) {
 				detachNode( div );
@@ -10576,11 +10763,11 @@ function renderMainFragment$3 ( root, component ) {
 
 function renderIfBlock1_0 ( root, component ) {
 	var p = createElement( 'p' );
-	setAttribute( p, 'svelte-605779974', '' );
+	setAttribute( p, 'svelte-4231919172', '' );
 	p.className = "menuitem";
 	
 	var span = createElement( 'span' );
-	setAttribute( span, 'svelte-605779974', '' );
+	setAttribute( span, 'svelte-4231919172', '' );
 	
 	appendNode( span, p );
 	appendNode( createText( "SIZE:" ), span );
@@ -10631,7 +10818,7 @@ function renderIfBlock1_0 ( root, component ) {
 
 function renderEachBlock1$1 ( root, eachBlock1_value, key, key__index, component ) {
 	var span = createElement( 'span' );
-	setAttribute( span, 'svelte-605779974', '' );
+	setAttribute( span, 'svelte-4231919172', '' );
 	span.className = "menuitem";
 	
 	function clickHandler ( event ) {
@@ -10669,7 +10856,7 @@ function renderEachBlock1$1 ( root, eachBlock1_value, key, key__index, component
 
 function renderEachBlock$2 ( root, eachBlock_value, key, key__index, component ) {
 	var span = createElement( 'span' );
-	setAttribute( span, 'svelte-605779974', '' );
+	setAttribute( span, 'svelte-4231919172', '' );
 	span.className = "menuitem";
 	
 	function clickHandler ( event ) {
@@ -10707,7 +10894,7 @@ function renderEachBlock$2 ( root, eachBlock_value, key, key__index, component )
 
 function renderIfBlock_1 ( root, component ) {
 	var p = createElement( 'p' );
-	setAttribute( p, 'svelte-605779974', '' );
+	setAttribute( p, 'svelte-4231919172', '' );
 	p.className = "menuitem";
 	
 	function clickHandler ( event ) {
@@ -10720,7 +10907,7 @@ function renderIfBlock_1 ( root, component ) {
 	var text1 = createText( "\n    " );
 	
 	var p1 = createElement( 'p' );
-	setAttribute( p1, 'svelte-605779974', '' );
+	setAttribute( p1, 'svelte-4231919172', '' );
 	p1.className = "menuitem";
 	
 	function clickHandler1 ( event ) {
@@ -10755,7 +10942,7 @@ function renderIfBlock_1 ( root, component ) {
 
 function renderIfBlock_0 ( root, component ) {
 	var p = createElement( 'p' );
-	setAttribute( p, 'svelte-605779974', '' );
+	setAttribute( p, 'svelte-4231919172', '' );
 	p.className = "menuitem";
 	
 	function clickHandler ( event ) {
@@ -10800,10 +10987,10 @@ function context_menu ( options ) {
 	this._yield = options._yield;
 
 	this._torndown = false;
-	if ( !addedCss$3 ) addCss$3();
+	if ( !addedCss$3 ) { addCss$3(); }
 	
 	this._fragment = renderMainFragment$3( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
+	if ( options.target ) { this._fragment.mount( options.target, null ); }
 	
 	if ( options._root ) {
 		options._root._renderHooks.push({ fn: template$3.onrender, context: this });
@@ -10814,11 +11001,11 @@ function context_menu ( options ) {
 
 context_menu.prototype = template$3.methods;
 
-context_menu.prototype.get = get;
-context_menu.prototype.fire = fire;
+context_menu.prototype.get = get$1;
+context_menu.prototype.fire = fire$1;
 context_menu.prototype.observe = observe;
-context_menu.prototype.on = on$1;
-context_menu.prototype.set = set;
+context_menu.prototype.on = on$2;
+context_menu.prototype.set = set$1;
 context_menu.prototype._flush = _flush;
 
 context_menu.prototype._set = function _set ( newState ) {
@@ -10826,7 +11013,7 @@ context_menu.prototype._set = function _set ( newState ) {
 	this._state = Object.assign( {}, oldState, newState );
 	
 	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
+	if ( this._fragment ) { this._fragment.update( newState, this._state ); }
 	dispatchObservers( this, this._observers.post, newState, oldState );
 };
 
@@ -10847,15 +11034,15 @@ function applyComputations ( state, newState, oldState, isInitial ) {
 }
 
 var template = (function () {
-  const COLOR_TYPE = ['hex', 'rgb', 'hsl'];
-  let colortypeindex = 0;
+  var COLOR_TYPE = ['hex', 'rgb', 'hsl'];
+  var colortypeindex = 0;
   return {
     components: {
       ColorCard: color_card,
       ColorLists: color_lists,
       ContextMenu: context_menu
     },
-    data () {
+    data: function data () {
       return {
         color_type: 'hex',
         // colortypeindex: 0,
@@ -10865,16 +11052,16 @@ var template = (function () {
       }
     },
     computed: {
-      textColor: bgColor => tinycolor.mostReadable(bgColor, ['#eee', '#111']),
+      textColor: function (bgColor) { return tinycolor.mostReadable(bgColor, ['#eee', '#111']); },
       // color_type: (colorcode) => COLOR_TYPE[colortypeindex].toUpperCase()
     },
-    onrender () {
+    onrender: function onrender () {
       console.log('this', this);
-      window.addEventListener('resize', (e) => {
+      window.addEventListener('resize', function (e) {
 
       });
-      this.on('thingHappened', event => {
-        console.log(`A thing happened: ${event.thing}`);
+      this.on('thingHappened', function (event) {
+        console.log(("A thing happened: " + (event.thing)));
       });
       this.fire('thingHappened', {
         thing: 'this event was fired'
@@ -10882,24 +11069,24 @@ var template = (function () {
       this.selectable = new Selectable(this.refs.box, {
         filter: '.card',
         tolerance: 'fit',
-        start: (e, position) => {
+        start: function (e, position) {
           store.trigger('menu_close');
         },
-        selected: (position, indexs, els) => {
+        selected: function (position, indexs, els) {
           store.trigger('cards.SELECT_CARDS', indexs, true);
         },
       });
     },
 
     methods: {
-      color_typeChange () {
+      color_typeChange: function color_typeChange () {
         ++colortypeindex;
         colortypeindex %= COLOR_TYPE.length;
         this.set({color_type: COLOR_TYPE[colortypeindex].toUpperCase()});
       },
-      addCard () {
-        const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i;
-        const text = validationRegExp.exec(this.get('colorcode'));
+      addCard: function addCard () {
+        var validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i;
+        var text = validationRegExp.exec(this.get('colorcode'));
         if (text) {
           store.trigger('cards.ADD_CARD', {
             name: '',
@@ -10912,7 +11099,7 @@ var template = (function () {
   }
 }());
 
-let addedCss = false;
+var addedCss = false;
 function addCss () {
 	var style = createElement( 'style' );
 	style.textContent = "\n  [svelte-230118669].ui-selectable-helper, [svelte-230118669] .ui-selectable-helper {\n    position: absolute;\n    z-index: 100;\n    border: 1px dotted black;\n  }\n  [svelte-230118669]#colors, [svelte-230118669] #colors {\n    width: 320px;\n    height: 100vh;\n    position: absolute;\n    margin:0;\n    padding: 20px;\n    top:0;\n    left:0;\n  }\n  [svelte-230118669]#box, [svelte-230118669] #box {\n    width: 100%;\n    height: 100%;\n  }\n  [svelte-230118669]#form_add, [svelte-230118669] #form_add {\n    margin: 10px 0;\n    \n    display: flex;\n    flex-direction: row;}\n    [svelte-230118669]#color_type, [svelte-230118669] #color_type {\n      text-align: center;\n      width: 42px;\n      height: 42px;\n      border-width: 1px 0 1px 1px;\n      border-style: solid;\n      border-top-left-radius: 4px;\n      border-bottom-left-radius: 4px;}\n    [svelte-230118669]#color_hex, [svelte-230118669] #color_hex {\n      flex: 1 1 auto; \n      height: 42px;\n      padding: 8px 5px;\n      border-width: 1px 0 1px 1px;\n      border-style: solid;}\n    [svelte-230118669]#add_btn, [svelte-230118669] #add_btn {\n      width: 42px;\n      height: 42px;\n      text-align: center;\n      border-width: 1px;\n      border-style: solid;\n      border-top-right-radius: 4px;\n      border-bottom-right-radius: 4px;}\n";
@@ -11049,7 +11236,7 @@ function renderMainFragment ( root, component ) {
 				text1.data = last_text1 = __tmp;
 			}
 			
-			if ( !input_updating ) input.value = root.colorcode;
+			if ( !input_updating ) { input.value = root.colorcode; }
 			
 			div2.style.cssText = "background-color: " + ( root.bgColor ) + ";";
 			
@@ -11071,12 +11258,12 @@ function renderMainFragment ( root, component ) {
 		
 		teardown: function ( detach ) {
 			removeEventListener( button, 'click', clickHandler );
-			if ( component.refs.colorhex === input ) component.refs.colorhex = null;
+			if ( component.refs.colorhex === input ) { component.refs.colorhex = null; }
 			removeEventListener( input, 'input', inputChangeHandler );
 			removeEventListener( input, 'submit', submitHandler );
 			removeEventListener( button1, 'click', clickHandler1 );
 			colorLists.teardown( false );
-			if ( component.refs.box === div2 ) component.refs.box = null;
+			if ( component.refs.box === div2 ) { component.refs.box = null; }
 			
 			teardownEach( eachBlock_iterations, false );
 			
@@ -11113,10 +11300,10 @@ function renderEachBlock ( root, eachBlock_value, card, index, component ) {
 		
 			var colorCard_changes = {};
 			
-			if ( 'cards' in changed ) colorCard_changes.card = card;
+			if ( 'cards' in changed ) { colorCard_changes.card = card; }
 			colorCard_changes.index = index;
 			
-			if ( Object.keys( colorCard_changes ).length ) colorCard.set( colorCard_changes );
+			if ( Object.keys( colorCard_changes ).length ) { colorCard.set( colorCard_changes ); }
 		},
 		
 		teardown: function ( detach ) {
@@ -11143,11 +11330,11 @@ applyComputations( this._state, this._state, {}, true );
 	this._yield = options._yield;
 
 	this._torndown = false;
-	if ( !addedCss ) addCss();
+	if ( !addedCss ) { addCss(); }
 	this._renderHooks = [];
 	
 	this._fragment = renderMainFragment( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
+	if ( options.target ) { this._fragment.mount( options.target, null ); }
 	
 	this._flush();
 	
@@ -11160,11 +11347,11 @@ applyComputations( this._state, this._state, {}, true );
 
 app$1.prototype = template.methods;
 
-app$1.prototype.get = get;
-app$1.prototype.fire = fire;
+app$1.prototype.get = get$1;
+app$1.prototype.fire = fire$1;
 app$1.prototype.observe = observe;
-app$1.prototype.on = on$1;
-app$1.prototype.set = set;
+app$1.prototype.on = on$2;
+app$1.prototype.set = set$1;
 app$1.prototype._flush = _flush;
 
 app$1.prototype._set = function _set ( newState ) {
@@ -11173,7 +11360,7 @@ app$1.prototype._set = function _set ( newState ) {
 	applyComputations( this._state, newState, oldState, false );
 	
 	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
+	if ( this._fragment ) { this._fragment.update( newState, this._state ); }
 	dispatchObservers( this, this._observers.post, newState, oldState );
 	
 	this._flush();
@@ -11190,12 +11377,12 @@ app$1.prototype.teardown = function teardown ( detach ) {
 };
 
 /* eslint  no-new: 0 */
-const app = new app$1({
+var app = new app$1({
   target: document.querySelector('#root'),
   data: store.get()
 });
 
-store.subscribe((data) => {
+store.subscribe(function (data) {
   app.set(data);
 });
 
