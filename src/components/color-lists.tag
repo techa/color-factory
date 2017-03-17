@@ -28,7 +28,7 @@
     </div>
   </div>
   <script>
-    import store from '../store/store.js'
+    import store from '../store.js'
     import tinycolor from 'tinycolor2'
     import WEBCOLOR      from '../constants/webcolor.json'
     import JISCOLOR_EN   from '../constants/jiscolor_en.json'
@@ -40,10 +40,10 @@
     import SOLID_COATED   from '../constants/solid-coated.json'
     import SOLID_UNCOATED from '../constants/solid-uncoated.json'
 
-    function parser (list, temp) {
+    function parser (list, temp, flg) {
       return Object.keys(list).map(key => ({
         name: temp ? temp(key, list[key]) : key,
-        color: list[key][0]
+        color: /* flg ? '#' + list[key] : */list[key][0]
       }))
     }
     function pantone (list) {
@@ -52,13 +52,16 @@
         color: list[key]
       }))
     }
+    function jisname (key, value) {
+      return `${key}(${value[1]})`
+    }
     this.colorlistData = [
       { name: 'Web Color',
-        list: parser(WEBCOLOR) },
+        list: parser(/* tinycolor.names */WEBCOLOR, null, true) },
       { name: 'JIS EN',
-        list: parser(JISCOLOR_EN) },
+        list: parser(JISCOLOR_EN, jisname) },
       { name: 'JIS JA',
-        list: parser(JISCOLOR_JA) },
+        list: parser(JISCOLOR_JA, jisname) },
       { name: 'GOOGLE MATERIAL',
         list: Object.keys(MATERIALCOLOR).reduce((ary, key) => {
           MATERIALCOLOR[key].forEach((color, i) => {
@@ -93,7 +96,7 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          store.trigger('add_card', {name, color})
+          store.trigger('cards.ADD_CARD', {name, color})
         }
       })
       this.refs.colortips.addEventListener('contextmenu', (e) => {

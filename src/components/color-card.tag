@@ -1,10 +1,15 @@
 <color-card>
   <div class="card animated bounceIn" ref="card"
-    riot-style="background-color: {color}; color: {textColor}; width: {width}px; height: {height}px; left: {x}px; top: {y}px; z-index: {+card.zIndex};">
-    <div class="cardtext"><b>{name}</b><br>{color}</div>
+    riot-style="{colorstyle} width: {width}px; height: {height}px; left: {left}px; top: {top}px; z-index: {+card.zIndex};">
+    <div class="cardtext">
+      <span><b>{name}</b></span><br>
+      <span>{color}</span><br>
+      <span>{color.toHslString()}</span><br>
+      <span>{contrast}</span>
+    </div>
   </div>
   <script>
-    import store     from '../store/store.js'
+    import store     from '../store.js'
     import {Movable} from '../mouse.js'
     import tinycolor from 'tinycolor2'
 
@@ -12,7 +17,28 @@
     this.height = 120
     Object.assign(this, this.card)
 
+
+    const getContrast = (color) => {
+      return Math.round(tinycolor.readability(tinycolor(color), this.color) * 10) / 10
+    }
+    store.on('bgColor.set_bgColor', (color) => {
+      this.contrast  = getContrast(color)
+      this.update()
+    })
+    this.contrast  = getContrast(store.get('bgColor'))
+
     this.textColor = tinycolor.mostReadable(this.color, ['#eee', '#111'])
+
+    this.modeChange = () => {
+      this.mode = !this.mode
+      if (this.mode) {
+        this.colorstyle = `background-color: transparent; color: ${this.color};`
+      } else {
+        this.colorstyle = `background-color: ${this.color}; color: ${this.textColor};`
+      }
+      this.update()
+    }
+    this.colorstyle = `background-color: ${this.color}; color: ${this.textColor};`
 
     function snap (n, grid = 5) {
       return Math.round(n / grid) * grid
@@ -29,16 +55,16 @@
       const maxH = rect.height - this.height
 
       const card = this.refs.card
-      if (init && (+this.card.x < colorsWidth || !this.card.y)) {
+      if (init && (+this.card.left < colorsWidth || !this.card.top)) {
         // random positions
-        this.x = snap((maxW - colorsWidth) * Math.random() + colorsWidth)
-        this.y = snap((maxH) * Math.random())
+        this.left = snap(((maxW - colorsWidth) * Math.random()) + colorsWidth)
+        this.top = snap((maxH) * Math.random())
       } else {
-        this.x = Math.min(Math.max(colorsWidth, this.card.x), maxW)
-        this.y = Math.min(Math.max(0, this.card.y), maxH)
+        this.left = Math.min(Math.max(colorsWidth, this.card.left), maxW)
+        this.top = Math.min(Math.max(0, this.card.top), maxH)
       }
-      card.style.left = this.x + 'px'
-      card.style.top  = this.y + 'px'
+      card.style.left = this.left + 'px'
+      card.style.top  = this.top + 'px'
     }
 
     // only once
@@ -72,7 +98,9 @@
         start: (e, position) => {
           e.stopPropagation()
 
-          store.trigger('card_forward', this.i)
+          store.trigger('menu_close')
+          store.trigger('cards.CARD_FORWARD', this.i, false)
+
           if (card.classList.contains('card_selected')) {
             cards = this.parent.selectable.selectElements
           } else {
@@ -98,13 +126,15 @@
             y = position.top  = position.startTop
           }
           position.setPosition(e)
-          this.x = x
-          this.y = y
-          store.trigger('card_moved', this.i, x, y)
+          this.left = x
+          this.top = y
+          store.trigger('cards.TRANSLATE_CARD', this.i, x, y)
         },
-        click: (e, position, el) => {
-          this.parent.selectable.select(this.i)
-        },
+        // click: (e, position, el) => {
+        //   // store.memo('cards')
+        //   store.trigger('cards.TRANSLATE_CARD', this.i, parseInt(card.style.left), parseInt(card.style.top))
+        //   // this.parent.selectable.select(this.i)
+        // },
       })
 
       card.addEventListener('contextmenu', (e) => {

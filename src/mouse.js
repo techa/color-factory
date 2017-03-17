@@ -384,7 +384,7 @@ export class Selectable extends MousePosition {
     this.selectorString = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)')
     this.children = Array.from(this.options.containment.querySelectorAll(this.selectorString))
     this.childrenRects = this.children.map((el) => el.getBoundingClientRect())
-    this.selectIndexs = new Set()
+    this.selectIndexs = []
     this.selectElements = []
   }
 
@@ -393,7 +393,6 @@ export class Selectable extends MousePosition {
     const opts = this.options,
           selectEl = this.children[i]
     selectEl.classList.add(opts.selectedClass)
-    this.selectIndexs.add(i)
     // Callback
     if (opts.selecting) {
       this.position.options.handle = selectEl
@@ -409,7 +408,6 @@ export class Selectable extends MousePosition {
     const opts = this.options,
           selectEl = this.children[i]
     selectEl.classList.remove(opts.selectedClass)
-    this.selectIndexs.delete(i)
     // Callback
     if (opts.unselecting) {
       this.position.options.handle = selectEl
@@ -449,7 +447,7 @@ export class Selectable extends MousePosition {
     // array init
     this.children = Array.from(el.querySelectorAll(this.selectorString))
     this.childrenRects = this.children.map((el) => el.getBoundingClientRect())
-    this.selectIndexs.clear()
+    this.selectIndexs.length = 0
     this.selectElements.length = 0
     // helper追加
     el.appendChild(helper)
@@ -491,7 +489,12 @@ export class Selectable extends MousePosition {
     opts.containment.removeChild(this.helper)
     // Callback
     if (opts.selected) {
-      this.selectIndexs.forEach((i) => this.selectElements.push(this.children[i]))
+      this.children.forEach((el, i) => {
+        if (el.classList.contains(opts.selectedClass)) {
+          this.selectIndexs.push(i)
+          this.selectElements.push(el)
+        }
+      })
       opts.selected(this.position, this.selectIndexs, this.selectElements)
     }
   }

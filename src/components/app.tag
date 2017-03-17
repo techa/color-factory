@@ -1,10 +1,10 @@
 <app>
   <div id="colors" ref="colors">
     <!--<input type="text" id="color-name" placeholder="COLOR NAME">-->
-    <color-picker size="280" oncolorchange={colorchange} simple=""/>
+    <color-picker color={color} size="280" oncolorchange={colorchange} simple=""/>
     <div id="form_add">
       <button id="color_type" onclick={color_typeChange}>{color_type.toUpperCase()}</button>
-      <input id="color_hex" ref="color_hex" placeholder="#000000" onsubmit={addCard_btn} oninput={color_hexInput}>
+      <input id="color_hex" ref="color_hex" placeholder={placeholder} onsubmit={addCard_btn} oninput={color_hexInput}>
       <button id="add_btn" onclick={addCard_btn}>➕</button>
     </div>
 
@@ -22,11 +22,12 @@
   <context-menu/>
 
   <script>
-    import store from '../store/store.js'
+    /* global opts */
+    import store from '../store.js'
     import tinycolor from 'tinycolor2'
     import {Selectable} from '../mouse.js'
 
-    this.cards = store.cards
+    this.cards = opts.cards
     const palette = () => {
       return this.cards.map((arg) => arg).sort((a, b) => {
         return a.color.getLuminance() - b.color.getLuminance()
@@ -34,59 +35,90 @@
         return a.color.toHsl().h - b.color.toHsl().h
       })
     }
-    this.palette = palette()
-    store.on('cards_changed', (cards) => {
-      // this.cards = cards
-      this.palette = palette()
+
+    store.subscribe(() => {
+      // console.log('subscribe.cards')
+      this.cards = store.cards
+      // this.palette = palette()
       this.update()
     })
+
+    this.color = tinycolor.random()
 
     const COLOR_TYPE = ['hex', 'rgb', 'hsl']
     let colortypeindex = 0
     this.color_type = COLOR_TYPE[colortypeindex]
-    this.placeholder = ['#000000', 'rgb(0, 0, 0)', 'hsl(0, 0%, 0%)']
+    const placeholder = ['#000000', 'rgb(0, 0, 0)', 'hsl(0, 0%, 0%)']
+    this.placeholder = placeholder[colortypeindex]
+
     this.color_typeChange = () => {
       ++colortypeindex
       colortypeindex %= COLOR_TYPE.length
       this.color_type = COLOR_TYPE[colortypeindex]
+      this.placeholder = placeholder[colortypeindex]
 
-      this.refs.color_hex.value = this.tags['color-picker'].color.toString(this.color_type)
+      this.refs.color_hex.value = this.color.toString(this.color_type)
     }
 
-    const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i
+    // ぱ
+    function colorKeyUpDown (e) {
+      const newcolor = tinycolor(this.refs.color_hex.value)
+      if (newcolor.isValid() && e.keyCode === 'Arrowup ArrowDown') {
+        const value = e.target.value
+        const selection = window.getSelection()
+        const range = selection.getRangeAt(0)
+        if (range.collapsed) {
+          const val = value
+          // TODO
+        }
+      }
+    }
+
+
     this.addCard_btn = () => {
-      const text = validationRegExp.exec(this.refs.color_hex.value)
-      if (text) {
-        store.trigger('add_card', {
-          name: (text[2] || '').trim(),
-          color: text[1],
+      const newcolor = tinycolor(this.refs.color_hex.value)
+
+      if (newcolor.isValid()) {
+        store.trigger('cards.ADD_CARD', {
+          name: '',
+          color: newcolor,
         })
         this.refs.color_hex.value = ''
       }
     }
+
+    let typing
     this.color_hexInput = (e) => {
-      const value = this.refs.color_hex.value
-      const text = validationRegExp.exec(value)
-      if (text) {
-        this.tags['color-picker'].color = tinycolor(text[1])
+      const newcolor = tinycolor(this.refs.color_hex.value)
+      if (newcolor.isValid()) {
+        typing = setTimeout(() => {
+          this.color = newcolor
+          this.update()
+          clearTimeout(typing)
+          typing = null
+        }, 300)
       }
     }
 
     this.colorchange = (color) => {
       this.refs.color_hex.value = color.toString(this.color_type)
+      this.refs.color_hex.style.color = tinycolor.mostReadable(color, ['#eee', '#111'])
+      this.refs.color_hex.style.backgroundColor = color.toString('hex')
     }
 
     this.on('mount', () => {
       store.box = this.refs.box
-      const bgColor = store.getItem('bgColor') || '#1f2532'
-      this.refs.box.style.backgroundColor = bgColor
+      const bgColor = store.get('bgColor')
 
-      store.on('set_bgColor', (color) => {
+      this.colorchange(this.color)
+
+      store.on('bgColor.set_bgColor', (color) => {
         const textcolor = tinycolor.mostReadable(color, ['#eee', '#111'])
         this.refs.colors.style.color = textcolor
+        this.refs.box.style.backgroundColor = color
       })
 
-      store.trigger('set_bgColor', tinycolor(bgColor))
+      store.trigger('bgColor.set_bgColor', tinycolor(bgColor))
 
       this.selectable = new Selectable(this.refs.box, {
         filter: '.card',
@@ -96,7 +128,7 @@
           store.trigger('menu_close')
         },
         selected: (position, indexs) => {
-          store.trigger('cards_select', indexs, true)
+          store.trigger('cards.SELECT_CARDS', indexs)
         },
       })
     })

@@ -1,5 +1,5 @@
 ;(function () {
-  let initDone, storage, undoLimt, memorizeDefault, eventNameSeperator
+  let initDone, storage, undoLimt, memorizeDefault, initializer
   let undoKeys = [],
       redoKeys = [],
       events = [],
@@ -36,6 +36,9 @@
     }, {})
 
     this.set(data, false)
+    if (initializer) {
+      initializer(this)
+    }
   }
 
   Histore.prototype = {
@@ -46,8 +49,13 @@
         ? opts.memorizeDefault
         : !!storage
       undoLimt = opts.undoLimt || 50
-      eventNameSeperator = opts.eventNameSeperator || '.'
+      initializer = opts.initializer
       return this
+    },
+    addPlugin (key, plugin) {
+      Object.defineProperty(this, key, {
+        value: plugin
+      })
     },
     toJSON () {
       return states
@@ -114,20 +122,37 @@
      */
     set (key, value, memo = memorizeDefault) {
       let p
+      const setter = (key, value, memo) => {
+        // p = (states[key] = states[key] || new State(key)).set(value, memo)
+        if (!states[key]) {
+          states[key] = new State(key)
+          // アクセサディスクリプタ
+          Object.defineProperty(this, key, {
+            enumerable: true,
+            configurable: true,
+            get () {
+              return states[key].current
+            },
+            set (newvalue) {
+              this.set(key, newvalue, memorizeDefault)
+            }
+          })
+        }
+        p = states[key].set(value, memo)
+      }
+
       if (typeof key === 'string' && value !== void 0) {
-        _setter(key, value, memo)
+        setter(key, value, memo)
       } else if (typeof key === 'object') {
         // key = object
         memo = value == null ? memorizeDefault : value
         for (let _key in key) {
-          _setter(_key, key[_key], memo)
+          setter(_key, key[_key], memo)
         }
       } else {
         throw new TypeError(`Histore.set(key): ${key} is Invalid`)
       }
-      function _setter (key, value, memo) {
-        p = (states[key] = states[key] || new State(key)).set(value, memo)
-      }
+
       p.then((memoflg) => {
         console.log('memoflg', memoflg)
         if (memoflg) {
@@ -135,8 +160,9 @@
           undoKeys.push(key)
         }
       })
+      // subscribe callback
       listeners.forEach((listener) => {
-        listener()
+        listener(this)
       })
       return this
     },
@@ -165,6 +191,14 @@
           stat.undo()
           redoKeys.push(key)
         }
+
+        if (initializer) {
+          initializer(this)
+        }
+        // subscribe callback
+        listeners.forEach((listener) => {
+          listener(this)
+        })
       }
       return this
     },
@@ -180,6 +214,14 @@
         if (stat.canRedo()) {
           stat.redo()
           undoKeys.push(key)
+
+          if (initializer) {
+            initializer(this)
+          }
+          // subscribe callback
+          listeners.forEach((listener) => {
+            listener(this)
+          })
         }
       }
       return this
@@ -265,7 +307,7 @@
 
       return this.remember.then((oldstr) => {
         const newstr = stringify(this.current)
-
+        console.log('remember', oldstr !== newstr, memo)
         if (oldstr !== newstr) {
           if (memo) {
             this.redoStock.length = 0

@@ -29,7 +29,6 @@
   function activeIndex () {
     const cards = store.get('cards')
     for (let i = 0; i < cards.length; i++) {
-      cards[i]
       if (cards[i].zIndex === cards.length - 1) {
         return i
       }

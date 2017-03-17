@@ -4,4 +4,5 @@ import './components/color-card.tag'
 import './components/color-lists.tag'
 import './components/context-menu.tag'
 import './components/color-picker.tag'
-riot.mount('#root', 'app')
+import store from './store'
+riot.mount('#root', 'app', store)

@@ -3,6 +3,7 @@
     <p class="menuitem" onclick={addCard} if={mode == 'tip'}>ADD CARD</p>
     <p class="menuitem" onclick={removeCard} if={mode == 'card'}>DELETE</p>
     <p class="menuitem" onclick={duplicateCard} if={mode == 'card'}>DUPLICATE</p>
+    <p class="menuitem" onclick={modeChange} if={mode == 'card'}>Mode</p>
     <p class="menuitem" onclick={setBgColor}>SET BACKGROUND</p>
     <p class="menuitem">
       <span>COPY:</span>
@@ -15,7 +16,7 @@
   </div>
 
   <script>
-    import store from '../store/store.js'
+    import store from '../store.js'
 
     /**
      * クリップボードコピー関数
@@ -50,24 +51,25 @@
     let activeCard
 
     this.addCard = () => {
-      store.trigger('add_card', activeCard)
+      store.trigger('cards.ADD_CARD', activeCard)
     }
     this.removeCard = () => {
       const selectElements = this.parent.selectable.selectElements
       if (selectElements.length) {
-        store.cards.forEach((card, i) => {
-          if (card.selected) {
-            store.trigger('remove_card', i)
-          }
-        })
+        store.trigger('cards.REMOVE_SELECT_CARDS')
         selectElements.length = 0
       } else {
-        store.trigger('remove_card', activeCard.i)
+        store.trigger('cards.REMOVE_CARD', activeCard.i)
       }
     }
     this.duplicateCard = () => {
-      store.trigger('duplicate_card', activeCard.i)
+      store.trigger('cards.DUPLICATE_CARD', activeCard.i)
     }
+    this.modeChange = () => {
+      activeCard.modeChange()
+    }
+
+
     this.setBgColor = () => {
       store.trigger('set_bgColor', activeCard.color)
     }
@@ -82,7 +84,7 @@
     this.sizes = [120, 240, 360]
 
     this.setSize = (e) => {
-      store.trigger('set_card_size', activeCard.i, +e.target.textContent)
+      store.trigger('cards.RESIZE_CARD', activeCard.i, +e.target.textContent)
       activeCard.rectSetter()
     }
 

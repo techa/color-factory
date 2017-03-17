@@ -184,7 +184,11 @@
 
     // update oncolorchange
     this.on('update', () => {
+      this.color = opts.color ? tinycolor(opts.color) : tinycolor.random()
       this.textColor = tinycolor.mostReadable(this.color, ['#eee', '#111'])
+      canvases.spectrum.draw()
+      canvases.spectrum.setPosition()
+      canvases.wheel.setPosition()
     })
 
     this.on('mount', () => {

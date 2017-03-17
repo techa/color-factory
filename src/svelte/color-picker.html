@@ -1,0 +1,247 @@
+<div class="color-picker" style="width: {{size}}px; height: {{size}}px;">
+  <div id="form_add">
+    <button id="color_type" onclick={color_typeChange}>{color_type.toUpperCase()}</button>
+    <input ref:colorInput id="color_hex" placeholder={placeholder} onsubmit={addCard_btn} oninput={color_hexInput}>
+    <button id="add_btn" onclick={addCard_btn}>➕</button>
+  </div>
+  <div class="color-wheel">
+    <canvas ref:wheel class="wheel-canvas" width={wheelRadius} height={wheelRadius}></canvas>
+    <div ref:wheelHandle class="color-handle"></div>
+  </div>
+
+  <div class="color-spectrum" style="{spectrumStyle}">
+    <canvas ref:spectrum class="spectrum-canvas" width={spectrumEdge} height={spectrumEdge}></canvas>
+    <div ref:spectrumHandle class="color-handle"></div>
+  </div>
+
+  <div class="color-alpha" if={opts.alpha}></div>
+</div>
+
+<style>
+  .color-picker {
+    position: relative;
+    padding: 5px;
+    text-align: center;
+  }
+  .color-wheel,
+  .color-spectrum {
+    /*position: absolute;*/
+  }
+  .color-spectrum {
+    position: absolute;
+  }
+  .color-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    top: 0;
+    left: 0;
+    border: 1px solid black;
+    border-radius: 5px;
+    text-align: left;
+    /* 値noneは、要素がマウスイベントのターゲットにならないことを明示することに加え、その代わりにマウスイベントが通過する要素やその配下にあるどんなターゲット要素へも指示はしません。 */
+    pointer-events: none;
+  }
+  .color-handle::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border: 1px solid white;
+    border-radius: 4px;
+  }
+  .color-alpha {
+    height: 16px;
+    margin: 5px;
+    background-color: #fff;
+    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),
+                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);
+    background-size: 8px 8px;
+    background-position:0 0, 4px 4px;
+    background-repeat: repeat;
+  }
+</style>
+
+<script>
+  import tinycolor from 'tinycolor2'
+  import { MousePosition } from '../mouse.js'
+
+  const canvases = {
+    wheel: {
+      positionTest: (position) => {
+        const x = center - position.x,
+              y = center - position.y,
+              r = Math.hypot(x, y)
+        return radius <= r && r <= center
+      },
+      setColor: (position) => {
+        const x = center - position.x,
+              y = center - position.y
+
+        const hsl = this._color.toHsl()
+        const hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90
+        hsl.h = hue < 0 ? 360 + hue : hue
+
+        this._color = tinycolor(hsl)
+        this.oncolorchange(this._color)
+        canvases.wheel.setPosition(hsl.h)
+
+        this.spectrumColor = this._color
+        canvases.spectrum.draw()
+      },
+      setPosition: (hue) => {
+        hue = hue == null ? this._color.toHsl().h : hue
+        const [mx, my] = positionRd(radius + wheelWidth / 2, hue)
+        this.refs.wheelHandle.style.left = mx + 'px'
+        this.refs.wheelHandle.style.top = my  + 'px'
+      },
+      draw: () => {
+        const context = this.refs.wheel.getContext('2d')
+        context.clearRect(0, 0, size, size)
+        for (let i = 0; i < 360; i++) {
+          context.beginPath()
+
+          context.fillStyle = `hsl(${i}, 100%, 50%)`
+
+          context.moveTo(...positionRd(radius, i))
+          context.lineTo(...positionRd(center, i))
+          context.lineTo(...positionRd(center, i + 1.5))
+          context.lineTo(...positionRd(radius, i + 1.5))
+          context.closePath()
+          context.fill()
+        }
+      }
+    },
+
+    huebar: {
+      setColor (position) {
+        const x = Math.max(0, Math.min(position.x, edge - 1)),
+              y = Math.max(0, Math.min(position.y, edge - 1))
+
+        const [r, g, b] = this.refs.spectrum.getContext('2d').getImageData(x, y, 1, 1).data
+
+        this._color = tinycolor({r, g, b})
+        this.oncolorchange(this._color)
+        canvases.huebar.setPosition()
+      },
+    },
+
+    spectrum: {
+      positionTest (position) {
+        const x = position.x,
+              y = position.y
+        return (edge >= x && x >= 0 && edge >= y && y >= 0)
+      },
+      setColor (position) {
+        const x = Math.max(0, Math.min(position.x, edge - 1)),
+              y = Math.max(0, Math.min(position.y, edge - 1))
+
+        const [r, g, b] = this.refs.spectrum.getContext('2d').getImageData(x, y, 1, 1).data
+
+        this._color = tinycolor({r, g, b})
+        this.oncolorchange(this._color)
+        canvases.spectrum.setPosition()
+      },
+      setPosition () {
+        const hsv = this._color.toHsv()
+        this.refs.spectrumHandle.style.left = edge * hsv.s - 5 + 'px'
+        this.refs.spectrumHandle.style.top = edge - (edge * hsv.v) - 5 + 'px'
+      },
+      draw (hue) {
+        const context = this.refs.spectrum.getContext('2d')
+        // http://www.html5.jp/canvas/ref.html
+        context.clearRect(0, 0, edge, edge)
+
+        context.fillStyle = `hsl(${this._color.toHsl().h | 0}, 100%, 50%)`
+        context.fillRect(0, 0, edge, edge)
+
+        const whiteGrd = context.createLinearGradient(0, 0, edge, 0)
+        whiteGrd.addColorStop(0.01, 'rgba(255, 255, 255, 1.000)')
+        whiteGrd.addColorStop(0.99, 'rgba(255, 255, 255, 0.000)')
+
+        context.fillStyle = whiteGrd
+        context.fillRect(0, 0, edge, edge)
+
+        const blackGrd = context.createLinearGradient(0, 0, 0, edge)
+        blackGrd.addColorStop(0.01, 'rgba(0, 0, 0, 0.000)')
+        blackGrd.addColorStop(0.99, 'rgba(0, 0, 0, 1.000)')
+
+        context.fillStyle = blackGrd
+        context.fillRect(0, 0, edge, edge)
+      }
+    },
+
+    alpha: {
+      setColor (position) {
+        const x = Math.max(0, Math.min(position.x, edge - 1)),
+              y = Math.max(0, Math.min(position.y, edge - 1))
+
+        const [r, g, b] = this.refs.spectrum.getContext('2d').getImageData(x, y, 1, 1).data
+
+        this._color = tinycolor({r, g, b})
+        this.oncolorchange(this._color)
+        canvases.spectrum.setPosition()
+      },
+    }
+  }
+
+  function positionRd (r, deg) {
+    const d = (deg - 90) / 180 * Math.PI
+    return [
+      Math.floor((center + r * Math.cos(d)) * 100) / 100,
+      Math.floor((center + r * Math.sin(d)) * 100) / 100,
+    ]
+  }
+
+  export default {
+    data () {
+      return {
+        size: 300,
+        color: tinycolor.random()
+      }
+    },
+    computed: {
+      wheelRadius: (size) => size - 10,
+      center: (wheelRadius) => (size - 10) / 2,
+      _color: (color) => tinycolor(color),
+      textColor: (_color) => tinycolor.mostReadable(_color, ['#eee', '#111'])
+    },
+    onrender () {
+      // update oncolorchange
+      this.observe('color', (color) => {
+        canvases.spectrum.draw.call(this)
+        canvases.spectrum.setPosition.call(this)
+        canvases.wheel.setPosition.call(this)
+      })
+      // picker
+      ;['wheel', 'spectrum'].forEach((type) => {
+        const canvas = canvases[type]
+        canvas.draw.call(this)
+        canvas.setPosition.call(this)
+
+        return new MousePosition({
+          containment: this.refs[type],
+          start: (e, position) => {
+            if (canvas.positionTest(position)) {
+              canvas.setColor(position)
+            }
+          },
+          drag: (e, position) => {
+            canvas.setColor(position)
+          },
+        })
+      })
+    },
+  }
+
+  const size = this.size = 300
+  const wheelRadius = this.wheelRadius = size - 10
+  const wheelWidth = 20
+  const center = wheelRadius / 2
+  const radius = wheelRadius / 2 - wheelWidth
+  const edge = this.spectrumEdge = (radius / Math.sqrt(2) | 0) * 2 - 10
+  const boxp = center - edge / 2
+
+  this.spectrumStyle = `width: ${edge}px; height: ${edge}px; left: ${boxp + 5}px; top: ${boxp + 5}px;`
+
+</script>
