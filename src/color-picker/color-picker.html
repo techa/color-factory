@@ -1,0 +1,74 @@
+<div class="color-picker" style="color: {{textColor}}; background-color: {{_color.toString('rgb')}};">
+  <ColorInput bind:color />
+  <div class="wrapper" style="width: {{size}}px;">
+    {{#if mode == 'hsv'}}
+    <HslPicker bind:color size={{size}} />
+    {{else}}
+    <HsvPicker bind:color size={{size}} />
+    {{/if}}
+    <Slider ref:alpha value={{_color.getAlpha() * 100}} :size direction="horizontal" />
+    <Blender bind:color width={{size}}
+      on:color1="this.setColor1(_color)"
+      on:color2="this.setColor2(_color)" />
+    <div>
+      <label><button>H</button><input value></label>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .color-picker {
+    position: relative;
+    padding: 5px;
+    text-align: center;
+    font-size: 12px;
+  }
+  .wrapper {
+    display: flex;
+    flex-wrap: wrap;
+  }
+</style>
+
+<script>
+  import tinycolor from 'tinycolor2'
+
+  import ColorInput from './color-input.html'
+  import HsvPicker from './hsv-picker.html'
+  import HslPicker from './hsl-picker.html'
+  import Slider from './slider.html'
+  import Blender from './blender.html'
+
+  export default {
+    components: {
+      ColorInput,
+      HsvPicker,
+      Slider,
+      Blender,
+      HslPicker,
+    },
+    data () {
+      return {
+        size: 200,
+        color: tinycolor.random(),
+        mode: 'hsl',
+      }
+    },
+    computed: {
+      _color: (color) => tinycolor(color),
+      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
+    },
+    oncreate () {
+      this.refs.alpha.observe('value', (value) => {
+        const _color = this.get('_color')
+        this.set({color: _color.setAlpha(value / 100)})
+        // this.set({color: _color.alphas(value / 100)})
+      })
+      this.observe('_color', (_color) => {
+        const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString()
+        // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
+        this.refs.alpha.draw(alphaColor(0), alphaColor(1))
+      })
+    },
+  }
+</script>

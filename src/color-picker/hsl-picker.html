@@ -1,0 +1,119 @@
+<div class="hsl-picker" style="width:{{size}}px; height:{{size}}px;">
+  <div class="spectrum-wrapper">
+    <canvas ref:canvas class="wheel-canvas" width={{size}} height={{size - 20}}></canvas>
+    <div ref:handle class="color-handle"></div>
+  </div>
+  <Slider ref:lightness value={{hsl.l * 100}} :size direction="horizontal" />
+</div>
+
+<style>
+  .spectrum-wrapper {
+    position: relative;
+  }
+
+  .color-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px;
+    top: 0;
+    left: 0;
+    border: 1px solid black;
+    border-radius: 5px;
+    text-align: left;
+    pointer-events: none;
+  }
+  .color-handle::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    top: 0;
+    left: 0;
+    border: 1px solid white;
+    border-radius: 4px;
+  }
+</style>
+
+<script>
+  import tinycolor from 'tinycolor2'
+  import { MousePosition } from '../mouse.js'
+
+  import Slider from './slider.html'
+
+  export default {
+    components: {
+      Slider,
+    },
+    data () {
+      return {
+        size: 150,
+        color: tinycolor.random(),
+      }
+    },
+    computed: {
+      _color: (color) => tinycolor(color),
+      hsl: (_color) => _color.toHsl(),
+      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
+    },
+    oncreate () {
+      // canvas init
+      this.draw()
+      this.refs.lightness.draw(tinycolor('#fff'), tinycolor('#000'))
+
+      this.refs.lightness.observe('value', (value) => {
+        const hsl = this.get('hsl')
+        hsl.l = 1 - value / 100
+        this.set({color: tinycolor(hsl)})
+      })
+
+      // // update oncolorchange
+      this.observe('_color', (_color) => {
+        this.setPosition(_color)
+      })
+      // picker
+      return new MousePosition(this.refs.canvas, {
+        start: (e, position) => {
+          this.setColor(position)
+        },
+        drag: (e, position) => {
+          this.setColor(position)
+        },
+      })
+    },
+    methods: {
+      setColor (position) {
+        const hsl = this.get('hsl')
+        hsl.h = position.percentLeft / 100
+        hsl.s = (100 - position.percentTop) / 100
+        this.set({ color: tinycolor.fromRatio(hsl) })
+      },
+      setPosition () {
+        const canvas = this.refs.canvas
+        const [w, h] = [canvas.width, canvas.height]
+        const hsl = this.get('hsl')
+        this.refs.handle.style.left = w * hsl.h / 360 + 'px'
+        this.refs.handle.style.top = h - (h * hsl.s) + 'px'
+      },
+      draw (lightness = 0.5) {
+        const canvas = this.refs.canvas
+        const cxt = canvas.getContext('2d')
+        const [w, h] = [canvas.width, canvas.height]
+
+        cxt.clearRect(0, 0, w, h)
+
+        const W = 3
+
+        for (let i = 0; i < h; i++) {
+          const grd = cxt.createLinearGradient(0, 0, 0, h)
+          const hue = i / w * 360
+          grd.addColorStop(0, `hsl(${hue}, 100%, 50%)`)
+          grd.addColorStop(1, `hsl(${hue}, 0%, 50%)`)
+
+          cxt.fillStyle = grd
+          cxt.fillRect(i, 0, i + 1, h)
+        }
+      }
+    },
+  }
+</script>

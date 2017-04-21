@@ -1,0 +1,236 @@
+{{#if phone}}
+  <input type="color">
+{{else}}
+  <div class="input-wrapper">
+    <input class="color-text"
+      on:input="input(event)"
+      on:updown="updown(event)"
+      on:click="focus(event)"
+      :value placeholder="keypress: ↑↓">
+    <ul ref:list class="color-text_list">
+      {{#each formats as fm, i}}
+        <li class="color-text_list-item {{format == fm ? 'active' : ''}}" on:click="set({format: fm})">{{_color.toString(fm)}}</li>
+      {{/each}}
+      {{#if _color.toName()}}
+        <li class="color-text_list-item {{format == 'name' ? 'active' : ''}}" on:click="set({format: 'name'})">{{_color.toName()}}</li>
+      {{/if}}
+    </ul>
+    <!--<button class="color-type" on:click="listToggle()">▼</button>-->
+  </div>
+{{/if}}
+
+<style>
+  .input-wrapper {
+    --size: 2.5em;
+    position: relative;
+    /*margin: 10px 0;*/
+    font: normal 1em "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: row;}
+
+    .input-wrapper > * {
+      border-width: 1px 1px 1px 0;
+      border-style: solid;
+    }
+    .input-wrapper > :first-child {
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;
+      border-width: 1px;
+    }
+    .input-wrapper > :last-child {
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;
+    }
+
+    .color-text {
+      flex: 1 1 auto; /* width: auto; */
+      height: var(--size);
+      padding: 0 4px;}
+    .submit-btn {
+      height: var(--size);
+      text-align: center;}
+
+    .color-text_list {
+      position: absolute;
+      margin: 0;
+      padding: 0;
+      top: var(--size);
+      left: 0;
+      width: 100%;
+      list-style: none;
+      text-align: left;
+      color: #111;
+      background-color: #ddd;
+      z-index: 10000;
+      visibility: hidden;
+    }
+    .color-text_list-item {
+      margin: 0;
+      padding: 4px;
+      height: var(--size);
+      list-style: none;
+    }
+    .color-text_list-item.active {
+      font-weight: bold;
+    }
+    .color-text_list-item:hover {
+      background-color: aqua;
+    }
+    /*.color-text:focus + .color-text_list,*/
+    /*.color-text_list:hover,*/
+    .color-text_list.active {
+      visibility: visible;
+    }
+</style>
+
+<script>
+  import tinycolor from 'tinycolor2'
+
+  function caretIndex (event, color) {
+    const {value, selectionStart} = event.target
+    const index = value[0] === '#'
+    ? Math.floor((selectionStart - 1) / 2)
+    // count ',' before selectionStart
+    : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1
+    return ((value[0] === '#' || color.getAlpha() === 1) && index === 3) || index === 4 ? -1 : index
+  }
+
+  export default {
+    data () {
+      return {
+        phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
+        color: 'red',
+        formats: ['hsl', 'hsv', 'rgb', 'prgb', 'hex'],
+        format: 'hex',
+      }
+    },
+    computed: {
+      _color: (color) => tinycolor(color),
+      value: (_color, format) => _color.toString(format),
+    },
+    methods: {
+      input (event) {
+        const value = event.target.value
+        const color = tinycolor(value)
+        const format = color.getFormat()
+
+        if (color.isValid() && !/^#?[a-f\d]{3,4}$/i.test(value)) {
+          this.set({ color, format })
+        }
+      },
+      updown (event) {
+        const {value, selectionStart, selectionEnd} = event.target
+        if (selectionStart !== selectionEnd) {
+          return
+        }
+
+        let color = tinycolor(value)
+        const index = caretIndex(event, color)
+        const arrow = (event.key === 'ArrowUp' ? 1 : -1)
+
+        if (index === -1) {
+          const format = this.get('format')
+          if (color.isValid()) {
+            // change format
+            const formats = this.get('formats')
+            let findex = (formats.indexOf(format) - arrow)
+            if (findex < 0) {
+              findex = formats.length + findex
+            }
+            this.set({ format: formats[findex % formats.length] })
+          } else {
+            // Re: valid Color
+            event.target.value = this.get('_color').toString(format)
+          }
+        } else if (color.isValid()) {
+          const format = color.getFormat()
+          if (index === 3) {
+            // alpla
+            color.setAlpha(color.getAlpha() + arrow / 100)
+          } else {
+            // not alpla
+            const plus = arrow
+            let param
+            switch (format) {
+              case 'hsl':
+                param = color.toHsl()
+                param.s *= 100
+                param.l *= 100
+                param['hsl'[index]] += plus
+                break
+              case 'hsv':
+                param = color.toHsv()
+                param.s *= 100
+                param.v *= 100
+                param['hsv'[index]] += plus
+                break
+              case 'prgb':
+                param = color.toRgb()
+                param.r /= 255
+                param.g /= 255
+                param.b /= 255
+                param['rgb'[index]] += plus / 100
+                param.r *= 255
+                param.g *= 255
+                param.b *= 255
+                break
+              default:
+                param = color.toRgb()
+                param['rgb'[index]] += plus
+                break
+            }
+            color = tinycolor(param)
+          }
+          this.set({ color })
+          event.target.selectionStart = selectionStart
+          event.target.selectionEnd = selectionStart
+        }
+      },
+      focus (event) {
+        const index = caretIndex(event, this.get('_color'))
+        this.listToggle(index === -1)
+
+        console.log('focus.index', index)
+      },
+      listToggle (flg) {
+        this.refs.list.classList.toggle('active', flg)
+        if (this.refs.list.classList.contains('active')) {
+          const winclick = (event) => {
+            this.refs.list.classList.remove('active')
+            window.removeEventListener('click', winclick, true)
+          }
+          window.addEventListener('click', winclick, true)
+        }
+      },
+    },
+    events: {
+      updown (node, callback) {
+        function onkeydown (event) {
+          let time
+          if (/Arrow(Up|Down)/.test(event.key)) {
+            callback(event)
+            time = setTimeout(() => {
+              clearTimeout(time)
+              time = setInterval(() => callback(event), 100)
+            }, 300)
+          }
+          function onkeyup (e) {
+            clearInterval(time)
+            time = null
+            node.removeEventListener('keyup', onkeyup, false)
+          }
+
+          node.addEventListener('keyup', onkeyup, false)
+        }
+
+        node.addEventListener('keydown', onkeydown, false)
+
+        return {
+          teardown () {
+            node.removeEventListener('keydown', onkeydown, false)
+          }
+        }
+      }
+    }
+  }
+</script>

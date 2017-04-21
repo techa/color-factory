@@ -1,0 +1,136 @@
+<div class="slider {{direction}}" style="width:{{width}}px; height:{{height}}px;">
+  <canvas ref:slider class="slider-canvas" :width :height></canvas>
+  <div ref:sliderHandle class="slider-handle {{direction}}"></div>
+</div>
+<style>
+  .slider {
+    position: relative;
+    /*margin: 5px;*/
+    background-color: #fff;
+    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),
+                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);
+    background-size: 8px 8px;
+    background-position:0 0, 4px 4px;
+    background-repeat: repeat;
+  }
+  .slider.vertical {
+    cursor: row-resize;
+  }
+  .slider.horizontal {
+    cursor: col-resize;
+  }
+
+  .slider-canvas {
+    vertical-align: baseline;
+  }
+  .slider-handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 1px solid black;
+    pointer-events: none;
+  }
+  .slider-handle.vertical {
+    margin-top: -3px;
+    width: 20px;
+    height: 6px;
+  }
+  .slider-handle.horizontal {
+    margin-left: -3px;
+    width: 6px;
+    height: 20px;
+  }
+  .slider-handle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 1px solid white;
+  }
+  .slider-handle.vertical::before {
+    width: 18px;
+    height: 4px;
+  }
+  .slider-handle.horizontal::before {
+    width: 4px;
+    height: 18px;
+  }
+</style>
+<script>
+  import { MousePosition } from '../mouse.js'
+  export default {
+    data () {
+      return {
+        size: 150,
+        strokeWidth: 20,
+        direction: 'vertical',
+        value: 50,
+        min: 0,
+        max: 100,
+        step: 1,
+        reverse: false
+      }
+    },
+    computed: {
+      width: (direction, size, strokeWidth) => direction === 'vertical' ? strokeWidth : size,
+      height: (direction, size, strokeWidth) => direction === 'vertical' ? size : strokeWidth,
+    },
+    oncreate () {
+      this.observe('value', (value) => {
+        this.setPosition(value)
+      })
+      // picker
+      new MousePosition(this.refs.slider, { // eslint-disable-line no-new
+        handle: this.refs.sliderHandle,
+        start: (e, position) => {
+          this.setValue(position)
+        },
+        drag: (e, position) => {
+          this.setValue(position)
+        },
+      })
+    },
+    methods: {
+      setValue (position) {
+        const max = this.get('max')
+        const min = this.get('min')
+        const side = this.get('direction') === 'vertical' ? 'percentTop' : 'percentLeft'
+        let per = position[side] / 100
+        if (this.get('reverse')) {
+          per = 1 - per
+        }
+        this.set({
+          value: (max - min) * per + min
+        })
+      },
+      setPosition (value) {
+        const size = this.get('size')
+        const max = this.get('max')
+        const min = this.get('min')
+        const side = this.get('direction') === 'vertical' ? 'top' : 'left'
+        let per = value / (max - min)
+        if (this.get('reverse')) {
+          per = 1 - per
+        }
+        this.refs.sliderHandle.style[side] = per * (size - 6) + 3 + 'px'
+      },
+      draw (beginColor, endColor) {
+        const cxt = this.refs.slider.getContext('2d')
+        const size = this.get('size')
+        cxt.clearRect(0, 0, size, size)
+
+        const grd = this.get('direction') === 'vertical'
+          ? cxt.createLinearGradient(0, 0, 0, size)
+          : cxt.createLinearGradient(0, 0, size, 0)
+
+        const [begin, end] = this.get('reverse') ? [1, 0] : [0, 1]
+
+        grd.addColorStop(begin, beginColor + '')
+        grd.addColorStop(end, endColor + '')
+
+        cxt.fillStyle = grd
+        cxt.fillRect(0, 0, size, size)
+      }
+    }
+  }
+</script>

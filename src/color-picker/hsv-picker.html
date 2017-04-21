@@ -1,0 +1,149 @@
+<div class="hsv-picker" style="width:{{size}}px; height:{{size}}px;">
+  <Wheel ref:wheel hue={{hsv.h}} :size />
+  <div class="spectrum-wrapper">
+    <Spectrum ref:spectrum hsv={{hsv}} size={{spectrumSize}} />
+  </div>
+  {{#each ['sp', 'v', 's', 'vp'] as meth, i}}
+    <svg class="spectrum-btn" width="20" height="20" view="0 0 20 20"
+      style={{btnPosition(size,i)}} on:press="spectrumCrement(meth)">
+      <path d="M2,15  L10,5  L18,15 Z" fill={{textColor}} transform="rotate({{ (i+1) * 90 }}, 10, 10)"></path>
+    </svg>
+  {{/each}}
+</div>
+
+<style>
+  .hsv-picker {
+    position: relative;
+  }
+  .spectrum-wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    pointer-events: none;
+  }
+  .spectrum-btn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.6;
+  }
+  .spectrum-btn:active {
+    opacity: 1;
+  }
+
+  .color-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px;
+    top: 0;
+    left: 0;
+    border: 1px solid black;
+    border-radius: 5px;
+    text-align: left;
+    pointer-events: none;
+  }
+  .color-handle::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    top: 0;
+    left: 0;
+    border: 1px solid white;
+    border-radius: 4px;
+  }
+</style>
+
+<script>
+  import tinycolor from 'tinycolor2'
+  import { on, off } from '../mouse.js'
+
+  import Wheel from './wheel.html'
+  import Spectrum from './spectrum.html'
+
+  export default {
+    components: {
+      Wheel,
+      Spectrum,
+    },
+    data () {
+      return {
+        size: 150,
+        strokeWidth: 10,
+        color: tinycolor.random(),
+      }
+    },
+    computed: {
+      spectrumSize: (size, strokeWidth) => ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2,
+      _color: (color) => tinycolor(color),
+      hsv: (_color) => _color.toHsv(),
+      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
+    },
+    oncreate () {
+      this.refs.wheel.observe('hue', (hue) => {
+        const hsv = this.get('hsv')
+        hsv.h = hue
+        this.set({color: tinycolor(hsv)})
+      })
+      this.refs.spectrum.observe('hsv', (hsv) => {
+        this.set({color: tinycolor(hsv)})
+      })
+    },
+    methods: {
+      spectrumCrement (meth) {
+        const hsv = this.get('hsv')
+
+        hsv[meth[0]] += meth[1] ? 0.01 : -0.01
+        if (hsv[meth[0]] === 1) {
+          hsv[meth[0]] = '1.0'
+        }
+
+        this.set({ color: tinycolor(hsv) })
+      },
+    },
+    helpers: {
+      btnPosition (size, i) {
+        const center = size / 2
+        const radius = (center - 20)
+        const btnsize = 20
+        const left = center + radius * Math.cos(i * 90 / 180 * Math.PI) - btnsize / 2
+        const top = center + radius * Math.sin(i * 90 / 180 * Math.PI) - btnsize / 2
+
+        return `left: ${left}px; top: ${top}px;`
+      },
+    },
+    events: {
+      press (node, callback) {
+        function onmousedown (event) {
+          callback(event)
+
+          let time = setTimeout(() => {
+            clearTimeout(time)
+            time = setInterval(() => callback(event), 150)
+          }, 300)
+
+          function onmouseup (e) {
+            clearInterval(time)
+            off(window, 'mouseup touchcancel touchend', onmousedown)
+          }
+
+          on(window, 'mouseup touchcancel touchend', onmouseup)
+        }
+
+        on(node, 'mousedown touchstart', onmousedown)
+
+        return {
+          teardown () {
+            off(node, 'mousedown touchstart', onmousedown)
+          }
+        }
+      }
+    }
+  }
+</script>
