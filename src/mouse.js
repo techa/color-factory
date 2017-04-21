@@ -11,7 +11,6 @@ export class PositionManager {
       containment: document.body,
       handle: null,
       grid: 1,
-      percent: false,
       axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
     }, options || {})
 
@@ -72,6 +71,7 @@ export class PositionManager {
     }
 
     const event = 'touches' in e ? e.touches[0] : e
+    // スクロールも考慮した絶対座標 this.parentRect.left - window.pageXOffset
     this.x = event.pageX - this.parentRect.left - window.pageXOffset
     this.y = event.pageY - this.parentRect.top - window.pageYOffset
 
@@ -86,13 +86,11 @@ export class PositionManager {
     }
 
     // modify
-    this.left = this.handleRect.left + this.vectorX
-    this.top  = this.handleRect.top + this.vectorY
+    this.left = this.handleRect.left - this.parentRect.left + this.vectorX
+    this.top  = this.handleRect.top - this.parentRect.top + this.vectorY
 
-    if (this.options.percent) {
-      this.percentLeft = this.percentage(this.left, 'width')
-      this.percentTop  = this.percentage(this.top, 'height')
-    }
+    this.percentLeft = this.percentage(this.x, 'width')
+    this.percentTop  = this.percentage(this.y, 'height')
 
     if (initflg) {
       this.startLeft = this.left
@@ -209,9 +207,9 @@ export function off (el, eventNames, callback, useCapture) {
  * @param {Object|Element} options
  */
 export class MousePosition {
-  constructor (options) {
+  constructor (element,  options) {
     this.options = Object.assign({
-      containment: (options.nodeName ? options : document.body),
+      containment: element || document.body,
       handle: null,
       // start: noop,
       // drag: noop,
@@ -224,9 +222,9 @@ export class MousePosition {
       mmove: (e) => { this.mmove(e) },
       mup: (e) => { this.mup(e) },
     }
-    on(options.handle || options.containment, 'mousedown touchstart', this._event.mdown)
+    on(element, 'mousedown touchstart', this._event.mdown)
 
-    this.position = new PositionManager(options)
+    this.position = new PositionManager(this.options)
 
     this._clickFlg = false
   }
@@ -289,7 +287,7 @@ export class MousePosition {
  */
 export class Movable extends MousePosition {
   constructor (element, options) {
-    super(Object.assign({
+    super(element, Object.assign({
       containment: element.parentElement,
       handle: element,
       draggingClass: 'dragging',
@@ -320,7 +318,7 @@ export function hitChecker (rect1, rect2, tolerance) {
   return tolerance === 'fit' ? fitHit(rect1, rect2) : touchHit(rect1, rect2)
 }
 
-function fitHit (rect1, rect2) {
+export function fitHit (rect1, rect2) {
   const [x, y, w, h] = ['left', 'top', 'width', 'height']
   // rect1 x1-----------------------------------------------x1+w1
   // rect2          x2---------------x2+w2
@@ -332,7 +330,7 @@ function fitHit (rect1, rect2) {
   }
   return false
 }
-function touchHit (rect1, rect2) {
+export function touchHit (rect1, rect2) {
   const [x, y, w, h] = ['left', 'top', 'width', 'height']
   // rect1                x1---------------------------x1+w1
   // rect2 x2---------------------------------x2+w2
@@ -356,7 +354,7 @@ function touchHit (rect1, rect2) {
 
 export class Selectable extends MousePosition {
   constructor (element, options) {
-    super(Object.assign({
+    super(element, Object.assign({
       containment: element,
       filter: '*',
       cancel: 'input,textarea,button,select,option',
