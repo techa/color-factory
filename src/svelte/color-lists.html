@@ -1,7 +1,7 @@
 <div class="wrapper">
   <select id="colorlists" on:change="set({colorlistsIndex: +this.value})">
     {{#each colorlists as data, index}}
-      <option value="{{index}}">{{data.name}}</option>
+      <option value={{index}}>{{data.name}}</option>
     {{/each}}
   </select>
 
@@ -9,7 +9,7 @@
     <div class="scrollbar-body">
       <div ref:colortips class="scrollbar-content">
         {{#each list as tip}}
-          <div class="tip" title="{{title(tip)}}" style="background-color: {{tip.color}};"></div>
+          <div class="tip" title={{title(tip)}} style="background-color: {{tip.color}};"></div>
         {{/each}}
       </div>
     </div>
@@ -67,7 +67,7 @@
     computed: {
       list: (colorlists, colorlistsIndex) => colorlists[colorlistsIndex].list,
     },
-    onrender () {
+    oncreate () {
       const colortips = this.refs.colortips
       colortips.addEventListener('click', (e) => {
         const el = e.target
@@ -87,8 +87,6 @@
           }, 'tip')
         }
       })
-    },
-    methods: {
     },
     helpers: {
       title (tip) {

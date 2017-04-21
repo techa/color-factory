@@ -1,6 +1,12 @@
-<div ref:card class="card animated bounceIn"
-  style="background-color: {{card.color}}; color: {{textColor}}; width: {{width}}px; height: {{height}}px; left: {{left}}px; top: {{top}}px; z-index: {{card.zIndex}};">
-  <div class="cardtext"><b>{{card.name}}</b><br>{{card.color}}</div>
+<div ref:card
+  class="card animated bounceIn"
+  style="{{colorStyle}} left: {{left}}px; top: {{top}}px; z-index: {{card.zIndex}};">
+  <div class="cardtext">
+    <h3 class="card_title">{{card.name}}</h3>
+    <div>{{card.color}}</div>
+    <div>{{card.color.toString('hsl')}}</div>
+    <div>{{Math.round(contrast * 10) / 10}}</div>
+  </div>
 </div>
 <script>
   import tinycolor from 'tinycolor2'
@@ -11,11 +17,19 @@
 
   export default {
     computed: {
-      textColor: card => tinycolor.mostReadable(card.color, ['#eee', '#111']),
-      width: card => card.width || 120,
-      height: card => card.height || 120,
+      colorStyle: (card) => {
+        return card.textMode
+        ? `background-color: transparent; color: ${card.color};`
+        : `background-color: ${card.color}; color: ${tinycolor.mostReadable(card.color, ['#eee', '#111'])};`
+      },
+      // textColor: card => tinycolor.mostReadable(card.color, ['#eee', '#111']),
+      contrast: (card, bgColor) => tinycolor.readability(card.color, bgColor),
+      //  width: {{width}}px; height: {{height}}px;
+      width: card => card.width || 200,
+      height: card => card.height || 180,
     },
-    onrender () {
+
+    oncreate () {
       console.log('card-render')
       const cardEl = this.refs.card
       const box = cardEl.parentElement
@@ -104,6 +118,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 6px;
+    width: 200px;
+    height: 180px;
   }
   .card.selected {
     outline: 1px dashed black;
@@ -113,10 +130,20 @@
     z-index: 100;
   }
   .cardtext {
-    white-space: pre-wrap;
+    /*font-size: 14pt;*/
+    padding: 8px;
+    width: 100%;
+    white-space: wrap;
     user-select: none;
     -ms-user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
+  }
+  .card_title {
+    /*font-size: 18pt;*/
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    /*font-weight: bold;*/
   }
 </style>

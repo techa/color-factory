@@ -1,23 +1,20 @@
 <div id="colors" ref="colors" style="color: {{textColor}};">
-  <!--<color-picker size="280" oncolorchange={colorchange} simple=""/>-->
-  <div id="form_add">
-    <button id="color_type" on:click="color_typeChange()">{{color_type}}</button>
-    <input ref:colorhex id="color_hex" bind:value="colorcode" placeholder="#000000" on:submit="addCard()">
-    <button id="add_btn" on:click="addCard()">➕</button>
-  </div>
+  <ColorPicker />
   <hr>
   <ColorLists />
 </div>
 
 <div ref:box id="box" style="background-color: {{bgColor}};">
   {{#each cards as card, index}}
-    <ColorCard card="{{card}}" index="{{index}}" />
+    <ColorCard :bgColor card={{card}} index={{index}} />
   {{/each}}
 </div>
 
 <ContextMenu />
 
 <script>
+  import ColorPicker from '../color-picker/color-picker.html'
+
   import ColorCard from './color-card.html'
   import ColorLists from './color-lists.html'
   import ContextMenu from './context-menu.html'
@@ -30,10 +27,12 @@
   let colortypeindex = 0
   export default {
     components: {
+      ColorPicker,
       ColorCard,
       ColorLists,
       ContextMenu
     },
+
     data () {
       return {
         color_type: 'hex',
@@ -47,17 +46,8 @@
       textColor: bgColor => tinycolor.mostReadable(bgColor, ['#eee', '#111']),
       // color_type: (colorcode) => COLOR_TYPE[colortypeindex].toUpperCase()
     },
-    onrender () {
+    oncreate () {
       console.log('this', this)
-      window.addEventListener('resize', (e) => {
-
-      })
-      this.on('thingHappened', event => {
-        console.log(`A thing happened: ${event.thing}`)
-      })
-      this.fire('thingHappened', {
-        thing: 'this event was fired'
-      })
       this.selectable = new Selectable(this.refs.box, {
         filter: '.card',
         tolerance: 'fit',

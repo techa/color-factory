@@ -4,6 +4,7 @@
   {{elseif mode == 'card'}}
     <p class="menuitem" on:click="remove()">DELETE</p>
     <p class="menuitem" on:click="duplicate()">DUPLICATE</p>
+    <p class="menuitem" on:click="modeChange()">MODE CHANGE</p>
   {{/if}}
   <p class="menuitem" on:click="setBgColor()">SET BACKGROUND</p>
   <p class="menuitem">
@@ -43,7 +44,7 @@
         sizes: [120, 240, 360],
       }
     },
-    onrender () {
+    oncreate () {
       console.log('menu-render')
       const menu = this.refs.menu
 
@@ -97,6 +98,9 @@
           console.log('remove', activeIndex())
           store.trigger('cards.REMOVE_CARD', activeIndex())
         }
+      },
+      modeChange () {
+        store.trigger('cards.TOGGLE_TEXTMODE', activeIndex())
       },
 
       setBgColor () {

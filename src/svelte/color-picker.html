@@ -206,7 +206,7 @@
       _color: (color) => tinycolor(color),
       textColor: (_color) => tinycolor.mostReadable(_color, ['#eee', '#111'])
     },
-    onrender () {
+    oncreate () {
       // update oncolorchange
       this.observe('color', (color) => {
         canvases.spectrum.draw.call(this)
