@@ -16,14 +16,14 @@ html, body, #root {
 :root {
   --bg:   #261C29; /* 紫紺 */
   --text: #F7F1D5; /* 菜の花 */
-  --invisibles: #2C283C; /*  */
+  --invisibles: #4025AD; /*  */
   --selection: #45553C; /*  */
   --comment: #91989F; /* 銀鼠 */
-  --comment: #828282; /* 灰 */
+  --comment: #8B2929; /* 灰 */
   --string: #EEA9A9; /* 鴇 */
   --numeric: #D05A6E; /* 今様 */
   --constant: #F596AA; /*  */
-  --keyword: #778A33; /* 鶯 */
+  --keyword: #7F8F46; /* 鶯 */
   --argument: #838A2D; /* 苔 */
   --keyword: #6C6024; /* 鶯 */
   --variable: #9B90C2; /* 楝 */

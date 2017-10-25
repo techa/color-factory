@@ -26,6 +26,10 @@
         {
             "taskName": "build",
             "args": ["run", "build"]
+        },
+        {
+            "taskName": "svelte",
+            "args": ["run", "svelte"]
         }
     ]
 }

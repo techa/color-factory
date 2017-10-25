@@ -2,6 +2,8 @@
   <div id="colors" ref="colors">
     <!--<input type="text" id="color-name" placeholder="COLOR NAME">-->
     <color-picker color={color} size="280" oncolorchange={colorchange} simple=""/>
+    <div id="color-picker"></div>
+    <!--<ColorPicker />-->
     <div id="form_add">
       <button id="color_type" onclick={color_typeChange}>{color_type.toUpperCase()}</button>
       <input id="color_hex" ref="color_hex" placeholder={placeholder} onsubmit={addCard_btn} oninput={color_hexInput}>
@@ -26,6 +28,9 @@
     import store from '../store.js'
     import tinycolor from 'tinycolor2'
     import {Selectable} from '../mouse.js'
+
+    // import ColorPicker from '../color-picker/app'
+    // import Color from './Color'
 
     this.cards = opts.cards
     const palette = () => {

@@ -5,4 +5,6 @@ import './components/color-lists.tag'
 import './components/context-menu.tag'
 import './components/color-picker.tag'
 import store from './store'
+
 riot.mount('#root', 'app', store)
+

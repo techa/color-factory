@@ -153,6 +153,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 5px;
     }
     .card.card_selected {
       outline: 1px dashed black;

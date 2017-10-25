@@ -24,18 +24,6 @@ export default {
   plugins: [
     commonjs(), // CommonJSモジュールをES6に変換
     json({preferConst: true}),
-    (env === 'svelte'
-      ? svelte({
-        include: [
-          './src/svelte/**.html',
-        ],
-      })
-      : riot({
-        include: [
-          './src/components/**.tag',
-        ],
-      })
-    ),
     nodeResolve({
       jsnext: true, // if provided in ES6
       main: true, // if provided in CommonJS
@@ -44,6 +32,24 @@ export default {
     replace({
       'process.env.NODE_ENV': JSON.stringify(env)
     }),
+    (env === 'svelte'
+      ? svelte()
+      : riot({
+        include: [
+          './src/components/**.tag',
+        ],
+      })
+    ),
+    // svelte({
+    //   include: [
+    //     './src/color-picker/**.html',
+    //   ],
+    // }),
+    // riot({
+    //   include: [
+    //     './src/components/**.tag',
+    //   ],
+    // }),
     (env === 'production' && buble()),
     (env === 'production' && uglify({
       compress: {

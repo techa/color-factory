@@ -198,8 +198,7 @@
         canvas.draw()
         canvas.setPosition()
 
-        return new MousePosition({
-          containment: this.refs[type],
+        return new MousePosition(this.refs[type], {
           start: (e, position) => {
             if (canvas.positionTest(position)) {
               canvas.setColor(position)

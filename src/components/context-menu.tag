@@ -69,9 +69,8 @@
       activeCard.modeChange()
     }
 
-
     this.setBgColor = () => {
-      store.trigger('set_bgColor', activeCard.color)
+      store.trigger('bgColor.set_bgColor', activeCard.color)
     }
 
     this.copys = 'HEX,RGB,HSL'.split(',')

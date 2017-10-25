@@ -40,6 +40,14 @@ store.on('cards.DUPLICATE_CARD', (index, memo) => {
   store.trigger('cards.ADD_CARD', newCard, memo)
 })
 
+store.on('cards.TOGGLE_TEXTMODE', (index, bool, memo) => {
+  store.set('cards', (cards) => {
+    const card = cards[index]
+    card.textMode = typeof bool === 'boolean' ? bool : !card.textMode
+    return cards
+  }, memo)
+})
+
 store.on('cards.RESIZE_CARD', (index, w, h = w, memo) => {
   store.set('cards', (cards) => {
     const card = cards[index]
