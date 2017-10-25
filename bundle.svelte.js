@@ -7,11 +7,12 @@ function createCommonjsModule(fn, module) {
 
 var Histore = createCommonjsModule(function (module) {
 (function () {
-  var initDone, storage, undoLimt, memorizeDefault, eventNameSeperator;
-  var undoKeys = [],
+  let initDone, storage, undoLimt, memorizeDefault, initializer;
+  let undoKeys = [],
       redoKeys = [],
+      events = [],
       listeners = [];
-  var states = {},
+  const states = {},
         stringify = JSON.stringify,
         parse = JSON.parse;
 
@@ -22,9 +23,7 @@ var Histore = createCommonjsModule(function (module) {
    * @param {object} data
    * @param {object} [opts={}]
    */
-  function Histore (defaultData, opts) {
-    if ( opts === void 0 ) opts = {};
-
+  function Histore (defaultData, opts = {}) {
     if (!(this instanceof Histore)) {
       return new Histore(defaultData, opts)
     }
@@ -34,42 +33,50 @@ var Histore = createCommonjsModule(function (module) {
     initDone = true;
     this.setOptions(opts);
 
-    var data = Object.keys(defaultData).reduce(function (obj, key) {
-      var val = storage.getItem(key);
+    const data = Object.keys(defaultData).reduce((obj, key) => {
+      let val = storage.getItem(key);
       val = val ? parse(val) : defaultData[key];
       if (val === void 0) {
-        throw new Error(("Histore.getItem: " + key + " is undefind"))
+        throw new Error(`Histore.getItem: ${key} is undefind`)
       }
       obj[key] = val;
       return obj
     }, {});
 
-    this.set(data);
+    this.set(data, false);
+    if (initializer) {
+      initializer(this);
+    }
   }
 
   Histore.prototype = {
-    setOptions: function setOptions (opts) {
+    setOptions (opts) {
       opts = opts || {};
       storage = opts.storage;
       memorizeDefault = typeof opts.memorizeDefault === 'boolean'
-        ? memorizeDefault
+        ? opts.memorizeDefault
         : !!storage;
       undoLimt = opts.undoLimt || 50;
-      eventNameSeperator = opts.eventNameSeperator || '.';
+      initializer = opts.initializer;
       return this
     },
-    toJSON: function toJSON () {
+    addPlugin (key, plugin) {
+      Object.defineProperty(this, key, {
+        value: plugin
+      });
+    },
+    toJSON () {
       return states
     },
-    clear: function clear (key) {
+    clear (key) {
       if (key) {
         delete states[key];
-        undoKeys = undoKeys.filter(function (k) { return key !== k; });
-        redoKeys = redoKeys.filter(function (k) { return key !== k; });
+        undoKeys = undoKeys.filter((k) => key !== k);
+        redoKeys = redoKeys.filter((k) => key !== k);
         storage.removeItem(key);
       } else {
         // clear all
-        for (var _key in states) {
+        for (let _key in states) {
           delete states[_key];
         }
         undoKeys.length = 0;
@@ -78,16 +85,40 @@ var Histore = createCommonjsModule(function (module) {
       }
       return this
     },
-    get: function get (key) {
+    get (key) {
       if (!key) {
-        return Object.keys(states).reduce(function (obj, _key) {
+        return Object.keys(states).reduce((obj, _key) => {
           if (states[_key]) {
+            obj[_key] = states[_key].current;
+          }
+          return obj
+        }, {})
+      } else if (Object.prototype.toString.call(key) === '[object RegExp]') {
+        return Object.keys(states).reduce((obj, _key) => {
+          if (key.test(_key) && states[_key]) {
             obj[_key] = states[_key].current;
           }
           return obj
         }, {})
       }
       return states[key].current
+    },
+    getlib (libkey) {
+      const [lib, key] = libkey.split('/');
+      return Object.keys(states).reduce((obj, _key) => {
+        if (states[_key]) {
+          obj[_key] = states[_key].current;
+        }
+        return obj
+      }, {})
+    },
+    setlib (libkey, value) {
+      return Object.keys(states).reduce((obj, _key) => {
+        if (states[_key]) {
+          obj[_key] = states[_key].current;
+        }
+        return obj
+      }, {})
     },
     /**
      * Histore.set()
@@ -97,121 +128,145 @@ var Histore = createCommonjsModule(function (module) {
      * @param {any} [memo=memorizeDefault]
      * @returns this
      */
-    set: function set (key, value, memo) {
-      var this$1 = this;
-      if ( memo === void 0 ) memo = memorizeDefault;
+    set (key, value, memo = memorizeDefault) {
+      let p;
+      const setter = (key, value, memo) => {
+        // p = (states[key] = states[key] || new State(key)).set(value, memo)
+        if (!states[key]) {
+          states[key] = new State(key);
+          // アクセサディスクリプタ
+          Object.defineProperty(this, key, {
+            enumerable: true,
+            configurable: true,
+            get () {
+              return states[key].current
+            },
+            set (newvalue) {
+              this.set(key, newvalue, memorizeDefault);
+            }
+          });
+        }
+        p = states[key].set(value, memo);
+      };
 
       if (typeof key === 'string' && value !== void 0) {
-        _setter(key, value, memo);
+        setter(key, value, memo);
       } else if (typeof key === 'object') {
         // key = object
-        for (var _key in key) {
-          _setter(_key, key[_key], value);
+        memo = value == null ? memorizeDefault : value;
+        for (let _key in key) {
+          setter(_key, key[_key], memo);
         }
       } else {
-        throw new TypeError(("Histore.set(key): " + key + " is Invalid"))
-      }
-      function _setter (key, value, memo) {
-        states[key] = (states[key] || new State(key)).set(value, memo);
+        throw new TypeError(`Histore.set(key): ${key} is Invalid`)
       }
 
-      if (memo) {
-        redoKeys.length = 0;
-        undoKeys.push(key);
-      }
-      listeners.forEach(function (listener) {
-        listener(this$1.get());
+      p.then((memoflg) => {
+        console.log('memoflg', memoflg);
+        if (memoflg) {
+          redoKeys.length = 0;
+          undoKeys.push(key);
+        }
+      });
+      // subscribe callback
+      listeners.forEach((listener) => {
+        listener(this);
       });
       return this
     },
-    memo: function memo (key) {
-      states[key].memo();
-      redoKeys.length = 0;
-      undoKeys.push(key);
+    memo (key) {
+      if (!key || !states[key]) {
+        throw new TypeError(`.memo(key) ${key} missing or states[key] is undefind!`)
+      }
+      states[key].memo().then((memoflg) => {
+        if (memoflg) {
+          redoKeys.length = 0;
+          undoKeys.push(key);
+        }
+      });
       return this
     },
-    undo: function undo (key) {
-      var len = undoKeys.length;
+    undo (key) {
+      const len = undoKeys.length;
       if (!len) {
-        throw new Error('undoKeys.length == 0')
+        // throw new Error('undoKeys.length == 0')
+        console.info('undoKeys.length == 0');
       }
       if (len) {
         key = key || undoKeys.pop();
-        var stat = states[key];
+        const stat = states[key];
         if (stat.canUndo()) {
           stat.undo();
           redoKeys.push(key);
         }
-      }
-      return this
-    },
-    redo: function redo (key) {
-      var len = redoKeys.length;
-      if (!len) {
-        throw new Error('redoKeys.length == 0')
-      }
-      if (len) {
-        key = key || redoKeys.pop();
-        var stat = states[key];
-        if (stat.canRedo()) {
-          stat.redo();
-          undoKeys.push(key);
+
+        if (initializer) {
+          initializer(this);
         }
-      }
-      return this
-    },
-    on: function on (eventName, handler) {
-      eventEmit(eventName, handler, addEvent);
-      return this
-    },
-    off: function off (eventName, handler) {
-      eventEmit(eventName, handler, removeEvent);
-      return this
-    },
-    one: function one (eventName, handler) {
-      var this$1 = this;
-
-      var onehandler = function () {
-        var args = [], len = arguments.length;
-        while ( len-- ) args[ len ] = arguments[ len ];
-
-        this$1.off(eventName, onehandler);
-        handler.apply(void 0, args);
-      };
-      eventEmit(eventName, onehandler, addEvent);
-      return this
-    },
-    trigger: function trigger (eventName) {
-      var args = [], len = arguments.length - 1;
-      while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
-
-      var names = eventName.split('.');
-
-      if (names.length === 1) {
-        var loop = function ( stateName ) {
-          (states[stateName].events[names[0]] || []).forEach(function (handler) {
-            console.log.apply(console, [ 'trigger', stateName, names[0] ].concat( args ));
-            handler.apply(void 0, args);
-          });
-        };
-
-        for (var stateName in states) loop( stateName );
-      } else {
-        (states[names[0]].events[names[1]] || []).forEach(function (handler) {
-          console.log.apply(console, [ 'trigger', names[0], names[1] ].concat( args ));
-          handler.apply(void 0, args);
+        // subscribe callback
+        listeners.forEach((listener) => {
+          listener(this);
         });
       }
       return this
     },
-    fire: function fire (eventName) {
-      var args = [], len = arguments.length - 1;
-      while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
+    redo (key) {
+      const len = redoKeys.length;
+      if (!len) {
+        // throw new Error('redoKeys.length == 0')
+        console.info('redoKeys.length == 0');
+      }
+      if (len) {
+        key = key || redoKeys.pop();
+        const stat = states[key];
+        if (stat.canRedo()) {
+          stat.redo();
+          undoKeys.push(key);
 
-      return (ref = this).trigger.apply(ref, [ eventName ].concat( args ))
-      var ref;
+          if (initializer) {
+            initializer(this);
+          }
+          // subscribe callback
+          listeners.forEach((listener) => {
+            listener(this);
+          });
+        }
+      }
+      return this
     },
-    subscribe: function subscribe (key, handler) {
+    on (eventName, handler) {
+      (events[eventName] = events[eventName] || []).push(handler);
+      return this
+    },
+    off (eventName, handler) {
+      const ary = events[eventName];
+      const index = ary.indexOf(handler);
+      if (index !== -1) {
+        events[eventName].splice(index, 1);
+      }
+      return this
+    },
+    one (eventName, handler) {
+      const onehandler = (...args) => {
+        this.off(eventName, onehandler);
+        handler(...args);
+      };
+      (events[eventName] = events[eventName] || []).push(onehandler);
+      return this
+    },
+    trigger (eventName, ...args) {
+      if (events[eventName]) {
+        console.log('trigger', eventName, ...args);
+        events[eventName].forEach((handler) => handler(...args));
+      } else {
+        console.error(`trigger: ${eventName} is undefind`);
+      }
+      return this
+    },
+    fire (eventName, ...args) {
+      return this.trigger(eventName, ...args)
+    },
+    subscribe (key, handler) {
       if (typeof key === 'function') {
         listeners.push(key);
       } else {
@@ -220,35 +275,6 @@ var Histore = createCommonjsModule(function (module) {
       return this
     },
   };
-
-  /**
-   * Histore.on() & Histore.off()
-   *
-   * @param {string}     eventName - stateName + eventName
-   * @param {function}   handler   - event handler
-   * @param {function}   emitter   - addEvent or removeEvent
-   * @returns
-   */
-  function eventEmit (eventName, handler, emitter) {
-    var names = eventName.split('.');
-    if (names.length === 1) {
-      for (var stateName in states) {
-        emitter(stateName, names[0], handler);
-      }
-    } else {
-      emitter(names[0], names[1], handler);
-    }
-  }
-  function addEvent (stateName, eventName, handler) {
-    (states[stateName].events[eventName] = states[stateName].events[eventName] || []).push(handler);
-  }
-  function removeEvent (stateName, eventName, handler) {
-    var ary = states[stateName].events[eventName];
-    var index = ary.indexOf(handler);
-    if (index > -1) {
-      states[stateName].events[eventName].splice(index, 1);
-    }
-  }
 
 
   /**
@@ -268,122 +294,129 @@ var Histore = createCommonjsModule(function (module) {
     this.listeners = [];
   }
   State.prototype = {
-    toJSON: function toJSON () {
+    toJSON () {
       return this.current
     },
-    setItem: function setItem (value) {
+    setItem (value) {
       if (storage) {
         storage.setItem(this.key, value);
       }
     },
-    set: function set (value, memo) {
-      var this$1 = this;
-
-      if (!memo) {
-        if (typeof value === 'function') {
-          this.current = value(this.current);
-        } else {
-          this.current = value;
-        }
-      } else {
-        var oldstr = stringify(this.current);
-        if (typeof value === 'function') {
-          this.current = value(this.current);
-        } else {
-          this.current = value;
-        }
-        var valstr = stringify(this.current);
-
-        if (oldstr !== valstr) {
-          this.redoStock.length = 0;
-          this.undoStock.push(oldstr);
-          while (this.undoStock.length > undoLimt) {
-            this$1.undoStock.shift();
-          }
-          this.setItem(valstr);
-          console.log('---memory set---');
-        }
-      }
-
-      // subscribe
-      this.listeners.forEach(function (listener) {
-        listener(this$1.current);
+    set (value, memo) {
+      this.remember = new Promise((resolve, reject) => {
+        resolve(stringify(this.current));
       });
-      // Do not write processing after here
-      return this
-    },
-    memo: function memo () {
-      var this$1 = this;
 
-      var len = this.undoStock.length;
-      var prevstr = stringify(this.undoStock[len - 1]);
-      var currstr = stringify(this.current);
-      if (!len || prevstr !== currstr) {
-        this.undoStock.push(currstr);
-        while (this.undoStock.length > undoLimt) {
-          this$1.undoStock.shift();
-        }
-        this.setItem(currstr);
-        console.log('---memory memo---');
+      if (typeof value === 'function') {
+        this.current = value(this.current);
+      } else {
+        this.current = value;
       }
+
+      return this.remember.then((oldstr) => {
+        const newstr = stringify(this.current);
+        console.log('remember', oldstr !== newstr, memo);
+        if (oldstr !== newstr) {
+          if (memo) {
+            this.redoStock.length = 0;
+            this.undoStock.push(oldstr);
+            while (this.undoStock.length > undoLimt) {
+              this.undoStock.shift();
+            }
+            new Promise(() => { // eslint-disable-line
+              this.setItem(newstr);
+            });
+            console.log('---memory set---');
+          }
+
+          // subscribe
+          this.listeners.forEach((listener) => {
+            listener(this.current);
+          });
+        }
+        return oldstr !== newstr && memo
+      })
+      // let oldstr, newstr
+      // if (memo || this.listeners.length) {
+      //   oldstr = stringify(this.current)
+      // }
+      // if (typeof value === 'function') {
+      //   this.current = value(this.current)
+      // } else {
+      //   this.current = value
+      // }
+      // if (memo || this.listeners.length) {
+      //   newstr = stringify(this.current)
+      // }
+      // if (oldstr !== newstr) {
+      //   if (memo) {
+      //     this.redoStock.length = 0
+      //     this.undoStock.push(oldstr)
+      //     while (this.undoStock.length > undoLimt) {
+      //       this.undoStock.shift()
+      //     }
+
+      //     this.setItem(newstr)
+      //     console.log('---memory set---')
+      //   }
+
+      //   // subscribe
+      //   this.listeners.forEach((listener) => {
+      //     listener(this.current)
+      //   })
+      // }
+      // Do not write processing after here
+      // return this
     },
-    canUndo: function canUndo () {
+    memo () {
+      return new Promise((resolve) => {
+        const len = this.undoStock.length;
+        const prevstr = stringify(this.undoStock[len - 1]);
+        const currstr = stringify(this.current);
+        if (!len || prevstr !== currstr) {
+          this.undoStock.push(currstr);
+          while (this.undoStock.length > undoLimt) {
+            this.undoStock.shift();
+          }
+          this.setItem(currstr);
+          console.log('---memory memo---');
+        }
+        resolve(!len || prevstr !== currstr);
+      })
+    },
+    canUndo () {
       return !!this.undoStock.length
     },
-    canRedo: function canRedo () {
+    canRedo () {
       return !!this.redoStock.length
     },
-    undo: function undo (err) {
-      var len = this.undoStock.length;
+    undo (err) {
+      const len = this.undoStock.length;
       if (err && !len) {
         throw new Error('State.undoStock.length == 0')
       }
       if (len) {
         this.redoStock.push(stringify(this.current));
         this.current = parse(this.undoStock.pop());
+        this.listeners.forEach((listener) => {
+          listener(this.current);
+        });
       }
-      return this
+      return this.current
     },
-    redo: function redo (err) {
-      var len = this.redoStock.length;
+    redo (err) {
+      const len = this.redoStock.length;
       if (err && !len) {
         throw new Error('State.redoStock.length == 0')
       }
       if (len) {
         this.undoStock.push(stringify(this.current));
         this.current = parse(this.redoStock.pop());
+        this.listeners.forEach((listener) => {
+          listener(this.current);
+        });
       }
-      return this
-    },
-    on: function on (eventName, handler) {
-      (this.events[eventName] = this.events[eventName] || []).push(handler);
-    },
-    one: function one (eventName, handler) {
-      var this$1 = this;
-
-      var onehandler = function () {
-        var args = [], len = arguments.length;
-        while ( len-- ) args[ len ] = arguments[ len ];
-
-        this$1.off(eventName, onehandler);
-        handler.apply(void 0, args);
-      }
-      (this.events[eventName] = this.events[eventName] || []).push(onehandler);
-    },
-    off: function off (eventName, handler) {
-      var ary = this.events[eventName];
-      var index = ary.indexOf(handler);
-      if (index !== -1) {
-        this.events[eventName].splice(index, 1);
-      }
-    },
-    trigger: function trigger (eventName) {
-      var args = [], len = arguments.length - 1;
-      while ( len-- > 0 ) args[ len ] = arguments[ len + 1 ];
-
-      (this.events[eventName] || []).forEach(function (handler) {
-        handler.apply(void 0, args);
-      });
+      return this.current
     },
   };
 
@@ -406,26 +439,20 @@ var KeyManager = createCommonjsModule(function (module) {
   /**
    * @type {object}
    */
-  var keymap = {
-    key: 'ctrl+z',
-    action: 'undo',
-    mode: '',
-    payload: {}
-  };
-  var vcvfhnfgnhg = function vcvfhnfgnhg () {
-    this.g = 9;
-  };
-
-  var prototypeAccessors = { kj: {} };
-  prototypeAccessors.kj.get = function () {
-
-  };
-  vcvfhnfgnhg.prototype.hj = function hj () {
-    return j
-  };
-
-  Object.defineProperties( vcvfhnfgnhg.prototype, prototypeAccessors );
-
+  const defaultkeymaps = [
+    {
+      key: 'ctrl+z',
+      action: 'undo',
+      mode: '',
+      // payload: {}
+    },
+    {
+      key: 'ctrl+shift+z',
+      action: 'redo',
+      mode: '',
+      // payload: {}
+    },
+  ];
   /**
    * keydown
    *
@@ -449,28 +476,35 @@ var KeyManager = createCommonjsModule(function (module) {
   /**
    * Class KeyManager constructor
    *
-   * @param {Histore} store     Histore instance
    * @param {object}  keymaps   keymap
+   * @param {Histore} store     Histore instance
    * @param {object}  [options] element
    */
-  function KeyManager (store, keymaps, options) {
-    var this$1 = this;
-
+  function KeyManager (keymaps = defaultkeymaps, store, options) {
     this.options = Object.assign({element: window}, options || {});
     this.mode = undefined;
+
     this.keymaps = [];
-    this.options.element.addEventListener('keydown', keydownHandler(function (e) {
-      console.log('e.key', e.key);
-      var inputTags = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+    this.addKeymaps(keymaps);
+
+    this.options.element.addEventListener('keydown', keydownHandler((e) => {
+      const inputTags = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
       if (inputTags) {
         // brackets
-        return ("fd" + inputTags)
+        return `fd${inputTags}`
       }
-      this$1.keymaps.some(function (keymap) {
-        var action = this$1.getAction(e, keymap);
+      // console.log('e.key', e.key, this.keymaps)
+      this.keymaps.some((keymap) => {
+        const action = this.getAction(e, keymap);
         if (action) {
           try {
-            this$1.trigger(action, e, keymap.payload);
+            if (typeof action === 'function') {
+              action(e, keymap.payload);
+            } else if (store) {
+              store.trigger(action, e, keymap.payload);
+            } else {
+              throw new Error('keymaps action error')
+            }
           } catch (err) {
             console.error(err.message, err.stack);
           }
@@ -481,23 +515,44 @@ var KeyManager = createCommonjsModule(function (module) {
     }));
   }
   KeyManager.prototype = {
-    getAction: function getAction (e, keymap) {
-      var key = keymap.key;
-      var action = keymap.action;
-      var mode = keymap.mode;
-      if (!this.modeCheck(mode)) { return }
-      if (e.shiftKey !== /\bshift\b/i.test(key)) { return }
-      if (e.ctrlKey !== /\bctrl\b/i.test(key)) { return }
-      if (e.altKey !== /\balt\b/i.test(key)) { return }
-      if (e.metaKey !== /\b(command|cmd)\b/i.test(key)) { return }
+    getAction (e, keymap) {
+      const { key, action, mode } = keymap;
+      // if (!this.modeCheck(mode)) return
+      if (e.shiftKey !== /\bshift\b/i.test(key)) return
+      if (e.ctrlKey !== /\bctrl\b/i.test(key)) return
+      if (e.altKey !== /\balt\b/i.test(key)) return
+      if (e.metaKey !== /\b(command|cmd)\b/i.test(key)) return
 
-      var eKey = e.key.replace('Arrow', '').toLowerCase(),
+      const eKey = e.key.replace('Arrow', '').toLowerCase(),
             keyReg = keymap.key.replace(/\b(shift|ctrl|alt|command|cmd)[-+]/ig, '');
-      console.log(keyReg, eKey);
-      if (!new RegExp((keyReg + "$")).test(eKey)) { return Number.EPSILON }
+      // console.log(keyReg, eKey)
+      if (!new RegExp(`${keyReg}$`).test(eKey)) return
       return action
+    },
+    addKeymap (key, action, mode = '', payload = {}) {
+      this.keymaps.push({ key, action, mode, payload });
+    },
+    addKeymaps (keymaps, mode) {
+      // store.on('undo', (e, payload) => { store.undo() })
+      // [
+        // { key: 'ctrl+z', action: 'undo', mode, payload },
+      // ]
+      if (Object.prototype.toString.call(keymaps) === '[object Array]') {
+        keymaps.forEach((keymap) => {
+          this.keymaps.push(keymap);
+        });
+      } else if (typeof keymaps === 'object') {
+      // {
+        // 'ctrl+z' () { store.undo() },
+      // }
+        Object.keys(keymaps).forEach((key) => {
+          this.addKeymap(key, keymaps[key], mode);
+        });
+      }
     }
   };
+
+
   // CommonJS: Export function
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = KeyManager;
@@ -518,8 +573,16 @@ var defaultpalette = {
       color: '#75715E'
     },
     {
+      name: 'Comment ',
+      color: '#72747d'
+    },
+    {
       name: 'String',
       color: '#EEA9A9'
+    },
+    {
+      name: 'String',
+      color: '#db9da7'
     },
     {
       name: 'Class,Function,Tag attribute',
@@ -538,8 +601,12 @@ var defaultpalette = {
       color: '#778A33'
     },
     {
-      name: 'Number, Built-in constant',
+      name: 'Number, Built-in 今様',
       color: '#D05A6E'
+    },
+    {
+      name: 'Number, Built-in constant',
+      color: '#c274a7'
     },
     {
       name: 'Variable',
@@ -568,7 +635,8 @@ var defaultpalette = {
     {
       name: 'text',
       color: '#c28fa5'
-    } ],
+    },
+  ],
   bgColor: '#261C29'
 };
 
@@ -992,11 +1060,11 @@ function hslToRgb(h, s, l) {
     l = bound01(l, 100);
 
     function hue2rgb(p, q, t) {
-        if(t < 0) { t += 1; }
-        if(t > 1) { t -= 1; }
-        if(t < 1/6) { return p + (q - p) * 6 * t; }
-        if(t < 1/2) { return q; }
-        if(t < 2/3) { return p + (q - p) * (2/3 - t) * 6; }
+        if(t < 0) t += 1;
+        if(t > 1) t -= 1;
+        if(t < 1/6) return p + (q - p) * 6 * t;
+        if(t < 1/2) return q;
+        if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
         return p;
     }
 
@@ -1773,57 +1841,72 @@ else {
 tinycolor.prototype.toJSON = function (type) {
   return this.toString(type)
 };
-var storage$1 = window.sessionStorage;
+const storage$1 = window.sessionStorage;
 
-storage$1.clear();
-var store = new Histore(defaultpalette, {storage: storage$1});
-// init
-store.set('cards', function (cards) {
-  cards.forEach(function (card, i) {
-    card.color = tinycolor(card.color);
-    card.zIndex = card.zIndex == null ? i : card.zIndex;
-    return card
-  });
-  return cards
-}, false);
+// storage.clear()
+const store = new Histore(defaultpalette, {
+  storage: storage$1,
+  initializer (store) {
+    store.set('cards', (cards) => {
+      console.log('initializer');
+      cards.forEach((card, i) => {
+        card.color = tinycolor(card.color);
+        card.zIndex = card.zIndex == null ? i : card.zIndex;
+        return card
+      });
+      return cards
+    }, false);
+  }
+});
 
-store.on('cards.ADD_CARD', function (card, memo) {
-  store.set('cards', function (cards) {
+// Events
+store.on('cards.ADD_CARD', (card, memo) => {
+  store.set('cards', (cards) => {
     card.color = tinycolor(card.color);
     card.zIndex = cards.length;
-    return cards.concat( [card])
+    return [...cards, card]
   }, memo);
 });
-store.on('cards.DUPLICATE_CARD', function (index, memo) {
-  var newCard = typeof index === 'number' ? store.get('cards')[index] : index;
+store.on('cards.DUPLICATE_CARD', (index, memo) => {
+  let newCard = typeof index === 'number' ? store.get('cards')[index] : index;
+  newCard = Object.assign({}, newCard);
   newCard.left += 10;
   newCard.top += 10;
   store.trigger('cards.ADD_CARD', newCard, memo);
 });
 
-store.on('cards.RESIZE_CARD', function (index, w, h, memo) {
-  if ( h === void 0 ) h = w;
+store.on('cards.TOGGLE_TEXTMODE', (index, bool, memo) => {
+  store.set('cards', (cards) => {
+    const card = cards[index];
+    card.textMode = typeof bool === 'boolean' ? bool : !card.textMode;
+    return cards
+  }, memo);
+});
 
-  store.set('cards', function (cards) {
-    var card = cards[index];
+store.on('cards.RESIZE_CARD', (index, w, h = w, memo) => {
+  store.set('cards', (cards) => {
+    const card = cards[index];
     card.width = w;
     card.height = h;
     return cards
   }, memo);
 });
-store.on('cards.TRANSLATE_CARD', function (index, left, top, memo) {
-  store.set('cards', function (cards) {
-    var card = cards[index];
+store.on('cards.TRANSLATE_CARD', (index, left, top, memo) => {
+  store.set('cards', (cards) => {
+    const card = cards[index];
     card.left = left;
     card.top = top;
     return cards
   }, memo);
 });
 // Don't momorize
-store.on('cards.SELECT_CARDS', function (indexs) {
-  store.set('cards', function (cards) {
-    cards.forEach(function (card, i) {
-      if (indexs.has(i)) {
+/**
+ * @param {array} indexs
+ */
+store.on('cards.SELECT_CARDS', (indexs) => {
+  store.set('cards', (cards) => {
+    cards.forEach((card, i) => {
+      if (indexs.indexOf(i) !== -1) {
         card.selected = true;
       } else {
         delete card.selected;
@@ -1834,16 +1917,21 @@ store.on('cards.SELECT_CARDS', function (indexs) {
 });
 
 
-store.on('cards.REMOVE_CARD', function (index, memo) {
-  store.set('cards', function (cards) {
+store.on('cards.REMOVE_CARD', (index, memo) => {
+  store.set('cards', (cards) => {
     // cards.splice(index, 1)
     return cards.slice(0, index).concat(cards.slice(index + 1))
   }, memo);
 });
-store.on('cards.CARD_FORWARD', function (index, memo) {
-  store.set('cards', function (cards) {
-    var currIndex = +cards[index].zIndex;
-    cards.forEach(function (card, i) {
+store.on('cards.REMOVE_SELECT_CARDS', (memo) => {
+  store.set('cards', (cards) => {
+    return cards.filter((card) => !card.selected)
+  }, memo);
+});
+store.on('cards.CARD_FORWARD', (index, memo) => {
+  store.set('cards', (cards) => {
+    const currIndex = +cards[index].zIndex;
+    cards.forEach((card, i) => {
       if (i === index) {
         card.zIndex = cards.length - 1;
       } else if (card.zIndex > currIndex) {
@@ -1854,12 +1942,641 @@ store.on('cards.CARD_FORWARD', function (index, memo) {
   }, memo);
 });
 
-
-store.subscribe('cards', function (cards) {
-  console.log('cards', cards);
+store.on('undo', (e, payload) => {
+  store.undo();
+});
+store.on('redo', (e, payload) => {
+  store.redo();
 });
 
-store.keyManager = new KeyManager(store);
+store.addPlugin('keyManager', new KeyManager({
+  'ctrl+z' () { store.undo(); },
+  'ctrl+shift+z' () { store.redo(); },
+}, store));
+
+store.subscribe('cards', (cards) => {
+  console.log('cards', cards);
+});
+console.log('store', store);
+
+function appendNode ( node, target ) {
+	target.appendChild( node );
+}
+
+function insertNode ( node, target, anchor ) {
+	target.insertBefore( node, anchor );
+}
+
+function detachNode ( node ) {
+	node.parentNode.removeChild( node );
+}
+
+function destroyEach ( iterations, detach, start ) {
+	for ( var i = start; i < iterations.length; i += 1 ) {
+		iterations[i].destroy( detach );
+	}
+}
+
+function createElement ( name ) {
+	return document.createElement( name );
+}
+
+function createSvgElement ( name ) {
+	return document.createElementNS( 'http://www.w3.org/2000/svg', name );
+}
+
+function createText ( data ) {
+	return document.createTextNode( data );
+}
+
+function createComment () {
+	return document.createComment( '' );
+}
+
+function addEventListener ( node, event, handler ) {
+	node.addEventListener( event, handler, false );
+}
+
+function removeEventListener ( node, event, handler ) {
+	node.removeEventListener( event, handler, false );
+}
+
+function setAttribute ( node, attribute, value ) {
+	node.setAttribute( attribute, value );
+}
+
+function noop () {}
+
+function assign ( target ) {
+	for ( var i = 1; i < arguments.length; i += 1 ) {
+		var source = arguments[i];
+		for ( var k in source ) target[k] = source[k];
+	}
+
+	return target;
+}
+
+function differs ( a, b ) {
+	return ( a !== b ) || ( a && ( typeof a === 'object' ) || ( typeof a === 'function' ) );
+}
+
+function dispatchObservers ( component, group, newState, oldState ) {
+	for ( var key in group ) {
+		if ( !( key in newState ) ) continue;
+
+		var newValue = newState[ key ];
+		var oldValue = oldState[ key ];
+
+		if ( differs( newValue, oldValue ) ) {
+			var callbacks = group[ key ];
+			if ( !callbacks ) continue;
+
+			for ( var i = 0; i < callbacks.length; i += 1 ) {
+				var callback = callbacks[i];
+				if ( callback.__calling ) continue;
+
+				callback.__calling = true;
+				callback.call( component, newValue, oldValue );
+				callback.__calling = false;
+			}
+		}
+	}
+}
+
+function get ( key ) {
+	return key ? this._state[ key ] : this._state;
+}
+
+function fire ( eventName, data ) {
+	var handlers = eventName in this._handlers && this._handlers[ eventName ].slice();
+	if ( !handlers ) return;
+
+	for ( var i = 0; i < handlers.length; i += 1 ) {
+		handlers[i].call( this, data );
+	}
+}
+
+function observe ( key, callback, options ) {
+	var group = ( options && options.defer ) ? this._observers.post : this._observers.pre;
+
+	( group[ key ] || ( group[ key ] = [] ) ).push( callback );
+
+	if ( !options || options.init !== false ) {
+		callback.__calling = true;
+		callback.call( this, this._state[ key ] );
+		callback.__calling = false;
+	}
+
+	return {
+		cancel: function () {
+			var index = group[ key ].indexOf( callback );
+			if ( ~index ) group[ key ].splice( index, 1 );
+		}
+	};
+}
+
+function on ( eventName, handler ) {
+	if ( eventName === 'teardown' ) return this.on( 'destroy', handler );
+
+	var handlers = this._handlers[ eventName ] || ( this._handlers[ eventName ] = [] );
+	handlers.push( handler );
+
+	return {
+		cancel: function () {
+			var index = handlers.indexOf( handler );
+			if ( ~index ) handlers.splice( index, 1 );
+		}
+	};
+}
+
+function set ( newState ) {
+	this._set( assign( {}, newState ) );
+	( this._root || this )._flush();
+}
+
+function _flush () {
+	if ( !this._renderHooks ) return;
+
+	while ( this._renderHooks.length ) {
+		var hook = this._renderHooks.pop();
+		hook.fn.call( hook.context );
+	}
+}
+
+var proto = {
+	get: get,
+	fire: fire,
+	observe: observe,
+	on: on,
+	set: set,
+	_flush: _flush
+};
+
+function recompute$2 ( state, newState, oldState, isInitial ) {
+	if ( isInitial || ( 'color' in newState && differs( state.color, oldState.color ) ) ) {
+		state._color = newState._color = template$2.computed._color( state.color );
+	}
+	
+	if ( isInitial || ( '_color' in newState && differs( state._color, oldState._color ) ) || ( 'format' in newState && differs( state.format, oldState.format ) ) ) {
+		state.value = newState.value = template$2.computed.value( state._color, state.format );
+	}
+}
+
+var template$2 = (function () {
+  function caretIndex (event, color) {
+    const {value, selectionStart} = event.target;
+    const index = value[0] === '#'
+    ? Math.floor((selectionStart - 1) / 2)
+    // count ',' before selectionStart
+    : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1;
+    return ((value[0] === '#' || color.getAlpha() === 1) && index === 3) || index === 4 ? -1 : index
+  }
+
+  return {
+    data () {
+      return {
+        phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
+        color: 'red',
+        formats: ['hsl', 'hsv', 'rgb', 'prgb', 'hex'],
+        format: 'hex',
+      }
+    },
+    computed: {
+      _color: (color) => tinycolor(color),
+      value: (_color, format) => _color.toString(format),
+    },
+    methods: {
+      input (event) {
+        const value = event.target.value;
+        const color = tinycolor(value);
+        const format = color.getFormat();
+
+        if (color.isValid() && !/^#?[a-f\d]{3,4}$/i.test(value)) {
+          this.set({ color, format });
+        }
+      },
+      updown (event) {
+        const {value, selectionStart, selectionEnd} = event.target;
+        if (selectionStart !== selectionEnd) {
+          return
+        }
+
+        let color = tinycolor(value);
+        const index = caretIndex(event, color);
+        const arrow = (event.key === 'ArrowUp' ? 1 : -1);
+
+        if (index === -1) {
+          const format = this.get('format');
+          if (color.isValid()) {
+            // change format
+            const formats = this.get('formats');
+            let findex = (formats.indexOf(format) - arrow);
+            if (findex < 0) {
+              findex = formats.length + findex;
+            }
+            this.set({ format: formats[findex % formats.length] });
+          } else {
+            // Re: valid Color
+            event.target.value = this.get('_color').toString(format);
+          }
+        } else if (color.isValid()) {
+          const format = color.getFormat();
+          if (index === 3) {
+            // alpla
+            color.setAlpha(color.getAlpha() + arrow / 100);
+          } else {
+            // not alpla
+            const plus = arrow;
+            let param;
+            switch (format) {
+              case 'hsl':
+                param = color.toHsl();
+                param.s *= 100;
+                param.l *= 100;
+                param['hsl'[index]] += plus;
+                break
+              case 'hsv':
+                param = color.toHsv();
+                param.s *= 100;
+                param.v *= 100;
+                param['hsv'[index]] += plus;
+                break
+              case 'prgb':
+                param = color.toRgb();
+                param.r /= 255;
+                param.g /= 255;
+                param.b /= 255;
+                param['rgb'[index]] += plus / 100;
+                param.r *= 255;
+                param.g *= 255;
+                param.b *= 255;
+                break
+              default:
+                param = color.toRgb();
+                param['rgb'[index]] += plus;
+                break
+            }
+            color = tinycolor(param);
+          }
+          this.set({ color });
+          event.target.selectionStart = selectionStart;
+          event.target.selectionEnd = selectionStart;
+        }
+      },
+      focus (event) {
+        const index = caretIndex(event, this.get('_color'));
+        this.listToggle(index === -1);
+
+        console.log('focus.index', index);
+      },
+      listToggle (flg) {
+        this.refs.list.classList.toggle('active', flg);
+        if (this.refs.list.classList.contains('active')) {
+          const winclick = (event) => {
+            this.refs.list.classList.remove('active');
+            window.removeEventListener('click', winclick, true);
+          };
+          window.addEventListener('click', winclick, true);
+        }
+      },
+    },
+    events: {
+      updown (node, callback) {
+        function onkeydown (event) {
+          let time;
+          if (/Arrow(Up|Down)/.test(event.key)) {
+            callback(event);
+            time = setTimeout(() => {
+              clearTimeout(time);
+              time = setInterval(() => callback(event), 100);
+            }, 300);
+          }
+          function onkeyup (e) {
+            clearInterval(time);
+            time = null;
+            node.removeEventListener('keyup', onkeyup, false);
+          }
+
+          node.addEventListener('keyup', onkeyup, false);
+        }
+
+        node.addEventListener('keydown', onkeydown, false);
+
+        return {
+          teardown () {
+            node.removeEventListener('keydown', onkeydown, false);
+          }
+        }
+      }
+    }
+  }
+}());
+
+var added_css$2 = false;
+function add_css$2 () {
+	var style = createElement( 'style' );
+	style.textContent = "\n  [svelte-1550853817].input-wrapper, [svelte-1550853817] .input-wrapper {\n    --size: 2.5em;\n    position: relative;\n    \n    font: normal 1em \"Lucida Grande\", \"Lucida Sans Unicode\", \"Lucida Sans\", Geneva, Verdana, sans-serif;\n    display: flex;\n    flex-direction: row;}\n\n    [svelte-1550853817].input-wrapper > *, [svelte-1550853817] .input-wrapper > * {\n      border-width: 1px 1px 1px 0;\n      border-style: solid;\n    }\n    [svelte-1550853817].input-wrapper > :first-child, [svelte-1550853817] .input-wrapper > :first-child {\n      border-top-left-radius: 4px;\n      border-bottom-left-radius: 4px;\n      border-width: 1px;\n    }\n    [svelte-1550853817].input-wrapper > :last-child, [svelte-1550853817] .input-wrapper > :last-child {\n      border-top-right-radius: 4px;\n      border-bottom-right-radius: 4px;\n    }\n\n    [svelte-1550853817].color-text, [svelte-1550853817] .color-text {\n      flex: 1 1 auto; \n      height: var(--size);\n      padding: 0 4px;}\n    [svelte-1550853817].submit-btn, [svelte-1550853817] .submit-btn {\n      height: var(--size);\n      text-align: center;}\n\n    [svelte-1550853817].color-text_list, [svelte-1550853817] .color-text_list {\n      position: absolute;\n      margin: 0;\n      padding: 0;\n      top: var(--size);\n      left: 0;\n      width: 100%;\n      list-style: none;\n      text-align: left;\n      color: #111;\n      background-color: #ddd;\n      z-index: 10000;\n      visibility: hidden;\n    }\n    [svelte-1550853817].color-text_list-item, [svelte-1550853817] .color-text_list-item {\n      margin: 0;\n      padding: 4px;\n      height: var(--size);\n      list-style: none;\n    }\n    [svelte-1550853817].color-text_list-item.active, [svelte-1550853817] .color-text_list-item.active {\n      font-weight: bold;\n    }\n    [svelte-1550853817].color-text_list-item:hover, [svelte-1550853817] .color-text_list-item:hover {\n      background-color: aqua;\n    }\n    \n    \n    [svelte-1550853817].color-text_list.active, [svelte-1550853817] .color-text_list.active {\n      visibility: visible;\n    }\n";
+	appendNode( style, document.head );
+
+	added_css$2 = true;
+}
+
+function create_main_fragment$2 ( state, component ) {
+	var if_block_anchor = createComment();
+	
+	function get_block ( state ) {
+		if ( state.phone ) return create_if_block$1;
+		return create_if_block_1$1;
+	}
+	
+	var current_block = get_block( state );
+	var if_block = current_block && current_block( state, component );
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( if_block_anchor, target, anchor );
+			if ( if_block ) if_block.mount( target, if_block_anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( current_block === ( current_block = get_block( state ) ) && if_block ) {
+				if_block.update( changed, state );
+			} else {
+				if ( if_block ) if_block.destroy( true );
+				if_block = current_block && current_block( state, component );
+				if ( if_block ) if_block.mount( if_block_anchor.parentNode, if_block_anchor );
+			}
+		},
+		
+		destroy: function ( detach ) {
+			if ( if_block ) if_block.destroy( detach );
+			
+			if ( detach ) {
+				detachNode( if_block_anchor );
+			}
+		}
+	};
+}
+
+function create_each_block$1 ( state, each_block_value, fm, i, component ) {
+	var li_class_value, text_value;
+	
+	var li = createElement( 'li' );
+	li.className = li_class_value = "color-text_list-item " + ( state.format == fm ? 'active' : '' );
+	addEventListener( li, 'click', click_handler );
+	
+	li._svelte = {
+		component: component,
+		each_block_value: each_block_value,
+		i: i
+	};
+	
+	var text = createText( text_value = state._color.toString(fm) );
+	appendNode( text, li );
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( li, target, anchor );
+		},
+		
+		update: function ( changed, state, each_block_value, fm, i ) {
+			if ( li_class_value !== ( li_class_value = "color-text_list-item " + ( state.format == fm ? 'active' : '' ) ) ) {
+				li.className = li_class_value;
+			}
+			
+			li._svelte.each_block_value = each_block_value;
+			li._svelte.i = i;
+			
+			if ( text_value !== ( text_value = state._color.toString(fm) ) ) {
+				text.data = text_value;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			removeEventListener( li, 'click', click_handler );
+			
+			if ( detach ) {
+				detachNode( li );
+			}
+		}
+	};
+}
+
+function create_if_block_2 ( state, component ) {
+	var li_class_value, text_value;
+	
+	var li = createElement( 'li' );
+	li.className = li_class_value = "color-text_list-item " + ( state.format == 'name' ? 'active' : '' );
+	
+	function click_handler_1 ( event ) {
+		component.set({format: 'name'});
+	}
+	
+	addEventListener( li, 'click', click_handler_1 );
+	var text = createText( text_value = state._color.toName() );
+	appendNode( text, li );
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( li, target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( li_class_value !== ( li_class_value = "color-text_list-item " + ( state.format == 'name' ? 'active' : '' ) ) ) {
+				li.className = li_class_value;
+			}
+			
+			if ( text_value !== ( text_value = state._color.toName() ) ) {
+				text.data = text_value;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			removeEventListener( li, 'click', click_handler_1 );
+			
+			if ( detach ) {
+				detachNode( li );
+			}
+		}
+	};
+}
+
+function create_if_block$1 ( state, component ) {
+	var input = createElement( 'input' );
+	setAttribute( input, 'svelte-1550853817', '' );
+	input.type = "color";
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( input, target, anchor );
+		},
+		
+		update: noop,
+		
+		destroy: function ( detach ) {
+			if ( detach ) {
+				detachNode( input );
+			}
+		}
+	};
+}
+
+function create_if_block_1$1 ( state, component ) {
+	var input_value_value;
+	
+	var div = createElement( 'div' );
+	setAttribute( div, 'svelte-1550853817', '' );
+	div.className = "input-wrapper";
+	var input = createElement( 'input' );
+	appendNode( input, div );
+	input.className = "color-text";
+	input.value = input_value_value = state.value;
+	input.placeholder = "keypress: ↑↓";
+	
+	function input_handler ( event ) {
+		component.input(event);
+	}
+	
+	addEventListener( input, 'input', input_handler );
+	
+	var updown_handler = template$2.events.updown.call( component, input, function ( event ) {
+		component.updown(event);
+	});
+	
+	function click_handler ( event ) {
+		component.focus(event);
+	}
+	
+	addEventListener( input, 'click', click_handler );
+	appendNode( createText( "\n    " ), div );
+	var ul = createElement( 'ul' );
+	appendNode( ul, div );
+	ul.className = "color-text_list";
+	component.refs.list = ul;
+	var each_block_anchor = createComment();
+	appendNode( each_block_anchor, ul );
+	var each_block_value = state.formats;
+	var each_block_iterations = [];
+	
+	for ( var i = 0; i < each_block_value.length; i += 1 ) {
+		each_block_iterations[i] = create_each_block$1( state, each_block_value, each_block_value[i], i, component );
+		each_block_iterations[i].mount( ul, each_block_anchor );
+	}
+	
+	var if_block_1_anchor = createComment();
+	appendNode( if_block_1_anchor, ul );
+	
+	var if_block_1 = state._color.toName() && create_if_block_2( state, component );
+	
+	if ( if_block_1 ) if_block_1.mount( ul, if_block_1_anchor );
+	appendNode( createText( "\n    " ), div );
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( div, target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( input_value_value !== ( input_value_value = state.value ) ) {
+				input.value = input_value_value;
+			}
+			
+			var each_block_value = state.formats;
+			
+			if ( 'format' in changed || 'formats' in changed || '_color' in changed ) {
+				for ( var i = 0; i < each_block_value.length; i += 1 ) {
+					if ( each_block_iterations[i] ) {
+						each_block_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+					} else {
+						each_block_iterations[i] = create_each_block$1( state, each_block_value, each_block_value[i], i, component );
+						each_block_iterations[i].mount( each_block_anchor.parentNode, each_block_anchor );
+					}
+				}
+			
+				destroyEach( each_block_iterations, true, each_block_value.length );
+			
+				each_block_iterations.length = each_block_value.length;
+			}
+			
+			if ( state._color.toName() ) {
+				if ( if_block_1 ) {
+					if_block_1.update( changed, state );
+				} else {
+					if_block_1 = create_if_block_2( state, component );
+					if_block_1.mount( if_block_1_anchor.parentNode, if_block_1_anchor );
+				}
+			} else if ( if_block_1 ) {
+				if_block_1.destroy( true );
+				if_block_1 = null;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			removeEventListener( input, 'input', input_handler );
+			updown_handler.teardown();
+			removeEventListener( input, 'click', click_handler );
+			if ( component.refs.list === ul ) component.refs.list = null;
+			
+			destroyEach( each_block_iterations, false, 0 );
+			
+			if ( if_block_1 ) if_block_1.destroy( false );
+			
+			if ( detach ) {
+				detachNode( div );
+			}
+		}
+	};
+}
+
+function click_handler ( event ) {
+	var component = this._svelte.component;
+	var each_block_value = this._svelte.each_block_value, i = this._svelte.i, fm = each_block_value[i];
+	component.set({format: fm});
+}
+
+function Color_input ( options ) {
+	options = options || {};
+	this.refs = {};
+	this._state = assign( template$2.data(), options.data );
+	recompute$2( this._state, this._state, {}, true );
+	
+	this._observers = {
+		pre: Object.create( null ),
+		post: Object.create( null )
+	};
+	
+	this._handlers = Object.create( null );
+	
+	this._root = options._root;
+	this._yield = options._yield;
+	
+	this._torndown = false;
+	if ( !added_css$2 ) add_css$2();
+	
+	this._fragment = create_main_fragment$2( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
+}
+
+assign( Color_input.prototype, template$2.methods, proto );
+
+Color_input.prototype._set = function _set ( newState ) {
+	var oldState = this._state;
+	this._state = assign( {}, oldState, newState );
+	recompute$2( this._state, newState, oldState, false );
+	dispatchObservers( this, this._observers.pre, newState, oldState );
+	if ( this._fragment ) this._fragment.update( newState, this._state );
+	dispatchObservers( this, this._observers.post, newState, oldState );
+};
+
+Color_input.prototype.teardown = Color_input.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
+
+	this._fragment.destroy( detach !== false );
+	this._fragment = null;
+
+	this._state = {};
+	this._torndown = true;
+};
 
 /**
  * constructor PositionManager
@@ -1868,189 +2585,181 @@ store.keyManager = new KeyManager(store);
  * @class PositionManager
  * @param {object} options
  */
-var PositionManager = function PositionManager (options) {
-  this.options = Object.assign({
-    containment: document.body,
-    handle: null,
-    grid: 1,
-    percent: false,
-    axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
-  }, options || {});
+class PositionManager {
+  constructor (options) {
+    this.options = Object.assign({
+      containment: document.body,
+      handle: null,
+      grid: 1,
+      axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
+    }, options || {});
 
-  var grid = this.options.grid;
-  if (!Array.isArray(grid)) {
-    grid = parseFloat(grid, 10) || 1;
-    grid = [grid, grid];
-  }
-  this.options.grid = grid;
+    let grid = this.options.grid;
+    if (!Array.isArray(grid)) {
+      grid = parseFloat(grid, 10) || 1;
+      grid = [grid, grid];
+    }
+    this.options.grid = grid;
 
-  // containment内に置ける現在のマウス相対位置
-  this.x = 0;
-  this.y = 0;
-  // this.x、this.yの初期値保存
-  this.startX = 0;
-  this.startY = 0;
+    // containment内に置ける現在のマウス相対位置
+    this.x = 0;
+    this.y = 0;
+    // this.x、this.yの初期値保存
+    this.startX = 0;
+    this.startY = 0;
 
-  this.handleRect = {width: 0, height: 0, left: 0, top: 0};
+    this.handleRect = {width: 0, height: 0, left: 0, top: 0};
 
-  // position
-  var position = { left: 0, top: 0 };
-  // 代入したときにもthis.adjust()したい
-  Object.defineProperties(this, {
-    left: {
-      get: function get () {
-        return position.left
+    // position
+    const position = { left: 0, top: 0 };
+    // 代入したときにもthis.adjust()したい
+    Object.defineProperties(this, {
+      left: {
+        get () {
+          return position.left
+        },
+        set (val) {
+          position.left = this.adjust(val, 'width');
+        }
       },
-      set: function set (val) {
-        position.left = this.adjust(val, 'width');
-      }
-    },
-    top: {
-      get: function get () {
-        return position.top
+      top: {
+        get () {
+          return position.top
+        },
+        set (val) {
+          position.top = this.adjust(val, 'height');
+        }
       },
-      set: function set (val) {
-        position.top = this.adjust(val, 'height');
-      }
-    },
-  });
-};
-
-/**
- * mousemove, mouseup
- *
- * @param {Event} e
- * @param {Boolean} [initflg]
- * @param {Element} [handle=this.options.handle]
- * @returns
- *
- * @memberOf PositionManager
- */
-PositionManager.prototype.set = function set (e, initflg, handle) {
-    if ( handle === void 0 ) handle = this.options.handle;
-
-  if (initflg) {
-    // ボックスサイズ取得。ここに書くのはresize対策
-    this.parentRect = this.options.containment.getBoundingClientRect();
-    if (handle) { this.handleRect = handle.getBoundingClientRect(); }
+    });
   }
 
-  var event = 'touches' in e ? e.touches[0] : e;
-  this.x = event.pageX - this.parentRect.left - window.pageXOffset;
-  this.y = event.pageY - this.parentRect.top - window.pageYOffset;
+  /**
+   * mousemove, mouseup
+   *
+   * @param {Event}   e
+   * @param {Boolean} [initflg]
+   * @param {Element} [handle=this.options.handle]
+   * @returns
+   *
+   * @memberOf PositionManager
+   */
+  set (e, initflg, handle = this.options.handle) {
+    if (initflg) {
+      // ボックスサイズ取得。ここに書くのはresize対策
+      this.parentRect = this.options.containment.getBoundingClientRect();
+      if (handle) this.handleRect = handle.getBoundingClientRect();
+    }
 
-  if (initflg) {
-    this.startX = this.x;
-    this.startY = this.y;
-    this.vectorX = 0;
-    this.vectorY = 0;
-  } else {
-    this.vectorX = this.x - this.startX;
-    this.vectorY = this.y - this.startY;
+    const event = 'touches' in e ? e.touches[0] : e;
+    // スクロールも考慮した絶対座標 this.parentRect.left - window.pageXOffset
+    this.x = event.pageX - this.parentRect.left - window.pageXOffset;
+    this.y = event.pageY - this.parentRect.top - window.pageYOffset;
+
+    if (initflg) {
+      this.startX = this.x;
+      this.startY = this.y;
+      this.vectorX = 0;
+      this.vectorY = 0;
+    } else {
+      this.vectorX = this.x - this.startX;
+      this.vectorY = this.y - this.startY;
+    }
+
+    // modify
+    this.left = this.handleRect.left - this.parentRect.left + this.vectorX;
+    this.top  = this.handleRect.top - this.parentRect.top + this.vectorY;
+
+    this.percentLeft = this.percentage(this.x, 'width');
+    this.percentTop  = this.percentage(this.y, 'height');
+
+    if (initflg) {
+      this.startLeft = this.left;
+      this.startTop  = this.top;
+    }
+    return this
   }
 
-  // modify
-  this.left = this.handleRect.left + this.vectorX;
-  this.top= this.handleRect.top + this.vectorY;
 
-  if (this.options.percent) {
-    this.percentLeft = this.percentage(this.left, 'width');
-    this.percentTop= this.percentage(this.top, 'height');
-  }
-
-  if (initflg) {
-    this.startLeft = this.left;
-    this.startTop= this.top;
-  }
-  return this
-};
-
-
-/**
- * handle move
- *
- * @param {Event}  e
- * @param {Element} [el=this.options.handle]
- * @returns
- *
- * @memberOf PositionManager
- */
-PositionManager.prototype.setPosition = function setPosition (e, el) {
-    if ( el === void 0 ) el = this.options.handle;
-
-  switch (this.options.axis) {
-    case 'x':
-    case 'y':
-      this.oneWayMove(this.options.axis, el);
-      break
-    case 'shift':
-    case 'ctrl':
-    case 'alt':
-      if (e[this.options.axis + 'Key']) {
-        var maxV = Math.abs(this.vectorX) > Math.abs(this.vectorY);
-        this.oneWayMove(maxV ? 'x' : 'y', el);
+  /**
+   * handle move
+   *
+   * @param {Event}    e
+   * @param {Element} [el=this.options.handle]
+   * @returns
+   *
+   * @memberOf PositionManager
+   */
+  setPosition (e, el = this.options.handle) {
+    switch (this.options.axis) {
+      case 'x':
+      case 'y':
+        this.oneWayMove(this.options.axis, el);
         break
-      }
-      // fall through
-    default:
+      case 'shift':
+      case 'ctrl':
+      case 'alt':
+        if (e[this.options.axis + 'Key']) {
+          const maxV = Math.abs(this.vectorX) > Math.abs(this.vectorY);
+          this.oneWayMove(maxV ? 'x' : 'y', el);
+          break
+        }
+        // fall through
+      default:
+        el.style.left = this.left + 'px';
+        el.style.top  = this.top + 'px';
+    }
+    if (typeof this.width === 'number') {
+      el.style.width  = this.width + 'px';
+    }
+    if (typeof this.height === 'number') {
+      el.style.height = this.height + 'px';
+    }
+    return this
+  }
+  oneWayMove (either, el = this.options.handle) {
+    if (either === 'x') {
       el.style.left = this.left + 'px';
-      el.style.top= this.top + 'px';
+      el.style.top = this.startTop + 'px';
+    } else if (either === 'y') {
+      el.style.left = this.startLeft + 'px';
+      el.style.top = this.top + 'px';
+    }
+    return this
   }
-  if (typeof this.width === 'number') {
-    el.style.width= this.width + 'px';
-  }
-  if (typeof this.height === 'number') {
-    el.style.height = this.height + 'px';
-  }
-  return this
-};
-PositionManager.prototype.oneWayMove = function oneWayMove (either, el) {
-    if ( el === void 0 ) el = this.options.handle;
 
-  if (either === 'x') {
-    el.style.left = this.left + 'px';
-    el.style.top = this.startTop + 'px';
-  } else if (either === 'y') {
-    el.style.left = this.startLeft + 'px';
-    el.style.top = this.top + 'px';
+  /**
+   * Box内に制限しグリッド幅に合わせ計算調整する
+   *
+   * @param {Number}  offset                     this.handleRect.left + this.vectorX
+   * @param {String}  side
+   * @param {Object}  [rect=this.handleRect]     getBoundingClientRect
+   * @returns {Number}          this.left
+   *
+   * @memberOf PositionManager
+   */
+  adjust (offset, side, rect = this.handleRect) {
+    const options = this.options;
+    // handlesの動きをcontainmentに制限する
+    if (options.containment !== document.body) {
+      offset = Math.min(Math.max(0, offset), this.parentRect[side] - rect[side]);
+    }
+    const grid = side === 'width' ? options.grid[0] : options.grid[1];
+    offset = Math.round(offset / grid) * grid;
+    return offset
   }
-  return this
-};
-
-/**
- * Box内に制限しグリッド幅に合わせ計算調整する
- *
- * @param {Number}offset                   this.handleRect.left + this.vectorX
- * @param {String}side
- * @param {Object}[rect=this.handleRect]   getBoundingClientRect
- * @returns {Number}        this.left
- *
- * @memberOf PositionManager
- */
-PositionManager.prototype.adjust = function adjust (offset, side, rect) {
-    if ( rect === void 0 ) rect = this.handleRect;
-
-  var options = this.options;
-  // handlesの動きをcontainmentに制限する
-  if (options.containment !== document.body) {
-    offset = Math.min(Math.max(0, offset), this.parentRect[side] - rect[side]);
+  /**
+   * Boxを基準にした％
+   *
+   * @param {Number}  offset    this.left
+   * @param {String}  side
+   * @returns {Number} ％
+   *
+   * @memberOf PositionManager
+   */
+  percentage (offset, side) {
+    return Math.min(Math.max(0, offset / (this.parentRect[side] - this.handleRect[side]) * 100), 100)
   }
-  var grid = side === 'width' ? options.grid[0] : options.grid[1];
-  offset = Math.round(offset / grid) * grid;
-  return offset
-};
-/**
- * Boxを基準にした％
- *
- * @param {Number}offset  this.left
- * @param {String}side
- * @returns {Number} ％
- *
- * @memberOf PositionManager
- */
-PositionManager.prototype.percentage = function percentage (offset, side) {
-  return Math.min(Math.max(0, offset / (this.parentRect[side] - this.handleRect[side]) * 100), 100)
-};
+}
 
 /**
  * addEventListener & removeEventListener
@@ -2062,12 +2771,12 @@ PositionManager.prototype.percentage = function percentage (offset, side) {
  * @param {boolean}  [useCapture]
  */
 function on$1 (el, eventNames, callback, useCapture) {
-  eventNames.split(' ').forEach(function (eventName) {
+  eventNames.split(' ').forEach((eventName) => {
     (el || window).addEventListener(eventName, callback, !!useCapture);
   });
 }
-function off$1 (el, eventNames, callback, useCapture) {
-  eventNames.split(' ').forEach(function (eventName) {
+function off (el, eventNames, callback, useCapture) {
+  eventNames.split(' ').forEach((eventName) => {
     (el || window).removeEventListener(eventName, callback, !!useCapture);
   });
 }
@@ -2077,83 +2786,77 @@ function off$1 (el, eventNames, callback, useCapture) {
  *
  * @param {Object|Element} options
  */
-var MousePosition = function MousePosition (options) {
-  var this$1 = this;
+class MousePosition {
+  constructor (element,  options) {
+    this.options = Object.assign({
+      containment: element || document.body,
+      handle: null,
+      // start: noop,
+      // drag: noop,
+      // stop: noop
+    }, options || {});
 
-  this.options = Object.assign({
-    containment: (options.nodeName ? options : document.body),
-    handle: null,
-    // start: noop,
-    // drag: noop,
-    // stop: noop
-  }, options || {});
+    // イベント登録
+    this._event = {
+      mdown: (e) => { this.mdown(e); },
+      mmove: (e) => { this.mmove(e); },
+      mup: (e) => { this.mup(e); },
+    };
+    on$1(element, 'mousedown touchstart', this._event.mdown);
 
-  // イベント登録
-  this._event = {
-    mdown: function (e) { this$1.mdown(e); },
-    mmove: function (e) { this$1.mmove(e); },
-    mup: function (e) { this$1.mup(e); },
-  };
-  on$1(options.handle || options.containment, 'mousedown touchstart', this._event.mdown);
+    this.position = new PositionManager(this.options);
 
-  this.position = new PositionManager(options);
-
-  this._clickFlg = false;
-};
-
-MousePosition.prototype.destroy = function destroy () {
-  off$1(0, 'mousedown touchstart', this._event.mdown);
-};
-
-// マウスが押された際の関数
-MousePosition.prototype.mdown = function mdown (e, handle) {
-  var ref = this;
-    var options = ref.options;
-    var position = ref.position;
-  // マウス座標を保存
-  position.set(e, true, handle);
-
-  if (options.start) {
-    options.start(e, position, handle);
+    this._clickFlg = false;
   }
-  on$1(0, 'mouseup touchcancel touchend', this._event.mup);
-  on$1(0, 'mousemove touchmove', this._event.mmove);
-  this._clickFlg = true;
-};
-// マウスカーソルが動いたときに発火
-MousePosition.prototype.mmove = function mmove (e) {
-  var ref = this;
-    var options = ref.options;
-    var position = ref.position;
-  // マウスが動いたベクトルを保存
-  position.set(e);
-  // フリックしたときに画面を動かさないようにデフォルト動作を抑制
-  e.preventDefault();
 
-  if (options.drag) {
-    options.drag(e, position);
+  destroy () {
+    off(0, 'mousedown touchstart', this._event.mdown);
   }
-  // カーソルが外れたとき発火
-  on$1(0, 'mouseleave touchleave', this._event.mup);
-  this._clickFlg = false;
-};
-// マウスボタンが上がったら発火
-MousePosition.prototype.mup = function mup (e) {
-  var ref = this;
-    var options = ref.options;
-    var position = ref.position;
-  // マウスが動いたベクトルを保存
-  position.set(e);
 
-  if (this._clickFlg && options.click) {
-    options.click(e, position);
-  } else if (options.stop) {
-    options.stop(e, position);
+  // マウスが押された際の関数
+  mdown (e, handle) {
+    const {options, position} = this;
+    // マウス座標を保存
+    position.set(e, true, handle);
+
+    if (options.start) {
+      options.start(e, position, handle);
+    }
+    on$1(0, 'mouseup touchcancel touchend', this._event.mup);
+    on$1(0, 'mousemove touchmove', this._event.mmove);
+    this._clickFlg = true;
   }
-  // ハンドラの消去
-  off$1(0, 'mouseup touchend touchcancel mouseleave touchleave', this._event.mup);
-  off$1(0, 'mousemove touchmove', this._event.mmove);
-};
+  // マウスカーソルが動いたときに発火
+  mmove (e) {
+    const {options, position} = this;
+    // マウスが動いたベクトルを保存
+    position.set(e);
+    // フリックしたときに画面を動かさないようにデフォルト動作を抑制
+    e.preventDefault();
+
+    if (options.drag) {
+      options.drag(e, position);
+    }
+    // カーソルが外れたとき発火
+    on$1(0, 'mouseleave touchleave', this._event.mup);
+    this._clickFlg = false;
+  }
+  // マウスボタンが上がったら発火
+  mup (e) {
+    const {options, position} = this;
+    // マウスが動いたベクトルを保存
+    position.set(e);
+
+    if (this._clickFlg && options.click) {
+      options.click(e, position);
+    } else if (options.stop) {
+      options.stop(e, position);
+    }
+    // ハンドラの消去
+    off(0, 'mouseup touchend touchcancel mouseleave touchleave', this._event.mup);
+    off(0, 'mousemove touchmove', this._event.mmove);
+  }
+}
 
 /**
  * movable
@@ -2162,39 +2865,33 @@ MousePosition.prototype.mup = function mup (e) {
  * @param {element} element
  * @param {object} options
  */
-var Movable = (function (MousePosition) {
-  function Movable (element, options) {
-    MousePosition.call(this, Object.assign({
+class Movable extends MousePosition {
+  constructor (element, options) {
+    super(element, Object.assign({
       containment: element.parentElement,
       handle: element,
       draggingClass: 'dragging',
     }, options || {}));
   }
-
-  if ( MousePosition ) Movable.__proto__ = MousePosition;
-  Movable.prototype = Object.create( MousePosition && MousePosition.prototype );
-  Movable.prototype.constructor = Movable;
   // マウスが押された際の関数
-  Movable.prototype.mdown = function mdown (e) {
-    MousePosition.prototype.mdown.call(this, e);
+  mdown (e) {
+    super.mdown(e);
     // クラス名に .drag を追加
     this.options.handle.classList.add(this.options.draggingClass);
-  };
+  }
   // マウスカーソルが動いたときに発火
-  Movable.prototype.mmove = function mmove (e) {
-    MousePosition.prototype.mmove.call(this, e);
+  mmove (e) {
+    super.mmove(e);
     // マウスが動いた場所に要素を動かす
     this.position.setPosition(e);
-  };
+  }
   // マウスボタンが上がったら発火
-  Movable.prototype.mup = function mup (e) {
-    MousePosition.prototype.mup.call(this, e);
+  mup (e) {
+    super.mup(e);
     // クラス名 .drag も消す
     this.options.handle.classList.remove(this.options.draggingClass);
-  };
-
-  return Movable;
-}(MousePosition));
+  }
+}
 
 
 function hitChecker (rect1, rect2, tolerance) {
@@ -2202,11 +2899,7 @@ function hitChecker (rect1, rect2, tolerance) {
 }
 
 function fitHit (rect1, rect2) {
-  var ref = ['left', 'top', 'width', 'height'];
-  var x = ref[0];
-  var y = ref[1];
-  var w = ref[2];
-  var h = ref[3];
+  const [x, y, w, h] = ['left', 'top', 'width', 'height'];
   // rect1 x1-----------------------------------------------x1+w1
   // rect2          x2---------------x2+w2
   if (
@@ -2218,11 +2911,7 @@ function fitHit (rect1, rect2) {
   return false
 }
 function touchHit (rect1, rect2) {
-  var ref = ['left', 'top', 'width', 'height'];
-  var x = ref[0];
-  var y = ref[1];
-  var w = ref[2];
-  var h = ref[3];
+  const [x, y, w, h] = ['left', 'top', 'width', 'height'];
   // rect1                x1---------------------------x1+w1
   // rect2 x2---------------------------------x2+w2
   if (
@@ -2243,9 +2932,9 @@ function touchHit (rect1, rect2) {
 }
 
 
-var Selectable = (function (MousePosition) {
-  function Selectable (element, options) {
-    MousePosition.call(this, Object.assign({
+class Selectable extends MousePosition {
+  constructor (element, options) {
+    super(element, Object.assign({
       containment: element,
       filter: '*',
       cancel: 'input,textarea,button,select,option',
@@ -2257,9 +2946,9 @@ var Selectable = (function (MousePosition) {
       // selected: noop,
     }, options || {}));
 
-    var opts = this.options;
+    const opts = this.options;
 
-    var helper = this.helper = document.createElement('div');
+    const helper = this.helper = document.createElement('div');
 
     helper.style.position = 'absolute';
 
@@ -2272,55 +2961,45 @@ var Selectable = (function (MousePosition) {
 
     this.selectorString = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)');
     this.children = Array.from(this.options.containment.querySelectorAll(this.selectorString));
-    this.childrenRects = this.children.map(function (el) { return el.getBoundingClientRect(); });
-    this.selectIndexs = new Set();
+    this.childrenRects = this.children.map((el) => el.getBoundingClientRect());
+    this.selectIndexs = [];
     this.selectElements = [];
   }
 
-  if ( MousePosition ) Selectable.__proto__ = MousePosition;
-  Selectable.prototype = Object.create( MousePosition && MousePosition.prototype );
-  Selectable.prototype.constructor = Selectable;
 
-
-  Selectable.prototype.select = function select (i) {
-    var opts = this.options,
+  select (i) {
+    const opts = this.options,
           selectEl = this.children[i];
     selectEl.classList.add(opts.selectedClass);
-    this.selectIndexs.add(i);
     // Callback
     if (opts.selecting) {
       this.position.options.handle = selectEl;
       opts.selecting(this.position, i);
     }
-  };
-  Selectable.prototype.selectAll = function selectAll () {
-    var this$1 = this;
-
-    this.children.forEach(function (selectEl, i) {
-      this$1.select(i);
+  }
+  selectAll () {
+    this.children.forEach((selectEl, i) => {
+      this.select(i);
     });
-  };
-  Selectable.prototype.unselect = function unselect (i) {
-    var opts = this.options,
+  }
+  unselect (i) {
+    const opts = this.options,
           selectEl = this.children[i];
     selectEl.classList.remove(opts.selectedClass);
-    this.selectIndexs.delete(i);
     // Callback
     if (opts.unselecting) {
       this.position.options.handle = selectEl;
       opts.unselecting(this.position, i);
     }
-  };
-  Selectable.prototype.unselectAll = function unselectAll () {
-    var this$1 = this;
-
-    this.children.forEach(function (selectEl, i) {
-      this$1.unselect(i);
+  }
+  unselectAll () {
+    this.children.forEach((selectEl, i) => {
+      this.unselect(i);
     });
-  };
+  }
 
-  Selectable.prototype.helperRect = function helperRect (position) {
-    var left, top, width, height;
+  helperRect (position) {
+    let left, top, width, height;
     if (position.vectorX < 0) {
       left  = position.startX + position.vectorX;
     }
@@ -2336,19 +3015,17 @@ var Selectable = (function (MousePosition) {
     width  = Math.abs(position.vectorX);
     height = Math.abs(position.vectorY);
     // 選択範囲のRectデータ
-    return {left: left, top: top, width: width, height: height}
-  };
+    return {left, top, width, height}
+  }
 
-  Selectable.prototype.mdown = function mdown (e, handle) {
-    MousePosition.prototype.mdown.call(this, e, handle);
-    var el = this.options.containment;
-    var ref = this;
-    var position = ref.position;
-    var helper = ref.helper;
+  mdown (e, handle) {
+    super.mdown(e, handle);
+    const el = this.options.containment;
+    const {position, helper} = this;
     // array init
     this.children = Array.from(el.querySelectorAll(this.selectorString));
-    this.childrenRects = this.children.map(function (el) { return el.getBoundingClientRect(); });
-    this.selectIndexs.clear();
+    this.childrenRects = this.children.map((el) => el.getBoundingClientRect());
+    this.selectIndexs.length = 0;
     this.selectElements.length = 0;
     // helper追加
     el.appendChild(helper);
@@ -2358,26 +3035,22 @@ var Selectable = (function (MousePosition) {
     helper.style.height = '0px';
     // 選択解除
     this.unselectAll();
-  };
+  }
 
   // マウスカーソルが動いたときに発火
-  Selectable.prototype.mmove = function mmove (e) {
-    var this$1 = this;
-
-    MousePosition.prototype.mmove.call(this, e);
-    var opts = this.options;
-    var ref = this;
-    var position = ref.position;
-    var helper = ref.helper;
+  mmove (e) {
+    super.mmove(e);
+    const opts = this.options;
+    const {position, helper} = this;
     // 選択範囲のRectデータ
-    var helperRect = this.helperRect(position);
+    const helperRect = this.helperRect(position);
 
     // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
-    this.childrenRects.forEach(function (rect2, i) {
+    this.childrenRects.forEach((rect2, i) => {
       if (hitChecker(helperRect, rect2, opts.tolerance)) {
-        this$1.select(i);
+        this.select(i);
       } else {
-        this$1.unselect(i);
+        this.unselect(i);
       }
     });
     // マウスが動いた場所にhelper要素を動かす
@@ -2385,201 +3058,1774 @@ var Selectable = (function (MousePosition) {
     helper.style.top  = helperRect.top + 'px';
     helper.style.width  = helperRect.width + 'px';
     helper.style.height = helperRect.height + 'px';
-  };
+  }
   // マウスボタンが上がったら発火
-  Selectable.prototype.mup = function mup (e) {
-    var this$1 = this;
-
-    MousePosition.prototype.mup.call(this, e);
-    var opts = this.options;
+  mup (e) {
+    super.mup(e);
+    const opts = this.options;
       // helper要素を消す
     opts.containment.removeChild(this.helper);
     // Callback
     if (opts.selected) {
-      this.selectIndexs.forEach(function (i) { return this$1.selectElements.push(this$1.children[i]); });
+      this.children.forEach((el, i) => {
+        if (el.classList.contains(opts.selectedClass)) {
+          this.selectIndexs.push(i);
+          this.selectElements.push(el);
+        }
+      });
       opts.selected(this.position, this.selectIndexs, this.selectElements);
     }
-  };
-
-  return Selectable;
-}(MousePosition));
-
-function appendNode ( node, target ) {
-	target.appendChild( node );
+  }
 }
 
-function insertNode ( node, target, anchor ) {
-	target.insertBefore( node, anchor );
-}
-
-function detachNode ( node ) {
-	node.parentNode.removeChild( node );
-}
-
-function teardownEach ( iterations, detach, start ) {
-	for ( var i = ( start || 0 ); i < iterations.length; i += 1 ) {
-		iterations[i].teardown( detach );
+function recompute$4 ( state, newState, oldState, isInitial ) {
+	if ( isInitial || ( 'size' in newState && differs( state.size, oldState.size ) ) ) {
+		state.center = newState.center = template$4.computed.center( state.size );
+	}
+	
+	if ( isInitial || ( 'center' in newState && differs( state.center, oldState.center ) ) || ( 'strokeWidth' in newState && differs( state.strokeWidth, oldState.strokeWidth ) ) ) {
+		state.inRadius = newState.inRadius = template$4.computed.inRadius( state.center, state.strokeWidth );
 	}
 }
 
-function createElement ( name ) {
-	return document.createElement( name );
+var template$4 = (function () {
+  return {
+    data () {
+      return {
+        size: 150,
+        strokeWidth: 10,
+        hue: 0
+      }
+    },
+    computed: {
+      center: (size) => size / 2,
+      inRadius: (center, strokeWidth) => center - strokeWidth,
+    },
+    oncreate () {
+      // canvas init
+      this.draw();
+
+      // update oncolorchange
+      this.observe('hue', (hue) => {
+        this.setPosition(hue);
+      });
+      // picker
+      return new MousePosition(this.refs.canvas, {
+        start: (e, position) => {
+          if (this.positionTest(position)) {
+            this.setColor(position);
+          }
+        },
+        drag: (e, position) => {
+          this.setColor(position);
+        },
+      })
+    },
+    methods: {
+      positionRd (r, deg) {
+        const d = (deg - 90) / 180 * Math.PI;
+        const center = this.get('center');
+        return [
+          Math.floor((center + r * Math.cos(d)) * 100) / 100,
+          Math.floor((center + r * Math.sin(d)) * 100) / 100,
+        ]
+      },
+      positionTest (position) {
+        const center = this.get('center');
+        const radius = this.get('inRadius');
+        const x = center - position.x,
+              y = center - position.y,
+              r = Math.hypot(x, y);
+        return radius <= r && r <= center
+      },
+      setColor (position) {
+        const center = this.get('center');
+        const x = center - position.x,
+              y = center - position.y;
+
+        const hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90;
+
+        this.set({
+          hue: hue < 0 ? 360 + hue : hue
+        });
+      },
+      setPosition (hue) {
+        const radius = this.get('inRadius');
+        const strokeWidth = this.get('strokeWidth');
+        const [mx, my] = this.positionRd(radius + strokeWidth / 2, hue);
+        this.refs.handle.style.left = mx + 'px';
+        this.refs.handle.style.top = my  + 'px';
+      },
+      draw () {
+        const center = this.get('center');
+        const radius = this.get('inRadius');
+
+        const canvas = this.refs.canvas;
+        const cxt = canvas.getContext('2d');
+        cxt.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = 0; i < 360; i++) {
+          cxt.beginPath();
+
+          cxt.fillStyle = `hsl(${i}, 100%, 50%)`;
+
+          cxt.moveTo(...this.positionRd(radius, i));
+          cxt.lineTo(...this.positionRd(center - 1, i));
+          cxt.lineTo(...this.positionRd(center - 1, i + 1.5));
+          cxt.lineTo(...this.positionRd(radius, i + 1.5));
+          cxt.closePath();
+          cxt.fill();
+        }
+      }
+    }
+  }
+}());
+
+var added_css$4 = false;
+function add_css$4 () {
+	var style = createElement( 'style' );
+	style.textContent = "\n  [svelte-1203191650].wheel, [svelte-1203191650] .wheel {\n    position: relative;\n  }\n";
+	appendNode( style, document.head );
+
+	added_css$4 = true;
 }
 
-function createText ( data ) {
-	return document.createTextNode( data );
-}
-
-function createComment () {
-	return document.createComment( '' );
-}
-
-function addEventListener ( node, event, handler ) {
-	node.addEventListener ( event, handler, false );
-}
-
-function removeEventListener ( node, event, handler ) {
-	node.removeEventListener ( event, handler, false );
-}
-
-function setAttribute ( node, attribute, value ) {
-	node.setAttribute ( attribute, value );
-}
-
-function get$1 ( key ) {
-	return key ? this._state[ key ] : this._state;
-}
-
-function fire$1 ( eventName, data ) {
-	var this$1 = this;
-
-	var handlers = eventName in this._handlers && this._handlers[ eventName ].slice();
-	if ( !handlers ) { return; }
-
-	for ( var i = 0; i < handlers.length; i += 1 ) {
-		handlers[i].call( this$1, data );
-	}
-}
-
-function observe ( key, callback, options ) {
-	var group = ( options && options.defer ) ? this._observers.pre : this._observers.post;
-
-	( group[ key ] || ( group[ key ] = [] ) ).push( callback );
-
-	if ( !options || options.init !== false ) {
-		callback.__calling = true;
-		callback.call( this, this._state[ key ] );
-		callback.__calling = false;
-	}
+function create_main_fragment$4 ( state, component ) {
+	var canvas_width_value, canvas_height_value;
+	
+	var div = createElement( 'div' );
+	setAttribute( div, 'svelte-1203191650', '' );
+	div.className = "wheel";
+	var canvas = createElement( 'canvas' );
+	appendNode( canvas, div );
+	canvas.className = "wheel-canvas";
+	canvas.width = canvas_width_value = state.size;
+	canvas.height = canvas_height_value = state.size;
+	component.refs.canvas = canvas;
+	appendNode( createText( "\n  " ), div );
+	var div_1 = createElement( 'div' );
+	appendNode( div_1, div );
+	div_1.className = "color-handle";
+	component.refs.handle = div_1;
 
 	return {
-		cancel: function () {
-			var index = group[ key ].indexOf( callback );
-			if ( ~index ) { group[ key ].splice( index, 1 ); }
+		mount: function ( target, anchor ) {
+			insertNode( div, target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( canvas_width_value !== ( canvas_width_value = state.size ) ) {
+				canvas.width = canvas_width_value;
+			}
+			
+			if ( canvas_height_value !== ( canvas_height_value = state.size ) ) {
+				canvas.height = canvas_height_value;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			if ( component.refs.canvas === canvas ) component.refs.canvas = null;
+			if ( component.refs.handle === div_1 ) component.refs.handle = null;
+			
+			if ( detach ) {
+				detachNode( div );
+			}
 		}
 	};
 }
 
-function on$2 ( eventName, handler ) {
-	var handlers = this._handlers[ eventName ] || ( this._handlers[ eventName ] = [] );
-	handlers.push( handler );
+function Wheel ( options ) {
+	options = options || {};
+	this.refs = {};
+	this._state = assign( template$4.data(), options.data );
+	recompute$4( this._state, this._state, {}, true );
+	
+	this._observers = {
+		pre: Object.create( null ),
+		post: Object.create( null )
+	};
+	
+	this._handlers = Object.create( null );
+	
+	this._root = options._root;
+	this._yield = options._yield;
+	
+	this._torndown = false;
+	if ( !added_css$4 ) add_css$4();
+	
+	this._fragment = create_main_fragment$4( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
+	
+	if ( options._root ) {
+		options._root._renderHooks.push({ fn: template$4.oncreate, context: this });
+	} else {
+		template$4.oncreate.call( this );
+	}
+}
+
+assign( Wheel.prototype, template$4.methods, proto );
+
+Wheel.prototype._set = function _set ( newState ) {
+	var oldState = this._state;
+	this._state = assign( {}, oldState, newState );
+	recompute$4( this._state, newState, oldState, false );
+	dispatchObservers( this, this._observers.pre, newState, oldState );
+	if ( this._fragment ) this._fragment.update( newState, this._state );
+	dispatchObservers( this, this._observers.post, newState, oldState );
+};
+
+Wheel.prototype.teardown = Wheel.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
+
+	this._fragment.destroy( detach !== false );
+	this._fragment = null;
+
+	this._state = {};
+	this._torndown = true;
+};
+
+var template$5 = (function () {
+  return {
+    data () {
+      return {
+        size: 150,
+        hsv: {h: 0, s: 1, v: 1}
+      }
+    },
+    oncreate () {
+      // update oncolorchange
+      this.observe('hsv', (hsv) => {
+        this.draw(hsv.h);
+        this.setPosition();
+      });
+
+      // picker
+      return new MousePosition(this.refs.canvas, {
+        start: (e, position) => {
+          this.setColor(position);
+        },
+        drag: (e, position) => {
+          this.setColor(position);
+        },
+      })
+    },
+    methods: {
+      setColor (position) {
+        const hsv = this.get('hsv');
+        hsv.s = position.percentLeft / 100;
+        hsv.v = (100 - position.percentTop) / 100;
+        this.set({ hsv });
+      },
+      setPosition () {
+        const size = this.get('size');
+        const hsv = this.get('hsv');
+        this.refs.handle.style.left = size * hsv.s + 'px';
+        this.refs.handle.style.top = size - (size * hsv.v) + 'px';
+      },
+      draw (hue = this.get('hsv').h) {
+        const canvas = this.refs.canvas;
+        const cxt = canvas.getContext('2d');
+        const [w, h] = [canvas.width, canvas.height];
+
+        cxt.clearRect(0, 0, w, h);
+
+        cxt.fillStyle = `hsl(${hue}, 100%, 50%)`;
+        cxt.fillRect(0, 0, w, h);
+
+        const whiteGrd = cxt.createLinearGradient(0, 0, w, 0);
+        whiteGrd.addColorStop(0.01, 'rgba(255, 255, 255, 1.000)');
+        whiteGrd.addColorStop(0.99, 'rgba(255, 255, 255, 0.000)');
+
+        cxt.fillStyle = whiteGrd;
+        cxt.fillRect(0, 0, w, h);
+
+        const blackGrd = cxt.createLinearGradient(0, 0, 0, h);
+        blackGrd.addColorStop(0.01, 'rgba(0, 0, 0, 0.000)');
+        blackGrd.addColorStop(0.99, 'rgba(0, 0, 0, 1.000)');
+
+        cxt.fillStyle = blackGrd;
+        cxt.fillRect(0, 0, w, h);
+      }
+    }
+  }
+}());
+
+var added_css$5 = false;
+function add_css$5 () {
+	var style = createElement( 'style' );
+	style.textContent = "\n  [svelte-692274410].spectrum, [svelte-692274410] .spectrum {\n    position: relative;\n    cursor: crosshair;\n    pointer-events: auto;\n  }\n";
+	appendNode( style, document.head );
+
+	added_css$5 = true;
+}
+
+function create_main_fragment$5 ( state, component ) {
+	var canvas_width_value, canvas_height_value;
+	
+	var div = createElement( 'div' );
+	setAttribute( div, 'svelte-692274410', '' );
+	div.className = "spectrum";
+	var canvas = createElement( 'canvas' );
+	appendNode( canvas, div );
+	canvas.className = "spectrum-canvas";
+	canvas.width = canvas_width_value = state.size;
+	canvas.height = canvas_height_value = state.size;
+	component.refs.canvas = canvas;
+	appendNode( createText( "\n  " ), div );
+	var div_1 = createElement( 'div' );
+	appendNode( div_1, div );
+	div_1.className = "color-handle";
+	component.refs.handle = div_1;
 
 	return {
-		cancel: function () {
-			var index = handlers.indexOf( handler );
-			if ( ~index ) { handlers.splice( index, 1 ); }
+		mount: function ( target, anchor ) {
+			insertNode( div, target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( canvas_width_value !== ( canvas_width_value = state.size ) ) {
+				canvas.width = canvas_width_value;
+			}
+			
+			if ( canvas_height_value !== ( canvas_height_value = state.size ) ) {
+				canvas.height = canvas_height_value;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			if ( component.refs.canvas === canvas ) component.refs.canvas = null;
+			if ( component.refs.handle === div_1 ) component.refs.handle = null;
+			
+			if ( detach ) {
+				detachNode( div );
+			}
 		}
 	};
 }
 
-function set$1 ( newState ) {
-	this._set( newState );
-	( this._root || this )._flush();
-}
-
-function _flush () {
-	var this$1 = this;
-
-	if ( !this._renderHooks ) { return; }
-
-	while ( this._renderHooks.length ) {
-		var hook = this$1._renderHooks.pop();
-		hook.fn.call( hook.context );
+function Spectrum ( options ) {
+	options = options || {};
+	this.refs = {};
+	this._state = assign( template$5.data(), options.data );
+	
+	this._observers = {
+		pre: Object.create( null ),
+		post: Object.create( null )
+	};
+	
+	this._handlers = Object.create( null );
+	
+	this._root = options._root;
+	this._yield = options._yield;
+	
+	this._torndown = false;
+	if ( !added_css$5 ) add_css$5();
+	
+	this._fragment = create_main_fragment$5( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
+	
+	if ( options._root ) {
+		options._root._renderHooks.push({ fn: template$5.oncreate, context: this });
+	} else {
+		template$5.oncreate.call( this );
 	}
 }
 
-function noop () {}
+assign( Spectrum.prototype, template$5.methods, proto );
 
-function dispatchObservers ( component, group, newState, oldState ) {
-	for ( var key in group ) {
-		if ( !( key in newState ) ) { continue; }
+Spectrum.prototype._set = function _set ( newState ) {
+	var oldState = this._state;
+	this._state = assign( {}, oldState, newState );
+	dispatchObservers( this, this._observers.pre, newState, oldState );
+	if ( this._fragment ) this._fragment.update( newState, this._state );
+	dispatchObservers( this, this._observers.post, newState, oldState );
+};
 
-		var newValue = newState[ key ];
-		var oldValue = oldState[ key ];
+Spectrum.prototype.teardown = Spectrum.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
 
-		if ( newValue === oldValue && typeof newValue !== 'object' ) { continue; }
+	this._fragment.destroy( detach !== false );
+	this._fragment = null;
 
-		var callbacks = group[ key ];
-		if ( !callbacks ) { continue; }
+	this._state = {};
+	this._torndown = true;
+};
 
-		for ( var i = 0; i < callbacks.length; i += 1 ) {
-			var callback = callbacks[i];
-			if ( callback.__calling ) { continue; }
+function recompute$3 ( state, newState, oldState, isInitial ) {
+	if ( isInitial || ( 'size' in newState && differs( state.size, oldState.size ) ) || ( 'strokeWidth' in newState && differs( state.strokeWidth, oldState.strokeWidth ) ) ) {
+		state.spectrumSize = newState.spectrumSize = template$3.computed.spectrumSize( state.size, state.strokeWidth );
+	}
+	
+	if ( isInitial || ( 'color' in newState && differs( state.color, oldState.color ) ) ) {
+		state._color = newState._color = template$3.computed._color( state.color );
+	}
+	
+	if ( isInitial || ( '_color' in newState && differs( state._color, oldState._color ) ) ) {
+		state.hsv = newState.hsv = template$3.computed.hsv( state._color );
+		state.textColor = newState.textColor = template$3.computed.textColor( state._color );
+	}
+}
 
-			callback.__calling = true;
-			callback.call( component, newValue, oldValue );
-			callback.__calling = false;
+var template$3 = (function () {
+  return {
+    data () {
+      return {
+        size: 150,
+        strokeWidth: 10,
+        color: tinycolor.random(),
+      }
+    },
+    computed: {
+      spectrumSize: (size, strokeWidth) => ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2,
+      _color: (color) => tinycolor(color),
+      hsv: (_color) => _color.toHsv(),
+      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
+    },
+    oncreate () {
+      this.refs.wheel.observe('hue', (hue) => {
+        const hsv = this.get('hsv');
+        hsv.h = hue;
+        this.set({color: tinycolor(hsv)});
+      });
+      this.refs.spectrum.observe('hsv', (hsv) => {
+        this.set({color: tinycolor(hsv)});
+      });
+    },
+    methods: {
+      spectrumCrement (meth) {
+        const hsv = this.get('hsv');
+
+        hsv[meth[0]] += meth[1] ? 0.01 : -0.01;
+        if (hsv[meth[0]] === 1) {
+          hsv[meth[0]] = '1.0';
+        }
+
+        this.set({ color: tinycolor(hsv) });
+      },
+    },
+    helpers: {
+      btnPosition (size, i) {
+        const center = size / 2;
+        const radius = (center - 20);
+        const btnsize = 20;
+        const left = center + radius * Math.cos(i * 90 / 180 * Math.PI) - btnsize / 2;
+        const top = center + radius * Math.sin(i * 90 / 180 * Math.PI) - btnsize / 2;
+
+        return `left: ${left}px; top: ${top}px;`
+      },
+    },
+    events: {
+      press (node, callback) {
+        function onmousedown (event) {
+          callback(event);
+
+          let time = setTimeout(() => {
+            clearTimeout(time);
+            time = setInterval(() => callback(event), 150);
+          }, 300);
+
+          function onmouseup (e) {
+            clearInterval(time);
+            off(window, 'mouseup touchcancel touchend', onmousedown);
+          }
+
+          on$1(window, 'mouseup touchcancel touchend', onmouseup);
+        }
+
+        on$1(node, 'mousedown touchstart', onmousedown);
+
+        return {
+          teardown () {
+            off(node, 'mousedown touchstart', onmousedown);
+          }
+        }
+      }
+    }
+  }
+}());
+
+var added_css$3 = false;
+function add_css$3 () {
+	var style = createElement( 'style' );
+	style.textContent = "\n  [svelte-4174928822].hsv-picker, [svelte-4174928822] .hsv-picker {\n    position: relative;\n  }\n  [svelte-4174928822].spectrum-wrapper, [svelte-4174928822] .spectrum-wrapper {\n    position: absolute;\n    width: 100%;\n    height: 100%;\n    top: 0;\n    left: 0;\n    display: flex;\n    align-items: center;\n    justify-content: space-around;\n    pointer-events: none;\n  }\n  [svelte-4174928822].spectrum-btn, [svelte-4174928822] .spectrum-btn {\n    position: absolute;\n    top: 0;\n    left: 0;\n    opacity: 0.6;\n  }\n  [svelte-4174928822].spectrum-btn:active, [svelte-4174928822] .spectrum-btn:active {\n    opacity: 1;\n  }\n\n  [svelte-4174928822].color-handle, [svelte-4174928822] .color-handle {\n    position: absolute;\n    width: 10px;\n    height: 10px;\n    margin: -5px;\n    top: 0;\n    left: 0;\n    border: 1px solid black;\n    border-radius: 5px;\n    text-align: left;\n    pointer-events: none;\n  }\n  [svelte-4174928822].color-handle::before, [svelte-4174928822] .color-handle::before {\n    content: '';\n    position: absolute;\n    width: 8px;\n    height: 8px;\n    top: 0;\n    left: 0;\n    border: 1px solid white;\n    border-radius: 4px;\n  }\n";
+	appendNode( style, document.head );
+
+	added_css$3 = true;
+}
+
+function create_main_fragment$3 ( state, component ) {
+	var div_style_value;
+	
+	var div = createElement( 'div' );
+	setAttribute( div, 'svelte-4174928822', '' );
+	div.className = "hsv-picker";
+	div.style.cssText = div_style_value = "width:" + ( state.size ) + "px; height:" + ( state.size ) + "px;";
+	
+	var wheel = new Wheel({
+		target: div,
+		_root: component._root || component,
+		data: { hue: state.hsv.h, size: state.size }
+	});
+	
+	component.refs.wheel = wheel;
+	
+	appendNode( createText( "\n  " ), div );
+	var div_1 = createElement( 'div' );
+	appendNode( div_1, div );
+	div_1.className = "spectrum-wrapper";
+	
+	var spectrum = new Spectrum({
+		target: div_1,
+		_root: component._root || component,
+		data: { hsv: state.hsv, size: state.spectrumSize }
+	});
+	
+	component.refs.spectrum = spectrum;
+	
+	appendNode( createText( "\n  " ), div );
+	var each_block_anchor = createComment();
+	appendNode( each_block_anchor, div );
+	var each_block_value = ['sp', 'v', 's', 'vp'];
+	var each_block_iterations = [];
+	
+	for ( var i = 0; i < each_block_value.length; i += 1 ) {
+		each_block_iterations[i] = create_each_block$2( state, each_block_value, each_block_value[i], i, component );
+		each_block_iterations[i].mount( div, each_block_anchor );
+	}
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( div, target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( div_style_value !== ( div_style_value = "width:" + ( state.size ) + "px; height:" + ( state.size ) + "px;" ) ) {
+				div.style.cssText = div_style_value;
+			}
+			
+			var wheel_changes = {};
+			
+			if ( 'hsv' in changed ) wheel_changes.hue = state.hsv.h;
+			if ( 'size' in changed ) wheel_changes.size = state.size;
+			
+			if ( Object.keys( wheel_changes ).length ) wheel.set( wheel_changes );
+			
+			var spectrum_changes = {};
+			
+			if ( 'hsv' in changed ) spectrum_changes.hsv = state.hsv;
+			if ( 'spectrumSize' in changed ) spectrum_changes.size = state.spectrumSize;
+			
+			if ( Object.keys( spectrum_changes ).length ) spectrum.set( spectrum_changes );
+			
+			var each_block_value = ['sp', 'v', 's', 'vp'];
+			
+			if ( 'size' in changed || 'textColor' in changed ) {
+				for ( var i = 0; i < each_block_value.length; i += 1 ) {
+					if ( each_block_iterations[i] ) {
+						each_block_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+					} else {
+						each_block_iterations[i] = create_each_block$2( state, each_block_value, each_block_value[i], i, component );
+						each_block_iterations[i].mount( each_block_anchor.parentNode, each_block_anchor );
+					}
+				}
+			
+				destroyEach( each_block_iterations, true, each_block_value.length );
+			
+				each_block_iterations.length = each_block_value.length;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			if ( component.refs.wheel === wheel ) component.refs.wheel = null;
+			wheel.destroy( false );
+			if ( component.refs.spectrum === spectrum ) component.refs.spectrum = null;
+			spectrum.destroy( false );
+			
+			destroyEach( each_block_iterations, false, 0 );
+			
+			if ( detach ) {
+				detachNode( div );
+			}
 		}
+	};
+}
+
+function create_each_block$2 ( state, each_block_value, meth, i, component ) {
+	var svg_style_value, path_fill_value, path_transform_value;
+	
+	var svg = createSvgElement( 'svg' );
+	setAttribute( svg, 'class', "spectrum-btn" );
+	setAttribute( svg, 'width', "20" );
+	setAttribute( svg, 'height', "20" );
+	setAttribute( svg, 'view', "0 0 20 20" );
+	setAttribute( svg, 'style', svg_style_value = template$3.helpers.btnPosition(state.size,i) );
+	
+	var press_handler = template$3.events.press.call( component, svg, function ( event ) {
+		var each_block_value = svg._svelte.each_block_value, i = svg._svelte.i, meth = each_block_value[i];
+		component.spectrumCrement(meth);
+	});
+	
+	svg._svelte = {
+		each_block_value: each_block_value,
+		i: i
+	};
+	
+	var path = createSvgElement( 'path' );
+	appendNode( path, svg );
+	setAttribute( path, 'd', "M2,15  L10,5  L18,15 Z" );
+	setAttribute( path, 'fill', path_fill_value = state.textColor );
+	setAttribute( path, 'transform', path_transform_value = "rotate(" + ( (i+1) * 90 ) + ", 10, 10)" );
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( svg, target, anchor );
+		},
+		
+		update: function ( changed, state, each_block_value, meth, i ) {
+			if ( svg_style_value !== ( svg_style_value = template$3.helpers.btnPosition(state.size,i) ) ) {
+				setAttribute( svg, 'style', svg_style_value );
+			}
+			
+			svg._svelte.each_block_value = each_block_value;
+			svg._svelte.i = i;
+			
+			if ( path_fill_value !== ( path_fill_value = state.textColor ) ) {
+				setAttribute( path, 'fill', path_fill_value );
+			}
+			
+			if ( path_transform_value !== ( path_transform_value = "rotate(" + ( (i+1) * 90 ) + ", 10, 10)" ) ) {
+				setAttribute( path, 'transform', path_transform_value );
+			}
+		},
+		
+		destroy: function ( detach ) {
+			press_handler.teardown();
+			
+			if ( detach ) {
+				detachNode( svg );
+			}
+		}
+	};
+}
+
+function Hsv_picker ( options ) {
+	options = options || {};
+	this.refs = {};
+	this._state = assign( template$3.data(), options.data );
+	recompute$3( this._state, this._state, {}, true );
+	
+	this._observers = {
+		pre: Object.create( null ),
+		post: Object.create( null )
+	};
+	
+	this._handlers = Object.create( null );
+	
+	this._root = options._root;
+	this._yield = options._yield;
+	
+	this._torndown = false;
+	if ( !added_css$3 ) add_css$3();
+	this._renderHooks = [];
+	
+	this._fragment = create_main_fragment$3( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
+	
+	this._flush();
+	
+	if ( options._root ) {
+		options._root._renderHooks.push({ fn: template$3.oncreate, context: this });
+	} else {
+		template$3.oncreate.call( this );
 	}
 }
 
-function applyComputations$1 ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'card' in newState && typeof state.card === 'object' || state.card !== oldState.card ) ) {
-		state.textColor = newState.textColor = template$1.computed.textColor( state.card );
+assign( Hsv_picker.prototype, template$3.methods, proto );
+
+Hsv_picker.prototype._set = function _set ( newState ) {
+	var oldState = this._state;
+	this._state = assign( {}, oldState, newState );
+	recompute$3( this._state, newState, oldState, false );
+	dispatchObservers( this, this._observers.pre, newState, oldState );
+	if ( this._fragment ) this._fragment.update( newState, this._state );
+	dispatchObservers( this, this._observers.post, newState, oldState );
+	
+	this._flush();
+};
+
+Hsv_picker.prototype.teardown = Hsv_picker.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
+
+	this._fragment.destroy( detach !== false );
+	this._fragment = null;
+
+	this._state = {};
+	this._torndown = true;
+};
+
+function recompute$6 ( state, newState, oldState, isInitial ) {
+	if ( isInitial || ( 'direction' in newState && differs( state.direction, oldState.direction ) ) || ( 'size' in newState && differs( state.size, oldState.size ) ) || ( 'strokeWidth' in newState && differs( state.strokeWidth, oldState.strokeWidth ) ) ) {
+		state.width = newState.width = template$7.computed.width( state.direction, state.size, state.strokeWidth );
+		state.height = newState.height = template$7.computed.height( state.direction, state.size, state.strokeWidth );
+	}
+}
+
+var template$7 = (function () {
+  return {
+    data () {
+      return {
+        size: 150,
+        strokeWidth: 20,
+        direction: 'vertical',
+        value: 50,
+        min: 0,
+        max: 100,
+        step: 1,
+        reverse: false
+      }
+    },
+    computed: {
+      width: (direction, size, strokeWidth) => direction === 'vertical' ? strokeWidth : size,
+      height: (direction, size, strokeWidth) => direction === 'vertical' ? size : strokeWidth,
+    },
+    oncreate () {
+      this.observe('value', (value) => {
+        this.setPosition(value);
+      });
+      // picker
+      new MousePosition(this.refs.slider, { // eslint-disable-line no-new
+        handle: this.refs.sliderHandle,
+        start: (e, position) => {
+          this.setValue(position);
+        },
+        drag: (e, position) => {
+          this.setValue(position);
+        },
+      });
+    },
+    methods: {
+      setValue (position) {
+        const max = this.get('max');
+        const min = this.get('min');
+        const side = this.get('direction') === 'vertical' ? 'percentTop' : 'percentLeft';
+        let per = position[side] / 100;
+        if (this.get('reverse')) {
+          per = 1 - per;
+        }
+        this.set({
+          value: (max - min) * per + min
+        });
+      },
+      setPosition (value) {
+        const size = this.get('size');
+        const max = this.get('max');
+        const min = this.get('min');
+        const side = this.get('direction') === 'vertical' ? 'top' : 'left';
+        let per = value / (max - min);
+        if (this.get('reverse')) {
+          per = 1 - per;
+        }
+        this.refs.sliderHandle.style[side] = per * (size - 6) + 3 + 'px';
+      },
+      draw (beginColor, endColor) {
+        const cxt = this.refs.slider.getContext('2d');
+        const size = this.get('size');
+        cxt.clearRect(0, 0, size, size);
+
+        const grd = this.get('direction') === 'vertical'
+          ? cxt.createLinearGradient(0, 0, 0, size)
+          : cxt.createLinearGradient(0, 0, size, 0);
+
+        const [begin, end] = this.get('reverse') ? [1, 0] : [0, 1];
+
+        grd.addColorStop(begin, beginColor + '');
+        grd.addColorStop(end, endColor + '');
+
+        cxt.fillStyle = grd;
+        cxt.fillRect(0, 0, size, size);
+      }
+    }
+  }
+}());
+
+var added_css$7 = false;
+function add_css$7 () {
+	var style = createElement( 'style' );
+	style.textContent = "\n  [svelte-2272254223].slider, [svelte-2272254223] .slider {\n    position: relative;\n    \n    background-color: #fff;\n    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);\n    background-size: 8px 8px;\n    background-position:0 0, 4px 4px;\n    background-repeat: repeat;\n  }\n  [svelte-2272254223].slider.vertical, [svelte-2272254223] .slider.vertical {\n    cursor: row-resize;\n  }\n  [svelte-2272254223].slider.horizontal, [svelte-2272254223] .slider.horizontal {\n    cursor: col-resize;\n  }\n\n  [svelte-2272254223].slider-canvas, [svelte-2272254223] .slider-canvas {\n    vertical-align: baseline;\n  }\n  [svelte-2272254223].slider-handle, [svelte-2272254223] .slider-handle {\n    position: absolute;\n    top: 0;\n    left: 0;\n    border: 1px solid black;\n    pointer-events: none;\n  }\n  [svelte-2272254223].slider-handle.vertical, [svelte-2272254223] .slider-handle.vertical {\n    margin-top: -3px;\n    width: 20px;\n    height: 6px;\n  }\n  [svelte-2272254223].slider-handle.horizontal, [svelte-2272254223] .slider-handle.horizontal {\n    margin-left: -3px;\n    width: 6px;\n    height: 20px;\n  }\n  [svelte-2272254223].slider-handle::before, [svelte-2272254223] .slider-handle::before {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: 0;\n    border: 1px solid white;\n  }\n  [svelte-2272254223].slider-handle.vertical::before, [svelte-2272254223] .slider-handle.vertical::before {\n    width: 18px;\n    height: 4px;\n  }\n  [svelte-2272254223].slider-handle.horizontal::before, [svelte-2272254223] .slider-handle.horizontal::before {\n    width: 4px;\n    height: 18px;\n  }\n";
+	appendNode( style, document.head );
+
+	added_css$7 = true;
+}
+
+function create_main_fragment$7 ( state, component ) {
+	var div_class_value, div_style_value, canvas_width_value, canvas_height_value, div_1_class_value;
+	
+	var div = createElement( 'div' );
+	setAttribute( div, 'svelte-2272254223', '' );
+	div.className = div_class_value = "slider " + ( state.direction );
+	div.style.cssText = div_style_value = "width:" + ( state.width ) + "px; height:" + ( state.height ) + "px;";
+	var canvas = createElement( 'canvas' );
+	appendNode( canvas, div );
+	canvas.className = "slider-canvas";
+	canvas.width = canvas_width_value = state.width;
+	canvas.height = canvas_height_value = state.height;
+	component.refs.slider = canvas;
+	appendNode( createText( "\n  " ), div );
+	var div_1 = createElement( 'div' );
+	appendNode( div_1, div );
+	div_1.className = div_1_class_value = "slider-handle " + ( state.direction );
+	component.refs.sliderHandle = div_1;
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( div, target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( div_class_value !== ( div_class_value = "slider " + ( state.direction ) ) ) {
+				div.className = div_class_value;
+			}
+			
+			if ( div_style_value !== ( div_style_value = "width:" + ( state.width ) + "px; height:" + ( state.height ) + "px;" ) ) {
+				div.style.cssText = div_style_value;
+			}
+			
+			if ( canvas_width_value !== ( canvas_width_value = state.width ) ) {
+				canvas.width = canvas_width_value;
+			}
+			
+			if ( canvas_height_value !== ( canvas_height_value = state.height ) ) {
+				canvas.height = canvas_height_value;
+			}
+			
+			if ( div_1_class_value !== ( div_1_class_value = "slider-handle " + ( state.direction ) ) ) {
+				div_1.className = div_1_class_value;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			if ( component.refs.slider === canvas ) component.refs.slider = null;
+			if ( component.refs.sliderHandle === div_1 ) component.refs.sliderHandle = null;
+			
+			if ( detach ) {
+				detachNode( div );
+			}
+		}
+	};
+}
+
+function Slider ( options ) {
+	options = options || {};
+	this.refs = {};
+	this._state = assign( template$7.data(), options.data );
+	recompute$6( this._state, this._state, {}, true );
+	
+	this._observers = {
+		pre: Object.create( null ),
+		post: Object.create( null )
+	};
+	
+	this._handlers = Object.create( null );
+	
+	this._root = options._root;
+	this._yield = options._yield;
+	
+	this._torndown = false;
+	if ( !added_css$7 ) add_css$7();
+	
+	this._fragment = create_main_fragment$7( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
+	
+	if ( options._root ) {
+		options._root._renderHooks.push({ fn: template$7.oncreate, context: this });
+	} else {
+		template$7.oncreate.call( this );
+	}
+}
+
+assign( Slider.prototype, template$7.methods, proto );
+
+Slider.prototype._set = function _set ( newState ) {
+	var oldState = this._state;
+	this._state = assign( {}, oldState, newState );
+	recompute$6( this._state, newState, oldState, false );
+	dispatchObservers( this, this._observers.pre, newState, oldState );
+	if ( this._fragment ) this._fragment.update( newState, this._state );
+	dispatchObservers( this, this._observers.post, newState, oldState );
+};
+
+Slider.prototype.teardown = Slider.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
+
+	this._fragment.destroy( detach !== false );
+	this._fragment = null;
+
+	this._state = {};
+	this._torndown = true;
+};
+
+function recompute$5 ( state, newState, oldState, isInitial ) {
+	if ( isInitial || ( 'color' in newState && differs( state.color, oldState.color ) ) ) {
+		state._color = newState._color = template$6.computed._color( state.color );
 	}
 	
-	if ( isInitial || ( 'card' in newState && typeof state.card === 'object' || state.card !== oldState.card ) ) {
-		state.width = newState.width = template$1.computed.width( state.card );
+	if ( isInitial || ( '_color' in newState && differs( state._color, oldState._color ) ) ) {
+		state.hsl = newState.hsl = template$6.computed.hsl( state._color );
+		state.textColor = newState.textColor = template$6.computed.textColor( state._color );
+	}
+}
+
+var template$6 = (function () {
+  return {
+    data () {
+      return {
+        size: 150,
+        color: tinycolor.random(),
+      }
+    },
+    computed: {
+      _color: (color) => tinycolor(color),
+      hsl: (_color) => _color.toHsl(),
+      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
+    },
+    oncreate () {
+      // canvas init
+      this.draw();
+      this.refs.lightness.draw(tinycolor('#fff'), tinycolor('#000'));
+
+      this.refs.lightness.observe('value', (value) => {
+        const hsl = this.get('hsl');
+        hsl.l = 1 - value / 100;
+        this.set({color: tinycolor(hsl)});
+      });
+
+      // // update oncolorchange
+      this.observe('_color', (_color) => {
+        this.setPosition(_color);
+      });
+      // picker
+      return new MousePosition(this.refs.canvas, {
+        start: (e, position) => {
+          this.setColor(position);
+        },
+        drag: (e, position) => {
+          this.setColor(position);
+        },
+      })
+    },
+    methods: {
+      setColor (position) {
+        const hsl = this.get('hsl');
+        hsl.h = position.percentLeft / 100;
+        hsl.s = (100 - position.percentTop) / 100;
+        this.set({ color: tinycolor.fromRatio(hsl) });
+      },
+      setPosition () {
+        const canvas = this.refs.canvas;
+        const [w, h] = [canvas.width, canvas.height];
+        const hsl = this.get('hsl');
+        this.refs.handle.style.left = w * hsl.h / 360 + 'px';
+        this.refs.handle.style.top = h - (h * hsl.s) + 'px';
+      },
+      draw (lightness = 0.5) {
+        const canvas = this.refs.canvas;
+        const cxt = canvas.getContext('2d');
+        const [w, h] = [canvas.width, canvas.height];
+
+        cxt.clearRect(0, 0, w, h);
+
+        const W = 3;
+
+        for (let i = 0; i < h; i++) {
+          const grd = cxt.createLinearGradient(0, 0, 0, h);
+          const hue = i / w * 360;
+          grd.addColorStop(0, `hsl(${hue}, 100%, 50%)`);
+          grd.addColorStop(1, `hsl(${hue}, 0%, 50%)`);
+
+          cxt.fillStyle = grd;
+          cxt.fillRect(i, 0, i + 1, h);
+        }
+      }
+    },
+  }
+}());
+
+var added_css$6 = false;
+function add_css$6 () {
+	var style = createElement( 'style' );
+	style.textContent = "\n  [svelte-1788418679].spectrum-wrapper, [svelte-1788418679] .spectrum-wrapper {\n    position: relative;\n  }\n\n  [svelte-1788418679].color-handle, [svelte-1788418679] .color-handle {\n    position: absolute;\n    width: 10px;\n    height: 10px;\n    margin: -5px;\n    top: 0;\n    left: 0;\n    border: 1px solid black;\n    border-radius: 5px;\n    text-align: left;\n    pointer-events: none;\n  }\n  [svelte-1788418679].color-handle::before, [svelte-1788418679] .color-handle::before {\n    content: '';\n    position: absolute;\n    width: 8px;\n    height: 8px;\n    top: 0;\n    left: 0;\n    border: 1px solid white;\n    border-radius: 4px;\n  }\n";
+	appendNode( style, document.head );
+
+	added_css$6 = true;
+}
+
+function create_main_fragment$6 ( state, component ) {
+	var div_style_value, canvas_width_value, canvas_height_value;
+	
+	var div = createElement( 'div' );
+	setAttribute( div, 'svelte-1788418679', '' );
+	div.className = "hsl-picker";
+	div.style.cssText = div_style_value = "width:" + ( state.size ) + "px; height:" + ( state.size ) + "px;";
+	var div_1 = createElement( 'div' );
+	appendNode( div_1, div );
+	div_1.className = "spectrum-wrapper";
+	var canvas = createElement( 'canvas' );
+	appendNode( canvas, div_1 );
+	canvas.className = "wheel-canvas";
+	canvas.width = canvas_width_value = state.size;
+	canvas.height = canvas_height_value = state.size - 20;
+	component.refs.canvas = canvas;
+	appendNode( createText( "\n    " ), div_1 );
+	var div_2 = createElement( 'div' );
+	appendNode( div_2, div_1 );
+	div_2.className = "color-handle";
+	component.refs.handle = div_2;
+	appendNode( createText( "\n  " ), div );
+	
+	var slider = new Slider({
+		target: div,
+		_root: component._root || component,
+		data: {
+			direction: "horizontal",
+			value: state.hsl.l * 100,
+			size: state.size
+		}
+	});
+	
+	component.refs.lightness = slider;
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( div, target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( div_style_value !== ( div_style_value = "width:" + ( state.size ) + "px; height:" + ( state.size ) + "px;" ) ) {
+				div.style.cssText = div_style_value;
+			}
+			
+			if ( canvas_width_value !== ( canvas_width_value = state.size ) ) {
+				canvas.width = canvas_width_value;
+			}
+			
+			if ( canvas_height_value !== ( canvas_height_value = state.size - 20 ) ) {
+				canvas.height = canvas_height_value;
+			}
+			
+			var slider_changes = {};
+			
+			if ( 'hsl' in changed ) slider_changes.value = state.hsl.l * 100;
+			if ( 'size' in changed ) slider_changes.size = state.size;
+			
+			if ( Object.keys( slider_changes ).length ) slider.set( slider_changes );
+		},
+		
+		destroy: function ( detach ) {
+			if ( component.refs.canvas === canvas ) component.refs.canvas = null;
+			if ( component.refs.handle === div_2 ) component.refs.handle = null;
+			if ( component.refs.lightness === slider ) component.refs.lightness = null;
+			slider.destroy( false );
+			
+			if ( detach ) {
+				detachNode( div );
+			}
+		}
+	};
+}
+
+function Hsl_picker ( options ) {
+	options = options || {};
+	this.refs = {};
+	this._state = assign( template$6.data(), options.data );
+	recompute$5( this._state, this._state, {}, true );
+	
+	this._observers = {
+		pre: Object.create( null ),
+		post: Object.create( null )
+	};
+	
+	this._handlers = Object.create( null );
+	
+	this._root = options._root;
+	this._yield = options._yield;
+	
+	this._torndown = false;
+	if ( !added_css$6 ) add_css$6();
+	this._renderHooks = [];
+	
+	this._fragment = create_main_fragment$6( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
+	
+	this._flush();
+	
+	if ( options._root ) {
+		options._root._renderHooks.push({ fn: template$6.oncreate, context: this });
+	} else {
+		template$6.oncreate.call( this );
+	}
+}
+
+assign( Hsl_picker.prototype, template$6.methods, proto );
+
+Hsl_picker.prototype._set = function _set ( newState ) {
+	var oldState = this._state;
+	this._state = assign( {}, oldState, newState );
+	recompute$5( this._state, newState, oldState, false );
+	dispatchObservers( this, this._observers.pre, newState, oldState );
+	if ( this._fragment ) this._fragment.update( newState, this._state );
+	dispatchObservers( this, this._observers.post, newState, oldState );
+	
+	this._flush();
+};
+
+Hsl_picker.prototype.teardown = Hsl_picker.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
+
+	this._fragment.destroy( detach !== false );
+	this._fragment = null;
+
+	this._state = {};
+	this._torndown = true;
+};
+
+var template$8 = (function () {
+  return {
+    data () {
+      return {
+        width: 150,
+        height: 20,
+        color1: '#000',
+        color2: '#fff',
+      }
+    },
+    oncreate () {
+      // picker
+      new MousePosition(this.refs.blender, { // eslint-disable-line no-new
+        handle: this.refs.handle,
+        start: (e, position) => {
+          this.setValue(position);
+        },
+        drag: (e, position) => {
+          this.setValue(position);
+        },
+      });
+
+      this.observe('color1', (color1) => {
+        console.log('color1', color1);
+        this.refs.color1.style.backgroundColor = color1.toString('hex');
+        this.draw();
+      });
+      this.observe('color2', (color2) => {
+        this.refs.color2.style.backgroundColor = color2.toString('hex');
+        this.draw();
+      });
+    },
+    methods: {
+      setColor1 (color1) {
+        this.set({color1});
+      },
+      setColor2 (color2) {
+        this.set({color2});
+      },
+      setValue (position) {
+        const size = this.get('width') - 41;
+        const x = Math.max(0, Math.min(position.x, size));
+        const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data;
+        const color = tinycolor({r, g, b});
+        this.set({ color });
+
+        this.refs.handle.style.left = x + 'px';
+        this.refs.handle.style.backgroundColor = tinycolor.mostReadable(color, ['#eee', '#111']);
+      },
+      draw () {
+        const canvas = this.refs.canvas;
+        const cxt = canvas.getContext('2d');
+        const [w, h] = [canvas.width, canvas.height];
+        cxt.clearRect(0, 0, w, h);
+
+        const grd = this.get('direction') === 'vertical'
+          ? cxt.createLinearGradient(0, 0, 0, h)
+          : cxt.createLinearGradient(0, 0, w, 0);
+
+        grd.addColorStop(0.02, tinycolor(this.get('color1')).toRgbString());
+        grd.addColorStop(0.98, tinycolor(this.get('color2')).toRgbString());
+
+        cxt.fillStyle = grd;
+        cxt.fillRect(0, 0, w, h);
+
+        this.setValue({
+          x: w / 2
+        });
+      }
+    }
+  }
+}());
+
+var added_css$8 = false;
+function add_css$8 () {
+	var style = createElement( 'style' );
+	style.textContent = "\n  [svelte-2540804967].blender, [svelte-2540804967] .blender {\n    display: flex;\n    flex-direction: row;\n  }\n  [svelte-2540804967].blender-slider, [svelte-2540804967] .blender-slider {\n    position: relative;\n    height: inherit;\n    margin: 0 2px;\n    background-color: #fff;\n    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);\n    background-size: 8px 8px;\n    background-position:0 0, 4px 4px;\n    background-repeat: repeat;\n  }\n  [svelte-2540804967].blender-canvas, [svelte-2540804967] .blender-canvas {\n    vertical-align: baseline;\n  }\n  [svelte-2540804967].blender-btn, [svelte-2540804967] .blender-btn {\n    display: block;\n    width: inherit;\n    height: inherit;\n    border: 1px solid #888888;\n  }\n  [svelte-2540804967].blender-handle, [svelte-2540804967] .blender-handle {\n    position: absolute;\n    margin-left: -.5px;\n    width: 1px;\n    height: inherit;\n    top: 0;\n    left: 0;\n    pointer-events: none;\n  }\n  [svelte-2540804967].blender-handle.vertical, [svelte-2540804967] .blender-handle.vertical {\n    margin-top: -.5px;\n    width: inherit;\n    height: 1px;\n  }\n  [svelte-2540804967].blender-handle.horizontal, [svelte-2540804967] .blender-handle.horizontal {\n    margin-left: -.5px;\n    width: 1px;\n    height: inherit;\n  }\n";
+	appendNode( style, document.head );
+
+	added_css$8 = true;
+}
+
+function create_main_fragment$8 ( state, component ) {
+	var div_style_value, canvas_width_value, canvas_height_value, div_2_class_value;
+	
+	var div = createElement( 'div' );
+	setAttribute( div, 'svelte-2540804967', '' );
+	div.className = "blender";
+	div.style.cssText = div_style_value = "width:" + ( state.width ) + "px; height:" + ( state.height ) + "px;";
+	var dv = createElement( 'dv' );
+	appendNode( dv, div );
+	dv.className = "blender-btn color1 active";
+	
+	function click_handler ( event ) {
+		component.fire('color1');
 	}
 	
-	if ( isInitial || ( 'card' in newState && typeof state.card === 'object' || state.card !== oldState.card ) ) {
-		state.height = newState.height = template$1.computed.height( state.card );
+	addEventListener( dv, 'click', click_handler );
+	component.refs.color1 = dv;
+	appendNode( createText( "\n  " ), div );
+	var div_1 = createElement( 'div' );
+	appendNode( div_1, div );
+	div_1.className = "blender-slider";
+	component.refs.blender = div_1;
+	var canvas = createElement( 'canvas' );
+	appendNode( canvas, div_1 );
+	canvas.className = "blender-canvas";
+	canvas.width = canvas_width_value = state.width-40;
+	canvas.height = canvas_height_value = state.height;
+	component.refs.canvas = canvas;
+	appendNode( createText( "\n    " ), div_1 );
+	var div_2 = createElement( 'div' );
+	appendNode( div_2, div_1 );
+	div_2.className = div_2_class_value = "blender-handle " + ( state.direction );
+	component.refs.handle = div_2;
+	appendNode( createText( "\n  " ), div );
+	var dv_1 = createElement( 'dv' );
+	appendNode( dv_1, div );
+	dv_1.className = "blender-btn color2";
+	
+	function click_handler_1 ( event ) {
+		component.fire('color2');
+	}
+	
+	addEventListener( dv_1, 'click', click_handler_1 );
+	component.refs.color2 = dv_1;
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( div, target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( div_style_value !== ( div_style_value = "width:" + ( state.width ) + "px; height:" + ( state.height ) + "px;" ) ) {
+				div.style.cssText = div_style_value;
+			}
+			
+			if ( canvas_width_value !== ( canvas_width_value = state.width-40 ) ) {
+				canvas.width = canvas_width_value;
+			}
+			
+			if ( canvas_height_value !== ( canvas_height_value = state.height ) ) {
+				canvas.height = canvas_height_value;
+			}
+			
+			if ( div_2_class_value !== ( div_2_class_value = "blender-handle " + ( state.direction ) ) ) {
+				div_2.className = div_2_class_value;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			removeEventListener( dv, 'click', click_handler );
+			if ( component.refs.color1 === dv ) component.refs.color1 = null;
+			if ( component.refs.blender === div_1 ) component.refs.blender = null;
+			if ( component.refs.canvas === canvas ) component.refs.canvas = null;
+			if ( component.refs.handle === div_2 ) component.refs.handle = null;
+			removeEventListener( dv_1, 'click', click_handler_1 );
+			if ( component.refs.color2 === dv_1 ) component.refs.color2 = null;
+			
+			if ( detach ) {
+				detachNode( div );
+			}
+		}
+	};
+}
+
+function Blender ( options ) {
+	options = options || {};
+	this.refs = {};
+	this._state = assign( template$8.data(), options.data );
+	
+	this._observers = {
+		pre: Object.create( null ),
+		post: Object.create( null )
+	};
+	
+	this._handlers = Object.create( null );
+	
+	this._root = options._root;
+	this._yield = options._yield;
+	
+	this._torndown = false;
+	if ( !added_css$8 ) add_css$8();
+	
+	this._fragment = create_main_fragment$8( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
+	
+	if ( options._root ) {
+		options._root._renderHooks.push({ fn: template$8.oncreate, context: this });
+	} else {
+		template$8.oncreate.call( this );
+	}
+}
+
+assign( Blender.prototype, template$8.methods, proto );
+
+Blender.prototype._set = function _set ( newState ) {
+	var oldState = this._state;
+	this._state = assign( {}, oldState, newState );
+	dispatchObservers( this, this._observers.pre, newState, oldState );
+	if ( this._fragment ) this._fragment.update( newState, this._state );
+	dispatchObservers( this, this._observers.post, newState, oldState );
+};
+
+Blender.prototype.teardown = Blender.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
+
+	this._fragment.destroy( detach !== false );
+	this._fragment = null;
+
+	this._state = {};
+	this._torndown = true;
+};
+
+function recompute$1 ( state, newState, oldState, isInitial ) {
+	if ( isInitial || ( 'color' in newState && differs( state.color, oldState.color ) ) ) {
+		state._color = newState._color = template$1.computed._color( state.color );
+	}
+	
+	if ( isInitial || ( '_color' in newState && differs( state._color, oldState._color ) ) ) {
+		state.textColor = newState.textColor = template$1.computed.textColor( state._color );
 	}
 }
 
 var template$1 = (function () {
-  var colorsWidth = 320;
+  return {
+    data () {
+      return {
+        size: 200,
+        color: tinycolor.random(),
+        mode: 'hsl',
+      }
+    },
+    computed: {
+      _color: (color) => tinycolor(color),
+      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
+    },
+    oncreate () {
+      this.refs.alpha.observe('value', (value) => {
+        const _color = this.get('_color');
+        this.set({color: _color.setAlpha(value / 100)});
+        // this.set({color: _color.alphas(value / 100)})
+      });
+      this.observe('_color', (_color) => {
+        const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString();
+        // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
+        this.refs.alpha.draw(alphaColor(0), alphaColor(1));
+      });
+    },
+  }
+}());
+
+var added_css$1 = false;
+function add_css$1 () {
+	var style = createElement( 'style' );
+	style.textContent = "\n  [svelte-1570121360].color-picker, [svelte-1570121360] .color-picker {\n    position: relative;\n    padding: 5px;\n    text-align: center;\n    color: #4025AD;\n  }\n  [svelte-1570121360].wrapper, [svelte-1570121360] .wrapper {\n    display: flex;\n    flex-wrap: wrap;\n  }\n";
+	appendNode( style, document.head );
+
+	added_css$1 = true;
+}
+
+function create_main_fragment$1 ( state, component ) {
+	var div_style_value, colorinput_updating = false, div_1_style_value, blender_updating = false;
+	
+	var div = createElement( 'div' );
+	setAttribute( div, 'svelte-1570121360', '' );
+	div.className = "color-picker";
+	div.style.cssText = div_style_value = "color: " + ( state.textColor ) + "; background-color: " + ( state._color.toString('rgb') ) + ";";
+	
+	var colorinput_initial_data = {};
+	if ( 'color' in state ) colorinput_initial_data.color = state.color ;
+	var colorinput = new Color_input({
+		target: div,
+		_root: component._root || component,
+		data: colorinput_initial_data
+	});
+	
+	component._bindings.push( function () {
+		if ( colorinput._torndown ) return;
+		colorinput.observe( 'color', function ( value ) {
+			if ( colorinput_updating ) return;
+			colorinput_updating = true;
+			component._set({ color: value });
+			colorinput_updating = false;
+		}, { init: differs( colorinput.get( 'color' ), state.color  ) });
+	});
+	
+	colorinput._context = {
+		state: state
+	};
+	
+	appendNode( createText( "\n  " ), div );
+	var div_1 = createElement( 'div' );
+	appendNode( div_1, div );
+	div_1.className = "wrapper";
+	div_1.style.cssText = div_1_style_value = "width: " + ( state.size ) + "px;";
+	var if_block_anchor = createComment();
+	appendNode( if_block_anchor, div_1 );
+	
+	function get_block ( state ) {
+		if ( state.mode == 'hsv' ) return create_if_block;
+		return create_if_block_1;
+	}
+	
+	var current_block = get_block( state );
+	var if_block = current_block && current_block( state, component );
+	
+	if ( if_block ) if_block.mount( div_1, if_block_anchor );
+	appendNode( createText( "\n    " ), div_1 );
+	
+	var slider = new Slider({
+		target: div_1,
+		_root: component._root || component,
+		data: {
+			direction: "horizontal",
+			value: state._color.getAlpha() * 100,
+			size: state.size
+		}
+	});
+	
+	component.refs.alpha = slider;
+	
+	appendNode( createText( "\n    " ), div_1 );
+	
+	var blender_initial_data = { width: state.size };
+	if ( 'color' in state ) blender_initial_data.color = state.color ;
+	var blender = new Blender({
+		target: div_1,
+		_root: component._root || component,
+		data: blender_initial_data
+	});
+	
+	blender.on( 'color1', function ( event ) {
+		var state = this._context.state;
+		
+		component.this.setColor1(state._color);
+	});
+	
+	blender.on( 'color2', function ( event ) {
+		var state = this._context.state;
+		
+		component.this.setColor2(state._color);
+	});
+	
+	component._bindings.push( function () {
+		if ( blender._torndown ) return;
+		blender.observe( 'color', function ( value ) {
+			if ( blender_updating ) return;
+			blender_updating = true;
+			component._set({ color: value });
+			blender_updating = false;
+		}, { init: differs( blender.get( 'color' ), state.color  ) });
+	});
+	
+	blender._context = {
+		state: state
+	};
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( div, target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( div_style_value !== ( div_style_value = "color: " + ( state.textColor ) + "; background-color: " + ( state._color.toString('rgb') ) + ";" ) ) {
+				div.style.cssText = div_style_value;
+			}
+			
+			if ( !colorinput_updating && 'color' in changed ) {
+				colorinput_updating = true;
+				colorinput._set({ color: state.color  });
+				colorinput_updating = false;
+			}
+			
+			colorinput._context.state = state;
+			
+			if ( div_1_style_value !== ( div_1_style_value = "width: " + ( state.size ) + "px;" ) ) {
+				div_1.style.cssText = div_1_style_value;
+			}
+			
+			if ( current_block === ( current_block = get_block( state ) ) && if_block ) {
+				if_block.update( changed, state );
+			} else {
+				if ( if_block ) if_block.destroy( true );
+				if_block = current_block && current_block( state, component );
+				if ( if_block ) if_block.mount( if_block_anchor.parentNode, if_block_anchor );
+			}
+			
+			var slider_changes = {};
+			
+			if ( '_color' in changed ) slider_changes.value = state._color.getAlpha() * 100;
+			if ( 'size' in changed ) slider_changes.size = state.size;
+			
+			if ( Object.keys( slider_changes ).length ) slider.set( slider_changes );
+			
+			if ( !blender_updating && 'color' in changed ) {
+				blender_updating = true;
+				blender._set({ color: state.color  });
+				blender_updating = false;
+			}
+			
+			blender._context.state = state;
+			
+			var blender_changes = {};
+			
+			if ( 'size' in changed ) blender_changes.width = state.size;
+			
+			if ( Object.keys( blender_changes ).length ) blender.set( blender_changes );
+		},
+		
+		destroy: function ( detach ) {
+			colorinput.destroy( false );
+			if ( if_block ) if_block.destroy( false );
+			if ( component.refs.alpha === slider ) component.refs.alpha = null;
+			slider.destroy( false );
+			blender.destroy( false );
+			
+			if ( detach ) {
+				detachNode( div );
+			}
+		}
+	};
+}
+
+function create_if_block ( state, component ) {
+	var hslpicker_updating = false;
+	
+	var hslpicker_initial_data = { size: state.size };
+	if ( 'color' in state ) hslpicker_initial_data.color = state.color ;
+	var hslpicker = new Hsl_picker({
+		target: null,
+		_root: component._root || component,
+		data: hslpicker_initial_data
+	});
+	
+	component._bindings.push( function () {
+		if ( hslpicker._torndown ) return;
+		hslpicker.observe( 'color', function ( value ) {
+			if ( hslpicker_updating ) return;
+			hslpicker_updating = true;
+			component._set({ color: value });
+			hslpicker_updating = false;
+		}, { init: differs( hslpicker.get( 'color' ), state.color  ) });
+	});
+	
+	hslpicker._context = {
+		state: state
+	};
+
+	return {
+		mount: function ( target, anchor ) {
+			hslpicker._fragment.mount( target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( !hslpicker_updating && 'color' in changed ) {
+				hslpicker_updating = true;
+				hslpicker._set({ color: state.color  });
+				hslpicker_updating = false;
+			}
+			
+			hslpicker._context.state = state;
+			
+			var hslpicker_changes = {};
+			
+			if ( 'size' in changed ) hslpicker_changes.size = state.size;
+			
+			if ( Object.keys( hslpicker_changes ).length ) hslpicker.set( hslpicker_changes );
+		},
+		
+		destroy: function ( detach ) {
+			hslpicker.destroy( detach );
+		}
+	};
+}
+
+function create_if_block_1 ( state, component ) {
+	var hsvpicker_updating = false;
+	
+	var hsvpicker_initial_data = { size: state.size };
+	if ( 'color' in state ) hsvpicker_initial_data.color = state.color ;
+	var hsvpicker = new Hsv_picker({
+		target: null,
+		_root: component._root || component,
+		data: hsvpicker_initial_data
+	});
+	
+	component._bindings.push( function () {
+		if ( hsvpicker._torndown ) return;
+		hsvpicker.observe( 'color', function ( value ) {
+			if ( hsvpicker_updating ) return;
+			hsvpicker_updating = true;
+			component._set({ color: value });
+			hsvpicker_updating = false;
+		}, { init: differs( hsvpicker.get( 'color' ), state.color  ) });
+	});
+	
+	hsvpicker._context = {
+		state: state
+	};
+
+	return {
+		mount: function ( target, anchor ) {
+			hsvpicker._fragment.mount( target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			if ( !hsvpicker_updating && 'color' in changed ) {
+				hsvpicker_updating = true;
+				hsvpicker._set({ color: state.color  });
+				hsvpicker_updating = false;
+			}
+			
+			hsvpicker._context.state = state;
+			
+			var hsvpicker_changes = {};
+			
+			if ( 'size' in changed ) hsvpicker_changes.size = state.size;
+			
+			if ( Object.keys( hsvpicker_changes ).length ) hsvpicker.set( hsvpicker_changes );
+		},
+		
+		destroy: function ( detach ) {
+			hsvpicker.destroy( detach );
+		}
+	};
+}
+
+function Color_picker ( options ) {
+	options = options || {};
+	this.refs = {};
+	this._state = assign( template$1.data(), options.data );
+	recompute$1( this._state, this._state, {}, true );
+	
+	this._observers = {
+		pre: Object.create( null ),
+		post: Object.create( null )
+	};
+	
+	this._handlers = Object.create( null );
+	
+	this._root = options._root;
+	this._yield = options._yield;
+	
+	this._torndown = false;
+	if ( !added_css$1 ) add_css$1();
+	this._renderHooks = [];
+	
+	this._bindings = [];
+	this._fragment = create_main_fragment$1( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
+	while ( this._bindings.length ) this._bindings.pop()();
+	
+	this._flush();
+	
+	if ( options._root ) {
+		options._root._renderHooks.push({ fn: template$1.oncreate, context: this });
+	} else {
+		template$1.oncreate.call( this );
+	}
+}
+
+assign( Color_picker.prototype, proto );
+
+Color_picker.prototype._set = function _set ( newState ) {
+	var oldState = this._state;
+	this._state = assign( {}, oldState, newState );
+	recompute$1( this._state, newState, oldState, false );
+	dispatchObservers( this, this._observers.pre, newState, oldState );
+	if ( this._fragment ) this._fragment.update( newState, this._state );
+	dispatchObservers( this, this._observers.post, newState, oldState );
+	while ( this._bindings.length ) this._bindings.pop()();
+	
+	this._flush();
+};
+
+Color_picker.prototype.teardown = Color_picker.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
+
+	this._fragment.destroy( detach !== false );
+	this._fragment = null;
+
+	this._state = {};
+	this._torndown = true;
+};
+
+function recompute$7 ( state, newState, oldState, isInitial ) {
+	if ( isInitial || ( 'card' in newState && differs( state.card, oldState.card ) ) ) {
+		state.colorStyle = newState.colorStyle = template$9.computed.colorStyle( state.card );
+	}
+	
+	if ( isInitial || ( 'card' in newState && differs( state.card, oldState.card ) ) || ( 'bgColor' in newState && differs( state.bgColor, oldState.bgColor ) ) ) {
+		state.contrast = newState.contrast = template$9.computed.contrast( state.card, state.bgColor );
+	}
+	
+	if ( isInitial || ( 'card' in newState && differs( state.card, oldState.card ) ) ) {
+		state.width = newState.width = template$9.computed.width( state.card );
+		state.height = newState.height = template$9.computed.height( state.card );
+	}
+}
+
+var template$9 = (function () {
+  const colorsWidth = 320;
 
   var template = {
     computed: {
-      textColor: function (card) { return tinycolor.mostReadable(card.color, ['#eee', '#111']); },
-      width: function (card) { return card.width || 120; },
-      height: function (card) { return card.height || 120; },
+      colorStyle: (card) => {
+        return card.textMode
+        ? `background-color: transparent; color: ${card.color};`
+        : `background-color: ${card.color}; color: ${tinycolor.mostReadable(card.color, ['#eee', '#111'])};`
+      },
+      // textColor: card => tinycolor.mostReadable(card.color, ['#eee', '#111']),
+      contrast: (card, bgColor) => tinycolor.readability(card.color, bgColor),
+      //  width: {{width}}px; height: {{height}}px;
+      width: card => card.width || 200,
+      height: card => card.height || 180,
     },
-    onrender: function onrender () {
-      var this$1 = this;
 
+    oncreate () {
       console.log('card-render');
-      var cardEl = this.refs.card;
-      var box = cardEl.parentElement;
+      const cardEl = this.refs.card;
+      const box = cardEl.parentElement;
 
-      var ref = this.get();
-      var card = ref.card;
-      var index = ref.index;
+      const {card, index} = this.get();
 
-      var selected;
+      let selected;
 
       this.movable = new Movable(cardEl, {
         containment: box,
         grid: 5,
         axis: 'shift',
-        start: function (e, position) {
+        start: (e, position) => {
           e.stopPropagation();
 
           store.trigger('cards.CARD_FORWARD', index, false);
           selected = store.get('cards');
         },
-        drag: function (e, position, el) {
+        drag: (e, position, el) => {
           // cards.forEach((cardEl, i) => {
           //   if (card !== cardEl) {
           //     const cardRect = cardRects[i]
@@ -2588,17 +4834,17 @@ var template$1 = (function () {
           //   }
           // })
         },
-        stop: function (e, position, el) {
-          var pos = this$1.adjust(position);
-          this$1.set(pos);
+        stop: (e, position, el) => {
+          const pos = this.adjust(position);
+          this.set(pos);
           store.trigger('cards.TRANSLATE_CARD', index, pos.left, pos.top);
         },
-        click: function (e, position, el) {
+        click: (e, position, el) => {
           store.memo('cards');
           // this.parent.selectable.select(this.i)
         },
       });
-      cardEl.addEventListener('contextmenu', function (e) {
+      cardEl.addEventListener('contextmenu', (e) => {
         // デフォルトイベントをキャンセル
         // これを書くことでコンテキストメニューが表示されなくなります
         e.preventDefault();
@@ -2613,11 +4859,11 @@ var template$1 = (function () {
       this.set(this.adjust(card, true));
     },
     methods: {
-      adjust: function adjust (card, init) {
-        var rect = this.refs.card.parentElement.getBoundingClientRect();
-        var maxW = rect.width - this.get('width');
-        var maxH = rect.height - this.get('height');
-        var left, top;
+      adjust (card, init) {
+        const rect = this.refs.card.parentElement.getBoundingClientRect();
+        const maxW = rect.width - this.get('width');
+        const maxH = rect.height - this.get('height');
+        let left, top;
 
         if (init && (+card.left < colorsWidth || !card.top)) {
           // random positions
@@ -2627,21 +4873,17 @@ var template$1 = (function () {
           left = clamp(card.left, maxW, colorsWidth);
           top = clamp(card.top, maxH);
         }
-        return {left: left, top: top}
+        return {left, top}
       }
     }
   };
 
   // Utilities
 
-  function snap (n, grid) {
-    if ( grid === void 0 ) grid = 5;
-
+  function snap (n, grid = 5) {
     return Math.round(n / grid) * grid
   }
-  function clamp (val, max, min) {
-    if ( min === void 0 ) min = 0;
-
+  function clamp (val, max, min = 0) {
     return Math.min(Math.max(min, val), max)
   }
 
@@ -2650,65 +4892,76 @@ var template$1 = (function () {
   return template;
 }());
 
-var addedCss$1 = false;
-function addCss$1 () {
+var added_css$9 = false;
+function add_css$9 () {
 	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-1441899067].card, [svelte-1441899067] .card {\n    position: absolute;\n    text-align:center;\n    font-size:12px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n  }\n  [svelte-1441899067].card.selected, [svelte-1441899067] .card.selected {\n    outline: 1px dashed black;\n    box-shadow: 0 0 0 1px white;\n  }\n  [svelte-1441899067].card.active, [svelte-1441899067] .card.active {\n    z-index: 100;\n  }\n  [svelte-1441899067].cardtext, [svelte-1441899067] .cardtext {\n    white-space: pre-wrap;\n    user-select: none;\n    -ms-user-select: none;\n    -webkit-user-select: none;\n    -moz-user-select: none;\n  }\n";
+	style.textContent = "\n  [svelte-3835247079].card, [svelte-3835247079] .card {\n    position: absolute;\n    text-align:center;\n    font-size:12px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    border-radius: 6px;\n    width: 200px;\n    height: 180px;\n  }\n  [svelte-3835247079].card.selected, [svelte-3835247079] .card.selected {\n    outline: 1px dashed black;\n    box-shadow: 0 0 0 1px white;\n  }\n  [svelte-3835247079].card.active, [svelte-3835247079] .card.active {\n    z-index: 100;\n  }\n  [svelte-3835247079].cardtext, [svelte-3835247079] .cardtext {\n    \n    padding: 8px;\n    width: 100%;\n    white-space: wrap;\n    user-select: none;\n    -ms-user-select: none;\n    -webkit-user-select: none;\n    -moz-user-select: none;\n  }\n  [svelte-3835247079].card_title, [svelte-3835247079] .card_title {\n    \n    overflow: hidden;\n    white-space: nowrap;\n    text-overflow: ellipsis;\n    \n  }\n";
 	appendNode( style, document.head );
 
-	addedCss$1 = true;
+	added_css$9 = true;
 }
 
-function renderMainFragment$1 ( root, component ) {
+function create_main_fragment$9 ( state, component ) {
+	var div_style_value, text_value, text_2_value, text_4_value, text_6_value;
+	
 	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-1441899067', '' );
-	component.refs.card = div;
+	setAttribute( div, 'svelte-3835247079', '' );
 	div.className = "card animated bounceIn";
-	div.style.cssText = "background-color: " + ( root.card.color ) + "; color: " + ( root.textColor ) + "; width: " + ( root.width ) + "px; height: " + ( root.height ) + "px; left: " + ( root.left ) + "px; top: " + ( root.top ) + "px; z-index: " + ( root.card.zIndex ) + ";";
-	
-	var div1 = createElement( 'div' );
-	setAttribute( div1, 'svelte-1441899067', '' );
-	div1.className = "cardtext";
-	
-	appendNode( div1, div );
-	
-	var b = createElement( 'b' );
-	setAttribute( b, 'svelte-1441899067', '' );
-	
-	appendNode( b, div1 );
-	var last_text = root.card.name;
-	var text = createText( last_text );
-	appendNode( text, b );
-	
-	var br = createElement( 'br' );
-	setAttribute( br, 'svelte-1441899067', '' );
-	
-	appendNode( br, div1 );
-	var last_text1 = root.card.color;
-	var text1 = createText( last_text1 );
-	appendNode( text1, div1 );
+	div.style.cssText = div_style_value = "" + ( state.colorStyle ) + " left: " + ( state.left ) + "px; top: " + ( state.top ) + "px; z-index: " + ( state.card.zIndex ) + ";";
+	component.refs.card = div;
+	var div_1 = createElement( 'div' );
+	appendNode( div_1, div );
+	div_1.className = "cardtext";
+	var h_ = createElement( 'h3' );
+	appendNode( h_, div_1 );
+	h_.className = "card_title";
+	var text = createText( text_value = state.card.name );
+	appendNode( text, h_ );
+	appendNode( createText( "\n    " ), div_1 );
+	var div_2 = createElement( 'div' );
+	appendNode( div_2, div_1 );
+	var text_2 = createText( text_2_value = state.card.color );
+	appendNode( text_2, div_2 );
+	appendNode( createText( "\n    " ), div_1 );
+	var div_3 = createElement( 'div' );
+	appendNode( div_3, div_1 );
+	var text_4 = createText( text_4_value = state.card.color.toString('hsl') );
+	appendNode( text_4, div_3 );
+	appendNode( createText( "\n    " ), div_1 );
+	var div_4 = createElement( 'div' );
+	appendNode( div_4, div_1 );
+	var text_6 = createText( text_6_value = ( 'Math' in state ? state.Math : Math ).round(state.contrast * 10) / 10 );
+	appendNode( text_6, div_4 );
 
 	return {
 		mount: function ( target, anchor ) {
 			insertNode( div, target, anchor );
 		},
 		
-		update: function ( changed, root ) {
-			var __tmp;
-		
-			div.style.cssText = "background-color: " + ( root.card.color ) + "; color: " + ( root.textColor ) + "; width: " + ( root.width ) + "px; height: " + ( root.height ) + "px; left: " + ( root.left ) + "px; top: " + ( root.top ) + "px; z-index: " + ( root.card.zIndex ) + ";";
-			
-			if ( ( __tmp = root.card.name ) !== last_text ) {
-				text.data = last_text = __tmp;
+		update: function ( changed, state ) {
+			if ( div_style_value !== ( div_style_value = "" + ( state.colorStyle ) + " left: " + ( state.left ) + "px; top: " + ( state.top ) + "px; z-index: " + ( state.card.zIndex ) + ";" ) ) {
+				div.style.cssText = div_style_value;
 			}
 			
-			if ( ( __tmp = root.card.color ) !== last_text1 ) {
-				text1.data = last_text1 = __tmp;
+			if ( text_value !== ( text_value = state.card.name ) ) {
+				text.data = text_value;
+			}
+			
+			if ( text_2_value !== ( text_2_value = state.card.color ) ) {
+				text_2.data = text_2_value;
+			}
+			
+			if ( text_4_value !== ( text_4_value = state.card.color.toString('hsl') ) ) {
+				text_4.data = text_4_value;
+			}
+			
+			if ( text_6_value !== ( text_6_value = ( 'Math' in state ? state.Math : Math ).round(state.contrast * 10) / 10 ) ) {
+				text_6.data = text_6_value;
 			}
 		},
 		
-		teardown: function ( detach ) {
-			if ( component.refs.card === div ) { component.refs.card = null; }
+		destroy: function ( detach ) {
+			if ( component.refs.card === div ) component.refs.card = null;
 			
 			if ( detach ) {
 				detachNode( div );
@@ -2717,206 +4970,197 @@ function renderMainFragment$1 ( root, component ) {
 	};
 }
 
-function color_card ( options ) {
+function Color_card ( options ) {
 	options = options || {};
-	
 	this.refs = {};
 	this._state = options.data || {};
-applyComputations$1( this._state, this._state, {}, true );
-
+	recompute$7( this._state, this._state, {}, true );
+	
 	this._observers = {
 		pre: Object.create( null ),
 		post: Object.create( null )
 	};
-
+	
 	this._handlers = Object.create( null );
-
+	
 	this._root = options._root;
 	this._yield = options._yield;
-
-	this._torndown = false;
-	if ( !addedCss$1 ) { addCss$1(); }
 	
-	this._fragment = renderMainFragment$1( this._state, this );
-	if ( options.target ) { this._fragment.mount( options.target, null ); }
+	this._torndown = false;
+	if ( !added_css$9 ) add_css$9();
+	
+	this._fragment = create_main_fragment$9( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
 	
 	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$1.onrender, context: this });
+		options._root._renderHooks.push({ fn: template$9.oncreate, context: this });
 	} else {
-		template$1.onrender.call( this );
+		template$9.oncreate.call( this );
 	}
 }
 
-color_card.prototype = template$1.methods;
+assign( Color_card.prototype, template$9.methods, proto );
 
-color_card.prototype.get = get$1;
-color_card.prototype.fire = fire$1;
-color_card.prototype.observe = observe;
-color_card.prototype.on = on$2;
-color_card.prototype.set = set$1;
-color_card.prototype._flush = _flush;
-
-color_card.prototype._set = function _set ( newState ) {
+Color_card.prototype._set = function _set ( newState ) {
 	var oldState = this._state;
-	this._state = Object.assign( {}, oldState, newState );
-	applyComputations$1( this._state, newState, oldState, false );
-	
+	this._state = assign( {}, oldState, newState );
+	recompute$7( this._state, newState, oldState, false );
 	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) { this._fragment.update( newState, this._state ); }
+	if ( this._fragment ) this._fragment.update( newState, this._state );
 	dispatchObservers( this, this._observers.post, newState, oldState );
 };
 
-color_card.prototype.teardown = function teardown ( detach ) {
-	this.fire( 'teardown' );
+Color_card.prototype.teardown = Color_card.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
 
-	this._fragment.teardown( detach !== false );
+	this._fragment.destroy( detach !== false );
 	this._fragment = null;
 
 	this._state = {};
 	this._torndown = true;
 };
 
-var IndianRed = ["#CD5C5C"];
-var LightCoral = ["#F08080"];
-var Salmon = ["#FA8072"];
-var DarkSalmon = ["#E9967A"];
-var LightSalmon = ["#FFA07A"];
-var Crimson = ["#DC143C"];
-var Red = ["#FF0000"];
-var FireBrick = ["#B22222"];
-var DarkRed = ["#8B0000"];
-var Pink = ["#FFC0CB"];
-var LightPink = ["#FFB6C1"];
-var HotPink = ["#FF69B4"];
-var DeepPink = ["#FF1493"];
-var MediumVioletRed = ["#C71585"];
-var PaleVioletRed = ["#DB7093"];
-var Coral = ["#FF7F50"];
-var Tomato = ["#FF6347"];
-var OrangeRed = ["#FF4500"];
-var DarkOrange = ["#FF8C00"];
-var Orange = ["#FFA500"];
-var Gold = ["#FFD700"];
-var Yellow = ["#FFFF00"];
-var LightYellow = ["#FFFFE0"];
-var LemonChiffon = ["#FFFACD"];
-var LightGoldenrodYellow = ["#FAFAD2"];
-var PapayaWhip = ["#FFEFD5"];
-var Moccasin = ["#FFE4B5"];
-var PeachPuff = ["#FFDAB9"];
-var PaleGoldenrod = ["#EEE8AA"];
-var Khaki = ["#F0E68C"];
-var DarkKhaki = ["#BDB76B"];
-var Lavender = ["#E6E6FA"];
-var Thistle = ["#D8BFD8"];
-var Plum = ["#DDA0DD"];
-var Violet = ["#EE82EE"];
-var Orchid = ["#DA70D6"];
-var Fuchsia = ["#FF00FF"];
-var Magenta = ["#FF00FF"];
-var MediumOrchid = ["#BA55D3"];
-var MediumPurple = ["#9370DB"];
-var RebeccaPurple = ["#663399"];
-var BlueViolet = ["#8A2BE2"];
-var DarkViolet = ["#9400D3"];
-var DarkOrchid = ["#9932CC"];
-var DarkMagenta = ["#8B008B"];
-var Purple = ["#800080"];
-var Indigo = ["#4B0082"];
-var SlateBlue = ["#6A5ACD"];
-var DarkSlateBlue = ["#483D8B"];
-var MediumSlateBlue = ["#7B68EE"];
-var GreenYellow = ["#ADFF2F"];
-var Chartreuse = ["#7FFF00"];
-var LawnGreen = ["#7CFC00"];
-var Lime = ["#00FF00"];
-var LimeGreen = ["#32CD32"];
-var PaleGreen = ["#98FB98"];
-var LightGreen = ["#90EE90"];
-var MediumSpringGreen = ["#00FA9A"];
-var SpringGreen = ["#00FF7F"];
-var MediumSeaGreen = ["#3CB371"];
-var SeaGreen = ["#2E8B57"];
-var ForestGreen = ["#228B22"];
-var Green = ["#008000"];
-var DarkGreen = ["#006400"];
-var YellowGreen = ["#9ACD32"];
-var OliveDrab = ["#6B8E23"];
-var Olive = ["#808000"];
-var DarkOliveGreen = ["#556B2F"];
-var MediumAquamarine = ["#66CDAA"];
-var DarkSeaGreen = ["#8FBC8B"];
-var LightSeaGreen = ["#20B2AA"];
-var DarkCyan = ["#008B8B"];
-var Teal = ["#008080"];
-var Aqua = ["#00FFFF"];
-var Cyan = ["#00FFFF"];
-var LightCyan = ["#E0FFFF"];
-var PaleTurquoise = ["#AFEEEE"];
-var Aquamarine = ["#7FFFD4"];
-var Turquoise = ["#40E0D0"];
-var MediumTurquoise = ["#48D1CC"];
-var DarkTurquoise = ["#00CED1"];
-var CadetBlue = ["#5F9EA0"];
-var SteelBlue = ["#4682B4"];
-var LightSteelBlue = ["#B0C4DE"];
-var PowderBlue = ["#B0E0E6"];
-var LightBlue = ["#ADD8E6"];
-var SkyBlue = ["#87CEEB"];
-var LightSkyBlue = ["#87CEFA"];
-var DeepSkyBlue = ["#00BFFF"];
-var DodgerBlue = ["#1E90FF"];
-var CornflowerBlue = ["#6495ED"];
-var RoyalBlue = ["#4169E1"];
-var Blue = ["#0000FF"];
-var MediumBlue = ["#0000CD"];
-var DarkBlue = ["#00008B"];
-var Navy = ["#000080"];
-var MidnightBlue = ["#191970"];
-var Cornsilk = ["#FFF8DC"];
-var BlanchedAlmond = ["#FFEBCD"];
-var Bisque = ["#FFE4C4"];
-var NavajoWhite = ["#FFDEAD"];
-var Wheat = ["#F5DEB3"];
-var BurlyWood = ["#DEB887"];
-var Tan = ["#D2B48C"];
-var RosyBrown = ["#BC8F8F"];
-var SandyBrown = ["#F4A460"];
-var Goldenrod = ["#DAA520"];
-var DarkGoldenrod = ["#B8860B"];
-var Peru = ["#CD853F"];
-var Chocolate = ["#D2691E"];
-var SaddleBrown = ["#8B4513"];
-var Sienna = ["#A0522D"];
-var Brown = ["#A52A2A"];
-var Maroon = ["#800000"];
-var White = ["#FFFFFF"];
-var Snow = ["#FFFAFA"];
-var HoneyDew = ["#F0FFF0"];
-var MintCream = ["#F5FFFA"];
-var Azure = ["#F0FFFF"];
-var AliceBlue = ["#F0F8FF"];
-var GhostWhite = ["#F8F8FF"];
-var WhiteSmoke = ["#F5F5F5"];
-var SeaShell = ["#FFF5EE"];
-var Beige = ["#F5F5DC"];
-var OldLace = ["#FDF5E6"];
-var FloralWhite = ["#FFFAF0"];
-var Ivory = ["#FFFFF0"];
-var AntiqueWhite = ["#FAEBD7"];
-var Linen = ["#FAF0E6"];
-var LavenderBlush = ["#FFF0F5"];
-var MistyRose = ["#FFE4E1"];
-var Gainsboro = ["#DCDCDC"];
-var LightGray = ["#D3D3D3"];
-var Silver = ["#C0C0C0"];
-var DarkGray = ["#A9A9A9"];
-var Gray = ["#808080"];
-var DimGray = ["#696969"];
-var LightSlateGray = ["#778899"];
-var SlateGray = ["#708090"];
-var DarkSlateGray = ["#2F4F4F"];
-var Black = ["#000000"];
+const IndianRed = ["#CD5C5C"];
+const LightCoral = ["#F08080"];
+const Salmon = ["#FA8072"];
+const DarkSalmon = ["#E9967A"];
+const LightSalmon = ["#FFA07A"];
+const Crimson = ["#DC143C"];
+const Red = ["#FF0000"];
+const FireBrick = ["#B22222"];
+const DarkRed = ["#8B0000"];
+const Pink = ["#FFC0CB"];
+const LightPink = ["#FFB6C1"];
+const HotPink = ["#FF69B4"];
+const DeepPink = ["#FF1493"];
+const MediumVioletRed = ["#C71585"];
+const PaleVioletRed = ["#DB7093"];
+const Coral = ["#FF7F50"];
+const Tomato = ["#FF6347"];
+const OrangeRed = ["#FF4500"];
+const DarkOrange = ["#FF8C00"];
+const Orange = ["#FFA500"];
+const Gold = ["#FFD700"];
+const Yellow = ["#FFFF00"];
+const LightYellow = ["#FFFFE0"];
+const LemonChiffon = ["#FFFACD"];
+const LightGoldenrodYellow = ["#FAFAD2"];
+const PapayaWhip = ["#FFEFD5"];
+const Moccasin = ["#FFE4B5"];
+const PeachPuff = ["#FFDAB9"];
+const PaleGoldenrod = ["#EEE8AA"];
+const Khaki = ["#F0E68C"];
+const DarkKhaki = ["#BDB76B"];
+const Lavender = ["#E6E6FA"];
+const Thistle = ["#D8BFD8"];
+const Plum = ["#DDA0DD"];
+const Violet = ["#EE82EE"];
+const Orchid = ["#DA70D6"];
+const Fuchsia = ["#FF00FF"];
+const Magenta = ["#FF00FF"];
+const MediumOrchid = ["#BA55D3"];
+const MediumPurple = ["#9370DB"];
+const RebeccaPurple = ["#663399"];
+const BlueViolet = ["#8A2BE2"];
+const DarkViolet = ["#9400D3"];
+const DarkOrchid = ["#9932CC"];
+const DarkMagenta = ["#8B008B"];
+const Purple = ["#800080"];
+const Indigo = ["#4B0082"];
+const SlateBlue = ["#6A5ACD"];
+const DarkSlateBlue = ["#483D8B"];
+const MediumSlateBlue = ["#7B68EE"];
+const GreenYellow = ["#ADFF2F"];
+const Chartreuse = ["#7FFF00"];
+const LawnGreen = ["#7CFC00"];
+const Lime = ["#00FF00"];
+const LimeGreen = ["#32CD32"];
+const PaleGreen = ["#98FB98"];
+const LightGreen = ["#90EE90"];
+const MediumSpringGreen = ["#00FA9A"];
+const SpringGreen = ["#00FF7F"];
+const MediumSeaGreen = ["#3CB371"];
+const SeaGreen = ["#2E8B57"];
+const ForestGreen = ["#228B22"];
+const Green = ["#008000"];
+const DarkGreen = ["#006400"];
+const YellowGreen = ["#9ACD32"];
+const OliveDrab = ["#6B8E23"];
+const Olive = ["#808000"];
+const DarkOliveGreen = ["#556B2F"];
+const MediumAquamarine = ["#66CDAA"];
+const DarkSeaGreen = ["#8FBC8B"];
+const LightSeaGreen = ["#20B2AA"];
+const DarkCyan = ["#008B8B"];
+const Teal = ["#008080"];
+const Aqua = ["#00FFFF"];
+const Cyan = ["#00FFFF"];
+const LightCyan = ["#E0FFFF"];
+const PaleTurquoise = ["#AFEEEE"];
+const Aquamarine = ["#7FFFD4"];
+const Turquoise = ["#40E0D0"];
+const MediumTurquoise = ["#48D1CC"];
+const DarkTurquoise = ["#00CED1"];
+const CadetBlue = ["#5F9EA0"];
+const SteelBlue = ["#4682B4"];
+const LightSteelBlue = ["#B0C4DE"];
+const PowderBlue = ["#B0E0E6"];
+const LightBlue = ["#ADD8E6"];
+const SkyBlue = ["#87CEEB"];
+const LightSkyBlue = ["#87CEFA"];
+const DeepSkyBlue = ["#00BFFF"];
+const DodgerBlue = ["#1E90FF"];
+const CornflowerBlue = ["#6495ED"];
+const RoyalBlue = ["#4169E1"];
+const Blue = ["#0000FF"];
+const MediumBlue = ["#0000CD"];
+const DarkBlue = ["#00008B"];
+const Navy = ["#000080"];
+const MidnightBlue = ["#191970"];
+const Cornsilk = ["#FFF8DC"];
+const BlanchedAlmond = ["#FFEBCD"];
+const Bisque = ["#FFE4C4"];
+const NavajoWhite = ["#FFDEAD"];
+const Wheat = ["#F5DEB3"];
+const BurlyWood = ["#DEB887"];
+const Tan = ["#D2B48C"];
+const RosyBrown = ["#BC8F8F"];
+const SandyBrown = ["#F4A460"];
+const Goldenrod = ["#DAA520"];
+const DarkGoldenrod = ["#B8860B"];
+const Peru = ["#CD853F"];
+const Chocolate = ["#D2691E"];
+const SaddleBrown = ["#8B4513"];
+const Sienna = ["#A0522D"];
+const Brown = ["#A52A2A"];
+const Maroon = ["#800000"];
+const White = ["#FFFFFF"];
+const Snow = ["#FFFAFA"];
+const HoneyDew = ["#F0FFF0"];
+const MintCream = ["#F5FFFA"];
+const Azure = ["#F0FFFF"];
+const AliceBlue = ["#F0F8FF"];
+const GhostWhite = ["#F8F8FF"];
+const WhiteSmoke = ["#F5F5F5"];
+const SeaShell = ["#FFF5EE"];
+const Beige = ["#F5F5DC"];
+const OldLace = ["#FDF5E6"];
+const FloralWhite = ["#FFFAF0"];
+const Ivory = ["#FFFFF0"];
+const AntiqueWhite = ["#FAEBD7"];
+const Linen = ["#FAF0E6"];
+const LavenderBlush = ["#FFF0F5"];
+const MistyRose = ["#FFE4E1"];
+const Gainsboro = ["#DCDCDC"];
+const LightGray = ["#D3D3D3"];
+const Silver = ["#C0C0C0"];
+const DarkGray = ["#A9A9A9"];
+const Gray = ["#808080"];
+const DimGray = ["#696969"];
+const LightSlateGray = ["#778899"];
+const SlateGray = ["#708090"];
+const DarkSlateGray = ["#2F4F4F"];
+const Black = ["#000000"];
 var WEBCOLOR = {
 	IndianRed: IndianRed,
 	LightCoral: LightCoral,
@@ -3061,54 +5305,54 @@ var WEBCOLOR = {
 	Black: Black
 };
 
-var Vermilion = ["#EF454A","バーミリオン"];
-var Maroon$1 = ["#662B2C","マルーン"];
-var Pink$1 = ["#EA9198","ピンク"];
-var Bordeaux = ["#533638","ボルドー"];
-var Red$1 = ["#DF3447","レッド"];
-var Burgundy = ["#442E31","バーガンディー"];
-var Rose = ["#DB3561","ローズ"];
-var Carmine = ["#BE0039","カーマイン"];
-var Strawberry = ["#BB004B","ストロベリー"];
-var Magenta$1 = ["#D13A84","マゼンタ"];
-var Orchid$1 = ["#C69CC5","オーキッド"];
-var Purple$1 = ["#A757A8","パープル"];
-var Lilac = ["#C29DC8","ライラック"];
-var Lavender$1 = ["#9A8A9F","ラベンダー"];
-var Mauve = ["#855896","モーブ"];
-var Violet$1 = ["#714C99","バイオレット"];
-var Heliotrope = ["#8865B2","ヘリオトロープ"];
-var Pansy = ["#433171","パンジー"];
-var Wistaria = ["#7967C3","ウイスタリア"];
-var Hyacinth = ["#6E82AD","ヒヤシンス"];
-var Blue$1 = ["#006FAB","ブルー"];
-var Cyan$1 = ["#009CD1","シアン"];
-var Viridian = ["#006D56","ビリジアン"];
-var Green$1 = ["#009A57","グリーン"];
-var Yellow$1 = ["#F4D500","イエロー"];
-var Olive$1 = ["#5C5424","オリーブ"];
-var Marigold = ["#FFA400","マリーゴールド"];
-var Leghorn = ["#DFC291","レグホーン"];
-var Ivory$1 = ["#DED2BF","アイボリー"];
-var Sepia = ["#483C2C","セピア"];
-var Bronze = ["#7A592F","ブロンズ"];
-var Beige$1 = ["#BCA78D","ベージュ"];
-var Amber = ["#AA7A40","アンバー"];
-var Buff = ["#C09567","バフ"];
-var Orange$1 = ["#EF810F","オレンジ"];
-var Tan$1 = ["#9E6C3F","タン"];
-var Apricot = ["#D89F6D","アプリコット"];
-var Cork = ["#9F7C5C","コルク"];
-var Brown$1 = ["#6D4C33","ブラウン"];
-var Peach = ["#E8BDA5","ピーチ"];
-var Blond = ["#F6A57D","ブロンド"];
-var Khaki$1 = ["#A36851","カーキー"];
-var Chocolate$1 = ["#503830","チョコレート"];
-var Terracotta = ["#A95045","テラコッタ"];
-var Scarlet = ["#DE3838","スカーレット"];
-var White$1 = ["#F0F0F0","ホワイト"];
-var Grey = ["#767676","グレイ"];
-var Black$1 = ["#212121","ブラック"];
+const Vermilion = ["#EF454A","バーミリオン"];
+const Maroon$1 = ["#662B2C","マルーン"];
+const Pink$1 = ["#EA9198","ピンク"];
+const Bordeaux = ["#533638","ボルドー"];
+const Red$1 = ["#DF3447","レッド"];
+const Burgundy = ["#442E31","バーガンディー"];
+const Rose = ["#DB3561","ローズ"];
+const Carmine = ["#BE0039","カーマイン"];
+const Strawberry = ["#BB004B","ストロベリー"];
+const Magenta$1 = ["#D13A84","マゼンタ"];
+const Orchid$1 = ["#C69CC5","オーキッド"];
+const Purple$1 = ["#A757A8","パープル"];
+const Lilac = ["#C29DC8","ライラック"];
+const Lavender$1 = ["#9A8A9F","ラベンダー"];
+const Mauve = ["#855896","モーブ"];
+const Violet$1 = ["#714C99","バイオレット"];
+const Heliotrope = ["#8865B2","ヘリオトロープ"];
+const Pansy = ["#433171","パンジー"];
+const Wistaria = ["#7967C3","ウイスタリア"];
+const Hyacinth = ["#6E82AD","ヒヤシンス"];
+const Blue$1 = ["#006FAB","ブルー"];
+const Cyan$1 = ["#009CD1","シアン"];
+const Viridian = ["#006D56","ビリジアン"];
+const Green$1 = ["#009A57","グリーン"];
+const Yellow$1 = ["#F4D500","イエロー"];
+const Olive$1 = ["#5C5424","オリーブ"];
+const Marigold = ["#FFA400","マリーゴールド"];
+const Leghorn = ["#DFC291","レグホーン"];
+const Ivory$1 = ["#DED2BF","アイボリー"];
+const Sepia = ["#483C2C","セピア"];
+const Bronze = ["#7A592F","ブロンズ"];
+const Beige$1 = ["#BCA78D","ベージュ"];
+const Amber = ["#AA7A40","アンバー"];
+const Buff = ["#C09567","バフ"];
+const Orange$1 = ["#EF810F","オレンジ"];
+const Tan$1 = ["#9E6C3F","タン"];
+const Apricot = ["#D89F6D","アプリコット"];
+const Cork = ["#9F7C5C","コルク"];
+const Brown$1 = ["#6D4C33","ブラウン"];
+const Peach = ["#E8BDA5","ピーチ"];
+const Blond = ["#F6A57D","ブロンド"];
+const Khaki$1 = ["#A36851","カーキー"];
+const Chocolate$1 = ["#503830","チョコレート"];
+const Terracotta = ["#A95045","テラコッタ"];
+const Scarlet = ["#DE3838","スカーレット"];
+const White$1 = ["#F0F0F0","ホワイト"];
+const Grey = ["#767676","グレイ"];
+const Black$1 = ["#212121","ブラック"];
 var JISCOLOR_EN = {
 	Vermilion: Vermilion,
 	Maroon: Maroon$1,
@@ -3381,25 +5625,25 @@ var JISCOLOR_JA = {
 	"黒": ["#2A2A2A","くろ"]
 };
 
-var Red$2 = ["#ffebee","#ffcdd2","#ef9a9a","#e57373","#ef5350","#f44336","#e53935","#d32f2f","#c62828","#b71c1c","#ff8a80","#ff5252","#ff1744","#d50000"];
-var Pink$2 = ["#fce4ec","#f8bbd0","#f48fb1","#f06292","#ec407a","#e91e63","#d81b60","#c2185b","#ad1457","#880e4f","#ff80ab","#ff4081","#f50057","#c51162"];
-var Purple$2 = ["#f3e5f5","#e1bee7","#ce93d8","#ba68c8","#ab47bc","#9c27b0","#8e24aa","#7b1fa2","#6a1b9a","#4a148c","#ea80fc","#e040fb","#d500f9","#aa00ff"];
-var DeepPurple = ["#ede7f6","#d1c4e9","#b39ddb","#9575cd","#7e57c2","#673ab7","#5e35b1","#512da8","#4527a0","#311b92","#b388ff","#7c4dff","#651fff","#6200ea"];
-var Indigo$1 = ["#e8eaf6","#c5cae9","#9fa8da","#7986cb","#5c6bc0","#3f51b5","#3949ab","#303f9f","#283593","#1a237e","#8c9eff","#536dfe","#3d5afe","#304ffe"];
-var Blue$2 = ["#e3f2fd","#bbdefb","#90caf9","#64b5f6","#42a5f5","#2196f3","#1e88e5","#1976d2","#1565c0","#0d47a1","#82b1ff","#448aff","#2979ff","#2962ff"];
-var LightBlue$1 = ["#e1f5fe","#b3e5fc","#81d4fa","#4fc3f7","#29b6f6","#03a9f4","#039be5","#0288d1","#0277bd","#01579b","#80d8ff","#40c4ff","#00b0ff","#0091ea"];
-var Cyan$2 = ["#e0f7fa","#b2ebf2","#80deea","#4dd0e1","#26c6da","#00bcd4","#00acc1","#0097a7","#00838f","#006064","#84ffff","#18ffff","#00e5ff","#00b8d4"];
-var Teal$1 = ["#e0f2f1","#b2dfdb","#80cbc4","#4db6ac","#26a69a","#009688","#00897b","#00796b","#00695c","#004d40","#a7ffeb","#64ffda","#1de9b6","#00bfa5"];
-var Green$2 = ["#e8f5e9","#c8e6c9","#a5d6a7","#81c784","#66bb6a","#4caf50","#43a047","#388e3c","#2e7d32","#1b5e20","#b9f6ca","#69f0ae","#00e676","#00c853"];
-var LightGreen$1 = ["#f1f8e9","#dcedc8","#c5e1a5","#aed581","#9ccc65","#8bc34a","#7cb342","#689f38","#558b2f","#33691e","#ccff90","#b2ff59","#76ff03","#64dd17"];
-var Lime$1 = ["#f9fbe7","#f0f4c3","#e6ee9c","#dce775","#d4e157","#cddc39","#c0ca33","#afb42b","#9e9d24","#827717","#f4ff81","#eeff41","#c6ff00","#aeea00"];
-var Yellow$2 = ["#fffde7","#fff9c4","#fff59d","#fff176","#ffee58","#ffeb3b","#fdd835","#fbc02d","#f9a825","#f57f17","#ffff8d","#ffff00","#ffea00","#ffd600"];
-var Amber$1 = ["#fff8e1","#ffecb3","#ffe082","#ffd54f","#ffca28","#ffc107","#ffb300","#ffa000","#ff8f00","#ff6f00","#ffe57f","#ffd740","#ffc400","#ffab00"];
-var Orange$2 = ["#fff3e0","#ffe0b2","#ffcc80","#ffb74d","#ffa726","#ff9800","#fb8c00","#f57c00","#ef6c00","#e65100","#ffd180","#ffab40","#ff9100","#ff6d00"];
-var DeepOrange = ["#fbe9e7","#ffccbc","#ffab91","#ff8a65","#ff7043","#ff5722","#f4511e","#e64a19","#d84315","#bf360c","#ff9e80","#ff6e40","#ff3d00","#dd2c00"];
-var Brown$2 = ["#efebe9","#d7ccc8","#bcaaa4","#a1887f","#8d6e63","#795548","#6d4c41","#5d4037","#4e342e","#3e2723"];
-var Grey$1 = ["#fafafa","#f5f5f5","#eeeeee","#e0e0e0","#bdbdbd","#9e9e9e","#757575","#616161","#424242","#212121"];
-var BlueGrey = ["#eceff1","#cfd8dc","#b0bec5","#90a4ae","#78909c","#607d8b","#546e7a","#455a64","#37474f","#263238"];
+const Red$2 = ["#ffebee","#ffcdd2","#ef9a9a","#e57373","#ef5350","#f44336","#e53935","#d32f2f","#c62828","#b71c1c","#ff8a80","#ff5252","#ff1744","#d50000"];
+const Pink$2 = ["#fce4ec","#f8bbd0","#f48fb1","#f06292","#ec407a","#e91e63","#d81b60","#c2185b","#ad1457","#880e4f","#ff80ab","#ff4081","#f50057","#c51162"];
+const Purple$2 = ["#f3e5f5","#e1bee7","#ce93d8","#ba68c8","#ab47bc","#9c27b0","#8e24aa","#7b1fa2","#6a1b9a","#4a148c","#ea80fc","#e040fb","#d500f9","#aa00ff"];
+const DeepPurple = ["#ede7f6","#d1c4e9","#b39ddb","#9575cd","#7e57c2","#673ab7","#5e35b1","#512da8","#4527a0","#311b92","#b388ff","#7c4dff","#651fff","#6200ea"];
+const Indigo$1 = ["#e8eaf6","#c5cae9","#9fa8da","#7986cb","#5c6bc0","#3f51b5","#3949ab","#303f9f","#283593","#1a237e","#8c9eff","#536dfe","#3d5afe","#304ffe"];
+const Blue$2 = ["#e3f2fd","#bbdefb","#90caf9","#64b5f6","#42a5f5","#2196f3","#1e88e5","#1976d2","#1565c0","#0d47a1","#82b1ff","#448aff","#2979ff","#2962ff"];
+const LightBlue$1 = ["#e1f5fe","#b3e5fc","#81d4fa","#4fc3f7","#29b6f6","#03a9f4","#039be5","#0288d1","#0277bd","#01579b","#80d8ff","#40c4ff","#00b0ff","#0091ea"];
+const Cyan$2 = ["#e0f7fa","#b2ebf2","#80deea","#4dd0e1","#26c6da","#00bcd4","#00acc1","#0097a7","#00838f","#006064","#84ffff","#18ffff","#00e5ff","#00b8d4"];
+const Teal$1 = ["#e0f2f1","#b2dfdb","#80cbc4","#4db6ac","#26a69a","#009688","#00897b","#00796b","#00695c","#004d40","#a7ffeb","#64ffda","#1de9b6","#00bfa5"];
+const Green$2 = ["#e8f5e9","#c8e6c9","#a5d6a7","#81c784","#66bb6a","#4caf50","#43a047","#388e3c","#2e7d32","#1b5e20","#b9f6ca","#69f0ae","#00e676","#00c853"];
+const LightGreen$1 = ["#f1f8e9","#dcedc8","#c5e1a5","#aed581","#9ccc65","#8bc34a","#7cb342","#689f38","#558b2f","#33691e","#ccff90","#b2ff59","#76ff03","#64dd17"];
+const Lime$1 = ["#f9fbe7","#f0f4c3","#e6ee9c","#dce775","#d4e157","#cddc39","#c0ca33","#afb42b","#9e9d24","#827717","#f4ff81","#eeff41","#c6ff00","#aeea00"];
+const Yellow$2 = ["#fffde7","#fff9c4","#fff59d","#fff176","#ffee58","#ffeb3b","#fdd835","#fbc02d","#f9a825","#f57f17","#ffff8d","#ffff00","#ffea00","#ffd600"];
+const Amber$1 = ["#fff8e1","#ffecb3","#ffe082","#ffd54f","#ffca28","#ffc107","#ffb300","#ffa000","#ff8f00","#ff6f00","#ffe57f","#ffd740","#ffc400","#ffab00"];
+const Orange$2 = ["#fff3e0","#ffe0b2","#ffcc80","#ffb74d","#ffa726","#ff9800","#fb8c00","#f57c00","#ef6c00","#e65100","#ffd180","#ffab40","#ff9100","#ff6d00"];
+const DeepOrange = ["#fbe9e7","#ffccbc","#ffab91","#ff8a65","#ff7043","#ff5722","#f4511e","#e64a19","#d84315","#bf360c","#ff9e80","#ff6e40","#ff3d00","#dd2c00"];
+const Brown$2 = ["#efebe9","#d7ccc8","#bcaaa4","#a1887f","#8d6e63","#795548","#6d4c41","#5d4037","#4e342e","#3e2723"];
+const Grey$1 = ["#fafafa","#f5f5f5","#eeeeee","#e0e0e0","#bdbdbd","#9e9e9e","#757575","#616161","#424242","#212121"];
+const BlueGrey = ["#eceff1","#cfd8dc","#b0bec5","#90a4ae","#78909c","#607d8b","#546e7a","#455a64","#37474f","#263238"];
 var MATERIALCOLOR = {
 	Red: Red$2,
 	Pink: Pink$2,
@@ -3422,17 +5666,17 @@ var MATERIALCOLOR = {
 	BlueGrey: BlueGrey
 };
 
-var Beige$2 = ["#D0B084",1001];
-var Ivory$2 = ["#E1CC4F",1014];
-var Curry = ["#9D9101",1027];
-var Vermilion$1 = ["#CB2821",2002];
-var Cored = ["#B32821",3016];
-var Rose$1 = ["#E63244",3017];
-var Luminous = ["#FE0000",3026];
-var Telemagenta = ["#CF3476",4010];
-var braun = ["#45322E",8017];
-var Cream = ["#FDF4E3",9001];
-var schwarz = ["#1E1E1E",9017];
+const Beige$2 = ["#D0B084",1001];
+const Ivory$2 = ["#E1CC4F",1014];
+const Curry = ["#9D9101",1027];
+const Vermilion$1 = ["#CB2821",2002];
+const Cored = ["#B32821",3016];
+const Rose$1 = ["#E63244",3017];
+const Luminous = ["#FE0000",3026];
+const Telemagenta = ["#CF3476",4010];
+const braun = ["#45322E",8017];
+const Cream = ["#FDF4E3",9001];
+const schwarz = ["#1E1E1E",9017];
 var RALCOLOUR = {
 	Beige: Beige$2,
 	Ivory: Ivory$2,
@@ -3649,16 +5893,16 @@ var RALCOLOUR = {
 	"Pearl dark grey": ["#828282",9023]
 };
 
-var MediumYellowC = "#fbd800";
-var BrightOrangeC = "#ff5d00";
-var BrightRedC = "#f33633";
-var StrongRedC = "#cc0066";
-var PinkC = "#cf2197";
-var MediumPurpleC = "#4c008f";
-var DarkBlueC = "#002297";
-var MediumBlueC = "#0088ce";
-var BrightGreenC = "#00ad83";
-var NeutralBlackC = "#19191a";
+const MediumYellowC = "#fbd800";
+const BrightOrangeC = "#ff5d00";
+const BrightRedC = "#f33633";
+const StrongRedC = "#cc0066";
+const PinkC = "#cf2197";
+const MediumPurpleC = "#4c008f";
+const DarkBlueC = "#002297";
+const MediumBlueC = "#0088ce";
+const BrightGreenC = "#00ad83";
+const NeutralBlackC = "#19191a";
 var GOE_COATED = {
 	MediumYellowC: MediumYellowC,
 	BrightOrangeC: BrightOrangeC,
@@ -7791,52 +10035,52 @@ var GOE_UNCOATED = {
 	"165-2-7U": "#78726d"
 };
 
-var Black2C = "#3c3625";
-var Black3C = "#252c26";
-var Black4C = "#382d24";
-var Black5C = "#443135";
-var Black6C = "#111c24";
-var Black7C = "#363534";
-var BlackC = "#2a2623";
-var Blue072C = "#0018a8";
-var CoolGray1C = "#e0e1dd";
-var CoolGray10C = "#616365";
-var CoolGray11C = "#4d4f53";
-var CoolGray2C = "#d5d6d2";
-var CoolGray3C = "#c9cac8";
-var CoolGray4C = "#bcbdbc";
-var CoolGray5C = "#b2b4b3";
-var CoolGray6C = "#adafaf";
-var CoolGray7C = "#9a9b9c";
-var CoolGray8C = "#8b8d8e";
-var CoolGray9C = "#747678";
-var GreenC = "#00ad83";
-var Orange021C = "#ff5800";
-var ProcessBlackC = "#1e1e1e";
-var ProcessBlueC = "#0088ce";
-var ProcessCyanC = "#009fda";
-var ProcessMagentaC = "#d10074";
-var ProcessYellowC = "#f9e300";
-var PurpleC = "#b634bb";
-var Red032C = "#ed2939";
-var ReflexBlueC = "#002395";
-var RhodamineRedC = "#e0119d";
-var RubineRedC = "#ca005d";
-var VioletC = "#4b08a1";
-var WarmGray1C = "#e0ded8";
-var WarmGray10C = "#766a62";
-var WarmGray11C = "#675c53";
-var WarmGray2C = "#d5d2ca";
-var WarmGray3C = "#c7c2ba";
-var WarmGray4C = "#b7b1a9";
-var WarmGray5C = "#aea79f";
-var WarmGray6C = "#a59d95";
-var WarmGray7C = "#988f86";
-var WarmGray8C = "#8b8178";
-var WarmGray9C = "#82786f";
-var WarmRedC = "#f7403a";
-var Yellow012C = "#ffd500";
-var YellowC = "#fedf00";
+const Black2C = "#3c3625";
+const Black3C = "#252c26";
+const Black4C = "#382d24";
+const Black5C = "#443135";
+const Black6C = "#111c24";
+const Black7C = "#363534";
+const BlackC = "#2a2623";
+const Blue072C = "#0018a8";
+const CoolGray1C = "#e0e1dd";
+const CoolGray10C = "#616365";
+const CoolGray11C = "#4d4f53";
+const CoolGray2C = "#d5d6d2";
+const CoolGray3C = "#c9cac8";
+const CoolGray4C = "#bcbdbc";
+const CoolGray5C = "#b2b4b3";
+const CoolGray6C = "#adafaf";
+const CoolGray7C = "#9a9b9c";
+const CoolGray8C = "#8b8d8e";
+const CoolGray9C = "#747678";
+const GreenC = "#00ad83";
+const Orange021C = "#ff5800";
+const ProcessBlackC = "#1e1e1e";
+const ProcessBlueC = "#0088ce";
+const ProcessCyanC = "#009fda";
+const ProcessMagentaC = "#d10074";
+const ProcessYellowC = "#f9e300";
+const PurpleC = "#b634bb";
+const Red032C = "#ed2939";
+const ReflexBlueC = "#002395";
+const RhodamineRedC = "#e0119d";
+const RubineRedC = "#ca005d";
+const VioletC = "#4b08a1";
+const WarmGray1C = "#e0ded8";
+const WarmGray10C = "#766a62";
+const WarmGray11C = "#675c53";
+const WarmGray2C = "#d5d2ca";
+const WarmGray3C = "#c7c2ba";
+const WarmGray4C = "#b7b1a9";
+const WarmGray5C = "#aea79f";
+const WarmGray6C = "#a59d95";
+const WarmGray7C = "#988f86";
+const WarmGray8C = "#8b8178";
+const WarmGray9C = "#82786f";
+const WarmRedC = "#f7403a";
+const Yellow012C = "#ffd500";
+const YellowC = "#fedf00";
 var SOLID_COATED = {
 	Black2C: Black2C,
 	Black3C: Black3C,
@@ -8964,52 +11208,52 @@ var SOLID_COATED = {
 	"HEXACHROME®YellowC": "#ffe000"
 };
 
-var Black2U = "#625e51";
-var Black3U = "#595c59";
-var Black4U = "#635a52";
-var Black5U = "#66585b";
-var Black6U = "#51565f";
-var Black7U = "#6c6a68";
-var BlackU = "#605b55";
-var Blue072U = "#3945a6";
-var CoolGray1U = "#e2e1dc";
-var CoolGray10U = "#7f8184";
-var CoolGray11U = "#75777b";
-var CoolGray2U = "#d4d4d0";
-var CoolGray3U = "#c5c6c4";
-var CoolGray4U = "#b5b6b6";
-var CoolGray5U = "#acadae";
-var CoolGray6U = "#a3a5a6";
-var CoolGray7U = "#98999b";
-var CoolGray8U = "#8f9193";
-var CoolGray9U = "#85878a";
-var GreenU = "#00aa87";
-var Orange021U = "#ff7334";
-var ProcessBlackU = "#555150";
-var ProcessBlueU = "#0083c5";
-var ProcessCyanU = "#009fd6";
-var ProcessMagentaU = "#d74d84";
-var ProcessYellowU = "#ffe623";
-var PurpleU = "#bd55bb";
-var Red032U = "#f35562";
-var ReflexBlueU = "#354793";
-var RhodamineRedU = "#e351a2";
-var RubineRedU = "#d4487e";
-var VioletU = "#7557b1";
-var WarmGray1U = "#e5e0d9";
-var WarmGray10U = "#7e7774";
-var WarmGray11U = "#78716e";
-var WarmGray2U = "#d7d1c9";
-var WarmGray3U = "#c3bcb4";
-var WarmGray4U = "#b5ada6";
-var WarmGray5U = "#a8a19b";
-var WarmGray6U = "#9e9791";
-var WarmGray7U = "#958e89";
-var WarmGray8U = "#8d8682";
-var WarmGray9U = "#87807c";
-var WarmRedU = "#fe615c";
-var Yellow012U = "#ffda00";
-var YellowU = "#ffe600";
+const Black2U = "#625e51";
+const Black3U = "#595c59";
+const Black4U = "#635a52";
+const Black5U = "#66585b";
+const Black6U = "#51565f";
+const Black7U = "#6c6a68";
+const BlackU = "#605b55";
+const Blue072U = "#3945a6";
+const CoolGray1U = "#e2e1dc";
+const CoolGray10U = "#7f8184";
+const CoolGray11U = "#75777b";
+const CoolGray2U = "#d4d4d0";
+const CoolGray3U = "#c5c6c4";
+const CoolGray4U = "#b5b6b6";
+const CoolGray5U = "#acadae";
+const CoolGray6U = "#a3a5a6";
+const CoolGray7U = "#98999b";
+const CoolGray8U = "#8f9193";
+const CoolGray9U = "#85878a";
+const GreenU = "#00aa87";
+const Orange021U = "#ff7334";
+const ProcessBlackU = "#555150";
+const ProcessBlueU = "#0083c5";
+const ProcessCyanU = "#009fd6";
+const ProcessMagentaU = "#d74d84";
+const ProcessYellowU = "#ffe623";
+const PurpleU = "#bd55bb";
+const Red032U = "#f35562";
+const ReflexBlueU = "#354793";
+const RhodamineRedU = "#e351a2";
+const RubineRedU = "#d4487e";
+const VioletU = "#7557b1";
+const WarmGray1U = "#e5e0d9";
+const WarmGray10U = "#7e7774";
+const WarmGray11U = "#78716e";
+const WarmGray2U = "#d7d1c9";
+const WarmGray3U = "#c3bcb4";
+const WarmGray4U = "#b5ada6";
+const WarmGray5U = "#a8a19b";
+const WarmGray6U = "#9e9791";
+const WarmGray7U = "#958e89";
+const WarmGray8U = "#8d8682";
+const WarmGray9U = "#87807c";
+const WarmRedU = "#fe615c";
+const Yellow012U = "#ffda00";
+const YellowU = "#ffe600";
 var SOLID_UNCOATED = {
 	Black2U: Black2U,
 	Black3U: Black3U,
@@ -10137,15 +12381,15 @@ var SOLID_UNCOATED = {
 	"HEXACHROME®YellowU": "#ffe210"
 };
 
-function applyComputations$2 ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'colorlists' in newState && typeof state.colorlists === 'object' || state.colorlists !== oldState.colorlists ) || ( 'colorlistsIndex' in newState && typeof state.colorlistsIndex === 'object' || state.colorlistsIndex !== oldState.colorlistsIndex ) ) {
-		state.list = newState.list = template$2.computed.list( state.colorlists, state.colorlistsIndex );
+function recompute$8 ( state, newState, oldState, isInitial ) {
+	if ( isInitial || ( 'colorlists' in newState && differs( state.colorlists, oldState.colorlists ) ) || ( 'colorlistsIndex' in newState && differs( state.colorlistsIndex, oldState.colorlistsIndex ) ) ) {
+		state.list = newState.list = template$10.computed.list( state.colorlists, state.colorlistsIndex );
 	}
 }
 
-var template$2 = (function () {
+var template$10 = (function () {
   var template = {
-    data: function data () {
+    data () {
       return {
         colorlists: [
           { name: 'Web Color',
@@ -10155,13 +12399,13 @@ var template$2 = (function () {
           { name: 'JIS JA',
             list: parser(JISCOLOR_JA) },
           { name: 'GOOGLE MATERIAL',
-            list: Object.keys(MATERIALCOLOR).reduce(function (ary, key) {
-              MATERIALCOLOR[key].forEach(function (color, i) {
-                var name = key;
-                if (i === 0)      { name += 50; }
-                else if (i < 10)  { name += i * 100; }
-                else if (i >= 10) { name += ['A100', 'A200', 'A400', 'A700'][i % 10]; }
-                ary.push({name: name, color: color});
+            list: Object.keys(MATERIALCOLOR).reduce((ary, key) => {
+              MATERIALCOLOR[key].forEach((color, i) => {
+                let name = key;
+                if (i === 0)      name += 50;
+                else if (i < 10)  name += i * 100;
+                else if (i >= 10) name += ['A100', 'A200', 'A400', 'A700'][i % 10];
+                ary.push({name, color});
               });
               return ary
             }, []) },
@@ -10174,58 +12418,53 @@ var template$2 = (function () {
           { name: 'PANTONE® solid Coated',
             list: pantone(SOLID_COATED) },
           { name: 'PANTONE® solid Uncoated',
-            list: pantone(SOLID_UNCOATED) } ],
+            list: pantone(SOLID_UNCOATED) },
+        ],
         colorlistsIndex: 0
       }
     },
     computed: {
-      list: function (colorlists, colorlistsIndex) { return colorlists[colorlistsIndex].list; },
+      list: (colorlists, colorlistsIndex) => colorlists[colorlistsIndex].list,
     },
-    onrender: function onrender () {
-      var colortips = this.refs.colortips;
-      colortips.addEventListener('click', function (e) {
-        var el = e.target;
+    oncreate () {
+      const colortips = this.refs.colortips;
+      colortips.addEventListener('click', (e) => {
+        const el = e.target;
         if (el.classList.contains('tip')) {
-          var ref = el.title.split(' : ');
-          var name = ref[0];
-          var color = ref[1];
-          store.trigger('cards.ADD_CARD', {name: name, color: color});
+          const [name, color] = el.title.split(' : ');
+          store.trigger('cards.ADD_CARD', {name, color});
         }
       });
-      colortips.addEventListener('contextmenu', function (e) {
+      colortips.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        var el = e.target;
+        const el = e.target;
         if (el.classList.contains('tip')) {
-          var ref = el.title.split(' : ');
-          var name = ref[0];
-          var color = ref[1];
+          const [name, color] = el.title.split(' : ');
           store.trigger('menu_open', e, {
-            name: name,
+            name,
             color: tinycolor(color)
           }, 'tip');
         }
       });
     },
-    methods: {
-    },
     helpers: {
-      title: function title (tip) {
+      title (tip) {
         return tip.name + ' : ' + tip.color
       },
     }
   };
 
   function parser (list, temp) {
-    return Object.keys(list).map(function (key) { return ({
+    return Object.keys(list).map(key => ({
       name: temp ? temp(key, list[key]) : key,
       color: list[key][0]
-    }); })
+    }))
   }
   function pantone (list) {
-    return Object.keys(list).map(function (key) { return ({
-      name: ("" + key),
+    return Object.keys(list).map(key => ({
+      name: `${key}`,
       color: list[key]
-    }); })
+    }))
   }
 
 
@@ -10233,69 +12472,57 @@ var template$2 = (function () {
   return template;
 }());
 
-var addedCss$2 = false;
-function addCss$2 () {
+var added_css$10 = false;
+function add_css$10 () {
 	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-1984938225]#colorlists, [svelte-1984938225] #colorlists {\n    width: 280px;\n    font-size: 20px;\n    margin: 10px 0;\n    display: block;\n  }\n  [svelte-1984938225]#colorlists option, [svelte-1984938225] #colorlists option {\n    background: #fff;\n    color: #111;\n  }\n  [svelte-1984938225]#colorlists option:hover, [svelte-1984938225] #colorlists option:hover {\n    background: aquamarine;\n  }\n  [svelte-1984938225].tip, [svelte-1984938225] .tip{\n    width: 20px;\n    height: 20px;\n    margin:0;\n    padding:0;\n    display:inline-block;\n  }\n  [svelte-1984938225].wrapper, [svelte-1984938225] .wrapper {\n    position: relative;\n    height: calc(100% - 420px);\n    margin: 0;\n  }\n  [svelte-1984938225].scrollbar-wrapper, [svelte-1984938225] .scrollbar-wrapper {\n    position: relative;\n    height: 100%;\n    overflow: hidden;\n  }\n  [svelte-1984938225].scrollbar-body, [svelte-1984938225] .scrollbar-body {\n    \n    width: calc(100% + 17px);\n    height: 100%;\n    \n    overflow-y: scroll;\n  }\n  [svelte-1984938225].scrollbar-content, [svelte-1984938225] .scrollbar-content {\n    \n    \n    display: flex;\n    flex-wrap: wrap;\n  }\n";
+	style.textContent = "\n  [svelte-1276901091]#colorlists, [svelte-1276901091] #colorlists {\n    width: 280px;\n    font-size: 20px;\n    margin: 10px 0;\n    display: block;\n  }\n  [svelte-1276901091]#colorlists option, [svelte-1276901091] #colorlists option {\n    background: #fff;\n    color: #111;\n  }\n  [svelte-1276901091]#colorlists option:hover, [svelte-1276901091] #colorlists option:hover {\n    background: aquamarine;\n  }\n  [svelte-1276901091].tip, [svelte-1276901091] .tip{\n    width: 20px;\n    height: 20px;\n    margin:0;\n    padding:0;\n    display:inline-block;\n  }\n  [svelte-1276901091].wrapper, [svelte-1276901091] .wrapper {\n    position: relative;\n    height: calc(100% - 420px);\n    margin: 0;\n  }\n  [svelte-1276901091].scrollbar-wrapper, [svelte-1276901091] .scrollbar-wrapper {\n    position: relative;\n    height: 100%;\n    overflow: hidden;\n  }\n  [svelte-1276901091].scrollbar-body, [svelte-1276901091] .scrollbar-body {\n    \n    width: calc(100% + 17px);\n    height: 100%;\n    \n    overflow-y: scroll;\n  }\n  [svelte-1276901091].scrollbar-content, [svelte-1276901091] .scrollbar-content {\n    \n    \n    display: flex;\n    flex-wrap: wrap;\n  }\n";
 	appendNode( style, document.head );
 
-	addedCss$2 = true;
+	added_css$10 = true;
 }
 
-function renderMainFragment$2 ( root, component ) {
+function create_main_fragment$10 ( state, component ) {
 	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-1984938225', '' );
+	setAttribute( div, 'svelte-1276901091', '' );
 	div.className = "wrapper";
-	
 	var select = createElement( 'select' );
-	setAttribute( select, 'svelte-1984938225', '' );
+	appendNode( select, div );
 	select.id = "colorlists";
 	
-	function changeHandler ( event ) {
-		component.set({colorlistsIndex: +this.value});
+	function change_handler ( event ) {
+		component.set({colorlistsIndex: +select.value});
 	}
 	
-	addEventListener( select, 'change', changeHandler );
+	addEventListener( select, 'change', change_handler );
+	var each_block_anchor = createComment();
+	appendNode( each_block_anchor, select );
+	var each_block_value = state.colorlists;
+	var each_block_iterations = [];
 	
-	appendNode( select, div );
-	var eachBlock_anchor = createComment();
-	appendNode( eachBlock_anchor, select );
-	var eachBlock_value = root.colorlists;
-	var eachBlock_iterations = [];
-	
-	for ( var i = 0; i < eachBlock_value.length; i += 1 ) {
-		eachBlock_iterations[i] = renderEachBlock$1( root, eachBlock_value, eachBlock_value[i], i, component );
-		eachBlock_iterations[i].mount( eachBlock_anchor.parentNode, eachBlock_anchor );
+	for ( var i = 0; i < each_block_value.length; i += 1 ) {
+		each_block_iterations[i] = create_each_block$3( state, each_block_value, each_block_value[i], i, component );
+		each_block_iterations[i].mount( select, each_block_anchor );
 	}
 	
 	appendNode( createText( "\n\n  " ), div );
+	var div_1 = createElement( 'div' );
+	appendNode( div_1, div );
+	div_1.className = "scrollbar-wrapper";
+	var div_2 = createElement( 'div' );
+	appendNode( div_2, div_1 );
+	div_2.className = "scrollbar-body";
+	var div_3 = createElement( 'div' );
+	appendNode( div_3, div_2 );
+	div_3.className = "scrollbar-content";
+	component.refs.colortips = div_3;
+	var each_block_1_anchor = createComment();
+	appendNode( each_block_1_anchor, div_3 );
+	var each_block_value_1 = state.list;
+	var each_block_1_iterations = [];
 	
-	var div1 = createElement( 'div' );
-	setAttribute( div1, 'svelte-1984938225', '' );
-	div1.className = "scrollbar-wrapper";
-	
-	appendNode( div1, div );
-	
-	var div2 = createElement( 'div' );
-	setAttribute( div2, 'svelte-1984938225', '' );
-	div2.className = "scrollbar-body";
-	
-	appendNode( div2, div1 );
-	
-	var div3 = createElement( 'div' );
-	setAttribute( div3, 'svelte-1984938225', '' );
-	component.refs.colortips = div3;
-	div3.className = "scrollbar-content";
-	
-	appendNode( div3, div2 );
-	var eachBlock1_anchor = createComment();
-	appendNode( eachBlock1_anchor, div3 );
-	var eachBlock1_value = root.list;
-	var eachBlock1_iterations = [];
-	
-	for ( var i1 = 0; i1 < eachBlock1_value.length; i1 += 1 ) {
-		eachBlock1_iterations[i1] = renderEachBlock1( root, eachBlock1_value, eachBlock1_value[i1], i1, component );
-		eachBlock1_iterations[i1].mount( eachBlock1_anchor.parentNode, eachBlock1_anchor );
+	for ( var i = 0; i < each_block_value_1.length; i += 1 ) {
+		each_block_1_iterations[i] = create_each_block_1( state, each_block_value_1, each_block_value_1[i], i, component );
+		each_block_1_iterations[i].mount( div_3, each_block_1_anchor );
 	}
 
 	return {
@@ -10303,48 +12530,50 @@ function renderMainFragment$2 ( root, component ) {
 			insertNode( div, target, anchor );
 		},
 		
-		update: function ( changed, root ) {
-			var __tmp;
-		
-			var eachBlock_value = root.colorlists;
+		update: function ( changed, state ) {
+			var each_block_value = state.colorlists;
 			
-			for ( var i = 0; i < eachBlock_value.length; i += 1 ) {
-				if ( !eachBlock_iterations[i] ) {
-					eachBlock_iterations[i] = renderEachBlock$1( root, eachBlock_value, eachBlock_value[i], i, component );
-					eachBlock_iterations[i].mount( eachBlock_anchor.parentNode, eachBlock_anchor );
-				} else {
-					eachBlock_iterations[i].update( changed, root, eachBlock_value, eachBlock_value[i], i );
+			if ( 'colorlists' in changed ) {
+				for ( var i = 0; i < each_block_value.length; i += 1 ) {
+					if ( each_block_iterations[i] ) {
+						each_block_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+					} else {
+						each_block_iterations[i] = create_each_block$3( state, each_block_value, each_block_value[i], i, component );
+						each_block_iterations[i].mount( each_block_anchor.parentNode, each_block_anchor );
+					}
 				}
+			
+				destroyEach( each_block_iterations, true, each_block_value.length );
+			
+				each_block_iterations.length = each_block_value.length;
 			}
 			
-			teardownEach( eachBlock_iterations, true, eachBlock_value.length );
+			var each_block_value_1 = state.list;
 			
-			eachBlock_iterations.length = eachBlock_value.length;
-			
-			var eachBlock1_value = root.list;
-			
-			for ( var i1 = 0; i1 < eachBlock1_value.length; i1 += 1 ) {
-				if ( !eachBlock1_iterations[i1] ) {
-					eachBlock1_iterations[i1] = renderEachBlock1( root, eachBlock1_value, eachBlock1_value[i1], i1, component );
-					eachBlock1_iterations[i1].mount( eachBlock1_anchor.parentNode, eachBlock1_anchor );
-				} else {
-					eachBlock1_iterations[i1].update( changed, root, eachBlock1_value, eachBlock1_value[i1], i1 );
+			if ( 'list' in changed ) {
+				for ( var i = 0; i < each_block_value_1.length; i += 1 ) {
+					if ( each_block_1_iterations[i] ) {
+						each_block_1_iterations[i].update( changed, state, each_block_value_1, each_block_value_1[i], i );
+					} else {
+						each_block_1_iterations[i] = create_each_block_1( state, each_block_value_1, each_block_value_1[i], i, component );
+						each_block_1_iterations[i].mount( each_block_1_anchor.parentNode, each_block_1_anchor );
+					}
 				}
+			
+				destroyEach( each_block_1_iterations, true, each_block_value_1.length );
+			
+				each_block_1_iterations.length = each_block_value_1.length;
 			}
-			
-			teardownEach( eachBlock1_iterations, true, eachBlock1_value.length );
-			
-			eachBlock1_iterations.length = eachBlock1_value.length;
 		},
 		
-		teardown: function ( detach ) {
-			removeEventListener( select, 'change', changeHandler );
+		destroy: function ( detach ) {
+			removeEventListener( select, 'change', change_handler );
 			
-			teardownEach( eachBlock_iterations, false );
+			destroyEach( each_block_iterations, false, 0 );
 			
-			if ( component.refs.colortips === div3 ) { component.refs.colortips = null; }
+			if ( component.refs.colortips === div_3 ) component.refs.colortips = null;
 			
-			teardownEach( eachBlock1_iterations, false );
+			destroyEach( each_block_1_iterations, false, 0 );
 			
 			if ( detach ) {
 				detachNode( div );
@@ -10353,47 +12582,13 @@ function renderMainFragment$2 ( root, component ) {
 	};
 }
 
-function renderEachBlock1 ( root, eachBlock1_value, tip, tip__index, component ) {
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-1984938225', '' );
-	div.className = "tip";
-	var last_div_title = template$2.helpers.title(tip);
-	div.title = last_div_title;
-	div.style.cssText = "background-color: " + ( tip.color ) + ";";
-
-	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
-		},
-		
-		update: function ( changed, root, eachBlock1_value, tip, tip__index ) {
-			var __tmp;
-		
-			if ( ( __tmp = template$2.helpers.title(tip) ) !== last_div_title ) {
-				last_div_title = __tmp;
-				div.title = last_div_title;
-			}
-			
-			div.style.cssText = "background-color: " + ( tip.color ) + ";";
-		},
-		
-		teardown: function ( detach ) {
-			if ( detach ) {
-				detachNode( div );
-			}
-		}
-	};
-}
-
-function renderEachBlock$1 ( root, eachBlock_value, data, index, component ) {
-	var option = createElement( 'option' );
-	setAttribute( option, 'svelte-1984938225', '' );
-	var last_option_value = index;
-	option.__value = last_option_value;
-	option.value = option.__value;
+function create_each_block$3 ( state, each_block_value, data, index, component ) {
+	var option_value_value, text_value;
 	
-	var last_text = data.name;
-	var text = createText( last_text );
+	var option = createElement( 'option' );
+	option.__value = option_value_value = index;
+	option.value = option.__value;
+	var text = createText( text_value = data.name );
 	appendNode( text, option );
 
 	return {
@@ -10401,22 +12596,19 @@ function renderEachBlock$1 ( root, eachBlock_value, data, index, component ) {
 			insertNode( option, target, anchor );
 		},
 		
-		update: function ( changed, root, eachBlock_value, data, index ) {
-			var __tmp;
-		
-			if ( ( __tmp = index ) !== last_option_value ) {
-				last_option_value = __tmp;
-				option.__value = last_option_value;
+		update: function ( changed, state, each_block_value, data, index ) {
+			if ( option_value_value !== ( option_value_value = index ) ) {
+				option.__value = option_value_value;
 			}
 			
 			option.value = option.__value;
 			
-			if ( ( __tmp = data.name ) !== last_text ) {
-				text.data = last_text = __tmp;
+			if ( text_value !== ( text_value = data.name ) ) {
+				text.data = text_value;
 			}
 		},
 		
-		teardown: function ( detach ) {
+		destroy: function ( detach ) {
 			if ( detach ) {
 				detachNode( option );
 			}
@@ -10424,74 +12616,96 @@ function renderEachBlock$1 ( root, eachBlock_value, data, index, component ) {
 	};
 }
 
-function color_lists ( options ) {
-	options = options || {};
+function create_each_block_1 ( state, each_block_value_1, tip, tip_index, component ) {
+	var div_title_value, div_style_value;
 	
-	this.refs = {};
-	this._state = Object.assign( template$2.data(), options.data );
-applyComputations$2( this._state, this._state, {}, true );
+	var div = createElement( 'div' );
+	div.className = "tip";
+	div.title = div_title_value = template$10.helpers.title(tip);
+	div.style.cssText = div_style_value = "background-color: " + ( tip.color ) + ";";
 
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( div, target, anchor );
+		},
+		
+		update: function ( changed, state, each_block_value_1, tip, tip_index ) {
+			if ( div_title_value !== ( div_title_value = template$10.helpers.title(tip) ) ) {
+				div.title = div_title_value;
+			}
+			
+			if ( div_style_value !== ( div_style_value = "background-color: " + ( tip.color ) + ";" ) ) {
+				div.style.cssText = div_style_value;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			if ( detach ) {
+				detachNode( div );
+			}
+		}
+	};
+}
+
+function Color_lists ( options ) {
+	options = options || {};
+	this.refs = {};
+	this._state = assign( template$10.data(), options.data );
+	recompute$8( this._state, this._state, {}, true );
+	
 	this._observers = {
 		pre: Object.create( null ),
 		post: Object.create( null )
 	};
-
+	
 	this._handlers = Object.create( null );
-
+	
 	this._root = options._root;
 	this._yield = options._yield;
-
-	this._torndown = false;
-	if ( !addedCss$2 ) { addCss$2(); }
 	
-	this._fragment = renderMainFragment$2( this._state, this );
-	if ( options.target ) { this._fragment.mount( options.target, null ); }
+	this._torndown = false;
+	if ( !added_css$10 ) add_css$10();
+	
+	this._fragment = create_main_fragment$10( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
 	
 	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$2.onrender, context: this });
+		options._root._renderHooks.push({ fn: template$10.oncreate, context: this });
 	} else {
-		template$2.onrender.call( this );
+		template$10.oncreate.call( this );
 	}
 }
 
-color_lists.prototype = template$2.methods;
+assign( Color_lists.prototype, proto );
 
-color_lists.prototype.get = get$1;
-color_lists.prototype.fire = fire$1;
-color_lists.prototype.observe = observe;
-color_lists.prototype.on = on$2;
-color_lists.prototype.set = set$1;
-color_lists.prototype._flush = _flush;
-
-color_lists.prototype._set = function _set ( newState ) {
+Color_lists.prototype._set = function _set ( newState ) {
 	var oldState = this._state;
-	this._state = Object.assign( {}, oldState, newState );
-	applyComputations$2( this._state, newState, oldState, false );
-	
+	this._state = assign( {}, oldState, newState );
+	recompute$8( this._state, newState, oldState, false );
 	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) { this._fragment.update( newState, this._state ); }
+	if ( this._fragment ) this._fragment.update( newState, this._state );
 	dispatchObservers( this, this._observers.post, newState, oldState );
 };
 
-color_lists.prototype.teardown = function teardown ( detach ) {
-	this.fire( 'teardown' );
+Color_lists.prototype.teardown = Color_lists.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
 
-	this._fragment.teardown( detach !== false );
+	this._fragment.destroy( detach !== false );
 	this._fragment = null;
 
 	this._state = {};
 	this._torndown = true;
 };
 
-var numStylekey = ['width', 'height', 'top', 'left'];
+const numStylekey = ['width', 'height', 'top', 'left'];
 function styler (dom, data) {
   if (dom[0] === void 0) {
     dom = [dom];
   }
-  dom.forEach(function (el) {
-    var style = el.style;
-    for (var key in data) {
-      var val = data[key];
+  dom.forEach((el) => {
+    const style = el.style;
+    for (let key in data) {
+      const val = data[key];
       if (typeof val === 'number' && numStylekey.indexOf(key) !== -1) {
         style[key] = val + 'px';
       } else if (val != null) {
@@ -10511,36 +12725,36 @@ function styler (dom, data) {
  */
 function copyTextToClipboard (textVal) {
   // テキストエリアを用意する
-  var copyFrom = document.createElement('textarea');
+  const copyFrom = document.createElement('textarea');
   // テキストエリアへ値をセット
   copyFrom.textContent = textVal;
 
   // bodyタグの要素を取得
-  var bodyElm = document.getElementsByTagName('body')[0];
+  const bodyElm = document.getElementsByTagName('body')[0];
   // 子要素にテキストエリアを配置
   bodyElm.appendChild(copyFrom);
 
   // テキストエリアの値を選択
   copyFrom.select();
   // コピーコマンド発行
-  var retVal = document.execCommand('copy');
+  const retVal = document.execCommand('copy');
   // 追加テキストエリアを削除
   bodyElm.removeChild(copyFrom);
 
   return retVal
 }
 
-var template$3 = (function () {
+var template$11 = (function () {
   function activeIndex () {
-    var cards = store.get('cards');
-    for (var i = 0; i < cards.length; i++) {
+    const cards = store.get('cards');
+    for (let i = 0; i < cards.length; i++) {
       if (cards[i].zIndex === cards.length - 1) {
         return i
       }
     }
   }
   return {
-    data: function data () {
+    data () {
       return {
         mode: false,
         activeCard: null,
@@ -10548,19 +12762,17 @@ var template$3 = (function () {
         sizes: [120, 240, 360],
       }
     },
-    onrender: function onrender () {
-      var this$1 = this;
-
+    oncreate () {
       console.log('menu-render');
-      var menu = this.refs.menu;
+      const menu = this.refs.menu;
 
-      var menuHide = function (e) {
-        if (this$1.get('mode')) {
+      const menuHide = (e) => {
+        if (this.get('mode')) {
           store.trigger('menu_close');
         }
       };
 
-      store.on('menu_open', function (e, card, mode) {
+      store.on('menu_open', (e, card, mode) => {
         styler(menu, {
           left: e.clientX,
           top: e.clientY,
@@ -10569,33 +12781,33 @@ var template$3 = (function () {
 
         // 'tip' or 'card'
         console.log('card', card);
-        this$1.set({mode: mode, activeCard: card});
+        this.set({mode, activeCard: card});
 
 
         window.addEventListener('blur', menuHide);
         document.addEventListener('click', menuHide);
       });
 
-      store.on('menu_close', function (e) {
+      store.on('menu_close', (e) => {
         menu.style.display = 'none';
-        this$1.set({mode: false});
+        this.set({mode: false});
         window.removeEventListener('blur', menuHide);
         document.removeEventListener('click', menuHide);
       });
     },
     methods: {
-      add: function add () {
+      add () {
         store.trigger('cards.ADD_CARD', this.get('activeCard'));
       },
-      duplicate: function duplicate () {
+      duplicate () {
         store.trigger('cards.DUPLICATE_CARD', this.get('activeCard'));
       },
-      remove: function remove () {
-        var cards = store.get('cards');
+      remove () {
+        const cards = store.get('cards');
 
-        if (cards.some(function (card) { return card.selected; })) {
+        if (cards.some((card) => card.selected)) {
           console.log('removeselected', activeIndex());
-          cards.forEach(function (card, i) {
+          cards.forEach((card, i) => {
             if (card.selected) {
               store.trigger('cards.REMOVE_CARD', i);
             }
@@ -10605,15 +12817,18 @@ var template$3 = (function () {
           store.trigger('cards.REMOVE_CARD', activeIndex());
         }
       },
+      modeChange () {
+        store.trigger('cards.TOGGLE_TEXTMODE', activeIndex());
+      },
 
-      setBgColor: function setBgColor () {
+      setBgColor () {
         store.set('bgColor', this.get('activeCard').color);
       },
-      copyColor: function copyColor (el) {
-        var key = el.textContent.toLowerCase();
+      copyColor (el) {
+        const key = el.textContent.toLowerCase();
         copyTextToClipboard(this.get('activeCard').color.toString(key));
       },
-      setSize: function setSize (el) {
+      setSize (el) {
         store.trigger('cards.RESIZE_CARD', activeIndex(), +el.textContent);
         // this.get('activeCard').rectSetter()
       }
@@ -10621,138 +12836,120 @@ var template$3 = (function () {
   }
 }());
 
-var addedCss$3 = false;
-function addCss$3 () {
+var added_css$11 = false;
+function add_css$11 () {
 	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-4231919172]#menu, [svelte-4231919172] #menu {\n    position: absolute;\n    font-size:12px;\n    background: #fff;\n    border: solid 1px silver;\n    z-index: 100;\n  }\n  [svelte-4231919172].menuitem, [svelte-4231919172] .menuitem {\n    min-width: 100px;\n    padding: 4px;\n    margin: 0;\n  }\n  [svelte-4231919172].menuitem:hover, [svelte-4231919172] .menuitem:hover, [svelte-4231919172].menuitem:active, [svelte-4231919172] .menuitem:active {\n    background: aquamarine;\n  }\n  [svelte-4231919172].menuitem .menuitem:hover, [svelte-4231919172] .menuitem .menuitem:hover {\n    font-weight: bold;\n  }\n";
+	style.textContent = "\n  [svelte-4134293530]#menu, [svelte-4134293530] #menu {\n    position: absolute;\n    font-size:12px;\n    background: #fff;\n    border: solid 1px silver;\n    z-index: 100;\n  }\n  [svelte-4134293530].menuitem, [svelte-4134293530] .menuitem {\n    min-width: 100px;\n    padding: 4px;\n    margin: 0;\n  }\n  [svelte-4134293530].menuitem:hover, [svelte-4134293530] .menuitem:hover, [svelte-4134293530].menuitem:active, [svelte-4134293530] .menuitem:active {\n    background: aquamarine;\n  }\n  [svelte-4134293530].menuitem .menuitem:hover, [svelte-4134293530] .menuitem .menuitem:hover {\n    font-weight: bold;\n  }\n";
 	appendNode( style, document.head );
 
-	addedCss$3 = true;
+	added_css$11 = true;
 }
 
-function renderMainFragment$3 ( root, component ) {
+function create_main_fragment$11 ( state, component ) {
 	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-4231919172', '' );
-	component.refs.menu = div;
+	setAttribute( div, 'svelte-4134293530', '' );
 	div.id = "menu";
+	component.refs.menu = div;
+	var if_block_anchor = createComment();
+	appendNode( if_block_anchor, div );
 	
-	var ifBlock_anchor = createComment();
-	appendNode( ifBlock_anchor, div );
-	
-	function getBlock ( root ) {
-		if ( root.mode == 'tip' ) { return renderIfBlock_0; }
-		if ( root.mode == 'card' ) { return renderIfBlock_1; }
+	function get_block ( state ) {
+		if ( state.mode == 'tip' ) return create_if_block$2;
+		if ( state.mode == 'card' ) return create_if_block_1$2;
 		return null;
 	}
 	
-	var currentBlock = getBlock( root );
-	var ifBlock = currentBlock && currentBlock( root, component );
+	var current_block = get_block( state );
+	var if_block = current_block && current_block( state, component );
 	
-	if ( ifBlock ) { ifBlock.mount( ifBlock_anchor.parentNode, ifBlock_anchor ); }
+	if ( if_block ) if_block.mount( div, if_block_anchor );
 	appendNode( createText( "\n  " ), div );
-	
 	var p = createElement( 'p' );
-	setAttribute( p, 'svelte-4231919172', '' );
+	appendNode( p, div );
 	p.className = "menuitem";
 	
-	function clickHandler ( event ) {
+	function click_handler ( event ) {
 		component.setBgColor();
 	}
 	
-	addEventListener( p, 'click', clickHandler );
-	
-	appendNode( p, div );
+	addEventListener( p, 'click', click_handler );
 	appendNode( createText( "SET BACKGROUND" ), p );
 	appendNode( createText( "\n  " ), div );
-	
-	var p1 = createElement( 'p' );
-	setAttribute( p1, 'svelte-4231919172', '' );
-	p1.className = "menuitem";
-	
-	appendNode( p1, div );
-	
+	var p_1 = createElement( 'p' );
+	appendNode( p_1, div );
+	p_1.className = "menuitem";
 	var span = createElement( 'span' );
-	setAttribute( span, 'svelte-4231919172', '' );
-	
-	appendNode( span, p1 );
+	appendNode( span, p_1 );
 	appendNode( createText( "COPY:" ), span );
-	appendNode( createText( "\n    " ), p1 );
-	var eachBlock_anchor = createComment();
-	appendNode( eachBlock_anchor, p1 );
-	var eachBlock_value = root.copys;
-	var eachBlock_iterations = [];
+	appendNode( createText( "\n    " ), p_1 );
+	var each_block_anchor = createComment();
+	appendNode( each_block_anchor, p_1 );
+	var each_block_value = state.copys;
+	var each_block_iterations = [];
 	
-	for ( var i = 0; i < eachBlock_value.length; i += 1 ) {
-		eachBlock_iterations[i] = renderEachBlock$2( root, eachBlock_value, eachBlock_value[i], i, component );
-		eachBlock_iterations[i].mount( eachBlock_anchor.parentNode, eachBlock_anchor );
+	for ( var i = 0; i < each_block_value.length; i += 1 ) {
+		each_block_iterations[i] = create_each_block$4( state, each_block_value, each_block_value[i], i, component );
+		each_block_iterations[i].mount( p_1, each_block_anchor );
 	}
 	
 	appendNode( createText( "\n  " ), div );
-	var ifBlock1_anchor = createComment();
-	appendNode( ifBlock1_anchor, div );
+	var if_block_1_anchor = createComment();
+	appendNode( if_block_1_anchor, div );
 	
-	function getBlock1 ( root ) {
-		if ( root.mode == 'card' ) { return renderIfBlock1_0; }
-		return null;
-	}
+	var if_block_1 = state.mode == 'card' && create_if_block_2$1( state, component );
 	
-	var currentBlock1 = getBlock1( root );
-	var ifBlock1 = currentBlock1 && currentBlock1( root, component );
-	
-	if ( ifBlock1 ) { ifBlock1.mount( ifBlock1_anchor.parentNode, ifBlock1_anchor ); }
+	if ( if_block_1 ) if_block_1.mount( div, if_block_1_anchor );
 
 	return {
 		mount: function ( target, anchor ) {
 			insertNode( div, target, anchor );
 		},
 		
-		update: function ( changed, root ) {
-			var __tmp;
-		
-			var _currentBlock = currentBlock;
-			currentBlock = getBlock( root );
-			if ( _currentBlock === currentBlock && ifBlock) {
-				ifBlock.update( changed, root );
-			} else {
-				if ( ifBlock ) { ifBlock.teardown( true ); }
-				ifBlock = currentBlock && currentBlock( root, component );
-				if ( ifBlock ) { ifBlock.mount( ifBlock_anchor.parentNode, ifBlock_anchor ); }
+		update: function ( changed, state ) {
+			if ( current_block !== ( current_block = get_block( state ) ) ) {
+				if ( if_block ) if_block.destroy( true );
+				if_block = current_block && current_block( state, component );
+				if ( if_block ) if_block.mount( if_block_anchor.parentNode, if_block_anchor );
 			}
 			
-			var eachBlock_value = root.copys;
+			var each_block_value = state.copys;
 			
-			for ( var i = 0; i < eachBlock_value.length; i += 1 ) {
-				if ( !eachBlock_iterations[i] ) {
-					eachBlock_iterations[i] = renderEachBlock$2( root, eachBlock_value, eachBlock_value[i], i, component );
-					eachBlock_iterations[i].mount( eachBlock_anchor.parentNode, eachBlock_anchor );
-				} else {
-					eachBlock_iterations[i].update( changed, root, eachBlock_value, eachBlock_value[i], i );
+			if ( 'copys' in changed ) {
+				for ( var i = 0; i < each_block_value.length; i += 1 ) {
+					if ( each_block_iterations[i] ) {
+						each_block_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+					} else {
+						each_block_iterations[i] = create_each_block$4( state, each_block_value, each_block_value[i], i, component );
+						each_block_iterations[i].mount( each_block_anchor.parentNode, each_block_anchor );
+					}
 				}
+			
+				destroyEach( each_block_iterations, true, each_block_value.length );
+			
+				each_block_iterations.length = each_block_value.length;
 			}
 			
-			teardownEach( eachBlock_iterations, true, eachBlock_value.length );
-			
-			eachBlock_iterations.length = eachBlock_value.length;
-			
-			var _currentBlock1 = currentBlock1;
-			currentBlock1 = getBlock1( root );
-			if ( _currentBlock1 === currentBlock1 && ifBlock1) {
-				ifBlock1.update( changed, root );
-			} else {
-				if ( ifBlock1 ) { ifBlock1.teardown( true ); }
-				ifBlock1 = currentBlock1 && currentBlock1( root, component );
-				if ( ifBlock1 ) { ifBlock1.mount( ifBlock1_anchor.parentNode, ifBlock1_anchor ); }
+			if ( state.mode == 'card' ) {
+				if ( if_block_1 ) {
+					if_block_1.update( changed, state );
+				} else {
+					if_block_1 = create_if_block_2$1( state, component );
+					if_block_1.mount( if_block_1_anchor.parentNode, if_block_1_anchor );
+				}
+			} else if ( if_block_1 ) {
+				if_block_1.destroy( true );
+				if_block_1 = null;
 			}
 		},
 		
-		teardown: function ( detach ) {
-			if ( component.refs.menu === div ) { component.refs.menu = null; }
-			if ( ifBlock ) { ifBlock.teardown( false ); }
-			removeEventListener( p, 'click', clickHandler );
+		destroy: function ( detach ) {
+			if ( component.refs.menu === div ) component.refs.menu = null;
+			if ( if_block ) if_block.destroy( false );
+			removeEventListener( p, 'click', click_handler );
 			
-			teardownEach( eachBlock_iterations, false );
+			destroyEach( each_block_iterations, false, 0 );
 			
-			if ( ifBlock1 ) { ifBlock1.teardown( false ); }
+			if ( if_block_1 ) if_block_1.destroy( false );
 			
 			if ( detach ) {
 				detachNode( div );
@@ -10761,196 +12958,15 @@ function renderMainFragment$3 ( root, component ) {
 	};
 }
 
-function renderIfBlock1_0 ( root, component ) {
+function create_if_block$2 ( state, component ) {
 	var p = createElement( 'p' );
-	setAttribute( p, 'svelte-4231919172', '' );
 	p.className = "menuitem";
 	
-	var span = createElement( 'span' );
-	setAttribute( span, 'svelte-4231919172', '' );
-	
-	appendNode( span, p );
-	appendNode( createText( "SIZE:" ), span );
-	appendNode( createText( "\n      " ), p );
-	var eachBlock1_anchor = createComment();
-	appendNode( eachBlock1_anchor, p );
-	var eachBlock1_value = root.sizes;
-	var eachBlock1_iterations = [];
-	
-	for ( var i = 0; i < eachBlock1_value.length; i += 1 ) {
-		eachBlock1_iterations[i] = renderEachBlock1$1( root, eachBlock1_value, eachBlock1_value[i], i, component );
-		eachBlock1_iterations[i].mount( eachBlock1_anchor.parentNode, eachBlock1_anchor );
-	}
-
-	return {
-		mount: function ( target, anchor ) {
-			insertNode( p, target, anchor );
-		},
-		
-		update: function ( changed, root ) {
-			var __tmp;
-		
-			var eachBlock1_value = root.sizes;
-			
-			for ( var i = 0; i < eachBlock1_value.length; i += 1 ) {
-				if ( !eachBlock1_iterations[i] ) {
-					eachBlock1_iterations[i] = renderEachBlock1$1( root, eachBlock1_value, eachBlock1_value[i], i, component );
-					eachBlock1_iterations[i].mount( eachBlock1_anchor.parentNode, eachBlock1_anchor );
-				} else {
-					eachBlock1_iterations[i].update( changed, root, eachBlock1_value, eachBlock1_value[i], i );
-				}
-			}
-			
-			teardownEach( eachBlock1_iterations, true, eachBlock1_value.length );
-			
-			eachBlock1_iterations.length = eachBlock1_value.length;
-		},
-		
-		teardown: function ( detach ) {
-			teardownEach( eachBlock1_iterations, false );
-			
-			if ( detach ) {
-				detachNode( p );
-			}
-		}
-	};
-}
-
-function renderEachBlock1$1 ( root, eachBlock1_value, key, key__index, component ) {
-	var span = createElement( 'span' );
-	setAttribute( span, 'svelte-4231919172', '' );
-	span.className = "menuitem";
-	
-	function clickHandler ( event ) {
-		component.setSize(this);
-	}
-	
-	addEventListener( span, 'click', clickHandler );
-	
-	var last_text = key;
-	var text = createText( last_text );
-	appendNode( text, span );
-
-	return {
-		mount: function ( target, anchor ) {
-			insertNode( span, target, anchor );
-		},
-		
-		update: function ( changed, root, eachBlock1_value, key, key__index ) {
-			var __tmp;
-		
-			if ( ( __tmp = key ) !== last_text ) {
-				text.data = last_text = __tmp;
-			}
-		},
-		
-		teardown: function ( detach ) {
-			removeEventListener( span, 'click', clickHandler );
-			
-			if ( detach ) {
-				detachNode( span );
-			}
-		}
-	};
-}
-
-function renderEachBlock$2 ( root, eachBlock_value, key, key__index, component ) {
-	var span = createElement( 'span' );
-	setAttribute( span, 'svelte-4231919172', '' );
-	span.className = "menuitem";
-	
-	function clickHandler ( event ) {
-		component.copyColor(this);
-	}
-	
-	addEventListener( span, 'click', clickHandler );
-	
-	var last_text = key;
-	var text = createText( last_text );
-	appendNode( text, span );
-
-	return {
-		mount: function ( target, anchor ) {
-			insertNode( span, target, anchor );
-		},
-		
-		update: function ( changed, root, eachBlock_value, key, key__index ) {
-			var __tmp;
-		
-			if ( ( __tmp = key ) !== last_text ) {
-				text.data = last_text = __tmp;
-			}
-		},
-		
-		teardown: function ( detach ) {
-			removeEventListener( span, 'click', clickHandler );
-			
-			if ( detach ) {
-				detachNode( span );
-			}
-		}
-	};
-}
-
-function renderIfBlock_1 ( root, component ) {
-	var p = createElement( 'p' );
-	setAttribute( p, 'svelte-4231919172', '' );
-	p.className = "menuitem";
-	
-	function clickHandler ( event ) {
-		component.remove();
-	}
-	
-	addEventListener( p, 'click', clickHandler );
-	
-	appendNode( createText( "DELETE" ), p );
-	var text1 = createText( "\n    " );
-	
-	var p1 = createElement( 'p' );
-	setAttribute( p1, 'svelte-4231919172', '' );
-	p1.className = "menuitem";
-	
-	function clickHandler1 ( event ) {
-		component.duplicate();
-	}
-	
-	addEventListener( p1, 'click', clickHandler1 );
-	
-	appendNode( createText( "DUPLICATE" ), p1 );
-
-	return {
-		mount: function ( target, anchor ) {
-			insertNode( p, target, anchor );
-			insertNode( text1, target, anchor );
-			insertNode( p1, target, anchor );
-		},
-		
-		update: noop,
-		
-		teardown: function ( detach ) {
-			removeEventListener( p, 'click', clickHandler );
-			removeEventListener( p1, 'click', clickHandler1 );
-			
-			if ( detach ) {
-				detachNode( p );
-				detachNode( text1 );
-				detachNode( p1 );
-			}
-		}
-	};
-}
-
-function renderIfBlock_0 ( root, component ) {
-	var p = createElement( 'p' );
-	setAttribute( p, 'svelte-4231919172', '' );
-	p.className = "menuitem";
-	
-	function clickHandler ( event ) {
+	function click_handler ( event ) {
 		component.add();
 	}
 	
-	addEventListener( p, 'click', clickHandler );
-	
+	addEventListener( p, 'click', click_handler );
 	appendNode( createText( "ADD CARD" ), p );
 
 	return {
@@ -10958,10 +12974,8 @@ function renderIfBlock_0 ( root, component ) {
 			insertNode( p, target, anchor );
 		},
 		
-		update: noop,
-		
-		teardown: function ( detach ) {
-			removeEventListener( p, 'click', clickHandler );
+		destroy: function ( detach ) {
+			removeEventListener( p, 'click', click_handler );
 			
 			if ( detach ) {
 				detachNode( p );
@@ -10970,79 +12984,252 @@ function renderIfBlock_0 ( root, component ) {
 	};
 }
 
-function context_menu ( options ) {
-	options = options || {};
+function create_if_block_1$2 ( state, component ) {
+	var p = createElement( 'p' );
+	p.className = "menuitem";
 	
-	this.refs = {};
-	this._state = Object.assign( template$3.data(), options.data );
+	function click_handler ( event ) {
+		component.remove();
+	}
+	
+	addEventListener( p, 'click', click_handler );
+	appendNode( createText( "DELETE" ), p );
+	var text_1 = createText( "\n    " );
+	var p_1 = createElement( 'p' );
+	p_1.className = "menuitem";
+	
+	function click_handler_1 ( event ) {
+		component.duplicate();
+	}
+	
+	addEventListener( p_1, 'click', click_handler_1 );
+	appendNode( createText( "DUPLICATE" ), p_1 );
+	var text_3 = createText( "\n    " );
+	var p_2 = createElement( 'p' );
+	p_2.className = "menuitem";
+	
+	function click_handler_2 ( event ) {
+		component.modeChange();
+	}
+	
+	addEventListener( p_2, 'click', click_handler_2 );
+	appendNode( createText( "MODE CHANGE" ), p_2 );
 
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( p, target, anchor );
+			insertNode( text_1, target, anchor );
+			insertNode( p_1, target, anchor );
+			insertNode( text_3, target, anchor );
+			insertNode( p_2, target, anchor );
+		},
+		
+		destroy: function ( detach ) {
+			removeEventListener( p, 'click', click_handler );
+			removeEventListener( p_1, 'click', click_handler_1 );
+			removeEventListener( p_2, 'click', click_handler_2 );
+			
+			if ( detach ) {
+				detachNode( p );
+				detachNode( text_1 );
+				detachNode( p_1 );
+				detachNode( text_3 );
+				detachNode( p_2 );
+			}
+		}
+	};
+}
+
+function create_each_block$4 ( state, each_block_value, key, key_index, component ) {
+	var text_value;
+	
+	var span = createElement( 'span' );
+	span.className = "menuitem";
+	addEventListener( span, 'click', click_handler$1 );
+	
+	span._svelte = {
+		component: component
+	};
+	
+	var text = createText( text_value = key );
+	appendNode( text, span );
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( span, target, anchor );
+		},
+		
+		update: function ( changed, state, each_block_value, key, key_index ) {
+			if ( text_value !== ( text_value = key ) ) {
+				text.data = text_value;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			removeEventListener( span, 'click', click_handler$1 );
+			
+			if ( detach ) {
+				detachNode( span );
+			}
+		}
+	};
+}
+
+function create_each_block_1$1 ( state, each_block_value, key_1, key_index, component ) {
+	var text_value;
+	
+	var span = createElement( 'span' );
+	span.className = "menuitem";
+	addEventListener( span, 'click', click_handler_1 );
+	
+	span._svelte = {
+		component: component
+	};
+	
+	var text = createText( text_value = key_1 );
+	appendNode( text, span );
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( span, target, anchor );
+		},
+		
+		update: function ( changed, state, each_block_value, key_1, key_index ) {
+			if ( text_value !== ( text_value = key_1 ) ) {
+				text.data = text_value;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			removeEventListener( span, 'click', click_handler_1 );
+			
+			if ( detach ) {
+				detachNode( span );
+			}
+		}
+	};
+}
+
+function create_if_block_2$1 ( state, component ) {
+	var p = createElement( 'p' );
+	p.className = "menuitem";
+	var span = createElement( 'span' );
+	appendNode( span, p );
+	appendNode( createText( "SIZE:" ), span );
+	appendNode( createText( "\n      " ), p );
+	var each_block_1_anchor = createComment();
+	appendNode( each_block_1_anchor, p );
+	var each_block_value = state.sizes;
+	var each_block_1_iterations = [];
+	
+	for ( var i = 0; i < each_block_value.length; i += 1 ) {
+		each_block_1_iterations[i] = create_each_block_1$1( state, each_block_value, each_block_value[i], i, component );
+		each_block_1_iterations[i].mount( p, each_block_1_anchor );
+	}
+
+	return {
+		mount: function ( target, anchor ) {
+			insertNode( p, target, anchor );
+		},
+		
+		update: function ( changed, state ) {
+			var each_block_value = state.sizes;
+			
+			if ( 'sizes' in changed ) {
+				for ( var i = 0; i < each_block_value.length; i += 1 ) {
+					if ( each_block_1_iterations[i] ) {
+						each_block_1_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+					} else {
+						each_block_1_iterations[i] = create_each_block_1$1( state, each_block_value, each_block_value[i], i, component );
+						each_block_1_iterations[i].mount( each_block_1_anchor.parentNode, each_block_1_anchor );
+					}
+				}
+			
+				destroyEach( each_block_1_iterations, true, each_block_value.length );
+			
+				each_block_1_iterations.length = each_block_value.length;
+			}
+		},
+		
+		destroy: function ( detach ) {
+			destroyEach( each_block_1_iterations, false, 0 );
+			
+			if ( detach ) {
+				detachNode( p );
+			}
+		}
+	};
+}
+
+function click_handler$1 ( event ) {
+	var component = this._svelte.component;
+	component.copyColor(this);
+}
+
+function click_handler_1 ( event ) {
+	var component = this._svelte.component;
+	component.setSize(this);
+}
+
+function Context_menu ( options ) {
+	options = options || {};
+	this.refs = {};
+	this._state = assign( template$11.data(), options.data );
+	
 	this._observers = {
 		pre: Object.create( null ),
 		post: Object.create( null )
 	};
-
+	
 	this._handlers = Object.create( null );
-
+	
 	this._root = options._root;
 	this._yield = options._yield;
-
-	this._torndown = false;
-	if ( !addedCss$3 ) { addCss$3(); }
 	
-	this._fragment = renderMainFragment$3( this._state, this );
-	if ( options.target ) { this._fragment.mount( options.target, null ); }
+	this._torndown = false;
+	if ( !added_css$11 ) add_css$11();
+	
+	this._fragment = create_main_fragment$11( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
 	
 	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$3.onrender, context: this });
+		options._root._renderHooks.push({ fn: template$11.oncreate, context: this });
 	} else {
-		template$3.onrender.call( this );
+		template$11.oncreate.call( this );
 	}
 }
 
-context_menu.prototype = template$3.methods;
+assign( Context_menu.prototype, template$11.methods, proto );
 
-context_menu.prototype.get = get$1;
-context_menu.prototype.fire = fire$1;
-context_menu.prototype.observe = observe;
-context_menu.prototype.on = on$2;
-context_menu.prototype.set = set$1;
-context_menu.prototype._flush = _flush;
-
-context_menu.prototype._set = function _set ( newState ) {
+Context_menu.prototype._set = function _set ( newState ) {
 	var oldState = this._state;
-	this._state = Object.assign( {}, oldState, newState );
-	
+	this._state = assign( {}, oldState, newState );
 	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) { this._fragment.update( newState, this._state ); }
+	if ( this._fragment ) this._fragment.update( newState, this._state );
 	dispatchObservers( this, this._observers.post, newState, oldState );
 };
 
-context_menu.prototype.teardown = function teardown ( detach ) {
-	this.fire( 'teardown' );
+Context_menu.prototype.teardown = Context_menu.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
 
-	this._fragment.teardown( detach !== false );
+	this._fragment.destroy( detach !== false );
 	this._fragment = null;
 
 	this._state = {};
 	this._torndown = true;
 };
 
-function applyComputations ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'bgColor' in newState && typeof state.bgColor === 'object' || state.bgColor !== oldState.bgColor ) ) {
+function recompute ( state, newState, oldState, isInitial ) {
+	if ( isInitial || ( 'bgColor' in newState && differs( state.bgColor, oldState.bgColor ) ) ) {
 		state.textColor = newState.textColor = template.computed.textColor( state.bgColor );
 	}
 }
 
 var template = (function () {
-  var COLOR_TYPE = ['hex', 'rgb', 'hsl'];
-  var colortypeindex = 0;
+  const COLOR_TYPE = ['hex', 'rgb', 'hsl'];
+  let colortypeindex = 0;
   return {
-    components: {
-      ColorCard: color_card,
-      ColorLists: color_lists,
-      ContextMenu: context_menu
-    },
-    data: function data () {
+    data () {
       return {
         color_type: 'hex',
         // colortypeindex: 0,
@@ -11052,41 +13239,32 @@ var template = (function () {
       }
     },
     computed: {
-      textColor: function (bgColor) { return tinycolor.mostReadable(bgColor, ['#eee', '#111']); },
+      textColor: bgColor => tinycolor.mostReadable(bgColor, ['#eee', '#111']),
       // color_type: (colorcode) => COLOR_TYPE[colortypeindex].toUpperCase()
     },
-    onrender: function onrender () {
+    oncreate () {
       console.log('this', this);
-      window.addEventListener('resize', function (e) {
-
-      });
-      this.on('thingHappened', function (event) {
-        console.log(("A thing happened: " + (event.thing)));
-      });
-      this.fire('thingHappened', {
-        thing: 'this event was fired'
-      });
       this.selectable = new Selectable(this.refs.box, {
         filter: '.card',
         tolerance: 'fit',
-        start: function (e, position) {
+        start: (e, position) => {
           store.trigger('menu_close');
         },
-        selected: function (position, indexs, els) {
+        selected: (position, indexs, els) => {
           store.trigger('cards.SELECT_CARDS', indexs, true);
         },
       });
     },
 
     methods: {
-      color_typeChange: function color_typeChange () {
+      color_typeChange () {
         ++colortypeindex;
         colortypeindex %= COLOR_TYPE.length;
         this.set({color_type: COLOR_TYPE[colortypeindex].toUpperCase()});
       },
-      addCard: function addCard () {
-        var validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i;
-        var text = validationRegExp.exec(this.get('colorcode'));
+      addCard () {
+        const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i;
+        const text = validationRegExp.exec(this.get('colorcode'));
         if (text) {
           store.trigger('cards.ADD_CARD', {
             name: '',
@@ -11099,121 +13277,58 @@ var template = (function () {
   }
 }());
 
-var addedCss = false;
-function addCss () {
+var added_css = false;
+function add_css () {
 	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-230118669].ui-selectable-helper, [svelte-230118669] .ui-selectable-helper {\n    position: absolute;\n    z-index: 100;\n    border: 1px dotted black;\n  }\n  [svelte-230118669]#colors, [svelte-230118669] #colors {\n    width: 320px;\n    height: 100vh;\n    position: absolute;\n    margin:0;\n    padding: 20px;\n    top:0;\n    left:0;\n  }\n  [svelte-230118669]#box, [svelte-230118669] #box {\n    width: 100%;\n    height: 100%;\n  }\n  [svelte-230118669]#form_add, [svelte-230118669] #form_add {\n    margin: 10px 0;\n    \n    display: flex;\n    flex-direction: row;}\n    [svelte-230118669]#color_type, [svelte-230118669] #color_type {\n      text-align: center;\n      width: 42px;\n      height: 42px;\n      border-width: 1px 0 1px 1px;\n      border-style: solid;\n      border-top-left-radius: 4px;\n      border-bottom-left-radius: 4px;}\n    [svelte-230118669]#color_hex, [svelte-230118669] #color_hex {\n      flex: 1 1 auto; \n      height: 42px;\n      padding: 8px 5px;\n      border-width: 1px 0 1px 1px;\n      border-style: solid;}\n    [svelte-230118669]#add_btn, [svelte-230118669] #add_btn {\n      width: 42px;\n      height: 42px;\n      text-align: center;\n      border-width: 1px;\n      border-style: solid;\n      border-top-right-radius: 4px;\n      border-bottom-right-radius: 4px;}\n";
+	style.textContent = "\n  [svelte-3257585059].ui-selectable-helper, [svelte-3257585059] .ui-selectable-helper {\n    position: absolute;\n    z-index: 100;\n    border: 1px dotted black;\n  }\n  [svelte-3257585059]#colors, [svelte-3257585059] #colors {\n    width: 320px;\n    height: 100vh;\n    position: absolute;\n    margin:0;\n    padding: 20px;\n    top:0;\n    left:0;\n  }\n  [svelte-3257585059]#box, [svelte-3257585059] #box {\n    width: 100%;\n    height: 100%;\n  }\n  [svelte-3257585059]#form_add, [svelte-3257585059] #form_add {\n    margin: 10px 0;\n    \n    display: flex;\n    flex-direction: row;}\n    [svelte-3257585059]#color_type, [svelte-3257585059] #color_type {\n      text-align: center;\n      width: 42px;\n      height: 42px;\n      border-width: 1px 0 1px 1px;\n      border-style: solid;\n      border-top-left-radius: 4px;\n      border-bottom-left-radius: 4px;}\n    [svelte-3257585059]#color_hex, [svelte-3257585059] #color_hex {\n      flex: 1 1 auto; \n      height: 42px;\n      padding: 8px 5px;\n      border-width: 1px 0 1px 1px;\n      border-style: solid;}\n    [svelte-3257585059]#add_btn, [svelte-3257585059] #add_btn {\n      width: 42px;\n      height: 42px;\n      text-align: center;\n      border-width: 1px;\n      border-style: solid;\n      border-top-right-radius: 4px;\n      border-bottom-right-radius: 4px;}\n";
 	appendNode( style, document.head );
 
-	addedCss = true;
+	added_css = true;
 }
 
-function renderMainFragment ( root, component ) {
+function create_main_fragment ( state, component ) {
+	var div_style_value, div_1_style_value;
+	
 	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-230118669', '' );
+	setAttribute( div, 'svelte-3257585059', '' );
 	div.id = "colors";
 	setAttribute( div, 'ref', "colors" );
-	div.style.cssText = "color: " + ( root.textColor ) + ";";
+	div.style.cssText = div_style_value = "color: " + ( state.textColor ) + ";";
 	
-	appendNode( createText( "\n  " ), div );
-	
-	var div1 = createElement( 'div' );
-	setAttribute( div1, 'svelte-230118669', '' );
-	div1.id = "form_add";
-	
-	appendNode( div1, div );
-	
-	var button = createElement( 'button' );
-	setAttribute( button, 'svelte-230118669', '' );
-	button.id = "color_type";
-	
-	function clickHandler ( event ) {
-		component.color_typeChange();
-	}
-	
-	addEventListener( button, 'click', clickHandler );
-	
-	appendNode( button, div1 );
-	var last_text1 = root.color_type;
-	var text1 = createText( last_text1 );
-	appendNode( text1, button );
-	appendNode( createText( "\n    " ), div1 );
-	
-	var input = createElement( 'input' );
-	setAttribute( input, 'svelte-230118669', '' );
-	component.refs.colorhex = input;
-	input.id = "color_hex";
-	
-	var input_updating = false;
-	
-	function inputChangeHandler () {
-		input_updating = true;
-		component._set({ colorcode: input.value });
-		input_updating = false;
-	}
-	
-	addEventListener( input, 'input', inputChangeHandler );
-	
-	input.placeholder = "#000000";
-	
-	function submitHandler ( event ) {
-		component.addCard();
-	}
-	
-	addEventListener( input, 'submit', submitHandler );
-	
-	appendNode( input, div1 );
-	
-	input.value = root.colorcode;
-	
-	appendNode( createText( "\n    " ), div1 );
-	
-	var button1 = createElement( 'button' );
-	setAttribute( button1, 'svelte-230118669', '' );
-	button1.id = "add_btn";
-	
-	function clickHandler1 ( event ) {
-		component.addCard();
-	}
-	
-	addEventListener( button1, 'click', clickHandler1 );
-	
-	appendNode( button1, div1 );
-	appendNode( createText( "➕" ), button1 );
-	appendNode( createText( "\n  " ), div );
-	
-	var hr = createElement( 'hr' );
-	setAttribute( hr, 'svelte-230118669', '' );
-	
-	appendNode( hr, div );
-	appendNode( createText( "\n  " ), div );
-	
-	var colorLists = new template.components.ColorLists({
+	var colorpicker = new Color_picker({
 		target: div,
 		_root: component._root || component
 	});
 	
-	var text7 = createText( "\n\n" );
+	appendNode( createText( "\n  " ), div );
+	var hr = createElement( 'hr' );
+	appendNode( hr, div );
+	appendNode( createText( "\n  " ), div );
 	
-	var div2 = createElement( 'div' );
-	setAttribute( div2, 'svelte-230118669', '' );
-	component.refs.box = div2;
-	div2.id = "box";
-	div2.style.cssText = "background-color: " + ( root.bgColor ) + ";";
+	var colorlists = new Color_lists({
+		target: div,
+		_root: component._root || component
+	});
 	
-	var eachBlock_anchor = createComment();
-	appendNode( eachBlock_anchor, div2 );
-	var eachBlock_value = root.cards;
-	var eachBlock_iterations = [];
+	var text_2 = createText( "\n\n" );
+	var div_1 = createElement( 'div' );
+	setAttribute( div_1, 'svelte-3257585059', '' );
+	div_1.id = "box";
+	div_1.style.cssText = div_1_style_value = "background-color: " + ( state.bgColor ) + ";";
+	component.refs.box = div_1;
+	var each_block_anchor = createComment();
+	appendNode( each_block_anchor, div_1 );
+	var each_block_value = state.cards;
+	var each_block_iterations = [];
 	
-	for ( var i = 0; i < eachBlock_value.length; i += 1 ) {
-		eachBlock_iterations[i] = renderEachBlock( root, eachBlock_value, eachBlock_value[i], i, component );
-		eachBlock_iterations[i].mount( eachBlock_anchor.parentNode, eachBlock_anchor );
+	for ( var i = 0; i < each_block_value.length; i += 1 ) {
+		each_block_iterations[i] = create_each_block( state, each_block_value, each_block_value[i], i, component );
+		each_block_iterations[i].mount( div_1, each_block_anchor );
 	}
 	
-	var text8 = createText( "\n\n" );
+	var text_3 = createText( "\n\n" );
 	
-	var contextMenu = new template.components.ContextMenu({
+	var contextmenu = new Context_menu({
 		target: null,
 		_root: component._root || component
 	});
@@ -11221,155 +13336,139 @@ function renderMainFragment ( root, component ) {
 	return {
 		mount: function ( target, anchor ) {
 			insertNode( div, target, anchor );
-			insertNode( text7, target, anchor );
-			insertNode( div2, target, anchor );
-			insertNode( text8, target, anchor );
-			contextMenu._fragment.mount( target, anchor );
+			insertNode( text_2, target, anchor );
+			insertNode( div_1, target, anchor );
+			insertNode( text_3, target, anchor );
+			contextmenu._fragment.mount( target, anchor );
 		},
 		
-		update: function ( changed, root ) {
-			var __tmp;
-		
-			div.style.cssText = "color: " + ( root.textColor ) + ";";
-			
-			if ( ( __tmp = root.color_type ) !== last_text1 ) {
-				text1.data = last_text1 = __tmp;
+		update: function ( changed, state ) {
+			if ( div_style_value !== ( div_style_value = "color: " + ( state.textColor ) + ";" ) ) {
+				div.style.cssText = div_style_value;
 			}
 			
-			if ( !input_updating ) { input.value = root.colorcode; }
+			if ( div_1_style_value !== ( div_1_style_value = "background-color: " + ( state.bgColor ) + ";" ) ) {
+				div_1.style.cssText = div_1_style_value;
+			}
 			
-			div2.style.cssText = "background-color: " + ( root.bgColor ) + ";";
+			var each_block_value = state.cards;
 			
-			var eachBlock_value = root.cards;
-			
-			for ( var i = 0; i < eachBlock_value.length; i += 1 ) {
-				if ( !eachBlock_iterations[i] ) {
-					eachBlock_iterations[i] = renderEachBlock( root, eachBlock_value, eachBlock_value[i], i, component );
-					eachBlock_iterations[i].mount( eachBlock_anchor.parentNode, eachBlock_anchor );
-				} else {
-					eachBlock_iterations[i].update( changed, root, eachBlock_value, eachBlock_value[i], i );
+			if ( 'bgColor' in changed || 'cards' in changed ) {
+				for ( var i = 0; i < each_block_value.length; i += 1 ) {
+					if ( each_block_iterations[i] ) {
+						each_block_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+					} else {
+						each_block_iterations[i] = create_each_block( state, each_block_value, each_block_value[i], i, component );
+						each_block_iterations[i].mount( each_block_anchor.parentNode, each_block_anchor );
+					}
 				}
+			
+				destroyEach( each_block_iterations, true, each_block_value.length );
+			
+				each_block_iterations.length = each_block_value.length;
 			}
-			
-			teardownEach( eachBlock_iterations, true, eachBlock_value.length );
-			
-			eachBlock_iterations.length = eachBlock_value.length;
 		},
 		
-		teardown: function ( detach ) {
-			removeEventListener( button, 'click', clickHandler );
-			if ( component.refs.colorhex === input ) { component.refs.colorhex = null; }
-			removeEventListener( input, 'input', inputChangeHandler );
-			removeEventListener( input, 'submit', submitHandler );
-			removeEventListener( button1, 'click', clickHandler1 );
-			colorLists.teardown( false );
-			if ( component.refs.box === div2 ) { component.refs.box = null; }
+		destroy: function ( detach ) {
+			colorpicker.destroy( false );
+			colorlists.destroy( false );
+			if ( component.refs.box === div_1 ) component.refs.box = null;
 			
-			teardownEach( eachBlock_iterations, false );
+			destroyEach( each_block_iterations, false, 0 );
 			
-			contextMenu.teardown( detach );
+			contextmenu.destroy( detach );
 			
 			if ( detach ) {
 				detachNode( div );
-				detachNode( text7 );
-				detachNode( div2 );
-				detachNode( text8 );
+				detachNode( text_2 );
+				detachNode( div_1 );
+				detachNode( text_3 );
 			}
 		}
 	};
 }
 
-function renderEachBlock ( root, eachBlock_value, card, index, component ) {
-	var colorCard_initialData = {
-		card: card,
-		index: index
-	};
-	var colorCard = new template.components.ColorCard({
+function create_each_block ( state, each_block_value, card, index, component ) {
+	var colorcard = new Color_card({
 		target: null,
 		_root: component._root || component,
-		data: colorCard_initialData
+		data: {
+			bgColor: state.bgColor,
+			card: card,
+			index: index
+		}
 	});
 
 	return {
 		mount: function ( target, anchor ) {
-			colorCard._fragment.mount( target, anchor );
+			colorcard._fragment.mount( target, anchor );
 		},
 		
-		update: function ( changed, root, eachBlock_value, card, index ) {
-			var __tmp;
-		
-			var colorCard_changes = {};
+		update: function ( changed, state, each_block_value, card, index ) {
+			var colorcard_changes = {};
 			
-			if ( 'cards' in changed ) { colorCard_changes.card = card; }
-			colorCard_changes.index = index;
+			if ( 'bgColor' in changed ) colorcard_changes.bgColor = state.bgColor;
+			if ( 'cards' in changed ) colorcard_changes.card = card;
+			colorcard_changes.index = index;
 			
-			if ( Object.keys( colorCard_changes ).length ) { colorCard.set( colorCard_changes ); }
+			if ( Object.keys( colorcard_changes ).length ) colorcard.set( colorcard_changes );
 		},
 		
-		teardown: function ( detach ) {
-			colorCard.teardown( detach );
+		destroy: function ( detach ) {
+			colorcard.destroy( detach );
 		}
 	};
 }
 
-function app$1 ( options ) {
+function App ( options ) {
 	options = options || {};
-	
 	this.refs = {};
-	this._state = Object.assign( template.data(), options.data );
-applyComputations( this._state, this._state, {}, true );
-
+	this._state = assign( template.data(), options.data );
+	recompute( this._state, this._state, {}, true );
+	
 	this._observers = {
 		pre: Object.create( null ),
 		post: Object.create( null )
 	};
-
+	
 	this._handlers = Object.create( null );
-
+	
 	this._root = options._root;
 	this._yield = options._yield;
-
+	
 	this._torndown = false;
-	if ( !addedCss ) { addCss(); }
+	if ( !added_css ) add_css();
 	this._renderHooks = [];
 	
-	this._fragment = renderMainFragment( this._state, this );
-	if ( options.target ) { this._fragment.mount( options.target, null ); }
+	this._fragment = create_main_fragment( this._state, this );
+	if ( options.target ) this._fragment.mount( options.target, null );
 	
 	this._flush();
 	
 	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template.onrender, context: this });
+		options._root._renderHooks.push({ fn: template.oncreate, context: this });
 	} else {
-		template.onrender.call( this );
+		template.oncreate.call( this );
 	}
 }
 
-app$1.prototype = template.methods;
+assign( App.prototype, template.methods, proto );
 
-app$1.prototype.get = get$1;
-app$1.prototype.fire = fire$1;
-app$1.prototype.observe = observe;
-app$1.prototype.on = on$2;
-app$1.prototype.set = set$1;
-app$1.prototype._flush = _flush;
-
-app$1.prototype._set = function _set ( newState ) {
+App.prototype._set = function _set ( newState ) {
 	var oldState = this._state;
-	this._state = Object.assign( {}, oldState, newState );
-	applyComputations( this._state, newState, oldState, false );
-	
+	this._state = assign( {}, oldState, newState );
+	recompute( this._state, newState, oldState, false );
 	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) { this._fragment.update( newState, this._state ); }
+	if ( this._fragment ) this._fragment.update( newState, this._state );
 	dispatchObservers( this, this._observers.post, newState, oldState );
 	
 	this._flush();
 };
 
-app$1.prototype.teardown = function teardown ( detach ) {
-	this.fire( 'teardown' );
+App.prototype.teardown = App.prototype.destroy = function destroy ( detach ) {
+	this.fire( 'destroy' );
 
-	this._fragment.teardown( detach !== false );
+	this._fragment.destroy( detach !== false );
 	this._fragment = null;
 
 	this._state = {};
@@ -11377,12 +13476,12 @@ app$1.prototype.teardown = function teardown ( detach ) {
 };
 
 /* eslint  no-new: 0 */
-var app = new app$1({
+const app = new App({
   target: document.querySelector('#root'),
   data: store.get()
 });
 
-store.subscribe(function (data) {
+store.subscribe((data) => {
   app.set(data);
 });
 

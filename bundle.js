@@ -4737,7 +4737,6 @@ class PositionManager {
       containment: document.body,
       handle: null,
       grid: 1,
-      percent: false,
       axis: false, // or 'x' , 'y', 'shift', 'ctrl', 'alt'
     }, options || {});
 
@@ -4798,6 +4797,7 @@ class PositionManager {
     }
 
     const event = 'touches' in e ? e.touches[0] : e;
+    // スクロールも考慮した絶対座標 this.parentRect.left - window.pageXOffset
     this.x = event.pageX - this.parentRect.left - window.pageXOffset;
     this.y = event.pageY - this.parentRect.top - window.pageYOffset;
 
@@ -4812,13 +4812,11 @@ class PositionManager {
     }
 
     // modify
-    this.left = this.handleRect.left + this.vectorX;
-    this.top  = this.handleRect.top + this.vectorY;
+    this.left = this.handleRect.left - this.parentRect.left + this.vectorX;
+    this.top  = this.handleRect.top - this.parentRect.top + this.vectorY;
 
-    if (this.options.percent) {
-      this.percentLeft = this.percentage(this.left, 'width');
-      this.percentTop  = this.percentage(this.top, 'height');
-    }
+    this.percentLeft = this.percentage(this.x, 'width');
+    this.percentTop  = this.percentage(this.y, 'height');
 
     if (initflg) {
       this.startLeft = this.left;
@@ -4935,9 +4933,9 @@ function off (el, eventNames, callback, useCapture) {
  * @param {Object|Element} options
  */
 class MousePosition {
-  constructor (options) {
+  constructor (element,  options) {
     this.options = Object.assign({
-      containment: (options.nodeName ? options : document.body),
+      containment: element || document.body,
       handle: null,
       // start: noop,
       // drag: noop,
@@ -4950,9 +4948,9 @@ class MousePosition {
       mmove: (e) => { this.mmove(e); },
       mup: (e) => { this.mup(e); },
     };
-    on(options.handle || options.containment, 'mousedown touchstart', this._event.mdown);
+    on(element, 'mousedown touchstart', this._event.mdown);
 
-    this.position = new PositionManager(options);
+    this.position = new PositionManager(this.options);
 
     this._clickFlg = false;
   }
@@ -5015,7 +5013,7 @@ class MousePosition {
  */
 class Movable extends MousePosition {
   constructor (element, options) {
-    super(Object.assign({
+    super(element, Object.assign({
       containment: element.parentElement,
       handle: element,
       draggingClass: 'dragging',
@@ -5082,7 +5080,7 @@ function touchHit (rect1, rect2) {
 
 class Selectable extends MousePosition {
   constructor (element, options) {
-    super(Object.assign({
+    super(element, Object.assign({
       containment: element,
       filter: '*',
       cancel: 'input,textarea,button,select,option',
@@ -5226,7 +5224,8 @@ class Selectable extends MousePosition {
   }
 }
 
-riot$1.tag2('app', '<div id="colors" ref="colors"> <color-picker color="{color}" size="280" oncolorchange="{colorchange}" simple=""></color-picker> <div id="form_add"> <button id="color_type" onclick="{color_typeChange}">{color_type.toUpperCase()}</button> <input id="color_hex" ref="color_hex" placeholder="{placeholder}" onsubmit="{addCard_btn}" oninput="{color_hexInput}"> <button id="add_btn" onclick="{addCard_btn}">➕</button> </div> <div id="pallete"> <color-tip each="{palette}"></color-tip> </div> <hr> <color-lists></color-lists> </div> <div id="box" ref="box"> <color-card each="{card, i in cards}"></color-card> </div> <context-menu></context-menu>', 'app .ui-selectable-helper,[data-is="app"] .ui-selectable-helper{ position: absolute; z-index: 100; border: 1px dotted black; } app #colors,[data-is="app"] #colors{ width: 320px; height: 100vh; position: absolute; margin:0; padding: 20px; top:0; left:0; } app #box,[data-is="app"] #box{ width: 100%; height: 100%; background: #1f2532; } app #form_add,[data-is="app"] #form_add{ margin: 10px 0; display: flex; flex-direction: row;} app #color_type,[data-is="app"] #color_type{ text-align: center; width: 42px; height: 42px; border-width: 1px 0 1px 1px; border-style: solid; border-top-left-radius: 4px; border-bottom-left-radius: 4px;} app #color_hex,[data-is="app"] #color_hex{ flex: 1 1 auto; height: 42px; padding: 8px 5px; border-width: 1px 0 1px 1px; border-style: solid;} app #add_btn,[data-is="app"] #add_btn{ width: 42px; height: 42px; text-align: center; border-width: 1px; border-style: solid; border-top-right-radius: 4px; border-bottom-right-radius: 4px;}', '', function(opts) {
+riot$1.tag2('app', '<div id="colors" ref="colors"> <color-picker color="{color}" size="280" oncolorchange="{colorchange}" simple=""></color-picker> <div id="color-picker"></div> <div id="form_add"> <button id="color_type" onclick="{color_typeChange}">{color_type.toUpperCase()}</button> <input id="color_hex" ref="color_hex" placeholder="{placeholder}" onsubmit="{addCard_btn}" oninput="{color_hexInput}"> <button id="add_btn" onclick="{addCard_btn}">➕</button> </div> <div id="pallete"> <color-tip each="{palette}"></color-tip> </div> <hr> <color-lists></color-lists> </div> <div id="box" ref="box"> <color-card each="{card, i in cards}"></color-card> </div> <context-menu></context-menu>', 'app .ui-selectable-helper,[data-is="app"] .ui-selectable-helper{ position: absolute; z-index: 100; border: 1px dotted black; } app #colors,[data-is="app"] #colors{ width: 320px; height: 100vh; position: absolute; margin:0; padding: 20px; top:0; left:0; } app #box,[data-is="app"] #box{ width: 100%; height: 100%; background: #1f2532; } app #form_add,[data-is="app"] #form_add{ margin: 10px 0; display: flex; flex-direction: row;} app #color_type,[data-is="app"] #color_type{ text-align: center; width: 42px; height: 42px; border-width: 1px 0 1px 1px; border-style: solid; border-top-left-radius: 4px; border-bottom-left-radius: 4px;} app #color_hex,[data-is="app"] #color_hex{ flex: 1 1 auto; height: 42px; padding: 8px 5px; border-width: 1px 0 1px 1px; border-style: solid;} app #add_btn,[data-is="app"] #add_btn{ width: 42px; height: 42px; text-align: center; border-width: 1px; border-style: solid; border-top-right-radius: 4px; border-bottom-right-radius: 4px;}', '', function(opts) {
+
 
     this.cards = opts.cards;
     const palette = () => {
@@ -5333,7 +5332,7 @@ riot$1.tag2('app', '<div id="colors" ref="colors"> <color-picker color="{color}"
     });
 });
 
-riot$1.tag2('color-card', '<div class="card animated bounceIn" ref="card" riot-style="{colorstyle} width: {width}px; height: {height}px; left: {left}px; top: {top}px; z-index: {+card.zIndex};"> <div class="cardtext"> <span><b>{name}</b></span><br> <span>{color}</span><br> <span>{color.toHslString()}</span><br> <span>{contrast}</span> </div> </div>', 'color-card .card,[data-is="color-card"] .card{ position: absolute; text-align:center; font-size:12px; display: flex; align-items: center; justify-content: center; } color-card .card.card_selected,[data-is="color-card"] .card.card_selected{ outline: 1px dashed black; box-shadow: 0 0 0 1px white; } color-card .card.active,[data-is="color-card"] .card.active{ z-index: 100; } color-card .cardtext,[data-is="color-card"] .cardtext{ white-space: pre-wrap; user-select: none; -ms-user-select: none; -webkit-user-select: none; -moz-user-select: none; }', '', function(opts) {
+riot$1.tag2('color-card', '<div class="card animated bounceIn" ref="card" riot-style="{colorstyle} width: {width}px; height: {height}px; left: {left}px; top: {top}px; z-index: {+card.zIndex};"> <div class="cardtext"> <span><b>{name}</b></span><br> <span>{color}</span><br> <span>{color.toHslString()}</span><br> <span>{contrast}</span> </div> </div>', 'color-card .card,[data-is="color-card"] .card{ position: absolute; text-align:center; font-size:12px; display: flex; align-items: center; justify-content: center; border-radius: 5px; } color-card .card.card_selected,[data-is="color-card"] .card.card_selected{ outline: 1px dashed black; box-shadow: 0 0 0 1px white; } color-card .card.active,[data-is="color-card"] .card.active{ z-index: 100; } color-card .cardtext,[data-is="color-card"] .cardtext{ white-space: pre-wrap; user-select: none; -ms-user-select: none; -webkit-user-select: none; -moz-user-select: none; }', '', function(opts) {
 
     this.width = 120;
     this.height = 120;
@@ -12944,7 +12943,7 @@ riot$1.tag2('context-menu', '<div id="menu" ref="menu" show="{mode}"> <p class="
     };
 
     this.setBgColor = () => {
-      store.trigger('set_bgColor', activeCard.color);
+      store.trigger('bgColor.set_bgColor', activeCard.color);
     };
 
     this.copys = 'HEX,RGB,HSL'.split(',');
@@ -13119,8 +13118,7 @@ riot$1.tag2('color-picker', '<div class="color-picker" riot-style="width: {opts.
         canvas.draw();
         canvas.setPosition();
 
-        return new MousePosition({
-          containment: this.refs[type],
+        return new MousePosition(this.refs[type], {
           start: (e, position) => {
             if (canvas.positionTest(position)) {
               canvas.setColor(position);
