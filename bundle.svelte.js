@@ -421,12 +421,12 @@ var Histore = createCommonjsModule(function (module) {
   };
 
   // CommonJS: Export function
-  if (typeof module !== 'undefined' && module.exports) {
+  if ('object' !== 'undefined' && module.exports) {
     module.exports = Histore;
     /* global define */
-  } else if (typeof define === 'function' && define.amd) {
+  } else if (typeof undefined === 'function' && undefined.amd) {
   // AMD/requirejs: Define the module
-    define(function () { return Histore });
+    undefined(function () { return Histore });
   } else {
   // Browser: Expose to window
     window.Histore = Histore;
@@ -554,11 +554,11 @@ var KeyManager = createCommonjsModule(function (module) {
 
 
   // CommonJS: Export function
-  if (typeof module !== 'undefined' && module.exports) {
+  if ('object' !== 'undefined' && module.exports) {
     module.exports = KeyManager;
-  } else if (typeof define === 'function' && define.amd) {
+  } else if (typeof undefined === 'function' && undefined.amd) {
   // AMD/requirejs: Define the module
-    define(function () { return KeyManager });
+    undefined(function () { return KeyManager });
   } else {
   // Browser: Expose to window
     window.KeyManager = KeyManager;
@@ -1823,12 +1823,12 @@ function validateWCAG2Parms(parms) {
 }
 
 // Node: Export function
-if (typeof module !== "undefined" && module.exports) {
+if ('object' !== "undefined" && module.exports) {
     module.exports = tinycolor;
 }
 // AMD/requirejs: Define the module
-else if (typeof define === 'function' && define.amd) {
-    define(function () {return tinycolor;});
+else if (typeof undefined === 'function' && undefined.amd) {
+    undefined(function () {return tinycolor;});
 }
 // Browser: Expose to window
 else {
@@ -1959,623 +1959,809 @@ store.subscribe('cards', (cards) => {
 });
 console.log('store', store);
 
-function appendNode ( node, target ) {
-	target.appendChild( node );
-}
+function noop() {}
 
-function insertNode ( node, target, anchor ) {
-	target.insertBefore( node, anchor );
-}
-
-function detachNode ( node ) {
-	node.parentNode.removeChild( node );
-}
-
-function destroyEach ( iterations, detach, start ) {
-	for ( var i = start; i < iterations.length; i += 1 ) {
-		iterations[i].destroy( detach );
-	}
-}
-
-function createElement ( name ) {
-	return document.createElement( name );
-}
-
-function createSvgElement ( name ) {
-	return document.createElementNS( 'http://www.w3.org/2000/svg', name );
-}
-
-function createText ( data ) {
-	return document.createTextNode( data );
-}
-
-function createComment () {
-	return document.createComment( '' );
-}
-
-function addEventListener ( node, event, handler ) {
-	node.addEventListener( event, handler, false );
-}
-
-function removeEventListener ( node, event, handler ) {
-	node.removeEventListener( event, handler, false );
-}
-
-function setAttribute ( node, attribute, value ) {
-	node.setAttribute( attribute, value );
-}
-
-function noop () {}
-
-function assign ( target ) {
-	for ( var i = 1; i < arguments.length; i += 1 ) {
-		var source = arguments[i];
-		for ( var k in source ) target[k] = source[k];
+function assign(target) {
+	var k,
+		source,
+		i = 1,
+		len = arguments.length;
+	for (; i < len; i++) {
+		source = arguments[i];
+		for (k in source) target[k] = source[k];
 	}
 
 	return target;
 }
 
-function differs ( a, b ) {
-	return ( a !== b ) || ( a && ( typeof a === 'object' ) || ( typeof a === 'function' ) );
+function appendNode(node, target) {
+	target.appendChild(node);
 }
 
-function dispatchObservers ( component, group, newState, oldState ) {
-	for ( var key in group ) {
-		if ( !( key in newState ) ) continue;
+function insertNode(node, target, anchor) {
+	target.insertBefore(node, anchor);
+}
 
-		var newValue = newState[ key ];
-		var oldValue = oldState[ key ];
+function detachNode(node) {
+	node.parentNode.removeChild(node);
+}
 
-		if ( differs( newValue, oldValue ) ) {
-			var callbacks = group[ key ];
-			if ( !callbacks ) continue;
+function destroyEach(iterations) {
+	for (var i = 0; i < iterations.length; i += 1) {
+		if (iterations[i]) iterations[i].d();
+	}
+}
 
-			for ( var i = 0; i < callbacks.length; i += 1 ) {
-				var callback = callbacks[i];
-				if ( callback.__calling ) continue;
+function createElement(name) {
+	return document.createElement(name);
+}
 
-				callback.__calling = true;
-				callback.call( component, newValue, oldValue );
-				callback.__calling = false;
-			}
+function createText(data) {
+	return document.createTextNode(data);
+}
+
+function createComment() {
+	return document.createComment('');
+}
+
+function addListener(node, event, handler) {
+	node.addEventListener(event, handler, false);
+}
+
+function removeListener(node, event, handler) {
+	node.removeEventListener(event, handler, false);
+}
+
+function setAttribute(node, attribute, value) {
+	node.setAttribute(attribute, value);
+}
+
+function setStyle(node, key, value) {
+	node.style.setProperty(key, value);
+}
+
+function blankObject() {
+	return Object.create(null);
+}
+
+function destroy(detach) {
+	this.destroy = noop;
+	this.fire('destroy');
+	this.set = this.get = noop;
+
+	if (detach !== false) this._fragment.u();
+	this._fragment.d();
+	this._fragment = this._state = null;
+}
+
+function differs(a, b) {
+	return a !== b || ((a && typeof a === 'object') || typeof a === 'function');
+}
+
+function dispatchObservers(component, group, changed, newState, oldState) {
+	for (var key in group) {
+		if (!changed[key]) continue;
+
+		var newValue = newState[key];
+		var oldValue = oldState[key];
+
+		var callbacks = group[key];
+		if (!callbacks) continue;
+
+		for (var i = 0; i < callbacks.length; i += 1) {
+			var callback = callbacks[i];
+			if (callback.__calling) continue;
+
+			callback.__calling = true;
+			callback.call(component, newValue, oldValue);
+			callback.__calling = false;
 		}
 	}
 }
 
-function get ( key ) {
-	return key ? this._state[ key ] : this._state;
-}
+function fire(eventName, data) {
+	var handlers =
+		eventName in this._handlers && this._handlers[eventName].slice();
+	if (!handlers) return;
 
-function fire ( eventName, data ) {
-	var handlers = eventName in this._handlers && this._handlers[ eventName ].slice();
-	if ( !handlers ) return;
-
-	for ( var i = 0; i < handlers.length; i += 1 ) {
-		handlers[i].call( this, data );
+	for (var i = 0; i < handlers.length; i += 1) {
+		handlers[i].call(this, data);
 	}
 }
 
-function observe ( key, callback, options ) {
-	var group = ( options && options.defer ) ? this._observers.post : this._observers.pre;
+function get(key) {
+	return key ? this._state[key] : this._state;
+}
 
-	( group[ key ] || ( group[ key ] = [] ) ).push( callback );
+function init(component, options) {
+	component.options = options;
 
-	if ( !options || options.init !== false ) {
+	component._observers = { pre: blankObject(), post: blankObject() };
+	component._handlers = blankObject();
+	component._root = options._root || component;
+	component._yield = options._yield;
+	component._bind = options._bind;
+}
+
+function observe(key, callback, options) {
+	var group = options && options.defer
+		? this._observers.post
+		: this._observers.pre;
+
+	(group[key] || (group[key] = [])).push(callback);
+
+	if (!options || options.init !== false) {
 		callback.__calling = true;
-		callback.call( this, this._state[ key ] );
+		callback.call(this, this._state[key]);
 		callback.__calling = false;
 	}
 
 	return {
-		cancel: function () {
-			var index = group[ key ].indexOf( callback );
-			if ( ~index ) group[ key ].splice( index, 1 );
+		cancel: function() {
+			var index = group[key].indexOf(callback);
+			if (~index) group[key].splice(index, 1);
 		}
 	};
 }
 
-function on ( eventName, handler ) {
-	if ( eventName === 'teardown' ) return this.on( 'destroy', handler );
+function on(eventName, handler) {
+	if (eventName === 'teardown') return this.on('destroy', handler);
 
-	var handlers = this._handlers[ eventName ] || ( this._handlers[ eventName ] = [] );
-	handlers.push( handler );
+	var handlers = this._handlers[eventName] || (this._handlers[eventName] = []);
+	handlers.push(handler);
 
 	return {
-		cancel: function () {
-			var index = handlers.indexOf( handler );
-			if ( ~index ) handlers.splice( index, 1 );
+		cancel: function() {
+			var index = handlers.indexOf(handler);
+			if (~index) handlers.splice(index, 1);
 		}
 	};
 }
 
-function set ( newState ) {
-	this._set( assign( {}, newState ) );
-	( this._root || this )._flush();
+function set(newState) {
+	this._set(assign({}, newState));
+	if (this._root._lock) return;
+	this._root._lock = true;
+	callAll(this._root._beforecreate);
+	callAll(this._root._oncreate);
+	callAll(this._root._aftercreate);
+	this._root._lock = false;
 }
 
-function _flush () {
-	if ( !this._renderHooks ) return;
+function _set(newState) {
+	var oldState = this._state,
+		changed = {},
+		dirty = false;
 
-	while ( this._renderHooks.length ) {
-		var hook = this._renderHooks.pop();
-		hook.fn.call( hook.context );
+	for (var key in newState) {
+		if (differs(newState[key], oldState[key])) changed[key] = dirty = true;
 	}
+	if (!dirty) return;
+
+	this._state = assign({}, oldState, newState);
+	this._recompute(changed, this._state);
+	if (this._bind) this._bind(changed, this._state);
+	dispatchObservers(this, this._observers.pre, changed, this._state, oldState);
+	this._fragment.p(changed, this._state);
+	dispatchObservers(this, this._observers.post, changed, this._state, oldState);
+}
+
+function callAll(fns) {
+	while (fns && fns.length) fns.pop()();
+}
+
+function _mount(target, anchor) {
+	this._fragment.m(target, anchor);
+}
+
+function _unmount() {
+	this._fragment.u();
 }
 
 var proto = {
+	destroy: destroy,
 	get: get,
 	fire: fire,
 	observe: observe,
 	on: on,
 	set: set,
-	_flush: _flush
+	teardown: destroy,
+	_recompute: noop,
+	_set: _set,
+	_mount: _mount,
+	_unmount: _unmount
 };
 
-function recompute$2 ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'color' in newState && differs( state.color, oldState.color ) ) ) {
-		state._color = newState._color = template$2.computed._color( state.color );
-	}
-	
-	if ( isInitial || ( '_color' in newState && differs( state._color, oldState._color ) ) || ( 'format' in newState && differs( state.format, oldState.format ) ) ) {
-		state.value = newState.value = template$2.computed.value( state._color, state.format );
-	}
-}
-
-var template$2 = (function () {
-  function caretIndex (event, color) {
-    const {value, selectionStart} = event.target;
-    const index = value[0] === '#'
+/* src\color-picker\color-input.html generated by Svelte v1.41.1 */
+function caretIndex (event, color) {
+  const {value, selectionStart} = event.target;
+  const index = value[0] === '#'
     ? Math.floor((selectionStart - 1) / 2)
     // count ',' before selectionStart
     : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1;
-    return ((value[0] === '#' || color.getAlpha() === 1) && index === 3) || index === 4 ? -1 : index
+  return ((value[0] === '#' || color.getAlpha() === 1) && index === 3) || index === 4 ? -1 : index
+}
+
+function _color$1(color) {
+	return tinycolor(color);
+}
+
+function value(_color, format) {
+	return _color.toString(format);
+}
+
+function textColor$2(_color) {
+	return tinycolor.mostReadable(_color, ['#fff', '#000']);
+}
+
+function data$2() {
+  return {
+    phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
+    color: 'red',
+    formats: ['hsl', 'hsv', 'rgb', 'prgb', 'hex'],
+    format: 'hex',
+    showList: false,
   }
+}
+
+function updown(node, callback) {
+  function onkeydown (event) {
+    let time;
+    if (/Arrow(Up|Down)/.test(event.key)) {
+      callback(event);
+      time = setTimeout(() => {
+        clearTimeout(time);
+        time = setInterval(() => callback(event), 100);
+      }, 300);
+    }
+    function onkeyup (e) {
+      clearInterval(time);
+      time = null;
+      node.removeEventListener('keyup', onkeyup, false);
+    }
+
+    node.addEventListener('keyup', onkeyup, false);
+  }
+
+  node.addEventListener('keydown', onkeydown, false);
 
   return {
-    data () {
-      return {
-        phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
-        color: 'red',
-        formats: ['hsl', 'hsv', 'rgb', 'prgb', 'hex'],
-        format: 'hex',
-      }
-    },
-    computed: {
-      _color: (color) => tinycolor(color),
-      value: (_color, format) => _color.toString(format),
-    },
-    methods: {
-      input (event) {
-        const value = event.target.value;
-        const color = tinycolor(value);
-        const format = color.getFormat();
-
-        if (color.isValid() && !/^#?[a-f\d]{3,4}$/i.test(value)) {
-          this.set({ color, format });
-        }
-      },
-      updown (event) {
-        const {value, selectionStart, selectionEnd} = event.target;
-        if (selectionStart !== selectionEnd) {
-          return
-        }
-
-        let color = tinycolor(value);
-        const index = caretIndex(event, color);
-        const arrow = (event.key === 'ArrowUp' ? 1 : -1);
-
-        if (index === -1) {
-          const format = this.get('format');
-          if (color.isValid()) {
-            // change format
-            const formats = this.get('formats');
-            let findex = (formats.indexOf(format) - arrow);
-            if (findex < 0) {
-              findex = formats.length + findex;
-            }
-            this.set({ format: formats[findex % formats.length] });
-          } else {
-            // Re: valid Color
-            event.target.value = this.get('_color').toString(format);
-          }
-        } else if (color.isValid()) {
-          const format = color.getFormat();
-          if (index === 3) {
-            // alpla
-            color.setAlpha(color.getAlpha() + arrow / 100);
-          } else {
-            // not alpla
-            const plus = arrow;
-            let param;
-            switch (format) {
-              case 'hsl':
-                param = color.toHsl();
-                param.s *= 100;
-                param.l *= 100;
-                param['hsl'[index]] += plus;
-                break
-              case 'hsv':
-                param = color.toHsv();
-                param.s *= 100;
-                param.v *= 100;
-                param['hsv'[index]] += plus;
-                break
-              case 'prgb':
-                param = color.toRgb();
-                param.r /= 255;
-                param.g /= 255;
-                param.b /= 255;
-                param['rgb'[index]] += plus / 100;
-                param.r *= 255;
-                param.g *= 255;
-                param.b *= 255;
-                break
-              default:
-                param = color.toRgb();
-                param['rgb'[index]] += plus;
-                break
-            }
-            color = tinycolor(param);
-          }
-          this.set({ color });
-          event.target.selectionStart = selectionStart;
-          event.target.selectionEnd = selectionStart;
-        }
-      },
-      focus (event) {
-        const index = caretIndex(event, this.get('_color'));
-        this.listToggle(index === -1);
-
-        console.log('focus.index', index);
-      },
-      listToggle (flg) {
-        this.refs.list.classList.toggle('active', flg);
-        if (this.refs.list.classList.contains('active')) {
-          const winclick = (event) => {
-            this.refs.list.classList.remove('active');
-            window.removeEventListener('click', winclick, true);
-          };
-          window.addEventListener('click', winclick, true);
-        }
-      },
-    },
-    events: {
-      updown (node, callback) {
-        function onkeydown (event) {
-          let time;
-          if (/Arrow(Up|Down)/.test(event.key)) {
-            callback(event);
-            time = setTimeout(() => {
-              clearTimeout(time);
-              time = setInterval(() => callback(event), 100);
-            }, 300);
-          }
-          function onkeyup (e) {
-            clearInterval(time);
-            time = null;
-            node.removeEventListener('keyup', onkeyup, false);
-          }
-
-          node.addEventListener('keyup', onkeyup, false);
-        }
-
-        node.addEventListener('keydown', onkeydown, false);
-
-        return {
-          teardown () {
-            node.removeEventListener('keydown', onkeydown, false);
-          }
-        }
-      }
+    teardown () {
+      node.removeEventListener('keydown', onkeydown, false);
     }
   }
-}());
-
-var added_css$2 = false;
-function add_css$2 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-1550853817].input-wrapper, [svelte-1550853817] .input-wrapper {\n    --size: 2.5em;\n    position: relative;\n    \n    font: normal 1em \"Lucida Grande\", \"Lucida Sans Unicode\", \"Lucida Sans\", Geneva, Verdana, sans-serif;\n    display: flex;\n    flex-direction: row;}\n\n    [svelte-1550853817].input-wrapper > *, [svelte-1550853817] .input-wrapper > * {\n      border-width: 1px 1px 1px 0;\n      border-style: solid;\n    }\n    [svelte-1550853817].input-wrapper > :first-child, [svelte-1550853817] .input-wrapper > :first-child {\n      border-top-left-radius: 4px;\n      border-bottom-left-radius: 4px;\n      border-width: 1px;\n    }\n    [svelte-1550853817].input-wrapper > :last-child, [svelte-1550853817] .input-wrapper > :last-child {\n      border-top-right-radius: 4px;\n      border-bottom-right-radius: 4px;\n    }\n\n    [svelte-1550853817].color-text, [svelte-1550853817] .color-text {\n      flex: 1 1 auto; \n      height: var(--size);\n      padding: 0 4px;}\n    [svelte-1550853817].submit-btn, [svelte-1550853817] .submit-btn {\n      height: var(--size);\n      text-align: center;}\n\n    [svelte-1550853817].color-text_list, [svelte-1550853817] .color-text_list {\n      position: absolute;\n      margin: 0;\n      padding: 0;\n      top: var(--size);\n      left: 0;\n      width: 100%;\n      list-style: none;\n      text-align: left;\n      color: #111;\n      background-color: #ddd;\n      z-index: 10000;\n      visibility: hidden;\n    }\n    [svelte-1550853817].color-text_list-item, [svelte-1550853817] .color-text_list-item {\n      margin: 0;\n      padding: 4px;\n      height: var(--size);\n      list-style: none;\n    }\n    [svelte-1550853817].color-text_list-item.active, [svelte-1550853817] .color-text_list-item.active {\n      font-weight: bold;\n    }\n    [svelte-1550853817].color-text_list-item:hover, [svelte-1550853817] .color-text_list-item:hover {\n      background-color: aqua;\n    }\n    \n    \n    [svelte-1550853817].color-text_list.active, [svelte-1550853817] .color-text_list.active {\n      visibility: visible;\n    }\n";
-	appendNode( style, document.head );
-
-	added_css$2 = true;
 }
 
-function create_main_fragment$2 ( state, component ) {
-	var if_block_anchor = createComment();
-	
-	function get_block ( state ) {
-		if ( state.phone ) return create_if_block$1;
-		return create_if_block_1$1;
-	}
-	
-	var current_block = get_block( state );
-	var if_block = current_block && current_block( state, component );
+var methods$1 = {
+  input (event) {
+    const value = event.target.value;
+    const color = tinycolor(value);
+    const format = color.getFormat();
+
+    if (color.isValid() && !/^#?[a-f\d]{3,4}$/i.test(value)) {
+      this.set({ color, format });
+    }
+  },
+  updown (event) {
+    const {value, selectionStart, selectionEnd} = event.target;
+    if (selectionStart !== selectionEnd) {
+      return
+    }
+
+    let color = tinycolor(value);
+    const index = caretIndex(event, color);
+    const arrow = event.type === 'keydown'
+      ? (event.key === 'ArrowUp' ? 1 : -1)
+      : event.deltaY;
+
+    if (index === -1) {
+      const format = this.get('format');
+      if (color.isValid()) {
+        // change format
+        const formats = this.get('formats');
+        let findex = (formats.indexOf(format) - arrow);
+        if (findex < 0) {
+          findex = formats.length + findex;
+        }
+        this.set({ format: formats[findex % formats.length] });
+      } else {
+        // Re: valid Color
+        event.target.value = this.get('_color').toString(format);
+      }
+    } else if (color.isValid()) {
+      const format = color.getFormat();
+      if (index === 3) {
+        // alpla
+        color.setAlpha(color.getAlpha() + arrow / 100);
+      } else {
+        // not alpla
+        const plus = arrow;
+        let param;
+        switch (format) {
+          case 'hsl':
+            param = color.toHsl();
+            param.s *= 100;
+            param.l *= 100;
+            param['hsl'[index]] += plus;
+            break
+          case 'hsv':
+            param = color.toHsv();
+            param.s *= 100;
+            param.v *= 100;
+            param['hsv'[index]] += plus;
+            break
+          case 'prgb':
+            param = color.toRgb();
+            param.r /= 255;
+            param.g /= 255;
+            param.b /= 255;
+            param['rgb'[index]] += plus / 100;
+            param.r *= 255;
+            param.g *= 255;
+            param.b *= 255;
+            break
+          default:
+            param = color.toRgb();
+            param['rgb'[index]] += plus;
+            break
+        }
+        color = tinycolor(param);
+      }
+      this.set({ color });
+      event.target.selectionStart = selectionStart;
+      event.target.selectionEnd = selectionStart;
+    }
+  },
+  focus (event) {
+    this.set({showList: true});
+    const index = caretIndex(event, this.get('_color'));
+    this.listToggle(index === -1);
+
+    console.log('focus.index', index);
+  },
+  listToggle (flg) {
+    this.set({showList: !!flg});
+    // this.refs.list.classList.toggle('active', flg)
+    // if (this.refs.list.classList.contains('active')) {
+    //   const winclick = (event) => {
+    //     this.refs.list.classList.remove('active')
+    //     window.removeEventListener('click', winclick, true)
+    //   }
+    //   window.addEventListener('click', winclick, true)
+    // }
+  },
+};
+
+function encapsulateStyles$2(node) {
+	setAttribute(node, "svelte-3531875913", "");
+}
+
+function add_css$2() {
+	var style = createElement("style");
+	style.id = 'svelte-3531875913-style';
+	style.textContent = "[svelte-3531875913].input-wrapper,[svelte-3531875913] .input-wrapper{--size:2.5em;position:relative;font:normal 1em \"Lucida Grande\", \"Lucida Sans Unicode\", \"Lucida Sans\", Geneva, Verdana, sans-serif;display:flex;flex-direction:row}[svelte-3531875913].input-wrapper > *,[svelte-3531875913] .input-wrapper > *{border-width:1px 1px 1px 0;border-style:solid}[svelte-3531875913].input-wrapper > :first-child,[svelte-3531875913] .input-wrapper > :first-child{border-top-left-radius:4px;border-bottom-left-radius:4px;border-width:1px}[svelte-3531875913].input-wrapper > :last-child,[svelte-3531875913] .input-wrapper > :last-child{border-top-right-radius:4px;border-bottom-right-radius:4px}[svelte-3531875913].color-text,[svelte-3531875913] .color-text{height:var(--size);padding:0 4px;text-align:center;flex:1 1 auto}[svelte-3531875913].submit-btn,[svelte-3531875913] .submit-btn{height:var(--size);text-align:center}[svelte-3531875913].color-text_list,[svelte-3531875913] .color-text_list{position:absolute;margin:0;padding:0;top:var(--size);left:0;width:100%;list-style:none;text-align:left;color:#111;background-color:#ddd;z-index:10000}[svelte-3531875913].color-text_list-item,[svelte-3531875913] .color-text_list-item{margin:0;padding:4px;height:var(--size);list-style:none}[svelte-3531875913].color-text_list-item.active,[svelte-3531875913] .color-text_list-item.active{font-weight:bold}[svelte-3531875913].color-text_list-item:hover,[svelte-3531875913] .color-text_list-item:hover{background-color:aqua}[svelte-3531875913].color-text_list.active,[svelte-3531875913] .color-text_list.active{visibility:visible}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$2(state, component) {
+	var if_block_anchor;
+
+	var current_block_type = select_block_type$1(state);
+	var if_block = current_block_type(state, component);
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( if_block_anchor, target, anchor );
-			if ( if_block ) if_block.mount( target, if_block_anchor );
+		c: function create() {
+			if_block.c();
+			if_block_anchor = createComment();
 		},
-		
-		update: function ( changed, state ) {
-			if ( current_block === ( current_block = get_block( state ) ) && if_block ) {
-				if_block.update( changed, state );
+
+		m: function mount(target, anchor) {
+			if_block.m(target, anchor);
+			insertNode(if_block_anchor, target, anchor);
+		},
+
+		p: function update(changed, state) {
+			if (current_block_type === (current_block_type = select_block_type$1(state)) && if_block) {
+				if_block.p(changed, state);
 			} else {
-				if ( if_block ) if_block.destroy( true );
-				if_block = current_block && current_block( state, component );
-				if ( if_block ) if_block.mount( if_block_anchor.parentNode, if_block_anchor );
+				if_block.u();
+				if_block.d();
+				if_block = current_block_type(state, component);
+				if_block.c();
+				if_block.m(if_block_anchor.parentNode, if_block_anchor);
 			}
 		},
-		
-		destroy: function ( detach ) {
-			if ( if_block ) if_block.destroy( detach );
-			
-			if ( detach ) {
-				detachNode( if_block_anchor );
-			}
+
+		u: function unmount() {
+			if_block.u();
+			detachNode(if_block_anchor);
+		},
+
+		d: function destroy$$1() {
+			if_block.d();
 		}
 	};
 }
 
-function create_each_block$1 ( state, each_block_value, fm, i, component ) {
-	var li_class_value, text_value;
-	
-	var li = createElement( 'li' );
-	li.className = li_class_value = "color-text_list-item " + ( state.format == fm ? 'active' : '' );
-	addEventListener( li, 'click', click_handler );
-	
-	li._svelte = {
-		component: component,
-		each_block_value: each_block_value,
-		i: i
-	};
-	
-	var text = createText( text_value = state._color.toString(fm) );
-	appendNode( text, li );
+// (15:8) {{#each formats as fm, i}}
+function create_each_block$1(state, formats, fm, i, component) {
+	var li, li_class_value, span, text_value = state._color.toString(fm), text, text_1, span_1;
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( li, target, anchor );
+		c: function create() {
+			li = createElement("li");
+			span = createElement("span");
+			text = createText(text_value);
+			text_1 = createText("\n            ");
+			span_1 = createElement("span");
+			span_1.textContent = "コピー";
+			this.h();
 		},
-		
-		update: function ( changed, state, each_block_value, fm, i ) {
-			if ( li_class_value !== ( li_class_value = "color-text_list-item " + ( state.format == fm ? 'active' : '' ) ) ) {
+
+		h: function hydrate() {
+			li.className = li_class_value = "color-text_list-item " + (state.format == fm ? 'active' : '');
+			addListener(span, "click", click_handler);
+
+			span._svelte = {
+				component: component,
+				formats: formats,
+				i: i
+			};
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(li, target, anchor);
+			appendNode(span, li);
+			appendNode(text, span);
+			appendNode(text_1, li);
+			appendNode(span_1, li);
+		},
+
+		p: function update(changed, state, formats, fm, i) {
+			if ((changed.format || changed.formats) && li_class_value !== (li_class_value = "color-text_list-item " + (state.format == fm ? 'active' : ''))) {
 				li.className = li_class_value;
 			}
-			
-			li._svelte.each_block_value = each_block_value;
-			li._svelte.i = i;
-			
-			if ( text_value !== ( text_value = state._color.toString(fm) ) ) {
+
+			span._svelte.formats = formats;
+			span._svelte.i = i;
+
+			if ((changed._color || changed.formats) && text_value !== (text_value = state._color.toString(fm))) {
 				text.data = text_value;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			removeEventListener( li, 'click', click_handler );
-			
-			if ( detach ) {
-				detachNode( li );
-			}
+
+		u: function unmount() {
+			detachNode(li);
+		},
+
+		d: function destroy$$1() {
+			removeListener(span, "click", click_handler);
 		}
 	};
 }
 
-function create_if_block_2 ( state, component ) {
-	var li_class_value, text_value;
-	
-	var li = createElement( 'li' );
-	li.className = li_class_value = "color-text_list-item " + ( state.format == 'name' ? 'active' : '' );
-	
-	function click_handler_1 ( event ) {
+// (21:8) {{#if _color.toName()}}
+function create_if_block_3(state, component) {
+	var li, li_class_value, span, text_value = state._color.toName(), text, text_1, span_1;
+
+	function click_handler_1(event) {
 		component.set({format: 'name'});
 	}
-	
-	addEventListener( li, 'click', click_handler_1 );
-	var text = createText( text_value = state._color.toName() );
-	appendNode( text, li );
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( li, target, anchor );
+		c: function create() {
+			li = createElement("li");
+			span = createElement("span");
+			text = createText(text_value);
+			text_1 = createText("\n            ");
+			span_1 = createElement("span");
+			span_1.textContent = "コピー";
+			this.h();
 		},
-		
-		update: function ( changed, state ) {
-			if ( li_class_value !== ( li_class_value = "color-text_list-item " + ( state.format == 'name' ? 'active' : '' ) ) ) {
+
+		h: function hydrate() {
+			li.className = li_class_value = "color-text_list-item " + (state.format == 'name' ? 'active' : '');
+			addListener(span, "click", click_handler_1);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(li, target, anchor);
+			appendNode(span, li);
+			appendNode(text, span);
+			appendNode(text_1, li);
+			appendNode(span_1, li);
+		},
+
+		p: function update(changed, state) {
+			if ((changed.format) && li_class_value !== (li_class_value = "color-text_list-item " + (state.format == 'name' ? 'active' : ''))) {
 				li.className = li_class_value;
 			}
-			
-			if ( text_value !== ( text_value = state._color.toName() ) ) {
+
+			if ((changed._color) && text_value !== (text_value = state._color.toName())) {
 				text.data = text_value;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			removeEventListener( li, 'click', click_handler_1 );
-			
-			if ( detach ) {
-				detachNode( li );
-			}
+
+		u: function unmount() {
+			detachNode(li);
+		},
+
+		d: function destroy$$1() {
+			removeListener(span, "click", click_handler_1);
 		}
 	};
 }
 
-function create_if_block$1 ( state, component ) {
-	var input = createElement( 'input' );
-	setAttribute( input, 'svelte-1550853817', '' );
-	input.type = "color";
+// (13:4) {{#if showList}}
+function create_if_block_2(state, component) {
+	var ul, each_anchor;
+
+	function click_handler(event) {
+		component.set({showList: false});
+	}
+
+	var formats = state.formats;
+
+	var each_blocks = [];
+
+	for (var i = 0; i < formats.length; i += 1) {
+		each_blocks[i] = create_each_block$1(state, formats, formats[i], i, component);
+	}
+
+	var if_block = (state._color.toName()) && create_if_block_3(state, component);
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( input, target, anchor );
-		},
-		
-		update: noop,
-		
-		destroy: function ( detach ) {
-			if ( detach ) {
-				detachNode( input );
-			}
-		}
-	};
-}
+		c: function create() {
+			ul = createElement("ul");
 
-function create_if_block_1$1 ( state, component ) {
-	var input_value_value;
-	
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-1550853817', '' );
-	div.className = "input-wrapper";
-	var input = createElement( 'input' );
-	appendNode( input, div );
-	input.className = "color-text";
-	input.value = input_value_value = state.value;
-	input.placeholder = "keypress: ↑↓";
-	
-	function input_handler ( event ) {
-		component.input(event);
-	}
-	
-	addEventListener( input, 'input', input_handler );
-	
-	var updown_handler = template$2.events.updown.call( component, input, function ( event ) {
-		component.updown(event);
-	});
-	
-	function click_handler ( event ) {
-		component.focus(event);
-	}
-	
-	addEventListener( input, 'click', click_handler );
-	appendNode( createText( "\n    " ), div );
-	var ul = createElement( 'ul' );
-	appendNode( ul, div );
-	ul.className = "color-text_list";
-	component.refs.list = ul;
-	var each_block_anchor = createComment();
-	appendNode( each_block_anchor, ul );
-	var each_block_value = state.formats;
-	var each_block_iterations = [];
-	
-	for ( var i = 0; i < each_block_value.length; i += 1 ) {
-		each_block_iterations[i] = create_each_block$1( state, each_block_value, each_block_value[i], i, component );
-		each_block_iterations[i].mount( ul, each_block_anchor );
-	}
-	
-	var if_block_1_anchor = createComment();
-	appendNode( if_block_1_anchor, ul );
-	
-	var if_block_1 = state._color.toName() && create_if_block_2( state, component );
-	
-	if ( if_block_1 ) if_block_1.mount( ul, if_block_1_anchor );
-	appendNode( createText( "\n    " ), div );
-
-	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
-		},
-		
-		update: function ( changed, state ) {
-			if ( input_value_value !== ( input_value_value = state.value ) ) {
-				input.value = input_value_value;
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].c();
 			}
-			
-			var each_block_value = state.formats;
-			
-			if ( 'format' in changed || 'formats' in changed || '_color' in changed ) {
-				for ( var i = 0; i < each_block_value.length; i += 1 ) {
-					if ( each_block_iterations[i] ) {
-						each_block_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+
+			each_anchor = createComment();
+			if (if_block) if_block.c();
+			this.h();
+		},
+
+		h: function hydrate() {
+			ul.className = "color-text_list";
+			addListener(ul, "click", click_handler);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(ul, target, anchor);
+			component.refs.list = ul;
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].m(ul, null);
+			}
+
+			appendNode(each_anchor, ul);
+			if (if_block) if_block.m(ul, null);
+		},
+
+		p: function update(changed, state) {
+			var formats = state.formats;
+
+			if (changed.format || changed.formats || changed._color) {
+				for (var i = 0; i < formats.length; i += 1) {
+					if (each_blocks[i]) {
+						each_blocks[i].p(changed, state, formats, formats[i], i);
 					} else {
-						each_block_iterations[i] = create_each_block$1( state, each_block_value, each_block_value[i], i, component );
-						each_block_iterations[i].mount( each_block_anchor.parentNode, each_block_anchor );
+						each_blocks[i] = create_each_block$1(state, formats, formats[i], i, component);
+						each_blocks[i].c();
+						each_blocks[i].m(ul, each_anchor);
 					}
 				}
-			
-				destroyEach( each_block_iterations, true, each_block_value.length );
-			
-				each_block_iterations.length = each_block_value.length;
-			}
-			
-			if ( state._color.toName() ) {
-				if ( if_block_1 ) {
-					if_block_1.update( changed, state );
-				} else {
-					if_block_1 = create_if_block_2( state, component );
-					if_block_1.mount( if_block_1_anchor.parentNode, if_block_1_anchor );
+
+				for (; i < each_blocks.length; i += 1) {
+					each_blocks[i].u();
+					each_blocks[i].d();
 				}
-			} else if ( if_block_1 ) {
-				if_block_1.destroy( true );
-				if_block_1 = null;
+				each_blocks.length = formats.length;
+			}
+
+			if (state._color.toName()) {
+				if (if_block) {
+					if_block.p(changed, state);
+				} else {
+					if_block = create_if_block_3(state, component);
+					if_block.c();
+					if_block.m(ul, null);
+				}
+			} else if (if_block) {
+				if_block.u();
+				if_block.d();
+				if_block = null;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			removeEventListener( input, 'input', input_handler );
-			updown_handler.teardown();
-			removeEventListener( input, 'click', click_handler );
-			if ( component.refs.list === ul ) component.refs.list = null;
-			
-			destroyEach( each_block_iterations, false, 0 );
-			
-			if ( if_block_1 ) if_block_1.destroy( false );
-			
-			if ( detach ) {
-				detachNode( div );
+
+		u: function unmount() {
+			detachNode(ul);
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].u();
 			}
+
+			if (if_block) if_block.u();
+		},
+
+		d: function destroy$$1() {
+			removeListener(ul, "click", click_handler);
+			if (component.refs.list === ul) component.refs.list = null;
+
+			destroyEach(each_blocks);
+
+			if (if_block) if_block.d();
 		}
 	};
 }
 
-function click_handler ( event ) {
+// (1:0) {{#if phone}}
+function create_if_block$1(state, component) {
+	var input;
+
+	return {
+		c: function create() {
+			input = createElement("input");
+			this.h();
+		},
+
+		h: function hydrate() {
+			encapsulateStyles$2(input);
+			input.type = "color";
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(input, target, anchor);
+		},
+
+		p: noop,
+
+		u: function unmount() {
+			detachNode(input);
+		},
+
+		d: noop
+	};
+}
+
+// (3:0) {{else}}
+function create_if_block_1$1(state, component) {
+	var div, input, updown_handler, text;
+
+	function input_handler(event) {
+		component.input(event);
+	}
+
+	function wheel_handler(event) {
+		component.updown(event);
+	}
+
+	function click_handler(event) {
+		component.focus(event);
+	}
+
+	var if_block = (state.showList) && create_if_block_2(state, component);
+
+	return {
+		c: function create() {
+			div = createElement("div");
+			input = createElement("input");
+			text = createText("\n    ");
+			if (if_block) if_block.c();
+			this.h();
+		},
+
+		h: function hydrate() {
+			encapsulateStyles$2(div);
+			div.className = "input-wrapper";
+			input.className = "color-text";
+			setStyle(input, "color", state.textColor);
+			setStyle(input, "background-color", state._color.toString('rgb'));
+			input.value = state.value;
+			input.placeholder = "keypress: ↑↓";
+			addListener(input, "input", input_handler);
+
+			updown_handler = updown.call(component, input, function(event) {
+				component.updown(event);
+			});
+
+			addListener(input, "wheel", wheel_handler);
+			addListener(input, "click", click_handler);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			appendNode(input, div);
+			appendNode(text, div);
+			if (if_block) if_block.m(div, null);
+		},
+
+		p: function update(changed, state) {
+			if (changed.textColor) {
+				setStyle(input, "color", state.textColor);
+			}
+
+			if (changed._color) {
+				setStyle(input, "background-color", state._color.toString('rgb'));
+			}
+
+			if (changed.value) {
+				input.value = state.value;
+			}
+
+			if (state.showList) {
+				if (if_block) {
+					if_block.p(changed, state);
+				} else {
+					if_block = create_if_block_2(state, component);
+					if_block.c();
+					if_block.m(div, null);
+				}
+			} else if (if_block) {
+				if_block.u();
+				if_block.d();
+				if_block = null;
+			}
+		},
+
+		u: function unmount() {
+			detachNode(div);
+			if (if_block) if_block.u();
+		},
+
+		d: function destroy$$1() {
+			removeListener(input, "input", input_handler);
+			updown_handler.teardown();
+			removeListener(input, "wheel", wheel_handler);
+			removeListener(input, "click", click_handler);
+			if (if_block) if_block.d();
+		}
+	};
+}
+
+function click_handler(event) {
 	var component = this._svelte.component;
-	var each_block_value = this._svelte.each_block_value, i = this._svelte.i, fm = each_block_value[i];
+	var formats = this._svelte.formats, i = this._svelte.i, fm = formats[i];
 	component.set({format: fm});
 }
 
-function Color_input ( options ) {
-	options = options || {};
-	this.refs = {};
-	this._state = assign( template$2.data(), options.data );
-	recompute$2( this._state, this._state, {}, true );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$2 ) add_css$2();
-	
-	this._fragment = create_main_fragment$2( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
+function select_block_type$1(state) {
+	if (state.phone) return create_if_block$1;
+	return create_if_block_1$1;
 }
 
-assign( Color_input.prototype, template$2.methods, proto );
+function Color_input(options) {
+	init(this, options);
+	this.refs = {};
+	this._state = assign(data$2(), options.data);
+	this._recompute({ color: 1, _color: 1, format: 1 }, this._state);
 
-Color_input.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	recompute$2( this._state, newState, oldState, false );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-};
+	if (!document.getElementById("svelte-3531875913-style")) add_css$2();
 
-Color_input.prototype.teardown = Color_input.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
+	this._fragment = create_main_fragment$2(this._state, this);
 
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+	}
+}
 
-	this._state = {};
-	this._torndown = true;
+assign(Color_input.prototype, methods$1, proto);
+
+Color_input.prototype._recompute = function _recompute(changed, state) {
+	if (changed.color) {
+		if (differs(state._color, (state._color = _color$1(state.color)))) changed._color = true;
+	}
+
+	if (changed._color || changed.format) {
+		if (differs(state.value, (state.value = value(state._color, state.format)))) changed.value = true;
+	}
+
+	if (changed._color) {
+		if (differs(state.textColor, (state.textColor = textColor$2(state._color)))) changed.textColor = true;
+	}
 };
 
 /**
@@ -3078,1946 +3264,1664 @@ class Selectable extends MousePosition {
   }
 }
 
-function recompute$4 ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'size' in newState && differs( state.size, oldState.size ) ) ) {
-		state.center = newState.center = template$4.computed.center( state.size );
-	}
-	
-	if ( isInitial || ( 'center' in newState && differs( state.center, oldState.center ) ) || ( 'strokeWidth' in newState && differs( state.strokeWidth, oldState.strokeWidth ) ) ) {
-		state.inRadius = newState.inRadius = template$4.computed.inRadius( state.center, state.strokeWidth );
-	}
-}
-
-var template$4 = (function () {
+/* src\color-picker\spectrum.html generated by Svelte v1.41.1 */
+function data$4() {
   return {
-    data () {
-      return {
-        size: 150,
-        strokeWidth: 10,
-        hue: 0
-      }
-    },
-    computed: {
-      center: (size) => size / 2,
-      inRadius: (center, strokeWidth) => center - strokeWidth,
-    },
-    oncreate () {
-      // canvas init
-      this.draw();
-
-      // update oncolorchange
-      this.observe('hue', (hue) => {
-        this.setPosition(hue);
-      });
-      // picker
-      return new MousePosition(this.refs.canvas, {
-        start: (e, position) => {
-          if (this.positionTest(position)) {
-            this.setColor(position);
-          }
-        },
-        drag: (e, position) => {
-          this.setColor(position);
-        },
-      })
-    },
-    methods: {
-      positionRd (r, deg) {
-        const d = (deg - 90) / 180 * Math.PI;
-        const center = this.get('center');
-        return [
-          Math.floor((center + r * Math.cos(d)) * 100) / 100,
-          Math.floor((center + r * Math.sin(d)) * 100) / 100,
-        ]
-      },
-      positionTest (position) {
-        const center = this.get('center');
-        const radius = this.get('inRadius');
-        const x = center - position.x,
-              y = center - position.y,
-              r = Math.hypot(x, y);
-        return radius <= r && r <= center
-      },
-      setColor (position) {
-        const center = this.get('center');
-        const x = center - position.x,
-              y = center - position.y;
-
-        const hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90;
-
-        this.set({
-          hue: hue < 0 ? 360 + hue : hue
-        });
-      },
-      setPosition (hue) {
-        const radius = this.get('inRadius');
-        const strokeWidth = this.get('strokeWidth');
-        const [mx, my] = this.positionRd(radius + strokeWidth / 2, hue);
-        this.refs.handle.style.left = mx + 'px';
-        this.refs.handle.style.top = my  + 'px';
-      },
-      draw () {
-        const center = this.get('center');
-        const radius = this.get('inRadius');
-
-        const canvas = this.refs.canvas;
-        const cxt = canvas.getContext('2d');
-        cxt.clearRect(0, 0, canvas.width, canvas.height);
-
-        for (let i = 0; i < 360; i++) {
-          cxt.beginPath();
-
-          cxt.fillStyle = `hsl(${i}, 100%, 50%)`;
-
-          cxt.moveTo(...this.positionRd(radius, i));
-          cxt.lineTo(...this.positionRd(center - 1, i));
-          cxt.lineTo(...this.positionRd(center - 1, i + 1.5));
-          cxt.lineTo(...this.positionRd(radius, i + 1.5));
-          cxt.closePath();
-          cxt.fill();
-        }
-      }
-    }
+    rect: {width: 0, height: 0, left: 0, top: 0},
+    hsv: {h: 0, s: 1, v: 1}
   }
-}());
-
-var added_css$4 = false;
-function add_css$4 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-1203191650].wheel, [svelte-1203191650] .wheel {\n    position: relative;\n  }\n";
-	appendNode( style, document.head );
-
-	added_css$4 = true;
 }
 
-function create_main_fragment$4 ( state, component ) {
-	var canvas_width_value, canvas_height_value;
-	
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-1203191650', '' );
-	div.className = "wheel";
-	var canvas = createElement( 'canvas' );
-	appendNode( canvas, div );
-	canvas.className = "wheel-canvas";
-	canvas.width = canvas_width_value = state.size;
-	canvas.height = canvas_height_value = state.size;
-	component.refs.canvas = canvas;
-	appendNode( createText( "\n  " ), div );
-	var div_1 = createElement( 'div' );
-	appendNode( div_1, div );
-	div_1.className = "color-handle";
-	component.refs.handle = div_1;
+var methods$3 = {
+  resize () {
+    // get size getBoundingClientRect() / getClientRect()[0]
+    // const rect = this.refs.box.getBoundingClientRect()
+    const rect = {
+      width: this.refs.box.clientWidth,
+      height: this.refs.box.clientHeight,
+    };
+    this.set({rect});
+  },
+  setColor (position) {
+    const hsv = this.get('hsv');
+    hsv.s = position.percentLeft / 100;
+    hsv.v = (100 - position.percentTop) / 100;
+    this.set({ hsv });
+  },
+  setPosition () {
+    const {width, height} = this.get('rect');
+    const hsv = this.get('hsv');
+    this.refs.handle.style.left = width * hsv.s + 'px';
+    this.refs.handle.style.top = height - (height * hsv.v) + 'px';
+  },
+  draw (hue = this.get('hsv').h) {
+    const canvas = this.refs.canvas;
+    const cxt = canvas.getContext('2d');
+    const [w, h] = [canvas.width, canvas.height];
+
+    cxt.clearRect(0, 0, w, h);
+
+    cxt.fillStyle = `hsl(${hue}, 100%, 50%)`;
+    cxt.fillRect(0, 0, w, h);
+
+    const whiteGrd = cxt.createLinearGradient(0, 0, w, 0);
+    whiteGrd.addColorStop(0.01, 'rgba(255, 255, 255, 1.000)');
+    whiteGrd.addColorStop(0.99, 'rgba(255, 255, 255, 0.000)');
+
+    cxt.fillStyle = whiteGrd;
+    cxt.fillRect(0, 0, w, h);
+
+    const blackGrd = cxt.createLinearGradient(0, 0, 0, h);
+    blackGrd.addColorStop(0.01, 'rgba(0, 0, 0, 0.000)');
+    blackGrd.addColorStop(0.99, 'rgba(0, 0, 0, 1.000)');
+
+    cxt.fillStyle = blackGrd;
+    cxt.fillRect(0, 0, w, h);
+  }
+};
+
+function oncreate$3() {
+  // get size getBoundingClientRect() / getClientRect()[0]
+  // const rect = this.refs.box.getBoundingClientRect()
+  const rect = {
+    width: this.refs.box.clientWidth,
+    height: this.refs.box.clientHeight,
+  };
+  this.set({rect});
+
+  // update oncolorchange
+  this.observe('hsv', (hsv) => {
+    this.draw(hsv.h);
+    this.setPosition();
+  });
+
+  // picker
+  return new MousePosition(this.refs.canvas, {
+    start: (e, position) => {
+      this.setColor(position);
+    },
+    drag: (e, position) => {
+      this.setColor(position);
+    },
+  })
+}
+
+function encapsulateStyles$4(node) {
+	setAttribute(node, "svelte-1306874950", "");
+}
+
+function add_css$4() {
+	var style = createElement("style");
+	style.id = 'svelte-1306874950-style';
+	style.textContent = "[svelte-1306874950].spectrum,[svelte-1306874950] .spectrum{position:relative;cursor:crosshair;pointer-events:auto}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$4(state, component) {
+	var div, canvas, canvas_width_value, canvas_height_value, text, div_1;
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
+		c: function create() {
+			div = createElement("div");
+			canvas = createElement("canvas");
+			text = createText("\n  ");
+			div_1 = createElement("div");
+			this.h();
 		},
-		
-		update: function ( changed, state ) {
-			if ( canvas_width_value !== ( canvas_width_value = state.size ) ) {
+
+		h: function hydrate() {
+			encapsulateStyles$4(div);
+			div.className = "spectrum";
+			canvas.className = "spectrum-canvas";
+			canvas.width = canvas_width_value = state.rect.width;
+			canvas.height = canvas_height_value = state.rect.height;
+			div_1.className = "color-handle";
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			component.refs.box = div;
+			appendNode(canvas, div);
+			component.refs.canvas = canvas;
+			appendNode(text, div);
+			appendNode(div_1, div);
+			component.refs.handle = div_1;
+		},
+
+		p: function update(changed, state) {
+			if ((changed.rect) && canvas_width_value !== (canvas_width_value = state.rect.width)) {
 				canvas.width = canvas_width_value;
 			}
-			
-			if ( canvas_height_value !== ( canvas_height_value = state.size ) ) {
+
+			if ((changed.rect) && canvas_height_value !== (canvas_height_value = state.rect.height)) {
 				canvas.height = canvas_height_value;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			if ( component.refs.canvas === canvas ) component.refs.canvas = null;
-			if ( component.refs.handle === div_1 ) component.refs.handle = null;
-			
-			if ( detach ) {
-				detachNode( div );
-			}
+
+		u: function unmount() {
+			detachNode(div);
+		},
+
+		d: function destroy$$1() {
+			if (component.refs.box === div) component.refs.box = null;
+			if (component.refs.canvas === canvas) component.refs.canvas = null;
+			if (component.refs.handle === div_1) component.refs.handle = null;
 		}
 	};
 }
 
-function Wheel ( options ) {
-	options = options || {};
+function Spectrum(options) {
+	init(this, options);
 	this.refs = {};
-	this._state = assign( template$4.data(), options.data );
-	recompute$4( this._state, this._state, {}, true );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$4 ) add_css$4();
-	
-	this._fragment = create_main_fragment$4( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$4.oncreate, context: this });
+	this._state = assign(data$4(), options.data);
+
+	if (!document.getElementById("svelte-1306874950-style")) add_css$4();
+
+	var _oncreate = oncreate$3.bind(this);
+
+	if (!options._root) {
+		this._oncreate = [_oncreate];
 	} else {
-		template$4.oncreate.call( this );
+	 	this._root._oncreate.push(_oncreate);
+	 }
+
+	this._fragment = create_main_fragment$4(this._state, this);
+
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+
+		callAll(this._oncreate);
 	}
 }
 
-assign( Wheel.prototype, template$4.methods, proto );
+assign(Spectrum.prototype, methods$3, proto);
 
-Wheel.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	recompute$4( this._state, newState, oldState, false );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-};
+/* src\color-picker\slider.html generated by Svelte v1.41.1 */
+function width(direction, size, strokeWidth) {
+	return direction === 'vertical' ? strokeWidth : size;
+}
 
-Wheel.prototype.teardown = Wheel.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
+function height(direction, size, strokeWidth) {
+	return direction === 'vertical' ? size : strokeWidth;
+}
 
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
-};
-
-var template$5 = (function () {
+function data$5() {
   return {
-    data () {
-      return {
-        size: 150,
-        hsv: {h: 0, s: 1, v: 1}
-      }
-    },
-    oncreate () {
-      // update oncolorchange
-      this.observe('hsv', (hsv) => {
-        this.draw(hsv.h);
-        this.setPosition();
-      });
-
-      // picker
-      return new MousePosition(this.refs.canvas, {
-        start: (e, position) => {
-          this.setColor(position);
-        },
-        drag: (e, position) => {
-          this.setColor(position);
-        },
-      })
-    },
-    methods: {
-      setColor (position) {
-        const hsv = this.get('hsv');
-        hsv.s = position.percentLeft / 100;
-        hsv.v = (100 - position.percentTop) / 100;
-        this.set({ hsv });
-      },
-      setPosition () {
-        const size = this.get('size');
-        const hsv = this.get('hsv');
-        this.refs.handle.style.left = size * hsv.s + 'px';
-        this.refs.handle.style.top = size - (size * hsv.v) + 'px';
-      },
-      draw (hue = this.get('hsv').h) {
-        const canvas = this.refs.canvas;
-        const cxt = canvas.getContext('2d');
-        const [w, h] = [canvas.width, canvas.height];
-
-        cxt.clearRect(0, 0, w, h);
-
-        cxt.fillStyle = `hsl(${hue}, 100%, 50%)`;
-        cxt.fillRect(0, 0, w, h);
-
-        const whiteGrd = cxt.createLinearGradient(0, 0, w, 0);
-        whiteGrd.addColorStop(0.01, 'rgba(255, 255, 255, 1.000)');
-        whiteGrd.addColorStop(0.99, 'rgba(255, 255, 255, 0.000)');
-
-        cxt.fillStyle = whiteGrd;
-        cxt.fillRect(0, 0, w, h);
-
-        const blackGrd = cxt.createLinearGradient(0, 0, 0, h);
-        blackGrd.addColorStop(0.01, 'rgba(0, 0, 0, 0.000)');
-        blackGrd.addColorStop(0.99, 'rgba(0, 0, 0, 1.000)');
-
-        cxt.fillStyle = blackGrd;
-        cxt.fillRect(0, 0, w, h);
-      }
-    }
+    size: 0,
+    rect: {width: 0, height: 0, left: 0, top: 0},
+    strokeWidth: 20,
+    direction: 'vertical',
+    value: 50,
+    min: 0,
+    max: 100,
+    step: 1,
+    reverse: false
   }
-}());
-
-var added_css$5 = false;
-function add_css$5 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-692274410].spectrum, [svelte-692274410] .spectrum {\n    position: relative;\n    cursor: crosshair;\n    pointer-events: auto;\n  }\n";
-	appendNode( style, document.head );
-
-	added_css$5 = true;
 }
 
-function create_main_fragment$5 ( state, component ) {
-	var canvas_width_value, canvas_height_value;
-	
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-692274410', '' );
-	div.className = "spectrum";
-	var canvas = createElement( 'canvas' );
-	appendNode( canvas, div );
-	canvas.className = "spectrum-canvas";
-	canvas.width = canvas_width_value = state.size;
-	canvas.height = canvas_height_value = state.size;
-	component.refs.canvas = canvas;
-	appendNode( createText( "\n  " ), div );
-	var div_1 = createElement( 'div' );
-	appendNode( div_1, div );
-	div_1.className = "color-handle";
-	component.refs.handle = div_1;
-
-	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
-		},
-		
-		update: function ( changed, state ) {
-			if ( canvas_width_value !== ( canvas_width_value = state.size ) ) {
-				canvas.width = canvas_width_value;
-			}
-			
-			if ( canvas_height_value !== ( canvas_height_value = state.size ) ) {
-				canvas.height = canvas_height_value;
-			}
-		},
-		
-		destroy: function ( detach ) {
-			if ( component.refs.canvas === canvas ) component.refs.canvas = null;
-			if ( component.refs.handle === div_1 ) component.refs.handle = null;
-			
-			if ( detach ) {
-				detachNode( div );
-			}
-		}
-	};
-}
-
-function Spectrum ( options ) {
-	options = options || {};
-	this.refs = {};
-	this._state = assign( template$5.data(), options.data );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$5 ) add_css$5();
-	
-	this._fragment = create_main_fragment$5( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$5.oncreate, context: this });
-	} else {
-		template$5.oncreate.call( this );
-	}
-}
-
-assign( Spectrum.prototype, template$5.methods, proto );
-
-Spectrum.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-};
-
-Spectrum.prototype.teardown = Spectrum.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
-
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
-};
-
-function recompute$3 ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'size' in newState && differs( state.size, oldState.size ) ) || ( 'strokeWidth' in newState && differs( state.strokeWidth, oldState.strokeWidth ) ) ) {
-		state.spectrumSize = newState.spectrumSize = template$3.computed.spectrumSize( state.size, state.strokeWidth );
-	}
-	
-	if ( isInitial || ( 'color' in newState && differs( state.color, oldState.color ) ) ) {
-		state._color = newState._color = template$3.computed._color( state.color );
-	}
-	
-	if ( isInitial || ( '_color' in newState && differs( state._color, oldState._color ) ) ) {
-		state.hsv = newState.hsv = template$3.computed.hsv( state._color );
-		state.textColor = newState.textColor = template$3.computed.textColor( state._color );
-	}
-}
-
-var template$3 = (function () {
-  return {
-    data () {
-      return {
-        size: 150,
-        strokeWidth: 10,
-        color: tinycolor.random(),
-      }
-    },
-    computed: {
-      spectrumSize: (size, strokeWidth) => ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2,
-      _color: (color) => tinycolor(color),
-      hsv: (_color) => _color.toHsv(),
-      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
-    },
-    oncreate () {
-      this.refs.wheel.observe('hue', (hue) => {
-        const hsv = this.get('hsv');
-        hsv.h = hue;
-        this.set({color: tinycolor(hsv)});
-      });
-      this.refs.spectrum.observe('hsv', (hsv) => {
-        this.set({color: tinycolor(hsv)});
-      });
-    },
-    methods: {
-      spectrumCrement (meth) {
-        const hsv = this.get('hsv');
-
-        hsv[meth[0]] += meth[1] ? 0.01 : -0.01;
-        if (hsv[meth[0]] === 1) {
-          hsv[meth[0]] = '1.0';
-        }
-
-        this.set({ color: tinycolor(hsv) });
-      },
-    },
-    helpers: {
-      btnPosition (size, i) {
-        const center = size / 2;
-        const radius = (center - 20);
-        const btnsize = 20;
-        const left = center + radius * Math.cos(i * 90 / 180 * Math.PI) - btnsize / 2;
-        const top = center + radius * Math.sin(i * 90 / 180 * Math.PI) - btnsize / 2;
-
-        return `left: ${left}px; top: ${top}px;`
-      },
-    },
-    events: {
-      press (node, callback) {
-        function onmousedown (event) {
-          callback(event);
-
-          let time = setTimeout(() => {
-            clearTimeout(time);
-            time = setInterval(() => callback(event), 150);
-          }, 300);
-
-          function onmouseup (e) {
-            clearInterval(time);
-            off(window, 'mouseup touchcancel touchend', onmousedown);
-          }
-
-          on$1(window, 'mouseup touchcancel touchend', onmouseup);
-        }
-
-        on$1(node, 'mousedown touchstart', onmousedown);
-
-        return {
-          teardown () {
-            off(node, 'mousedown touchstart', onmousedown);
-          }
-        }
-      }
+var methods$4 = {
+  setValue (position) {
+    const max = this.get('max');
+    const min = this.get('min');
+    const side = this.get('direction') === 'vertical' ? 'percentTop' : 'percentLeft';
+    let per = position[side] / 100;
+    if (this.get('reverse')) {
+      per = 1 - per;
     }
-  }
-}());
-
-var added_css$3 = false;
-function add_css$3 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-4174928822].hsv-picker, [svelte-4174928822] .hsv-picker {\n    position: relative;\n  }\n  [svelte-4174928822].spectrum-wrapper, [svelte-4174928822] .spectrum-wrapper {\n    position: absolute;\n    width: 100%;\n    height: 100%;\n    top: 0;\n    left: 0;\n    display: flex;\n    align-items: center;\n    justify-content: space-around;\n    pointer-events: none;\n  }\n  [svelte-4174928822].spectrum-btn, [svelte-4174928822] .spectrum-btn {\n    position: absolute;\n    top: 0;\n    left: 0;\n    opacity: 0.6;\n  }\n  [svelte-4174928822].spectrum-btn:active, [svelte-4174928822] .spectrum-btn:active {\n    opacity: 1;\n  }\n\n  [svelte-4174928822].color-handle, [svelte-4174928822] .color-handle {\n    position: absolute;\n    width: 10px;\n    height: 10px;\n    margin: -5px;\n    top: 0;\n    left: 0;\n    border: 1px solid black;\n    border-radius: 5px;\n    text-align: left;\n    pointer-events: none;\n  }\n  [svelte-4174928822].color-handle::before, [svelte-4174928822] .color-handle::before {\n    content: '';\n    position: absolute;\n    width: 8px;\n    height: 8px;\n    top: 0;\n    left: 0;\n    border: 1px solid white;\n    border-radius: 4px;\n  }\n";
-	appendNode( style, document.head );
-
-	added_css$3 = true;
-}
-
-function create_main_fragment$3 ( state, component ) {
-	var div_style_value;
-	
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-4174928822', '' );
-	div.className = "hsv-picker";
-	div.style.cssText = div_style_value = "width:" + ( state.size ) + "px; height:" + ( state.size ) + "px;";
-	
-	var wheel = new Wheel({
-		target: div,
-		_root: component._root || component,
-		data: { hue: state.hsv.h, size: state.size }
-	});
-	
-	component.refs.wheel = wheel;
-	
-	appendNode( createText( "\n  " ), div );
-	var div_1 = createElement( 'div' );
-	appendNode( div_1, div );
-	div_1.className = "spectrum-wrapper";
-	
-	var spectrum = new Spectrum({
-		target: div_1,
-		_root: component._root || component,
-		data: { hsv: state.hsv, size: state.spectrumSize }
-	});
-	
-	component.refs.spectrum = spectrum;
-	
-	appendNode( createText( "\n  " ), div );
-	var each_block_anchor = createComment();
-	appendNode( each_block_anchor, div );
-	var each_block_value = ['sp', 'v', 's', 'vp'];
-	var each_block_iterations = [];
-	
-	for ( var i = 0; i < each_block_value.length; i += 1 ) {
-		each_block_iterations[i] = create_each_block$2( state, each_block_value, each_block_value[i], i, component );
-		each_block_iterations[i].mount( div, each_block_anchor );
-	}
-
-	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
-		},
-		
-		update: function ( changed, state ) {
-			if ( div_style_value !== ( div_style_value = "width:" + ( state.size ) + "px; height:" + ( state.size ) + "px;" ) ) {
-				div.style.cssText = div_style_value;
-			}
-			
-			var wheel_changes = {};
-			
-			if ( 'hsv' in changed ) wheel_changes.hue = state.hsv.h;
-			if ( 'size' in changed ) wheel_changes.size = state.size;
-			
-			if ( Object.keys( wheel_changes ).length ) wheel.set( wheel_changes );
-			
-			var spectrum_changes = {};
-			
-			if ( 'hsv' in changed ) spectrum_changes.hsv = state.hsv;
-			if ( 'spectrumSize' in changed ) spectrum_changes.size = state.spectrumSize;
-			
-			if ( Object.keys( spectrum_changes ).length ) spectrum.set( spectrum_changes );
-			
-			var each_block_value = ['sp', 'v', 's', 'vp'];
-			
-			if ( 'size' in changed || 'textColor' in changed ) {
-				for ( var i = 0; i < each_block_value.length; i += 1 ) {
-					if ( each_block_iterations[i] ) {
-						each_block_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
-					} else {
-						each_block_iterations[i] = create_each_block$2( state, each_block_value, each_block_value[i], i, component );
-						each_block_iterations[i].mount( each_block_anchor.parentNode, each_block_anchor );
-					}
-				}
-			
-				destroyEach( each_block_iterations, true, each_block_value.length );
-			
-				each_block_iterations.length = each_block_value.length;
-			}
-		},
-		
-		destroy: function ( detach ) {
-			if ( component.refs.wheel === wheel ) component.refs.wheel = null;
-			wheel.destroy( false );
-			if ( component.refs.spectrum === spectrum ) component.refs.spectrum = null;
-			spectrum.destroy( false );
-			
-			destroyEach( each_block_iterations, false, 0 );
-			
-			if ( detach ) {
-				detachNode( div );
-			}
-		}
-	};
-}
-
-function create_each_block$2 ( state, each_block_value, meth, i, component ) {
-	var svg_style_value, path_fill_value, path_transform_value;
-	
-	var svg = createSvgElement( 'svg' );
-	setAttribute( svg, 'class', "spectrum-btn" );
-	setAttribute( svg, 'width', "20" );
-	setAttribute( svg, 'height', "20" );
-	setAttribute( svg, 'view', "0 0 20 20" );
-	setAttribute( svg, 'style', svg_style_value = template$3.helpers.btnPosition(state.size,i) );
-	
-	var press_handler = template$3.events.press.call( component, svg, function ( event ) {
-		var each_block_value = svg._svelte.each_block_value, i = svg._svelte.i, meth = each_block_value[i];
-		component.spectrumCrement(meth);
-	});
-	
-	svg._svelte = {
-		each_block_value: each_block_value,
-		i: i
-	};
-	
-	var path = createSvgElement( 'path' );
-	appendNode( path, svg );
-	setAttribute( path, 'd', "M2,15  L10,5  L18,15 Z" );
-	setAttribute( path, 'fill', path_fill_value = state.textColor );
-	setAttribute( path, 'transform', path_transform_value = "rotate(" + ( (i+1) * 90 ) + ", 10, 10)" );
-
-	return {
-		mount: function ( target, anchor ) {
-			insertNode( svg, target, anchor );
-		},
-		
-		update: function ( changed, state, each_block_value, meth, i ) {
-			if ( svg_style_value !== ( svg_style_value = template$3.helpers.btnPosition(state.size,i) ) ) {
-				setAttribute( svg, 'style', svg_style_value );
-			}
-			
-			svg._svelte.each_block_value = each_block_value;
-			svg._svelte.i = i;
-			
-			if ( path_fill_value !== ( path_fill_value = state.textColor ) ) {
-				setAttribute( path, 'fill', path_fill_value );
-			}
-			
-			if ( path_transform_value !== ( path_transform_value = "rotate(" + ( (i+1) * 90 ) + ", 10, 10)" ) ) {
-				setAttribute( path, 'transform', path_transform_value );
-			}
-		},
-		
-		destroy: function ( detach ) {
-			press_handler.teardown();
-			
-			if ( detach ) {
-				detachNode( svg );
-			}
-		}
-	};
-}
-
-function Hsv_picker ( options ) {
-	options = options || {};
-	this.refs = {};
-	this._state = assign( template$3.data(), options.data );
-	recompute$3( this._state, this._state, {}, true );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$3 ) add_css$3();
-	this._renderHooks = [];
-	
-	this._fragment = create_main_fragment$3( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	
-	this._flush();
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$3.oncreate, context: this });
-	} else {
-		template$3.oncreate.call( this );
-	}
-}
-
-assign( Hsv_picker.prototype, template$3.methods, proto );
-
-Hsv_picker.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	recompute$3( this._state, newState, oldState, false );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-	
-	this._flush();
-};
-
-Hsv_picker.prototype.teardown = Hsv_picker.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
-
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
-};
-
-function recompute$6 ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'direction' in newState && differs( state.direction, oldState.direction ) ) || ( 'size' in newState && differs( state.size, oldState.size ) ) || ( 'strokeWidth' in newState && differs( state.strokeWidth, oldState.strokeWidth ) ) ) {
-		state.width = newState.width = template$7.computed.width( state.direction, state.size, state.strokeWidth );
-		state.height = newState.height = template$7.computed.height( state.direction, state.size, state.strokeWidth );
-	}
-}
-
-var template$7 = (function () {
-  return {
-    data () {
-      return {
-        size: 150,
-        strokeWidth: 20,
-        direction: 'vertical',
-        value: 50,
-        min: 0,
-        max: 100,
-        step: 1,
-        reverse: false
-      }
-    },
-    computed: {
-      width: (direction, size, strokeWidth) => direction === 'vertical' ? strokeWidth : size,
-      height: (direction, size, strokeWidth) => direction === 'vertical' ? size : strokeWidth,
-    },
-    oncreate () {
-      this.observe('value', (value) => {
-        this.setPosition(value);
-      });
-      // picker
-      new MousePosition(this.refs.slider, { // eslint-disable-line no-new
-        handle: this.refs.sliderHandle,
-        start: (e, position) => {
-          this.setValue(position);
-        },
-        drag: (e, position) => {
-          this.setValue(position);
-        },
-      });
-    },
-    methods: {
-      setValue (position) {
-        const max = this.get('max');
-        const min = this.get('min');
-        const side = this.get('direction') === 'vertical' ? 'percentTop' : 'percentLeft';
-        let per = position[side] / 100;
-        if (this.get('reverse')) {
-          per = 1 - per;
-        }
-        this.set({
-          value: (max - min) * per + min
-        });
-      },
-      setPosition (value) {
-        const size = this.get('size');
-        const max = this.get('max');
-        const min = this.get('min');
-        const side = this.get('direction') === 'vertical' ? 'top' : 'left';
-        let per = value / (max - min);
-        if (this.get('reverse')) {
-          per = 1 - per;
-        }
-        this.refs.sliderHandle.style[side] = per * (size - 6) + 3 + 'px';
-      },
-      draw (beginColor, endColor) {
-        const cxt = this.refs.slider.getContext('2d');
-        const size = this.get('size');
-        cxt.clearRect(0, 0, size, size);
-
-        const grd = this.get('direction') === 'vertical'
-          ? cxt.createLinearGradient(0, 0, 0, size)
-          : cxt.createLinearGradient(0, 0, size, 0);
-
-        const [begin, end] = this.get('reverse') ? [1, 0] : [0, 1];
-
-        grd.addColorStop(begin, beginColor + '');
-        grd.addColorStop(end, endColor + '');
-
-        cxt.fillStyle = grd;
-        cxt.fillRect(0, 0, size, size);
-      }
+    this.set({
+      value: (max - min) * per + min
+    });
+  },
+  setPosition (value) {
+    const size = this.get('size');
+    const max = this.get('max');
+    const min = this.get('min');
+    const side = this.get('direction') === 'vertical' ? 'top' : 'left';
+    let per = value / (max - min);
+    if (this.get('reverse')) {
+      per = 1 - per;
     }
+    this.refs.sliderHandle.style[side] = per * (size - 6) + 3 + 'px';
+  },
+  draw (beginColor, endColor) {
+    const cxt = this.refs.slider.getContext('2d');
+    const size = this.get('size');
+    cxt.clearRect(0, 0, size, size);
+
+    const grd = this.get('direction') === 'vertical'
+      ? cxt.createLinearGradient(0, 0, 0, size)
+      : cxt.createLinearGradient(0, 0, size, 0);
+
+    const [begin, end] = this.get('reverse') ? [1, 0] : [0, 1];
+
+    if (beginColor === 'hue') {
+      // hue gradient bar
+      const len = 12;
+      for (let i = 0; i <= len; i++) {
+        grd.addColorStop(1 / len * i, `hsl(${360 / len * i}, 100%, 50%)`);
+      }
+    } else {
+      grd.addColorStop(begin, beginColor + '');
+      grd.addColorStop(end, endColor + '');
+    }
+
+    cxt.fillStyle = grd;
+    cxt.fillRect(0, 0, size, size);
   }
-}());
+};
 
-var added_css$7 = false;
-function add_css$7 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-2272254223].slider, [svelte-2272254223] .slider {\n    position: relative;\n    \n    background-color: #fff;\n    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);\n    background-size: 8px 8px;\n    background-position:0 0, 4px 4px;\n    background-repeat: repeat;\n  }\n  [svelte-2272254223].slider.vertical, [svelte-2272254223] .slider.vertical {\n    cursor: row-resize;\n  }\n  [svelte-2272254223].slider.horizontal, [svelte-2272254223] .slider.horizontal {\n    cursor: col-resize;\n  }\n\n  [svelte-2272254223].slider-canvas, [svelte-2272254223] .slider-canvas {\n    vertical-align: baseline;\n  }\n  [svelte-2272254223].slider-handle, [svelte-2272254223] .slider-handle {\n    position: absolute;\n    top: 0;\n    left: 0;\n    border: 1px solid black;\n    pointer-events: none;\n  }\n  [svelte-2272254223].slider-handle.vertical, [svelte-2272254223] .slider-handle.vertical {\n    margin-top: -3px;\n    width: 20px;\n    height: 6px;\n  }\n  [svelte-2272254223].slider-handle.horizontal, [svelte-2272254223] .slider-handle.horizontal {\n    margin-left: -3px;\n    width: 6px;\n    height: 20px;\n  }\n  [svelte-2272254223].slider-handle::before, [svelte-2272254223] .slider-handle::before {\n    content: '';\n    position: absolute;\n    top: 0;\n    left: 0;\n    border: 1px solid white;\n  }\n  [svelte-2272254223].slider-handle.vertical::before, [svelte-2272254223] .slider-handle.vertical::before {\n    width: 18px;\n    height: 4px;\n  }\n  [svelte-2272254223].slider-handle.horizontal::before, [svelte-2272254223] .slider-handle.horizontal::before {\n    width: 4px;\n    height: 18px;\n  }\n";
-	appendNode( style, document.head );
+function oncreate$4() {
+  // get size getBoundingClientRect() / getClientRect()[0]
+  // const rect = this.refs.box.getBoundingClientRect()
+  const rect = {
+    width: this.refs.box.clientWidth,
+    height: this.refs.box.clientHeight,
+  };
+  console.log('rect', rect);
+  this.set({rect});
+  if (rect.width > rect.height) {
+    this.set({
+      direction: 'horizontal'
+    });
+  }
+  this.set({
+    size: Math.max(rect.width, rect.height)
+  });
 
-	added_css$7 = true;
+  this.draw('hue');
+
+  this.observe('value', (value) => {
+    this.fire('change');
+    this.setPosition(value);
+  });
+  // picker
+  new MousePosition(this.refs.slider, { // eslint-disable-line no-new
+    // handle: this.refs.sliderHandle,
+    start: (e, position) => {
+      this.setValue(position);
+    },
+    drag: (e, position) => {
+      this.setValue(position);
+    },
+  });
 }
 
-function create_main_fragment$7 ( state, component ) {
-	var div_class_value, div_style_value, canvas_width_value, canvas_height_value, div_1_class_value;
-	
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-2272254223', '' );
-	div.className = div_class_value = "slider " + ( state.direction );
-	div.style.cssText = div_style_value = "width:" + ( state.width ) + "px; height:" + ( state.height ) + "px;";
-	var canvas = createElement( 'canvas' );
-	appendNode( canvas, div );
-	canvas.className = "slider-canvas";
-	canvas.width = canvas_width_value = state.width;
-	canvas.height = canvas_height_value = state.height;
-	component.refs.slider = canvas;
-	appendNode( createText( "\n  " ), div );
-	var div_1 = createElement( 'div' );
-	appendNode( div_1, div );
-	div_1.className = div_1_class_value = "slider-handle " + ( state.direction );
-	component.refs.sliderHandle = div_1;
+function encapsulateStyles$5(node) {
+	setAttribute(node, "svelte-2144930725", "");
+}
+
+function add_css$5() {
+	var style = createElement("style");
+	style.id = 'svelte-2144930725-style';
+	style.textContent = "[svelte-2144930725].slider,[svelte-2144930725] .slider{position:relative}[svelte-2144930725].slider.vertical,[svelte-2144930725] .slider.vertical{cursor:row-resize;height:100%}[svelte-2144930725].slider.horizontal,[svelte-2144930725] .slider.horizontal{cursor:col-resize;width:100%}[svelte-2144930725].slider-canvas,[svelte-2144930725] .slider-canvas{margin:0;padding:0}[svelte-2144930725].slider-handle,[svelte-2144930725] .slider-handle{position:absolute;top:0;left:0;border:1px solid black;pointer-events:none}[svelte-2144930725].slider-handle.vertical,[svelte-2144930725] .slider-handle.vertical{margin-top:-3px;width:100%;height:6px}[svelte-2144930725].slider-handle.horizontal,[svelte-2144930725] .slider-handle.horizontal{margin-left:-3px;width:6px;height:100%}[svelte-2144930725].slider-handle::before,[svelte-2144930725] .slider-handle::before{content:'';position:absolute;width:100%;height:100%;top:0;left:0;border:1px solid white}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$5(state, component) {
+	var div, div_class_value, canvas, canvas_width_value, canvas_height_value, text, div_1, div_1_class_value;
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
+		c: function create() {
+			div = createElement("div");
+			canvas = createElement("canvas");
+			text = createText("\n  ");
+			div_1 = createElement("div");
+			this.h();
 		},
-		
-		update: function ( changed, state ) {
-			if ( div_class_value !== ( div_class_value = "slider " + ( state.direction ) ) ) {
+
+		h: function hydrate() {
+			encapsulateStyles$5(div);
+			div.className = div_class_value = "slider alpha-check-bg " + state.direction;
+			canvas.className = "slider-canvas";
+			canvas.width = canvas_width_value = state.rect.width;
+			canvas.height = canvas_height_value = state.rect.height;
+			div_1.className = div_1_class_value = "slider-handle " + state.direction;
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			component.refs.box = div;
+			appendNode(canvas, div);
+			component.refs.slider = canvas;
+			appendNode(text, div);
+			appendNode(div_1, div);
+			component.refs.sliderHandle = div_1;
+		},
+
+		p: function update(changed, state) {
+			if ((changed.direction) && div_class_value !== (div_class_value = "slider alpha-check-bg " + state.direction)) {
 				div.className = div_class_value;
 			}
-			
-			if ( div_style_value !== ( div_style_value = "width:" + ( state.width ) + "px; height:" + ( state.height ) + "px;" ) ) {
-				div.style.cssText = div_style_value;
-			}
-			
-			if ( canvas_width_value !== ( canvas_width_value = state.width ) ) {
+
+			if ((changed.rect) && canvas_width_value !== (canvas_width_value = state.rect.width)) {
 				canvas.width = canvas_width_value;
 			}
-			
-			if ( canvas_height_value !== ( canvas_height_value = state.height ) ) {
+
+			if ((changed.rect) && canvas_height_value !== (canvas_height_value = state.rect.height)) {
 				canvas.height = canvas_height_value;
 			}
-			
-			if ( div_1_class_value !== ( div_1_class_value = "slider-handle " + ( state.direction ) ) ) {
+
+			if ((changed.direction) && div_1_class_value !== (div_1_class_value = "slider-handle " + state.direction)) {
 				div_1.className = div_1_class_value;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			if ( component.refs.slider === canvas ) component.refs.slider = null;
-			if ( component.refs.sliderHandle === div_1 ) component.refs.sliderHandle = null;
-			
-			if ( detach ) {
-				detachNode( div );
-			}
+
+		u: function unmount() {
+			detachNode(div);
+		},
+
+		d: function destroy$$1() {
+			if (component.refs.box === div) component.refs.box = null;
+			if (component.refs.slider === canvas) component.refs.slider = null;
+			if (component.refs.sliderHandle === div_1) component.refs.sliderHandle = null;
 		}
 	};
 }
 
-function Slider ( options ) {
-	options = options || {};
+function Slider(options) {
+	init(this, options);
 	this.refs = {};
-	this._state = assign( template$7.data(), options.data );
-	recompute$6( this._state, this._state, {}, true );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$7 ) add_css$7();
-	
-	this._fragment = create_main_fragment$7( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$7.oncreate, context: this });
+	this._state = assign(data$5(), options.data);
+	this._recompute({ direction: 1, size: 1, strokeWidth: 1 }, this._state);
+
+	if (!document.getElementById("svelte-2144930725-style")) add_css$5();
+
+	var _oncreate = oncreate$4.bind(this);
+
+	if (!options._root) {
+		this._oncreate = [_oncreate];
 	} else {
-		template$7.oncreate.call( this );
+	 	this._root._oncreate.push(_oncreate);
+	 }
+
+	this._fragment = create_main_fragment$5(this._state, this);
+
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+
+		callAll(this._oncreate);
 	}
 }
 
-assign( Slider.prototype, template$7.methods, proto );
+assign(Slider.prototype, methods$4, proto);
 
-Slider.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	recompute$6( this._state, newState, oldState, false );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
+Slider.prototype._recompute = function _recompute(changed, state) {
+	if (changed.direction || changed.size || changed.strokeWidth) {
+		if (differs(state.width, (state.width = width(state.direction, state.size, state.strokeWidth)))) changed.width = true;
+		if (differs(state.height, (state.height = height(state.direction, state.size, state.strokeWidth)))) changed.height = true;
+	}
 };
 
-Slider.prototype.teardown = Slider.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
-
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
-};
-
-function recompute$5 ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'color' in newState && differs( state.color, oldState.color ) ) ) {
-		state._color = newState._color = template$6.computed._color( state.color );
-	}
-	
-	if ( isInitial || ( '_color' in newState && differs( state._color, oldState._color ) ) ) {
-		state.hsl = newState.hsl = template$6.computed.hsl( state._color );
-		state.textColor = newState.textColor = template$6.computed.textColor( state._color );
-	}
+/* src\color-picker\hsv-picker.html generated by Svelte v1.41.1 */
+function spectrumSize(size, strokeWidth) {
+	return ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2;
 }
 
-var template$6 = (function () {
+function _color$2(color) {
+	return tinycolor(color);
+}
+
+function hsv(_color) {
+	return _color.toHsv();
+}
+
+function textColor$3(_color) {
+	return tinycolor.mostReadable(_color, ['#fff', '#000']);
+}
+
+function data$3() {
   return {
-    data () {
-      return {
-        size: 150,
-        color: tinycolor.random(),
-      }
-    },
-    computed: {
-      _color: (color) => tinycolor(color),
-      hsl: (_color) => _color.toHsl(),
-      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
-    },
-    oncreate () {
-      // canvas init
-      this.draw();
-      this.refs.lightness.draw(tinycolor('#fff'), tinycolor('#000'));
-
-      this.refs.lightness.observe('value', (value) => {
-        const hsl = this.get('hsl');
-        hsl.l = 1 - value / 100;
-        this.set({color: tinycolor(hsl)});
-      });
-
-      // // update oncolorchange
-      this.observe('_color', (_color) => {
-        this.setPosition(_color);
-      });
-      // picker
-      return new MousePosition(this.refs.canvas, {
-        start: (e, position) => {
-          this.setColor(position);
-        },
-        drag: (e, position) => {
-          this.setColor(position);
-        },
-      })
-    },
-    methods: {
-      setColor (position) {
-        const hsl = this.get('hsl');
-        hsl.h = position.percentLeft / 100;
-        hsl.s = (100 - position.percentTop) / 100;
-        this.set({ color: tinycolor.fromRatio(hsl) });
-      },
-      setPosition () {
-        const canvas = this.refs.canvas;
-        const [w, h] = [canvas.width, canvas.height];
-        const hsl = this.get('hsl');
-        this.refs.handle.style.left = w * hsl.h / 360 + 'px';
-        this.refs.handle.style.top = h - (h * hsl.s) + 'px';
-      },
-      draw (lightness = 0.5) {
-        const canvas = this.refs.canvas;
-        const cxt = canvas.getContext('2d');
-        const [w, h] = [canvas.width, canvas.height];
-
-        cxt.clearRect(0, 0, w, h);
-
-        const W = 3;
-
-        for (let i = 0; i < h; i++) {
-          const grd = cxt.createLinearGradient(0, 0, 0, h);
-          const hue = i / w * 360;
-          grd.addColorStop(0, `hsl(${hue}, 100%, 50%)`);
-          grd.addColorStop(1, `hsl(${hue}, 0%, 50%)`);
-
-          cxt.fillStyle = grd;
-          cxt.fillRect(i, 0, i + 1, h);
-        }
-      }
-    },
+    size: 150,
+    strokeWidth: 10,
+    color: tinycolor.random(),
   }
-}());
-
-var added_css$6 = false;
-function add_css$6 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-1788418679].spectrum-wrapper, [svelte-1788418679] .spectrum-wrapper {\n    position: relative;\n  }\n\n  [svelte-1788418679].color-handle, [svelte-1788418679] .color-handle {\n    position: absolute;\n    width: 10px;\n    height: 10px;\n    margin: -5px;\n    top: 0;\n    left: 0;\n    border: 1px solid black;\n    border-radius: 5px;\n    text-align: left;\n    pointer-events: none;\n  }\n  [svelte-1788418679].color-handle::before, [svelte-1788418679] .color-handle::before {\n    content: '';\n    position: absolute;\n    width: 8px;\n    height: 8px;\n    top: 0;\n    left: 0;\n    border: 1px solid white;\n    border-radius: 4px;\n  }\n";
-	appendNode( style, document.head );
-
-	added_css$6 = true;
 }
 
-function create_main_fragment$6 ( state, component ) {
-	var div_style_value, canvas_width_value, canvas_height_value;
-	
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-1788418679', '' );
-	div.className = "hsl-picker";
-	div.style.cssText = div_style_value = "width:" + ( state.size ) + "px; height:" + ( state.size ) + "px;";
-	var div_1 = createElement( 'div' );
-	appendNode( div_1, div );
-	div_1.className = "spectrum-wrapper";
-	var canvas = createElement( 'canvas' );
-	appendNode( canvas, div_1 );
-	canvas.className = "wheel-canvas";
-	canvas.width = canvas_width_value = state.size;
-	canvas.height = canvas_height_value = state.size - 20;
-	component.refs.canvas = canvas;
-	appendNode( createText( "\n    " ), div_1 );
-	var div_2 = createElement( 'div' );
-	appendNode( div_2, div_1 );
-	div_2.className = "color-handle";
-	component.refs.handle = div_2;
-	appendNode( createText( "\n  " ), div );
-	
+
+
+
+
+var methods$2 = {
+  spectrumCrement (meth) {
+    const hsv = this.get('hsv');
+
+    hsv[meth[0]] += meth[1] ? 0.01 : -0.01;
+    if (hsv[meth[0]] === 1) {
+      hsv[meth[0]] = '1.0';
+    }
+
+    this.set({ color: tinycolor(hsv) });
+  },
+};
+
+function oncreate$2() {
+  this.refs.hue.observe('value', (hue) => {
+    const hsv = this.get('hsv');
+    hsv.h = hue;
+    this.set({color: tinycolor(hsv)});
+  });
+  this.refs.spectrum.observe('hsv', (hsv) => {
+    this.set({color: tinycolor(hsv)});
+  });
+  this.refs.alpha.observe('value', (value) => {
+    const _color = this.get('_color');
+    this.set({color: _color.setAlpha(value / 100)});
+    // this.set({color: _color.alphas(value / 100)})
+  });
+  this.observe('_color', (_color) => {
+    const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString();
+    // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
+    this.refs.alpha.draw(alphaColor(0), alphaColor(1));
+  });
+}
+
+function encapsulateStyles$3(node) {
+	setAttribute(node, "svelte-613414466", "");
+}
+
+function add_css$3() {
+	var style = createElement("style");
+	style.id = 'svelte-613414466-style';
+	style.textContent = "[svelte-613414466].hsv-picker,[svelte-613414466] .hsv-picker{position:relative;width:100%;height:100%;display:flex;align-items:stretch;justify-content:space-around}[svelte-613414466].hsv-picker > :nth-child(2),[svelte-613414466] .hsv-picker > :nth-child(2){margin:0 8px;flex:2 1 auto}[svelte-613414466].hsv-picker > :first-child,[svelte-613414466] .hsv-picker > :first-child,[svelte-613414466].hsv-picker > :last-child,[svelte-613414466] .hsv-picker > :last-child{flex:0 1 30px}[svelte-613414466].color-handle,[svelte-613414466] .color-handle{position:absolute;width:10px;height:10px;margin:-5px;top:0;left:0;border:1px solid black;border-radius:5px;text-align:left;pointer-events:none}[svelte-613414466].color-handle::before,[svelte-613414466] .color-handle::before{content:'';position:absolute;width:8px;height:8px;top:0;left:0;border:1px solid white;border-radius:4px}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$3(state, component) {
+	var div, text, text_1;
+
 	var slider = new Slider({
-		target: div,
-		_root: component._root || component,
+		_root: component._root,
+		data: { value: state.hsv.h, max: 359 }
+	});
+
+	component.refs.hue = slider;
+
+	var spectrum = new Spectrum({
+		_root: component._root,
+		data: { hsv: state.hsv }
+	});
+
+	component.refs.spectrum = spectrum;
+
+	var slider_1 = new Slider({
+		_root: component._root,
+		data: { value: state._color.getAlpha() * 100 }
+	});
+
+	component.refs.alpha = slider_1;
+
+	return {
+		c: function create() {
+			div = createElement("div");
+			slider._fragment.c();
+			text = createText("\n  ");
+			spectrum._fragment.c();
+			text_1 = createText("\n  ");
+			slider_1._fragment.c();
+			this.h();
+		},
+
+		h: function hydrate() {
+			encapsulateStyles$3(div);
+			div.className = "hsv-picker";
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			slider._mount(div, null);
+			appendNode(text, div);
+			spectrum._mount(div, null);
+			appendNode(text_1, div);
+			slider_1._mount(div, null);
+		},
+
+		p: function update(changed, state) {
+			var slider_changes = {};
+			if (changed.hsv) slider_changes.value = state.hsv.h;
+			slider._set( slider_changes );
+
+			var spectrum_changes = {};
+			if (changed.hsv) spectrum_changes.hsv = state.hsv;
+			spectrum._set( spectrum_changes );
+
+			var slider_1_changes = {};
+			if (changed._color) slider_1_changes.value = state._color.getAlpha() * 100;
+			slider_1._set( slider_1_changes );
+		},
+
+		u: function unmount() {
+			detachNode(div);
+		},
+
+		d: function destroy$$1() {
+			slider.destroy(false);
+			if (component.refs.hue === slider) component.refs.hue = null;
+			spectrum.destroy(false);
+			if (component.refs.spectrum === spectrum) component.refs.spectrum = null;
+			slider_1.destroy(false);
+			if (component.refs.alpha === slider_1) component.refs.alpha = null;
+		}
+	};
+}
+
+function Hsv_picker(options) {
+	init(this, options);
+	this.refs = {};
+	this._state = assign(data$3(), options.data);
+	this._recompute({ size: 1, strokeWidth: 1, color: 1, _color: 1 }, this._state);
+
+	if (!document.getElementById("svelte-613414466-style")) add_css$3();
+
+	var _oncreate = oncreate$2.bind(this);
+
+	if (!options._root) {
+		this._oncreate = [_oncreate];
+		this._beforecreate = [];
+		this._aftercreate = [];
+	} else {
+	 	this._root._oncreate.push(_oncreate);
+	 }
+
+	this._fragment = create_main_fragment$3(this._state, this);
+
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+
+		this._lock = true;
+		callAll(this._beforecreate);
+		callAll(this._oncreate);
+		callAll(this._aftercreate);
+		this._lock = false;
+	}
+}
+
+assign(Hsv_picker.prototype, methods$2, proto);
+
+Hsv_picker.prototype._recompute = function _recompute(changed, state) {
+	if (changed.size || changed.strokeWidth) {
+		if (differs(state.spectrumSize, (state.spectrumSize = spectrumSize(state.size, state.strokeWidth)))) changed.spectrumSize = true;
+	}
+
+	if (changed.color) {
+		if (differs(state._color, (state._color = _color$2(state.color)))) changed._color = true;
+	}
+
+	if (changed._color) {
+		if (differs(state.hsv, (state.hsv = hsv(state._color)))) changed.hsv = true;
+		if (differs(state.textColor, (state.textColor = textColor$3(state._color)))) changed.textColor = true;
+	}
+};
+
+/* src\color-picker\hsl-picker.html generated by Svelte v1.41.1 */
+function _color$3(color) {
+	return tinycolor(color);
+}
+
+function hsl(_color) {
+	return _color.toHsl();
+}
+
+function textColor$4(_color) {
+	return tinycolor.mostReadable(_color, ['#fff', '#000']);
+}
+
+function data$6() {
+  return {
+    size: 150,
+    color: tinycolor.random(),
+  }
+}
+
+var methods$5 = {
+  setColor (position) {
+    const hsl = this.get('hsl');
+    hsl.h = position.percentLeft / 100;
+    hsl.s = (100 - position.percentTop) / 100;
+    this.set({ color: tinycolor.fromRatio(hsl) });
+  },
+  setPosition () {
+    const canvas = this.refs.canvas;
+    const [w, h] = [canvas.width, canvas.height];
+    const hsl = this.get('hsl');
+    this.refs.handle.style.left = w * hsl.h / 360 + 'px';
+    this.refs.handle.style.top = h - (h * hsl.s) + 'px';
+  },
+  draw (lightness = 0.5) {
+    const canvas = this.refs.canvas;
+    const cxt = canvas.getContext('2d');
+    const [w, h] = [canvas.width, canvas.height];
+
+    cxt.clearRect(0, 0, w, h);
+
+    for (let i = 0; i < h; i++) {
+      const grd = cxt.createLinearGradient(0, 0, 0, h);
+      const hue = i / w * 360;
+      grd.addColorStop(0, `hsl(${hue}, 100%, 50%)`);
+      grd.addColorStop(1, `hsl(${hue}, 0%, 50%)`);
+
+      cxt.fillStyle = grd;
+      cxt.fillRect(i, 0, i + 1, h);
+    }
+  }
+};
+
+function oncreate$5() {
+  // canvas init
+  this.draw();
+  this.refs.lightness.draw(tinycolor('#fff'), tinycolor('#000'));
+
+  this.refs.lightness.observe('value', (value) => {
+    const hsl = this.get('hsl');
+    hsl.l = 1 - value / 100;
+    this.set({color: tinycolor(hsl)});
+  });
+
+  // // update oncolorchange
+  this.observe('_color', (_color) => {
+    this.setPosition(_color);
+  });
+  // picker
+  return new MousePosition(this.refs.canvas, {
+    start: (e, position) => {
+      this.setColor(position);
+    },
+    drag: (e, position) => {
+      this.setColor(position);
+    },
+  })
+}
+
+function encapsulateStyles$6(node) {
+	setAttribute(node, "svelte-5250349", "");
+}
+
+function add_css$6() {
+	var style = createElement("style");
+	style.id = 'svelte-5250349-style';
+	style.textContent = "[svelte-5250349].spectrum-wrapper,[svelte-5250349] .spectrum-wrapper{position:relative}[svelte-5250349].color-handle,[svelte-5250349] .color-handle{position:absolute;width:10px;height:10px;margin:-5px;top:0;left:0;border:1px solid black;border-radius:5px;text-align:left;pointer-events:none}[svelte-5250349].color-handle::before,[svelte-5250349] .color-handle::before{content:'';position:absolute;width:8px;height:8px;top:0;left:0;border:1px solid white;border-radius:4px}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$6(state, component) {
+	var div, div_1, canvas, canvas_height_value, text, div_2, text_2;
+
+	var slider = new Slider({
+		_root: component._root,
 		data: {
-			direction: "horizontal",
 			value: state.hsl.l * 100,
-			size: state.size
+			size: state.size,
+			direction: "horizontal"
 		}
 	});
-	
+
 	component.refs.lightness = slider;
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
+		c: function create() {
+			div = createElement("div");
+			div_1 = createElement("div");
+			canvas = createElement("canvas");
+			text = createText("\n    ");
+			div_2 = createElement("div");
+			text_2 = createText("\n  ");
+			slider._fragment.c();
+			this.h();
 		},
-		
-		update: function ( changed, state ) {
-			if ( div_style_value !== ( div_style_value = "width:" + ( state.size ) + "px; height:" + ( state.size ) + "px;" ) ) {
-				div.style.cssText = div_style_value;
+
+		h: function hydrate() {
+			encapsulateStyles$6(div);
+			div.className = "hsl-picker";
+			setStyle(div, "width", "" + state.size + "px");
+			setStyle(div, "height", "" + state.size + "px");
+			div_1.className = "spectrum-wrapper";
+			canvas.className = "wheel-canvas";
+			canvas.width = state.size;
+			canvas.height = canvas_height_value = state.size - 20;
+			div_2.className = "color-handle";
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			appendNode(div_1, div);
+			appendNode(canvas, div_1);
+			component.refs.canvas = canvas;
+			appendNode(text, div_1);
+			appendNode(div_2, div_1);
+			component.refs.handle = div_2;
+			appendNode(text_2, div);
+			slider._mount(div, null);
+		},
+
+		p: function update(changed, state) {
+			if (changed.size) {
+				setStyle(div, "width", "" + state.size + "px");
+				setStyle(div, "height", "" + state.size + "px");
+				canvas.width = state.size;
 			}
-			
-			if ( canvas_width_value !== ( canvas_width_value = state.size ) ) {
-				canvas.width = canvas_width_value;
-			}
-			
-			if ( canvas_height_value !== ( canvas_height_value = state.size - 20 ) ) {
+
+			if ((changed.size) && canvas_height_value !== (canvas_height_value = state.size - 20)) {
 				canvas.height = canvas_height_value;
 			}
-			
+
 			var slider_changes = {};
-			
-			if ( 'hsl' in changed ) slider_changes.value = state.hsl.l * 100;
-			if ( 'size' in changed ) slider_changes.size = state.size;
-			
-			if ( Object.keys( slider_changes ).length ) slider.set( slider_changes );
+			if (changed.hsl) slider_changes.value = state.hsl.l * 100;
+			if (changed.size) slider_changes.size = state.size;
+			slider._set( slider_changes );
 		},
-		
-		destroy: function ( detach ) {
-			if ( component.refs.canvas === canvas ) component.refs.canvas = null;
-			if ( component.refs.handle === div_2 ) component.refs.handle = null;
-			if ( component.refs.lightness === slider ) component.refs.lightness = null;
-			slider.destroy( false );
-			
-			if ( detach ) {
-				detachNode( div );
-			}
+
+		u: function unmount() {
+			detachNode(div);
+		},
+
+		d: function destroy$$1() {
+			if (component.refs.canvas === canvas) component.refs.canvas = null;
+			if (component.refs.handle === div_2) component.refs.handle = null;
+			slider.destroy(false);
+			if (component.refs.lightness === slider) component.refs.lightness = null;
 		}
 	};
 }
 
-function Hsl_picker ( options ) {
-	options = options || {};
+function Hsl_picker(options) {
+	init(this, options);
 	this.refs = {};
-	this._state = assign( template$6.data(), options.data );
-	recompute$5( this._state, this._state, {}, true );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$6 ) add_css$6();
-	this._renderHooks = [];
-	
-	this._fragment = create_main_fragment$6( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	
-	this._flush();
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$6.oncreate, context: this });
+	this._state = assign(data$6(), options.data);
+	this._recompute({ color: 1, _color: 1 }, this._state);
+
+	if (!document.getElementById("svelte-5250349-style")) add_css$6();
+
+	var _oncreate = oncreate$5.bind(this);
+
+	if (!options._root) {
+		this._oncreate = [_oncreate];
+		this._beforecreate = [];
+		this._aftercreate = [];
 	} else {
-		template$6.oncreate.call( this );
+	 	this._root._oncreate.push(_oncreate);
+	 }
+
+	this._fragment = create_main_fragment$6(this._state, this);
+
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+
+		this._lock = true;
+		callAll(this._beforecreate);
+		callAll(this._oncreate);
+		callAll(this._aftercreate);
+		this._lock = false;
 	}
 }
 
-assign( Hsl_picker.prototype, template$6.methods, proto );
+assign(Hsl_picker.prototype, methods$5, proto);
 
-Hsl_picker.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	recompute$5( this._state, newState, oldState, false );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-	
-	this._flush();
+Hsl_picker.prototype._recompute = function _recompute(changed, state) {
+	if (changed.color) {
+		if (differs(state._color, (state._color = _color$3(state.color)))) changed._color = true;
+	}
+
+	if (changed._color) {
+		if (differs(state.hsl, (state.hsl = hsl(state._color)))) changed.hsl = true;
+		if (differs(state.textColor, (state.textColor = textColor$4(state._color)))) changed.textColor = true;
+	}
 };
 
-Hsl_picker.prototype.teardown = Hsl_picker.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
-
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
-};
-
-var template$8 = (function () {
+/* src\color-picker\blender.html generated by Svelte v1.41.1 */
+function data$7() {
   return {
-    data () {
-      return {
-        width: 150,
-        height: 20,
-        color1: '#000',
-        color2: '#fff',
-      }
-    },
-    oncreate () {
-      // picker
-      new MousePosition(this.refs.blender, { // eslint-disable-line no-new
-        handle: this.refs.handle,
-        start: (e, position) => {
-          this.setValue(position);
-        },
-        drag: (e, position) => {
-          this.setValue(position);
-        },
-      });
-
-      this.observe('color1', (color1) => {
-        console.log('color1', color1);
-        this.refs.color1.style.backgroundColor = color1.toString('hex');
-        this.draw();
-      });
-      this.observe('color2', (color2) => {
-        this.refs.color2.style.backgroundColor = color2.toString('hex');
-        this.draw();
-      });
-    },
-    methods: {
-      setColor1 (color1) {
-        this.set({color1});
-      },
-      setColor2 (color2) {
-        this.set({color2});
-      },
-      setValue (position) {
-        const size = this.get('width') - 41;
-        const x = Math.max(0, Math.min(position.x, size));
-        const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data;
-        const color = tinycolor({r, g, b});
-        this.set({ color });
-
-        this.refs.handle.style.left = x + 'px';
-        this.refs.handle.style.backgroundColor = tinycolor.mostReadable(color, ['#eee', '#111']);
-      },
-      draw () {
-        const canvas = this.refs.canvas;
-        const cxt = canvas.getContext('2d');
-        const [w, h] = [canvas.width, canvas.height];
-        cxt.clearRect(0, 0, w, h);
-
-        const grd = this.get('direction') === 'vertical'
-          ? cxt.createLinearGradient(0, 0, 0, h)
-          : cxt.createLinearGradient(0, 0, w, 0);
-
-        grd.addColorStop(0.02, tinycolor(this.get('color1')).toRgbString());
-        grd.addColorStop(0.98, tinycolor(this.get('color2')).toRgbString());
-
-        cxt.fillStyle = grd;
-        cxt.fillRect(0, 0, w, h);
-
-        this.setValue({
-          x: w / 2
-        });
-      }
-    }
+    width: 150,
+    height: 20,
+    color1: '#000',
+    color2: '#fff',
   }
-}());
-
-var added_css$8 = false;
-function add_css$8 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-2540804967].blender, [svelte-2540804967] .blender {\n    display: flex;\n    flex-direction: row;\n  }\n  [svelte-2540804967].blender-slider, [svelte-2540804967] .blender-slider {\n    position: relative;\n    height: inherit;\n    margin: 0 2px;\n    background-color: #fff;\n    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);\n    background-size: 8px 8px;\n    background-position:0 0, 4px 4px;\n    background-repeat: repeat;\n  }\n  [svelte-2540804967].blender-canvas, [svelte-2540804967] .blender-canvas {\n    vertical-align: baseline;\n  }\n  [svelte-2540804967].blender-btn, [svelte-2540804967] .blender-btn {\n    display: block;\n    width: inherit;\n    height: inherit;\n    border: 1px solid #888888;\n  }\n  [svelte-2540804967].blender-handle, [svelte-2540804967] .blender-handle {\n    position: absolute;\n    margin-left: -.5px;\n    width: 1px;\n    height: inherit;\n    top: 0;\n    left: 0;\n    pointer-events: none;\n  }\n  [svelte-2540804967].blender-handle.vertical, [svelte-2540804967] .blender-handle.vertical {\n    margin-top: -.5px;\n    width: inherit;\n    height: 1px;\n  }\n  [svelte-2540804967].blender-handle.horizontal, [svelte-2540804967] .blender-handle.horizontal {\n    margin-left: -.5px;\n    width: 1px;\n    height: inherit;\n  }\n";
-	appendNode( style, document.head );
-
-	added_css$8 = true;
 }
 
-function create_main_fragment$8 ( state, component ) {
-	var div_style_value, canvas_width_value, canvas_height_value, div_2_class_value;
-	
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-2540804967', '' );
-	div.className = "blender";
-	div.style.cssText = div_style_value = "width:" + ( state.width ) + "px; height:" + ( state.height ) + "px;";
-	var dv = createElement( 'dv' );
-	appendNode( dv, div );
-	dv.className = "blender-btn color1 active";
-	
-	function click_handler ( event ) {
+var methods$6 = {
+  setColor1 (color1) {
+    this.set({color1});
+  },
+  setColor2 (color2) {
+    this.set({color2});
+  },
+  setValue (position) {
+    const size = this.get('width') - 41;
+    const x = Math.max(0, Math.min(position.x, size));
+    const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data;
+    const color = tinycolor({r, g, b});
+    this.set({ color });
+
+    this.refs.handle.style.left = x + 'px';
+    this.refs.handle.style.backgroundColor = tinycolor.mostReadable(color, ['#eee', '#111']);
+  },
+  draw () {
+    const canvas = this.refs.canvas;
+    const cxt = canvas.getContext('2d');
+    const [w, h] = [canvas.width, canvas.height];
+    cxt.clearRect(0, 0, w, h);
+
+    const grd = this.get('direction') === 'vertical'
+      ? cxt.createLinearGradient(0, 0, 0, h)
+      : cxt.createLinearGradient(0, 0, w, 0);
+
+    grd.addColorStop(0.02, tinycolor(this.get('color1')).toRgbString());
+    grd.addColorStop(0.98, tinycolor(this.get('color2')).toRgbString());
+
+    cxt.fillStyle = grd;
+    cxt.fillRect(0, 0, w, h);
+
+    this.setValue({
+      x: w / 2
+    });
+  }
+};
+
+function oncreate$6() {
+  // picker
+  new MousePosition(this.refs.blender, { // eslint-disable-line no-new
+    handle: this.refs.handle,
+    start: (e, position) => {
+      this.setValue(position);
+    },
+    drag: (e, position) => {
+      this.setValue(position);
+    },
+  });
+
+  this.observe('color1', (color1) => {
+    console.log('color1', color1);
+    this.refs.color1.style.backgroundColor = color1.toString('hex');
+    this.draw();
+  });
+  this.observe('color2', (color2) => {
+    this.refs.color2.style.backgroundColor = color2.toString('hex');
+    this.draw();
+  });
+}
+
+function encapsulateStyles$7(node) {
+	setAttribute(node, "svelte-3059113235", "");
+}
+
+function add_css$7() {
+	var style = createElement("style");
+	style.id = 'svelte-3059113235-style';
+	style.textContent = "[svelte-3059113235].blender,[svelte-3059113235] .blender{display:flex;flex-direction:row}[svelte-3059113235].blender-slider,[svelte-3059113235] .blender-slider{position:relative;height:inherit;margin:0 2px;background-color:#fff;background-image:linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);background-size:8px 8px;background-position:0 0, 4px 4px;background-repeat:repeat}[svelte-3059113235].blender-canvas,[svelte-3059113235] .blender-canvas{vertical-align:baseline}[svelte-3059113235].blender-btn,[svelte-3059113235] .blender-btn{display:block;width:inherit;height:inherit;border:1px solid #888888}[svelte-3059113235].blender-handle,[svelte-3059113235] .blender-handle{position:absolute;margin-left:-.5px;width:1px;height:inherit;top:0;left:0;pointer-events:none}[svelte-3059113235].blender-handle.vertical,[svelte-3059113235] .blender-handle.vertical{margin-top:-.5px;width:inherit;height:1px}[svelte-3059113235].blender-handle.horizontal,[svelte-3059113235] .blender-handle.horizontal{margin-left:-.5px;width:1px;height:inherit}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$7(state, component) {
+	var div, dv, text, div_1, canvas, canvas_width_value, text_1, div_2, div_2_class_value, text_3, dv_1;
+
+	function click_handler(event) {
 		component.fire('color1');
 	}
-	
-	addEventListener( dv, 'click', click_handler );
-	component.refs.color1 = dv;
-	appendNode( createText( "\n  " ), div );
-	var div_1 = createElement( 'div' );
-	appendNode( div_1, div );
-	div_1.className = "blender-slider";
-	component.refs.blender = div_1;
-	var canvas = createElement( 'canvas' );
-	appendNode( canvas, div_1 );
-	canvas.className = "blender-canvas";
-	canvas.width = canvas_width_value = state.width-40;
-	canvas.height = canvas_height_value = state.height;
-	component.refs.canvas = canvas;
-	appendNode( createText( "\n    " ), div_1 );
-	var div_2 = createElement( 'div' );
-	appendNode( div_2, div_1 );
-	div_2.className = div_2_class_value = "blender-handle " + ( state.direction );
-	component.refs.handle = div_2;
-	appendNode( createText( "\n  " ), div );
-	var dv_1 = createElement( 'dv' );
-	appendNode( dv_1, div );
-	dv_1.className = "blender-btn color2";
-	
-	function click_handler_1 ( event ) {
+
+	function click_handler_1(event) {
 		component.fire('color2');
 	}
-	
-	addEventListener( dv_1, 'click', click_handler_1 );
-	component.refs.color2 = dv_1;
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
+		c: function create() {
+			div = createElement("div");
+			dv = createElement("dv");
+			text = createText("\n  ");
+			div_1 = createElement("div");
+			canvas = createElement("canvas");
+			text_1 = createText("\n    ");
+			div_2 = createElement("div");
+			text_3 = createText("\n  ");
+			dv_1 = createElement("dv");
+			this.h();
 		},
-		
-		update: function ( changed, state ) {
-			if ( div_style_value !== ( div_style_value = "width:" + ( state.width ) + "px; height:" + ( state.height ) + "px;" ) ) {
-				div.style.cssText = div_style_value;
+
+		h: function hydrate() {
+			encapsulateStyles$7(div);
+			div.className = "blender";
+			setStyle(div, "width", "" + state.width + "px");
+			setStyle(div, "height", "" + state.height + "px");
+			dv.className = "blender-btn color1 active";
+			addListener(dv, "click", click_handler);
+			div_1.className = "blender-slider";
+			canvas.className = "blender-canvas";
+			canvas.width = canvas_width_value = state.width-40;
+			canvas.height = state.height;
+			div_2.className = div_2_class_value = "blender-handle " + state.direction;
+			dv_1.className = "blender-btn color2";
+			addListener(dv_1, "click", click_handler_1);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			appendNode(dv, div);
+			component.refs.color1 = dv;
+			appendNode(text, div);
+			appendNode(div_1, div);
+			component.refs.blender = div_1;
+			appendNode(canvas, div_1);
+			component.refs.canvas = canvas;
+			appendNode(text_1, div_1);
+			appendNode(div_2, div_1);
+			component.refs.handle = div_2;
+			appendNode(text_3, div);
+			appendNode(dv_1, div);
+			component.refs.color2 = dv_1;
+		},
+
+		p: function update(changed, state) {
+			if (changed.width) {
+				setStyle(div, "width", "" + state.width + "px");
 			}
-			
-			if ( canvas_width_value !== ( canvas_width_value = state.width-40 ) ) {
+
+			if (changed.height) {
+				setStyle(div, "height", "" + state.height + "px");
+			}
+
+			if ((changed.width) && canvas_width_value !== (canvas_width_value = state.width-40)) {
 				canvas.width = canvas_width_value;
 			}
-			
-			if ( canvas_height_value !== ( canvas_height_value = state.height ) ) {
-				canvas.height = canvas_height_value;
+
+			if (changed.height) {
+				canvas.height = state.height;
 			}
-			
-			if ( div_2_class_value !== ( div_2_class_value = "blender-handle " + ( state.direction ) ) ) {
+
+			if ((changed.direction) && div_2_class_value !== (div_2_class_value = "blender-handle " + state.direction)) {
 				div_2.className = div_2_class_value;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			removeEventListener( dv, 'click', click_handler );
-			if ( component.refs.color1 === dv ) component.refs.color1 = null;
-			if ( component.refs.blender === div_1 ) component.refs.blender = null;
-			if ( component.refs.canvas === canvas ) component.refs.canvas = null;
-			if ( component.refs.handle === div_2 ) component.refs.handle = null;
-			removeEventListener( dv_1, 'click', click_handler_1 );
-			if ( component.refs.color2 === dv_1 ) component.refs.color2 = null;
-			
-			if ( detach ) {
-				detachNode( div );
-			}
+
+		u: function unmount() {
+			detachNode(div);
+		},
+
+		d: function destroy$$1() {
+			removeListener(dv, "click", click_handler);
+			if (component.refs.color1 === dv) component.refs.color1 = null;
+			if (component.refs.blender === div_1) component.refs.blender = null;
+			if (component.refs.canvas === canvas) component.refs.canvas = null;
+			if (component.refs.handle === div_2) component.refs.handle = null;
+			removeListener(dv_1, "click", click_handler_1);
+			if (component.refs.color2 === dv_1) component.refs.color2 = null;
 		}
 	};
 }
 
-function Blender ( options ) {
-	options = options || {};
+function Blender(options) {
+	init(this, options);
 	this.refs = {};
-	this._state = assign( template$8.data(), options.data );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$8 ) add_css$8();
-	
-	this._fragment = create_main_fragment$8( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$8.oncreate, context: this });
+	this._state = assign(data$7(), options.data);
+
+	if (!document.getElementById("svelte-3059113235-style")) add_css$7();
+
+	var _oncreate = oncreate$6.bind(this);
+
+	if (!options._root) {
+		this._oncreate = [_oncreate];
 	} else {
-		template$8.oncreate.call( this );
+	 	this._root._oncreate.push(_oncreate);
+	 }
+
+	this._fragment = create_main_fragment$7(this._state, this);
+
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+
+		callAll(this._oncreate);
 	}
 }
 
-assign( Blender.prototype, template$8.methods, proto );
+assign(Blender.prototype, methods$6, proto);
 
-Blender.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-};
-
-Blender.prototype.teardown = Blender.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
-
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
-};
-
-function recompute$1 ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'color' in newState && differs( state.color, oldState.color ) ) ) {
-		state._color = newState._color = template$1.computed._color( state.color );
-	}
-	
-	if ( isInitial || ( '_color' in newState && differs( state._color, oldState._color ) ) ) {
-		state.textColor = newState.textColor = template$1.computed.textColor( state._color );
-	}
+/* src\color-picker\color-picker.html generated by Svelte v1.41.1 */
+function _color(color) {
+	return tinycolor(color);
 }
 
-var template$1 = (function () {
+function textColor$1(_color) {
+	return tinycolor.mostReadable(_color, ['#fff', '#000']);
+}
+
+function data$1() {
   return {
-    data () {
-      return {
-        size: 200,
-        color: tinycolor.random(),
-        mode: 'hsl',
-      }
-    },
-    computed: {
-      _color: (color) => tinycolor(color),
-      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
-    },
-    oncreate () {
-      this.refs.alpha.observe('value', (value) => {
-        const _color = this.get('_color');
-        this.set({color: _color.setAlpha(value / 100)});
-        // this.set({color: _color.alphas(value / 100)})
-      });
-      this.observe('_color', (_color) => {
-        const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString();
-        // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
-        this.refs.alpha.draw(alphaColor(0), alphaColor(1));
-      });
-    },
+    size: 200,
+    color: tinycolor.random(),
+    mode: 'hsv',
   }
-}());
-
-var added_css$1 = false;
-function add_css$1 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-1570121360].color-picker, [svelte-1570121360] .color-picker {\n    position: relative;\n    padding: 5px;\n    text-align: center;\n    color: #4025AD;\n  }\n  [svelte-1570121360].wrapper, [svelte-1570121360] .wrapper {\n    display: flex;\n    flex-wrap: wrap;\n  }\n";
-	appendNode( style, document.head );
-
-	added_css$1 = true;
 }
 
-function create_main_fragment$1 ( state, component ) {
-	var div_style_value, colorinput_updating = false, div_1_style_value, blender_updating = false;
-	
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-1570121360', '' );
-	div.className = "color-picker";
-	div.style.cssText = div_style_value = "color: " + ( state.textColor ) + "; background-color: " + ( state._color.toString('rgb') ) + ";";
-	
+function oncreate$1() {
+  // this.refs.alpha.observe('value', (value) => {
+  //   const _color = this.get('_color')
+  //   this.set({color: _color.setAlpha(value / 100)})
+  //   // this.set({color: _color.alphas(value / 100)})
+  // })
+  // this.observe('_color', (_color) => {
+  //   const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString()
+  //   // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
+  //   this.refs.alpha.draw(alphaColor(0), alphaColor(1))
+  // })
+}
+
+function encapsulateStyles$1(node) {
+	setAttribute(node, "svelte-2117978208", "");
+}
+
+function add_css$1() {
+	var style = createElement("style");
+	style.id = 'svelte-2117978208-style';
+	style.textContent = "[svelte-2117978208].color-picker,[svelte-2117978208] .color-picker{position:relative;padding:8px;text-align:center;color:#4025AD}[svelte-2117978208].wrapper,[svelte-2117978208] .wrapper{height:100px;display:flex;flex-direction:column}[svelte-2117978208].alpha-check-bg,[svelte-2117978208] .alpha-check-bg{background-color:#fff;background-image:linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);background-size:8px 8px;background-position:0 0, 4px 4px;background-repeat:repeat}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$1(state, component) {
+	var div, colorinput_updating = {}, text, div_1, text_1, blender_updating = {};
+
 	var colorinput_initial_data = {};
-	if ( 'color' in state ) colorinput_initial_data.color = state.color ;
-	var colorinput = new Color_input({
-		target: div,
-		_root: component._root || component,
-		data: colorinput_initial_data
-	});
-	
-	component._bindings.push( function () {
-		if ( colorinput._torndown ) return;
-		colorinput.observe( 'color', function ( value ) {
-			if ( colorinput_updating ) return;
-			colorinput_updating = true;
-			component._set({ color: value });
-			colorinput_updating = false;
-		}, { init: differs( colorinput.get( 'color' ), state.color  ) });
-	});
-	
-	colorinput._context = {
-		state: state
-	};
-	
-	appendNode( createText( "\n  " ), div );
-	var div_1 = createElement( 'div' );
-	appendNode( div_1, div );
-	div_1.className = "wrapper";
-	div_1.style.cssText = div_1_style_value = "width: " + ( state.size ) + "px;";
-	var if_block_anchor = createComment();
-	appendNode( if_block_anchor, div_1 );
-	
-	function get_block ( state ) {
-		if ( state.mode == 'hsv' ) return create_if_block;
-		return create_if_block_1;
+	if ('color' in state) {
+		colorinput_initial_data.color = state.color ;
+		colorinput_updating.color = true;
 	}
-	
-	var current_block = get_block( state );
-	var if_block = current_block && current_block( state, component );
-	
-	if ( if_block ) if_block.mount( div_1, if_block_anchor );
-	appendNode( createText( "\n    " ), div_1 );
-	
-	var slider = new Slider({
-		target: div_1,
-		_root: component._root || component,
-		data: {
-			direction: "horizontal",
-			value: state._color.getAlpha() * 100,
-			size: state.size
+	var colorinput = new Color_input({
+		_root: component._root,
+		data: colorinput_initial_data,
+		_bind: function(changed, childState) {
+			var state = component.get(), newState = {};
+			if (!colorinput_updating.color && changed.color) {
+				newState.color = childState.color;
+			}
+			colorinput_updating = assign({}, changed);
+			component._set(newState);
+			colorinput_updating = {};
 		}
 	});
-	
-	component.refs.alpha = slider;
-	
-	appendNode( createText( "\n    " ), div_1 );
-	
-	var blender_initial_data = { width: state.size };
-	if ( 'color' in state ) blender_initial_data.color = state.color ;
-	var blender = new Blender({
-		target: div_1,
-		_root: component._root || component,
-		data: blender_initial_data
+
+	component._root._beforecreate.push(function () {
+		var state = component.get(), childState = colorinput.get(), newState = {};
+		if (!childState) return;
+		if (!colorinput_updating.color) {
+			newState.color = childState.color;
+		}
+		colorinput_updating = { color: true };
+		component._set(newState);
+		colorinput_updating = {};
 	});
-	
-	blender.on( 'color1', function ( event ) {
-		var state = this._context.state;
-		
+
+	var current_block_type = select_block_type(state);
+	var if_block = current_block_type(state, component);
+
+	var blender_initial_data = { width: state.size };
+	if ('color' in state) {
+		blender_initial_data.color = state.color ;
+		blender_updating.color = true;
+	}
+	var blender = new Blender({
+		_root: component._root,
+		data: blender_initial_data,
+		_bind: function(changed, childState) {
+			var state = component.get(), newState = {};
+			if (!blender_updating.color && changed.color) {
+				newState.color = childState.color;
+			}
+			blender_updating = assign({}, changed);
+			component._set(newState);
+			blender_updating = {};
+		}
+	});
+
+	component._root._beforecreate.push(function () {
+		var state = component.get(), childState = blender.get(), newState = {};
+		if (!childState) return;
+		if (!blender_updating.color) {
+			newState.color = childState.color;
+		}
+		blender_updating = { color: true };
+		component._set(newState);
+		blender_updating = {};
+	});
+
+	blender.on("color1", function(event) {
+		var state = blender_context.state;
+
 		component.this.setColor1(state._color);
 	});
-	
-	blender.on( 'color2', function ( event ) {
-		var state = this._context.state;
-		
+
+	blender.on("color2", function(event) {
+		var state = blender_context.state;
+
 		component.this.setColor2(state._color);
 	});
-	
-	component._bindings.push( function () {
-		if ( blender._torndown ) return;
-		blender.observe( 'color', function ( value ) {
-			if ( blender_updating ) return;
-			blender_updating = true;
-			component._set({ color: value });
-			blender_updating = false;
-		}, { init: differs( blender.get( 'color' ), state.color  ) });
-	});
-	
-	blender._context = {
+
+	var blender_context = {
 		state: state
 	};
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
+		c: function create() {
+			div = createElement("div");
+			colorinput._fragment.c();
+			text = createText("\n  ");
+			div_1 = createElement("div");
+			if_block.c();
+			text_1 = createText("\n    \n    ");
+			blender._fragment.c();
+			this.h();
 		},
-		
-		update: function ( changed, state ) {
-			if ( div_style_value !== ( div_style_value = "color: " + ( state.textColor ) + "; background-color: " + ( state._color.toString('rgb') ) + ";" ) ) {
-				div.style.cssText = div_style_value;
+
+		h: function hydrate() {
+			encapsulateStyles$1(div);
+			div.className = "color-picker";
+			div_1.className = "wrapper";
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			colorinput._mount(div, null);
+			appendNode(text, div);
+			appendNode(div_1, div);
+			if_block.m(div_1, null);
+			appendNode(text_1, div_1);
+			blender._mount(div_1, null);
+		},
+
+		p: function update(changed, state) {
+			var colorinput_changes = {};
+			if (!colorinput_updating.color && changed.color) {
+				colorinput_changes.color = state.color ;
+				colorinput_updating.color = true;
 			}
-			
-			if ( !colorinput_updating && 'color' in changed ) {
-				colorinput_updating = true;
-				colorinput._set({ color: state.color  });
-				colorinput_updating = false;
-			}
-			
-			colorinput._context.state = state;
-			
-			if ( div_1_style_value !== ( div_1_style_value = "width: " + ( state.size ) + "px;" ) ) {
-				div_1.style.cssText = div_1_style_value;
-			}
-			
-			if ( current_block === ( current_block = get_block( state ) ) && if_block ) {
-				if_block.update( changed, state );
+			colorinput._set( colorinput_changes );
+			colorinput_updating = {};
+
+			if (current_block_type === (current_block_type = select_block_type(state)) && if_block) {
+				if_block.p(changed, state);
 			} else {
-				if ( if_block ) if_block.destroy( true );
-				if_block = current_block && current_block( state, component );
-				if ( if_block ) if_block.mount( if_block_anchor.parentNode, if_block_anchor );
+				if_block.u();
+				if_block.d();
+				if_block = current_block_type(state, component);
+				if_block.c();
+				if_block.m(div_1, text_1);
 			}
-			
-			var slider_changes = {};
-			
-			if ( '_color' in changed ) slider_changes.value = state._color.getAlpha() * 100;
-			if ( 'size' in changed ) slider_changes.size = state.size;
-			
-			if ( Object.keys( slider_changes ).length ) slider.set( slider_changes );
-			
-			if ( !blender_updating && 'color' in changed ) {
-				blender_updating = true;
-				blender._set({ color: state.color  });
-				blender_updating = false;
-			}
-			
-			blender._context.state = state;
-			
+
 			var blender_changes = {};
-			
-			if ( 'size' in changed ) blender_changes.width = state.size;
-			
-			if ( Object.keys( blender_changes ).length ) blender.set( blender_changes );
-		},
-		
-		destroy: function ( detach ) {
-			colorinput.destroy( false );
-			if ( if_block ) if_block.destroy( false );
-			if ( component.refs.alpha === slider ) component.refs.alpha = null;
-			slider.destroy( false );
-			blender.destroy( false );
-			
-			if ( detach ) {
-				detachNode( div );
+			if (changed.size) blender_changes.width = state.size;
+			if (!blender_updating.color && changed.color) {
+				blender_changes.color = state.color ;
+				blender_updating.color = true;
 			}
+			blender._set( blender_changes );
+			blender_updating = {};
+
+			blender_context.state = state;
+		},
+
+		u: function unmount() {
+			detachNode(div);
+			if_block.u();
+		},
+
+		d: function destroy$$1() {
+			colorinput.destroy(false);
+			if_block.d();
+			blender.destroy(false);
 		}
 	};
 }
 
-function create_if_block ( state, component ) {
-	var hslpicker_updating = false;
-	
-	var hslpicker_initial_data = { size: state.size };
-	if ( 'color' in state ) hslpicker_initial_data.color = state.color ;
-	var hslpicker = new Hsl_picker({
-		target: null,
-		_root: component._root || component,
-		data: hslpicker_initial_data
-	});
-	
-	component._bindings.push( function () {
-		if ( hslpicker._torndown ) return;
-		hslpicker.observe( 'color', function ( value ) {
-			if ( hslpicker_updating ) return;
-			hslpicker_updating = true;
-			component._set({ color: value });
-			hslpicker_updating = false;
-		}, { init: differs( hslpicker.get( 'color' ), state.color  ) });
-	});
-	
-	hslpicker._context = {
-		state: state
-	};
+// (4:4) {{#if mode == 'hsv'}}
+function create_if_block(state, component) {
+	var hsvpicker_updating = {};
 
-	return {
-		mount: function ( target, anchor ) {
-			hslpicker._fragment.mount( target, anchor );
-		},
-		
-		update: function ( changed, state ) {
-			if ( !hslpicker_updating && 'color' in changed ) {
-				hslpicker_updating = true;
-				hslpicker._set({ color: state.color  });
-				hslpicker_updating = false;
-			}
-			
-			hslpicker._context.state = state;
-			
-			var hslpicker_changes = {};
-			
-			if ( 'size' in changed ) hslpicker_changes.size = state.size;
-			
-			if ( Object.keys( hslpicker_changes ).length ) hslpicker.set( hslpicker_changes );
-		},
-		
-		destroy: function ( detach ) {
-			hslpicker.destroy( detach );
-		}
-	};
-}
-
-function create_if_block_1 ( state, component ) {
-	var hsvpicker_updating = false;
-	
 	var hsvpicker_initial_data = { size: state.size };
-	if ( 'color' in state ) hsvpicker_initial_data.color = state.color ;
+	if ('color' in state) {
+		hsvpicker_initial_data.color = state.color ;
+		hsvpicker_updating.color = true;
+	}
 	var hsvpicker = new Hsv_picker({
-		target: null,
-		_root: component._root || component,
-		data: hsvpicker_initial_data
+		_root: component._root,
+		data: hsvpicker_initial_data,
+		_bind: function(changed, childState) {
+			var state = component.get(), newState = {};
+			if (!hsvpicker_updating.color && changed.color) {
+				newState.color = childState.color;
+			}
+			hsvpicker_updating = assign({}, changed);
+			component._set(newState);
+			hsvpicker_updating = {};
+		}
 	});
-	
-	component._bindings.push( function () {
-		if ( hsvpicker._torndown ) return;
-		hsvpicker.observe( 'color', function ( value ) {
-			if ( hsvpicker_updating ) return;
-			hsvpicker_updating = true;
-			component._set({ color: value });
-			hsvpicker_updating = false;
-		}, { init: differs( hsvpicker.get( 'color' ), state.color  ) });
+
+	component._root._beforecreate.push(function () {
+		var state = component.get(), childState = hsvpicker.get(), newState = {};
+		if (!childState) return;
+		if (!hsvpicker_updating.color) {
+			newState.color = childState.color;
+		}
+		hsvpicker_updating = { color: true };
+		component._set(newState);
+		hsvpicker_updating = {};
 	});
-	
-	hsvpicker._context = {
-		state: state
-	};
 
 	return {
-		mount: function ( target, anchor ) {
-			hsvpicker._fragment.mount( target, anchor );
+		c: function create() {
+			hsvpicker._fragment.c();
 		},
-		
-		update: function ( changed, state ) {
-			if ( !hsvpicker_updating && 'color' in changed ) {
-				hsvpicker_updating = true;
-				hsvpicker._set({ color: state.color  });
-				hsvpicker_updating = false;
-			}
-			
-			hsvpicker._context.state = state;
-			
+
+		m: function mount(target, anchor) {
+			hsvpicker._mount(target, anchor);
+		},
+
+		p: function update(changed, state) {
 			var hsvpicker_changes = {};
+			if (changed.size) hsvpicker_changes.size = state.size;
+			if (!hsvpicker_updating.color && changed.color) {
+				hsvpicker_changes.color = state.color ;
+				hsvpicker_updating.color = true;
+			}
+			hsvpicker._set( hsvpicker_changes );
+			hsvpicker_updating = {};
+
 			
-			if ( 'size' in changed ) hsvpicker_changes.size = state.size;
-			
-			if ( Object.keys( hsvpicker_changes ).length ) hsvpicker.set( hsvpicker_changes );
 		},
-		
-		destroy: function ( detach ) {
-			hsvpicker.destroy( detach );
+
+		u: function unmount() {
+			hsvpicker._unmount();
+		},
+
+		d: function destroy$$1() {
+			hsvpicker.destroy(false);
 		}
 	};
 }
 
-function Color_picker ( options ) {
-	options = options || {};
-	this.refs = {};
-	this._state = assign( template$1.data(), options.data );
-	recompute$1( this._state, this._state, {}, true );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$1 ) add_css$1();
-	this._renderHooks = [];
-	
-	this._bindings = [];
-	this._fragment = create_main_fragment$1( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	while ( this._bindings.length ) this._bindings.pop()();
-	
-	this._flush();
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$1.oncreate, context: this });
-	} else {
-		template$1.oncreate.call( this );
+// (6:4) {{else}}
+function create_if_block_1(state, component) {
+	var hslpicker_updating = {};
+
+	var hslpicker_initial_data = { size: state.size };
+	if ('color' in state) {
+		hslpicker_initial_data.color = state.color ;
+		hslpicker_updating.color = true;
 	}
-}
+	var hslpicker = new Hsl_picker({
+		_root: component._root,
+		data: hslpicker_initial_data,
+		_bind: function(changed, childState) {
+			var state = component.get(), newState = {};
+			if (!hslpicker_updating.color && changed.color) {
+				newState.color = childState.color;
+			}
+			hslpicker_updating = assign({}, changed);
+			component._set(newState);
+			hslpicker_updating = {};
+		}
+	});
 
-assign( Color_picker.prototype, proto );
-
-Color_picker.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	recompute$1( this._state, newState, oldState, false );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-	while ( this._bindings.length ) this._bindings.pop()();
-	
-	this._flush();
-};
-
-Color_picker.prototype.teardown = Color_picker.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
-
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
-};
-
-function recompute$7 ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'card' in newState && differs( state.card, oldState.card ) ) ) {
-		state.colorStyle = newState.colorStyle = template$9.computed.colorStyle( state.card );
-	}
-	
-	if ( isInitial || ( 'card' in newState && differs( state.card, oldState.card ) ) || ( 'bgColor' in newState && differs( state.bgColor, oldState.bgColor ) ) ) {
-		state.contrast = newState.contrast = template$9.computed.contrast( state.card, state.bgColor );
-	}
-	
-	if ( isInitial || ( 'card' in newState && differs( state.card, oldState.card ) ) ) {
-		state.width = newState.width = template$9.computed.width( state.card );
-		state.height = newState.height = template$9.computed.height( state.card );
-	}
-}
-
-var template$9 = (function () {
-  const colorsWidth = 320;
-
-  var template = {
-    computed: {
-      colorStyle: (card) => {
-        return card.textMode
-        ? `background-color: transparent; color: ${card.color};`
-        : `background-color: ${card.color}; color: ${tinycolor.mostReadable(card.color, ['#eee', '#111'])};`
-      },
-      // textColor: card => tinycolor.mostReadable(card.color, ['#eee', '#111']),
-      contrast: (card, bgColor) => tinycolor.readability(card.color, bgColor),
-      //  width: {{width}}px; height: {{height}}px;
-      width: card => card.width || 200,
-      height: card => card.height || 180,
-    },
-
-    oncreate () {
-      console.log('card-render');
-      const cardEl = this.refs.card;
-      const box = cardEl.parentElement;
-
-      const {card, index} = this.get();
-
-      let selected;
-
-      this.movable = new Movable(cardEl, {
-        containment: box,
-        grid: 5,
-        axis: 'shift',
-        start: (e, position) => {
-          e.stopPropagation();
-
-          store.trigger('cards.CARD_FORWARD', index, false);
-          selected = store.get('cards');
-        },
-        drag: (e, position, el) => {
-          // cards.forEach((cardEl, i) => {
-          //   if (card !== cardEl) {
-          //     const cardRect = cardRects[i]
-          //     cardEl.style.left = position.adjust(cardRect.left + position.vectorX, 'width', cardRect) + 'px'
-          //     cardEl.style.top  = position.adjust(cardRect.top  + position.vectorY, 'height', cardRect) + 'px'
-          //   }
-          // })
-        },
-        stop: (e, position, el) => {
-          const pos = this.adjust(position);
-          this.set(pos);
-          store.trigger('cards.TRANSLATE_CARD', index, pos.left, pos.top);
-        },
-        click: (e, position, el) => {
-          store.memo('cards');
-          // this.parent.selectable.select(this.i)
-        },
-      });
-      cardEl.addEventListener('contextmenu', (e) => {
-        // デフォルトイベントをキャンセル
-        // これを書くことでコンテキストメニューが表示されなくなります
-        e.preventDefault();
-        store.trigger('menu_open', e, {
-          name: card.name,
-          color: card.color,
-        }, 'card');
-      }, false);
-
-      // styler(cardEl, position(card, true))
-      // this.position(card, true)
-      this.set(this.adjust(card, true));
-    },
-    methods: {
-      adjust (card, init) {
-        const rect = this.refs.card.parentElement.getBoundingClientRect();
-        const maxW = rect.width - this.get('width');
-        const maxH = rect.height - this.get('height');
-        let left, top;
-
-        if (init && (+card.left < colorsWidth || !card.top)) {
-          // random positions
-          left = snap((maxW - colorsWidth) * Math.random() + colorsWidth);
-          top = snap((maxH) * Math.random());
-        } else {
-          left = clamp(card.left, maxW, colorsWidth);
-          top = clamp(card.top, maxH);
-        }
-        return {left, top}
-      }
-    }
-  };
-
-  // Utilities
-
-  function snap (n, grid = 5) {
-    return Math.round(n / grid) * grid
-  }
-  function clamp (val, max, min = 0) {
-    return Math.min(Math.max(min, val), max)
-  }
-
-
-
-  return template;
-}());
-
-var added_css$9 = false;
-function add_css$9 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-3835247079].card, [svelte-3835247079] .card {\n    position: absolute;\n    text-align:center;\n    font-size:12px;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    border-radius: 6px;\n    width: 200px;\n    height: 180px;\n  }\n  [svelte-3835247079].card.selected, [svelte-3835247079] .card.selected {\n    outline: 1px dashed black;\n    box-shadow: 0 0 0 1px white;\n  }\n  [svelte-3835247079].card.active, [svelte-3835247079] .card.active {\n    z-index: 100;\n  }\n  [svelte-3835247079].cardtext, [svelte-3835247079] .cardtext {\n    \n    padding: 8px;\n    width: 100%;\n    white-space: wrap;\n    user-select: none;\n    -ms-user-select: none;\n    -webkit-user-select: none;\n    -moz-user-select: none;\n  }\n  [svelte-3835247079].card_title, [svelte-3835247079] .card_title {\n    \n    overflow: hidden;\n    white-space: nowrap;\n    text-overflow: ellipsis;\n    \n  }\n";
-	appendNode( style, document.head );
-
-	added_css$9 = true;
-}
-
-function create_main_fragment$9 ( state, component ) {
-	var div_style_value, text_value, text_2_value, text_4_value, text_6_value;
-	
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-3835247079', '' );
-	div.className = "card animated bounceIn";
-	div.style.cssText = div_style_value = "" + ( state.colorStyle ) + " left: " + ( state.left ) + "px; top: " + ( state.top ) + "px; z-index: " + ( state.card.zIndex ) + ";";
-	component.refs.card = div;
-	var div_1 = createElement( 'div' );
-	appendNode( div_1, div );
-	div_1.className = "cardtext";
-	var h_ = createElement( 'h3' );
-	appendNode( h_, div_1 );
-	h_.className = "card_title";
-	var text = createText( text_value = state.card.name );
-	appendNode( text, h_ );
-	appendNode( createText( "\n    " ), div_1 );
-	var div_2 = createElement( 'div' );
-	appendNode( div_2, div_1 );
-	var text_2 = createText( text_2_value = state.card.color );
-	appendNode( text_2, div_2 );
-	appendNode( createText( "\n    " ), div_1 );
-	var div_3 = createElement( 'div' );
-	appendNode( div_3, div_1 );
-	var text_4 = createText( text_4_value = state.card.color.toString('hsl') );
-	appendNode( text_4, div_3 );
-	appendNode( createText( "\n    " ), div_1 );
-	var div_4 = createElement( 'div' );
-	appendNode( div_4, div_1 );
-	var text_6 = createText( text_6_value = ( 'Math' in state ? state.Math : Math ).round(state.contrast * 10) / 10 );
-	appendNode( text_6, div_4 );
+	component._root._beforecreate.push(function () {
+		var state = component.get(), childState = hslpicker.get(), newState = {};
+		if (!childState) return;
+		if (!hslpicker_updating.color) {
+			newState.color = childState.color;
+		}
+		hslpicker_updating = { color: true };
+		component._set(newState);
+		hslpicker_updating = {};
+	});
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
+		c: function create() {
+			hslpicker._fragment.c();
 		},
-		
-		update: function ( changed, state ) {
-			if ( div_style_value !== ( div_style_value = "" + ( state.colorStyle ) + " left: " + ( state.left ) + "px; top: " + ( state.top ) + "px; z-index: " + ( state.card.zIndex ) + ";" ) ) {
+
+		m: function mount(target, anchor) {
+			hslpicker._mount(target, anchor);
+		},
+
+		p: function update(changed, state) {
+			var hslpicker_changes = {};
+			if (changed.size) hslpicker_changes.size = state.size;
+			if (!hslpicker_updating.color && changed.color) {
+				hslpicker_changes.color = state.color ;
+				hslpicker_updating.color = true;
+			}
+			hslpicker._set( hslpicker_changes );
+			hslpicker_updating = {};
+
+			
+		},
+
+		u: function unmount() {
+			hslpicker._unmount();
+		},
+
+		d: function destroy$$1() {
+			hslpicker.destroy(false);
+		}
+	};
+}
+
+function select_block_type(state) {
+	if (state.mode == 'hsv') return create_if_block;
+	return create_if_block_1;
+}
+
+function Color_picker(options) {
+	init(this, options);
+	this._state = assign(data$1(), options.data);
+	this._recompute({ color: 1, _color: 1 }, this._state);
+
+	if (!document.getElementById("svelte-2117978208-style")) add_css$1();
+
+	var _oncreate = oncreate$1.bind(this);
+
+	if (!options._root) {
+		this._oncreate = [_oncreate];
+		this._beforecreate = [];
+		this._aftercreate = [];
+	} else {
+	 	this._root._oncreate.push(_oncreate);
+	 }
+
+	this._fragment = create_main_fragment$1(this._state, this);
+
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+
+		this._lock = true;
+		callAll(this._beforecreate);
+		callAll(this._oncreate);
+		callAll(this._aftercreate);
+		this._lock = false;
+	}
+}
+
+assign(Color_picker.prototype, proto);
+
+Color_picker.prototype._recompute = function _recompute(changed, state) {
+	if (changed.color) {
+		if (differs(state._color, (state._color = _color(state.color)))) changed._color = true;
+	}
+
+	if (changed._color) {
+		if (differs(state.textColor, (state.textColor = textColor$1(state._color)))) changed.textColor = true;
+	}
+};
+
+/* src\svelte\color-card.html generated by Svelte v1.41.1 */
+function activeIndex () {
+  const cards = store.get('cards');
+  for (let i = 0; i < cards.length; i++) {
+    if (cards[i].zIndex === cards.length - 1) {
+      return i
+    }
+  }
+}
+
+const colorsWidth = 320;
+
+function colorStyle(card) {
+  return card.textMode
+    ? `background-color: transparent; color: ${card.color};`
+    : `background-color: ${card.color}; color: ${tinycolor.mostReadable(card.color, ['#eee', '#111'])};`
+}
+
+function contrast(card, bgColor) {
+	return tinycolor.readability(card.color, bgColor);
+}
+
+function width$1(card) {
+	return card.width || 200;
+}
+
+function height$1(card) {
+	return card.height || 180;
+}
+
+var methods$7 = {
+  adjust (card, init$$1) {
+    const rect = this.refs.card.parentElement.getBoundingClientRect();
+    const maxW = rect.width - this.get('width');
+    const maxH = rect.height - this.get('height');
+    let left, top;
+
+    if (init$$1 && (+card.left < colorsWidth || !card.top)) {
+      // random positions
+      left = snap((maxW - colorsWidth) * Math.random() + colorsWidth);
+      top = snap((maxH) * Math.random());
+    } else {
+      left = clamp(card.left, maxW, colorsWidth);
+      top = clamp(card.top, maxH);
+    }
+    return {left, top}
+  },
+  duplicate () {
+    store.trigger('cards.DUPLICATE_CARD', this.get('activeCard'));
+  },
+  remove () {
+    const cards = store.get('cards');
+
+    if (cards.some((card) => card.selected)) {
+      console.log('removeselected', activeIndex());
+      cards.forEach((card, i) => {
+        if (card.selected) {
+          store.trigger('cards.REMOVE_CARD', i);
+        }
+      });
+    } else {
+      console.log('remove', activeIndex());
+      store.trigger('cards.REMOVE_CARD', activeIndex());
+    }
+  },
+};
+
+function oncreate$7() {
+  console.log('card-render');
+  const cardEl = this.refs.card;
+  const box = cardEl.parentElement;
+
+  const {card, index} = this.get();
+
+  let selected;
+
+  this.movable = new Movable(cardEl, {
+    containment: box,
+    grid: 5,
+    axis: 'shift',
+    start: (e, position) => {
+      e.stopPropagation();
+
+      store.trigger('cards.CARD_FORWARD', index, false);
+      selected = store.get('cards');
+    },
+    drag: (e, position, el) => {
+      // cards.forEach((cardEl, i) => {
+      //   if (card !== cardEl) {
+      //     const cardRect = cardRects[i]
+      //     cardEl.style.left = position.adjust(cardRect.left + position.vectorX, 'width', cardRect) + 'px'
+      //     cardEl.style.top  = position.adjust(cardRect.top  + position.vectorY, 'height', cardRect) + 'px'
+      //   }
+      // })
+    },
+    stop: (e, position, el) => {
+      const pos = this.adjust(position);
+      this.set(pos);
+      store.trigger('cards.TRANSLATE_CARD', index, pos.left, pos.top);
+    },
+    click: (e, position, el) => {
+      store.memo('cards');
+      // this.parent.selectable.select(this.i)
+    },
+  });
+  cardEl.addEventListener('contextmenu', (e) => {
+    // デフォルトイベントをキャンセル
+    // これを書くことでコンテキストメニューが表示されなくなります
+    e.preventDefault();
+    store.trigger('menu_open', e, {
+      name: card.name,
+      color: card.color,
+    }, 'card');
+  }, false);
+
+  // styler(cardEl, position(card, true))
+  // this.position(card, true)
+  this.set(this.adjust(card, true));
+}
+
+// Utilities
+
+function snap (n, grid = 5) {
+  return Math.round(n / grid) * grid
+}
+function clamp (val, max, min = 0) {
+  return Math.min(Math.max(min, val), max)
+}
+
+function encapsulateStyles$8(node) {
+	setAttribute(node, "svelte-3144337615", "");
+}
+
+function add_css$8() {
+	var style = createElement("style");
+	style.id = 'svelte-3144337615-style';
+	style.textContent = "[svelte-3144337615].card,[svelte-3144337615] .card{position:absolute;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:6px;width:200px;height:180px;user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none}[svelte-3144337615].card.selected,[svelte-3144337615] .card.selected{outline:1px dashed black;box-shadow:0 0 0 1px white}[svelte-3144337615].card.active,[svelte-3144337615] .card.active{z-index:100}[svelte-3144337615].cardtext,[svelte-3144337615] .cardtext{padding:8px;width:100%;white-space:wrap}[svelte-3144337615].card_title,[svelte-3144337615] .card_title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}[svelte-3144337615].icon,[svelte-3144337615] .icon{position:absolute;display:none;width:20px;height:20px;margin:5px;top:0;right:0}[svelte-3144337615].card:hover .icon,[svelte-3144337615] .card:hover .icon{display:block}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$8(state, component) {
+	var div, div_style_value, div_1, h3, text_value = state.card.name, text, text_1, div_2, text_2_value = state.card.color, text_2, text_3, div_3, text_4_value = state.card.color.toString('hsl'), text_4, text_5, div_4, text_6_value = ('Math' in state ? state.Math : Math).round(state.contrast * 10) / 10, text_6, text_8, div_5;
+
+	function click_handler(event) {
+		component.remove();
+	}
+
+	return {
+		c: function create() {
+			div = createElement("div");
+			div_1 = createElement("div");
+			h3 = createElement("h3");
+			text = createText(text_value);
+			text_1 = createText("\n    ");
+			div_2 = createElement("div");
+			text_2 = createText(text_2_value);
+			text_3 = createText("\n    ");
+			div_3 = createElement("div");
+			text_4 = createText(text_4_value);
+			text_5 = createText("\n    ");
+			div_4 = createElement("div");
+			text_6 = createText(text_6_value);
+			text_8 = createText("\n  ");
+			div_5 = createElement("div");
+			div_5.textContent = "ｘ";
+			this.h();
+		},
+
+		h: function hydrate() {
+			encapsulateStyles$8(div);
+			div.className = "card animated bounceIn";
+			div.style.cssText = div_style_value = "" + state.colorStyle + " left: " + state.left + "px; top: " + state.top + "px; z-index: " + state.card.zIndex + ";";
+			div_1.className = "cardtext";
+			h3.className = "card_title";
+			div_5.className = "icon card-delete";
+			addListener(div_5, "click", click_handler);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			component.refs.card = div;
+			appendNode(div_1, div);
+			appendNode(h3, div_1);
+			appendNode(text, h3);
+			appendNode(text_1, div_1);
+			appendNode(div_2, div_1);
+			appendNode(text_2, div_2);
+			appendNode(text_3, div_1);
+			appendNode(div_3, div_1);
+			appendNode(text_4, div_3);
+			appendNode(text_5, div_1);
+			appendNode(div_4, div_1);
+			appendNode(text_6, div_4);
+			appendNode(text_8, div);
+			appendNode(div_5, div);
+		},
+
+		p: function update(changed, state) {
+			if ((changed.colorStyle || changed.left || changed.top || changed.card) && div_style_value !== (div_style_value = "" + state.colorStyle + " left: " + state.left + "px; top: " + state.top + "px; z-index: " + state.card.zIndex + ";")) {
 				div.style.cssText = div_style_value;
 			}
-			
-			if ( text_value !== ( text_value = state.card.name ) ) {
+
+			if ((changed.card) && text_value !== (text_value = state.card.name)) {
 				text.data = text_value;
 			}
-			
-			if ( text_2_value !== ( text_2_value = state.card.color ) ) {
+
+			if ((changed.card) && text_2_value !== (text_2_value = state.card.color)) {
 				text_2.data = text_2_value;
 			}
-			
-			if ( text_4_value !== ( text_4_value = state.card.color.toString('hsl') ) ) {
+
+			if ((changed.card) && text_4_value !== (text_4_value = state.card.color.toString('hsl'))) {
 				text_4.data = text_4_value;
 			}
-			
-			if ( text_6_value !== ( text_6_value = ( 'Math' in state ? state.Math : Math ).round(state.contrast * 10) / 10 ) ) {
+
+			if ((changed.Math || changed.contrast) && text_6_value !== (text_6_value = ('Math' in state ? state.Math : Math).round(state.contrast * 10) / 10)) {
 				text_6.data = text_6_value;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			if ( component.refs.card === div ) component.refs.card = null;
-			
-			if ( detach ) {
-				detachNode( div );
-			}
+
+		u: function unmount() {
+			detachNode(div);
+		},
+
+		d: function destroy$$1() {
+			if (component.refs.card === div) component.refs.card = null;
+			removeListener(div_5, "click", click_handler);
 		}
 	};
 }
 
-function Color_card ( options ) {
-	options = options || {};
+function Color_card(options) {
+	init(this, options);
 	this.refs = {};
 	this._state = options.data || {};
-	recompute$7( this._state, this._state, {}, true );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$9 ) add_css$9();
-	
-	this._fragment = create_main_fragment$9( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$9.oncreate, context: this });
+	this._recompute({ card: 1, bgColor: 1 }, this._state);
+
+	if (!document.getElementById("svelte-3144337615-style")) add_css$8();
+
+	var _oncreate = oncreate$7.bind(this);
+
+	if (!options._root) {
+		this._oncreate = [_oncreate];
 	} else {
-		template$9.oncreate.call( this );
+	 	this._root._oncreate.push(_oncreate);
+	 }
+
+	this._fragment = create_main_fragment$8(this._state, this);
+
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+
+		callAll(this._oncreate);
 	}
 }
 
-assign( Color_card.prototype, template$9.methods, proto );
+assign(Color_card.prototype, methods$7, proto);
 
-Color_card.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	recompute$7( this._state, newState, oldState, false );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-};
+Color_card.prototype._recompute = function _recompute(changed, state) {
+	if (changed.card) {
+		if (differs(state.colorStyle, (state.colorStyle = colorStyle(state.card)))) changed.colorStyle = true;
+	}
 
-Color_card.prototype.teardown = Color_card.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
+	if (changed.card || changed.bgColor) {
+		if (differs(state.contrast, (state.contrast = contrast(state.card, state.bgColor)))) changed.contrast = true;
+	}
 
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
+	if (changed.card) {
+		if (differs(state.width, (state.width = width$1(state.card)))) changed.width = true;
+		if (differs(state.height, (state.height = height$1(state.card)))) changed.height = true;
+	}
 };
 
 const IndianRed = ["#CD5C5C"];
@@ -12381,320 +12285,339 @@ var SOLID_UNCOATED = {
 	"HEXACHROME®YellowU": "#ffe210"
 };
 
-function recompute$8 ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'colorlists' in newState && differs( state.colorlists, oldState.colorlists ) ) || ( 'colorlistsIndex' in newState && differs( state.colorlistsIndex, oldState.colorlistsIndex ) ) ) {
-		state.list = newState.list = template$10.computed.list( state.colorlists, state.colorlistsIndex );
-	}
+/* src\svelte\color-lists.html generated by Svelte v1.41.1 */
+function list_1(colorlists, colorlistsIndex) {
+	return colorlists[colorlistsIndex].list;
 }
 
-var template$10 = (function () {
-  var template = {
-    data () {
-      return {
-        colorlists: [
-          { name: 'Web Color',
-            list: parser(WEBCOLOR) },
-          { name: 'JIS EN',
-            list: parser(JISCOLOR_EN) },
-          { name: 'JIS JA',
-            list: parser(JISCOLOR_JA) },
-          { name: 'GOOGLE MATERIAL',
-            list: Object.keys(MATERIALCOLOR).reduce((ary, key) => {
-              MATERIALCOLOR[key].forEach((color, i) => {
-                let name = key;
-                if (i === 0)      name += 50;
-                else if (i < 10)  name += i * 100;
-                else if (i >= 10) name += ['A100', 'A200', 'A400', 'A700'][i % 10];
-                ary.push({name, color});
-              });
-              return ary
-            }, []) },
-          { name: 'RAL',
-            list: parser(RALCOLOUR) },
-          { name: 'PANTONE® Goe™ Coated',
-            list: pantone(GOE_COATED) },
-          { name: 'PANTONE® Goe™ Uncoated',
-            list: pantone(GOE_UNCOATED) },
-          { name: 'PANTONE® solid Coated',
-            list: pantone(SOLID_COATED) },
-          { name: 'PANTONE® solid Uncoated',
-            list: pantone(SOLID_UNCOATED) },
-        ],
-        colorlistsIndex: 0
-      }
-    },
-    computed: {
-      list: (colorlists, colorlistsIndex) => colorlists[colorlistsIndex].list,
-    },
-    oncreate () {
-      const colortips = this.refs.colortips;
-      colortips.addEventListener('click', (e) => {
-        const el = e.target;
-        if (el.classList.contains('tip')) {
-          const [name, color] = el.title.split(' : ');
-          store.trigger('cards.ADD_CARD', {name, color});
-        }
-      });
-      colortips.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        const el = e.target;
-        if (el.classList.contains('tip')) {
-          const [name, color] = el.title.split(' : ');
-          store.trigger('menu_open', e, {
-            name,
-            color: tinycolor(color)
-          }, 'tip');
-        }
-      });
-    },
-    helpers: {
-      title (tip) {
-        return tip.name + ' : ' + tip.color
-      },
+function data$8() {
+  return {
+    colorlists: [
+      { name: 'Web Color',
+        list: parser(WEBCOLOR) },
+      { name: 'JIS EN',
+        list: parser(JISCOLOR_EN) },
+      { name: 'JIS JA',
+        list: parser(JISCOLOR_JA) },
+      { name: 'GOOGLE MATERIAL',
+        list: Object.keys(MATERIALCOLOR).reduce((ary, key) => {
+          MATERIALCOLOR[key].forEach((color, i) => {
+            let name = key;
+            if (i === 0)      name += 50;
+            else if (i < 10)  name += i * 100;
+            else if (i >= 10) name += ['A100', 'A200', 'A400', 'A700'][i % 10];
+            ary.push({name, color});
+          });
+          return ary
+        }, []) },
+      { name: 'RAL',
+        list: parser(RALCOLOUR) },
+      { name: 'PANTONE® Goe™ Coated',
+        list: pantone(GOE_COATED) },
+      { name: 'PANTONE® Goe™ Uncoated',
+        list: pantone(GOE_UNCOATED) },
+      { name: 'PANTONE® solid Coated',
+        list: pantone(SOLID_COATED) },
+      { name: 'PANTONE® solid Uncoated',
+        list: pantone(SOLID_UNCOATED) },
+    ],
+    colorlistsIndex: 0
+  }
+}
+
+function title(tip) {
+  return tip.name + ' : ' + tip.color
+}
+
+function oncreate$8() {
+  const colortips = this.refs.colortips;
+  colortips.addEventListener('click', (e) => {
+    const el = e.target;
+    if (el.classList.contains('tip')) {
+      const [name, color] = el.title.split(' : ');
+      store.trigger('cards.ADD_CARD', {name, color});
     }
-  };
-
-  function parser (list, temp) {
-    return Object.keys(list).map(key => ({
-      name: temp ? temp(key, list[key]) : key,
-      color: list[key][0]
-    }))
-  }
-  function pantone (list) {
-    return Object.keys(list).map(key => ({
-      name: `${key}`,
-      color: list[key]
-    }))
-  }
-
-
-
-  return template;
-}());
-
-var added_css$10 = false;
-function add_css$10 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-1276901091]#colorlists, [svelte-1276901091] #colorlists {\n    width: 280px;\n    font-size: 20px;\n    margin: 10px 0;\n    display: block;\n  }\n  [svelte-1276901091]#colorlists option, [svelte-1276901091] #colorlists option {\n    background: #fff;\n    color: #111;\n  }\n  [svelte-1276901091]#colorlists option:hover, [svelte-1276901091] #colorlists option:hover {\n    background: aquamarine;\n  }\n  [svelte-1276901091].tip, [svelte-1276901091] .tip{\n    width: 20px;\n    height: 20px;\n    margin:0;\n    padding:0;\n    display:inline-block;\n  }\n  [svelte-1276901091].wrapper, [svelte-1276901091] .wrapper {\n    position: relative;\n    height: calc(100% - 420px);\n    margin: 0;\n  }\n  [svelte-1276901091].scrollbar-wrapper, [svelte-1276901091] .scrollbar-wrapper {\n    position: relative;\n    height: 100%;\n    overflow: hidden;\n  }\n  [svelte-1276901091].scrollbar-body, [svelte-1276901091] .scrollbar-body {\n    \n    width: calc(100% + 17px);\n    height: 100%;\n    \n    overflow-y: scroll;\n  }\n  [svelte-1276901091].scrollbar-content, [svelte-1276901091] .scrollbar-content {\n    \n    \n    display: flex;\n    flex-wrap: wrap;\n  }\n";
-	appendNode( style, document.head );
-
-	added_css$10 = true;
+  });
+  colortips.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const el = e.target;
+    if (el.classList.contains('tip')) {
+      const [name, color] = el.title.split(' : ');
+      store.trigger('menu_open', e, {
+        name,
+        color: tinycolor(color)
+      }, 'tip');
+    }
+  });
 }
 
-function create_main_fragment$10 ( state, component ) {
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-1276901091', '' );
-	div.className = "wrapper";
-	var select = createElement( 'select' );
-	appendNode( select, div );
-	select.id = "colorlists";
-	
-	function change_handler ( event ) {
+function parser (list, temp) {
+  return Object.keys(list).map(key => ({
+    name: temp ? temp(key, list[key]) : key,
+    color: list[key][0]
+  }))
+}
+function pantone (list) {
+  return Object.keys(list).map(key => ({
+    name: `${key}`,
+    color: list[key]
+  }))
+}
+
+function encapsulateStyles$9(node) {
+	setAttribute(node, "svelte-3330610401", "");
+}
+
+function add_css$9() {
+	var style = createElement("style");
+	style.id = 'svelte-3330610401-style';
+	style.textContent = "[svelte-3330610401]#colorlists,[svelte-3330610401] #colorlists{width:280px;font-size:20px;margin:10px 0;display:block}[svelte-3330610401]#colorlists option,[svelte-3330610401] #colorlists option{background:#fff;color:#111}[svelte-3330610401]#colorlists option:hover,[svelte-3330610401] #colorlists option:hover{background:aquamarine}[svelte-3330610401].tip,[svelte-3330610401] .tip{width:20px;height:20px;margin:0;padding:0;display:inline-block}[svelte-3330610401].wrapper,[svelte-3330610401] .wrapper{position:relative;height:calc(100% - 420px);margin:0}[svelte-3330610401].scrollbar-wrapper,[svelte-3330610401] .scrollbar-wrapper{position:relative;height:100%;overflow:hidden}[svelte-3330610401].scrollbar-body,[svelte-3330610401] .scrollbar-body{width:calc(100% + 17px);height:100%;overflow-y:scroll}[svelte-3330610401].scrollbar-content,[svelte-3330610401] .scrollbar-content{display:flex;flex-wrap:wrap}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$9(state, component) {
+	var div, select, text, div_1, div_2, div_3;
+
+	var colorlists = state.colorlists;
+
+	var each_blocks = [];
+
+	for (var i = 0; i < colorlists.length; i += 1) {
+		each_blocks[i] = create_each_block$2(state, colorlists, colorlists[i], i, component);
+	}
+
+	function change_handler(event) {
 		component.set({colorlistsIndex: +select.value});
 	}
-	
-	addEventListener( select, 'change', change_handler );
-	var each_block_anchor = createComment();
-	appendNode( each_block_anchor, select );
-	var each_block_value = state.colorlists;
-	var each_block_iterations = [];
-	
-	for ( var i = 0; i < each_block_value.length; i += 1 ) {
-		each_block_iterations[i] = create_each_block$3( state, each_block_value, each_block_value[i], i, component );
-		each_block_iterations[i].mount( select, each_block_anchor );
-	}
-	
-	appendNode( createText( "\n\n  " ), div );
-	var div_1 = createElement( 'div' );
-	appendNode( div_1, div );
-	div_1.className = "scrollbar-wrapper";
-	var div_2 = createElement( 'div' );
-	appendNode( div_2, div_1 );
-	div_2.className = "scrollbar-body";
-	var div_3 = createElement( 'div' );
-	appendNode( div_3, div_2 );
-	div_3.className = "scrollbar-content";
-	component.refs.colortips = div_3;
-	var each_block_1_anchor = createComment();
-	appendNode( each_block_1_anchor, div_3 );
-	var each_block_value_1 = state.list;
-	var each_block_1_iterations = [];
-	
-	for ( var i = 0; i < each_block_value_1.length; i += 1 ) {
-		each_block_1_iterations[i] = create_each_block_1( state, each_block_value_1, each_block_value_1[i], i, component );
-		each_block_1_iterations[i].mount( div_3, each_block_1_anchor );
+
+	var list_2 = state.list;
+
+	var each_1_blocks = [];
+
+	for (var i = 0; i < list_2.length; i += 1) {
+		each_1_blocks[i] = create_each_block_1(state, list_2, list_2[i], i, component);
 	}
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
+		c: function create() {
+			div = createElement("div");
+			select = createElement("select");
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].c();
+			}
+
+			text = createText("\n\n  ");
+			div_1 = createElement("div");
+			div_2 = createElement("div");
+			div_3 = createElement("div");
+
+			for (var i = 0; i < each_1_blocks.length; i += 1) {
+				each_1_blocks[i].c();
+			}
+			this.h();
 		},
-		
-		update: function ( changed, state ) {
-			var each_block_value = state.colorlists;
-			
-			if ( 'colorlists' in changed ) {
-				for ( var i = 0; i < each_block_value.length; i += 1 ) {
-					if ( each_block_iterations[i] ) {
-						each_block_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+
+		h: function hydrate() {
+			encapsulateStyles$9(div);
+			div.className = "wrapper";
+			select.id = "colorlists";
+			addListener(select, "change", change_handler);
+			div_1.className = "scrollbar-wrapper";
+			div_2.className = "scrollbar-body";
+			div_3.className = "scrollbar-content";
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			appendNode(select, div);
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].m(select, null);
+			}
+
+			appendNode(text, div);
+			appendNode(div_1, div);
+			appendNode(div_2, div_1);
+			appendNode(div_3, div_2);
+			component.refs.colortips = div_3;
+
+			for (var i = 0; i < each_1_blocks.length; i += 1) {
+				each_1_blocks[i].m(div_3, null);
+			}
+		},
+
+		p: function update(changed, state) {
+			var colorlists = state.colorlists;
+
+			if (changed.colorlists) {
+				for (var i = 0; i < colorlists.length; i += 1) {
+					if (each_blocks[i]) {
+						each_blocks[i].p(changed, state, colorlists, colorlists[i], i);
 					} else {
-						each_block_iterations[i] = create_each_block$3( state, each_block_value, each_block_value[i], i, component );
-						each_block_iterations[i].mount( each_block_anchor.parentNode, each_block_anchor );
+						each_blocks[i] = create_each_block$2(state, colorlists, colorlists[i], i, component);
+						each_blocks[i].c();
+						each_blocks[i].m(select, null);
 					}
 				}
-			
-				destroyEach( each_block_iterations, true, each_block_value.length );
-			
-				each_block_iterations.length = each_block_value.length;
+
+				for (; i < each_blocks.length; i += 1) {
+					each_blocks[i].u();
+					each_blocks[i].d();
+				}
+				each_blocks.length = colorlists.length;
 			}
-			
-			var each_block_value_1 = state.list;
-			
-			if ( 'list' in changed ) {
-				for ( var i = 0; i < each_block_value_1.length; i += 1 ) {
-					if ( each_block_1_iterations[i] ) {
-						each_block_1_iterations[i].update( changed, state, each_block_value_1, each_block_value_1[i], i );
+
+			var list_2 = state.list;
+
+			if (changed.list) {
+				for (var i = 0; i < list_2.length; i += 1) {
+					if (each_1_blocks[i]) {
+						each_1_blocks[i].p(changed, state, list_2, list_2[i], i);
 					} else {
-						each_block_1_iterations[i] = create_each_block_1( state, each_block_value_1, each_block_value_1[i], i, component );
-						each_block_1_iterations[i].mount( each_block_1_anchor.parentNode, each_block_1_anchor );
+						each_1_blocks[i] = create_each_block_1(state, list_2, list_2[i], i, component);
+						each_1_blocks[i].c();
+						each_1_blocks[i].m(div_3, null);
 					}
 				}
-			
-				destroyEach( each_block_1_iterations, true, each_block_value_1.length );
-			
-				each_block_1_iterations.length = each_block_value_1.length;
+
+				for (; i < each_1_blocks.length; i += 1) {
+					each_1_blocks[i].u();
+					each_1_blocks[i].d();
+				}
+				each_1_blocks.length = list_2.length;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			removeEventListener( select, 'change', change_handler );
-			
-			destroyEach( each_block_iterations, false, 0 );
-			
-			if ( component.refs.colortips === div_3 ) component.refs.colortips = null;
-			
-			destroyEach( each_block_1_iterations, false, 0 );
-			
-			if ( detach ) {
-				detachNode( div );
+
+		u: function unmount() {
+			detachNode(div);
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].u();
 			}
+
+			for (var i = 0; i < each_1_blocks.length; i += 1) {
+				each_1_blocks[i].u();
+			}
+		},
+
+		d: function destroy$$1() {
+			destroyEach(each_blocks);
+
+			removeListener(select, "change", change_handler);
+			if (component.refs.colortips === div_3) component.refs.colortips = null;
+
+			destroyEach(each_1_blocks);
 		}
 	};
 }
 
-function create_each_block$3 ( state, each_block_value, data, index, component ) {
-	var option_value_value, text_value;
-	
-	var option = createElement( 'option' );
-	option.__value = option_value_value = index;
-	option.value = option.__value;
-	var text = createText( text_value = data.name );
-	appendNode( text, option );
+// (3:4) {{#each colorlists as data, index}}
+function create_each_block$2(state, colorlists, data_1, index, component) {
+	var option, text_value = data_1.name, text;
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( option, target, anchor );
+		c: function create() {
+			option = createElement("option");
+			text = createText(text_value);
+			this.h();
 		},
-		
-		update: function ( changed, state, each_block_value, data, index ) {
-			if ( option_value_value !== ( option_value_value = index ) ) {
-				option.__value = option_value_value;
-			}
-			
+
+		h: function hydrate() {
+			option.__value = index;
 			option.value = option.__value;
-			
-			if ( text_value !== ( text_value = data.name ) ) {
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(option, target, anchor);
+			appendNode(text, option);
+		},
+
+		p: function update(changed, state, colorlists, data_1, index) {
+			option.value = option.__value;
+			if ((changed.colorlists) && text_value !== (text_value = data_1.name)) {
 				text.data = text_value;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			if ( detach ) {
-				detachNode( option );
-			}
-		}
+
+		u: function unmount() {
+			detachNode(option);
+		},
+
+		d: noop
 	};
 }
 
-function create_each_block_1 ( state, each_block_value_1, tip, tip_index, component ) {
-	var div_title_value, div_style_value;
-	
-	var div = createElement( 'div' );
-	div.className = "tip";
-	div.title = div_title_value = template$10.helpers.title(tip);
-	div.style.cssText = div_style_value = "background-color: " + ( tip.color ) + ";";
+// (11:8) {{#each list as tip}}
+function create_each_block_1(state, list_2, tip, tip_index, component) {
+	var div, div_title_value;
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
+		c: function create() {
+			div = createElement("div");
+			this.h();
 		},
-		
-		update: function ( changed, state, each_block_value_1, tip, tip_index ) {
-			if ( div_title_value !== ( div_title_value = template$10.helpers.title(tip) ) ) {
+
+		h: function hydrate() {
+			div.className = "tip";
+			div.title = div_title_value = title(tip);
+			setStyle(div, "background-color", tip.color);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+		},
+
+		p: function update(changed, state, list_2, tip, tip_index) {
+			if ((changed.list) && div_title_value !== (div_title_value = title(tip))) {
 				div.title = div_title_value;
 			}
-			
-			if ( div_style_value !== ( div_style_value = "background-color: " + ( tip.color ) + ";" ) ) {
-				div.style.cssText = div_style_value;
+
+			if (changed.list) {
+				setStyle(div, "background-color", tip.color);
 			}
 		},
-		
-		destroy: function ( detach ) {
-			if ( detach ) {
-				detachNode( div );
-			}
-		}
+
+		u: function unmount() {
+			detachNode(div);
+		},
+
+		d: noop
 	};
 }
 
-function Color_lists ( options ) {
-	options = options || {};
+function Color_lists(options) {
+	init(this, options);
 	this.refs = {};
-	this._state = assign( template$10.data(), options.data );
-	recompute$8( this._state, this._state, {}, true );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$10 ) add_css$10();
-	
-	this._fragment = create_main_fragment$10( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$10.oncreate, context: this });
+	this._state = assign(data$8(), options.data);
+	this._recompute({ colorlists: 1, colorlistsIndex: 1 }, this._state);
+
+	if (!document.getElementById("svelte-3330610401-style")) add_css$9();
+
+	var _oncreate = oncreate$8.bind(this);
+
+	if (!options._root) {
+		this._oncreate = [_oncreate];
 	} else {
-		template$10.oncreate.call( this );
+	 	this._root._oncreate.push(_oncreate);
+	 }
+
+	this._fragment = create_main_fragment$9(this._state, this);
+
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+
+		callAll(this._oncreate);
 	}
 }
 
-assign( Color_lists.prototype, proto );
+assign(Color_lists.prototype, proto);
 
-Color_lists.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	recompute$8( this._state, newState, oldState, false );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-};
-
-Color_lists.prototype.teardown = Color_lists.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
-
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
+Color_lists.prototype._recompute = function _recompute(changed, state) {
+	if (changed.colorlists || changed.colorlistsIndex) {
+		if (differs(state.list, (state.list = list_1(state.colorlists, state.colorlistsIndex)))) changed.list = true;
+	}
 };
 
 const numStylekey = ['width', 'height', 'top', 'left'];
@@ -12744,654 +12667,753 @@ function copyTextToClipboard (textVal) {
   return retVal
 }
 
-var template$11 = (function () {
-  function activeIndex () {
-    const cards = store.get('cards');
-    for (let i = 0; i < cards.length; i++) {
-      if (cards[i].zIndex === cards.length - 1) {
-        return i
-      }
+/* src\svelte\context-menu.html generated by Svelte v1.41.1 */
+function activeIndex$1 () {
+  const cards = store.get('cards');
+  for (let i = 0; i < cards.length; i++) {
+    if (cards[i].zIndex === cards.length - 1) {
+      return i
     }
   }
+}
+function data$9() {
   return {
-    data () {
-      return {
-        mode: false,
-        activeCard: null,
-        copys: 'HEX,RGB,HSL'.split(','),
-        sizes: [120, 240, 360],
-      }
-    },
-    oncreate () {
-      console.log('menu-render');
-      const menu = this.refs.menu;
-
-      const menuHide = (e) => {
-        if (this.get('mode')) {
-          store.trigger('menu_close');
-        }
-      };
-
-      store.on('menu_open', (e, card, mode) => {
-        styler(menu, {
-          left: e.clientX,
-          top: e.clientY,
-          display: 'block'
-        });
-
-        // 'tip' or 'card'
-        console.log('card', card);
-        this.set({mode, activeCard: card});
-
-
-        window.addEventListener('blur', menuHide);
-        document.addEventListener('click', menuHide);
-      });
-
-      store.on('menu_close', (e) => {
-        menu.style.display = 'none';
-        this.set({mode: false});
-        window.removeEventListener('blur', menuHide);
-        document.removeEventListener('click', menuHide);
-      });
-    },
-    methods: {
-      add () {
-        store.trigger('cards.ADD_CARD', this.get('activeCard'));
-      },
-      duplicate () {
-        store.trigger('cards.DUPLICATE_CARD', this.get('activeCard'));
-      },
-      remove () {
-        const cards = store.get('cards');
-
-        if (cards.some((card) => card.selected)) {
-          console.log('removeselected', activeIndex());
-          cards.forEach((card, i) => {
-            if (card.selected) {
-              store.trigger('cards.REMOVE_CARD', i);
-            }
-          });
-        } else {
-          console.log('remove', activeIndex());
-          store.trigger('cards.REMOVE_CARD', activeIndex());
-        }
-      },
-      modeChange () {
-        store.trigger('cards.TOGGLE_TEXTMODE', activeIndex());
-      },
-
-      setBgColor () {
-        store.set('bgColor', this.get('activeCard').color);
-      },
-      copyColor (el) {
-        const key = el.textContent.toLowerCase();
-        copyTextToClipboard(this.get('activeCard').color.toString(key));
-      },
-      setSize (el) {
-        store.trigger('cards.RESIZE_CARD', activeIndex(), +el.textContent);
-        // this.get('activeCard').rectSetter()
-      }
-    }
+    mode: false,
+    activeCard: null,
+    copys: 'HEX,RGB,HSL'.split(','),
+    sizes: [120, 240, 360],
   }
-}());
-
-var added_css$11 = false;
-function add_css$11 () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-4134293530]#menu, [svelte-4134293530] #menu {\n    position: absolute;\n    font-size:12px;\n    background: #fff;\n    border: solid 1px silver;\n    z-index: 100;\n  }\n  [svelte-4134293530].menuitem, [svelte-4134293530] .menuitem {\n    min-width: 100px;\n    padding: 4px;\n    margin: 0;\n  }\n  [svelte-4134293530].menuitem:hover, [svelte-4134293530] .menuitem:hover, [svelte-4134293530].menuitem:active, [svelte-4134293530] .menuitem:active {\n    background: aquamarine;\n  }\n  [svelte-4134293530].menuitem .menuitem:hover, [svelte-4134293530] .menuitem .menuitem:hover {\n    font-weight: bold;\n  }\n";
-	appendNode( style, document.head );
-
-	added_css$11 = true;
 }
 
-function create_main_fragment$11 ( state, component ) {
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-4134293530', '' );
-	div.id = "menu";
-	component.refs.menu = div;
-	var if_block_anchor = createComment();
-	appendNode( if_block_anchor, div );
-	
-	function get_block ( state ) {
-		if ( state.mode == 'tip' ) return create_if_block$2;
-		if ( state.mode == 'card' ) return create_if_block_1$2;
-		return null;
-	}
-	
-	var current_block = get_block( state );
-	var if_block = current_block && current_block( state, component );
-	
-	if ( if_block ) if_block.mount( div, if_block_anchor );
-	appendNode( createText( "\n  " ), div );
-	var p = createElement( 'p' );
-	appendNode( p, div );
-	p.className = "menuitem";
-	
-	function click_handler ( event ) {
+var methods$8 = {
+  add () {
+    store.trigger('cards.ADD_CARD', this.get('activeCard'));
+  },
+  duplicate () {
+    store.trigger('cards.DUPLICATE_CARD', this.get('activeCard'));
+  },
+  remove () {
+    const cards = store.get('cards');
+
+    if (cards.some((card) => card.selected)) {
+      console.log('removeselected', activeIndex$1());
+      cards.forEach((card, i) => {
+        if (card.selected) {
+          store.trigger('cards.REMOVE_CARD', i);
+        }
+      });
+    } else {
+      console.log('remove', activeIndex$1());
+      store.trigger('cards.REMOVE_CARD', activeIndex$1());
+    }
+  },
+  modeChange () {
+    store.trigger('cards.TOGGLE_TEXTMODE', activeIndex$1());
+  },
+
+  setBgColor () {
+    store.set('bgColor', this.get('activeCard').color);
+  },
+  copyColor (el) {
+    const key = el.textContent.toLowerCase();
+    copyTextToClipboard(this.get('activeCard').color.toString(key));
+  },
+  setSize (el) {
+    store.trigger('cards.RESIZE_CARD', activeIndex$1(), +el.textContent);
+    // this.get('activeCard').rectSetter()
+  }
+};
+
+function oncreate$9() {
+  console.log('menu-render');
+  const menu = this.refs.menu;
+
+  const menuHide = (e) => {
+    if (this.get('mode')) {
+      store.trigger('menu_close');
+    }
+  };
+
+  store.on('menu_open', (e, card, mode) => {
+    styler(menu, {
+      left: e.clientX,
+      top: e.clientY,
+      display: 'block'
+    });
+
+    // 'tip' or 'card'
+    console.log('card', card);
+    this.set({mode, activeCard: card});
+
+
+    window.addEventListener('blur', menuHide);
+    document.addEventListener('click', menuHide);
+  });
+
+  store.on('menu_close', (e) => {
+    menu.style.display = 'none';
+    this.set({mode: false});
+    window.removeEventListener('blur', menuHide);
+    document.removeEventListener('click', menuHide);
+  });
+}
+
+function encapsulateStyles$10(node) {
+	setAttribute(node, "svelte-2976389592", "");
+}
+
+function add_css$10() {
+	var style = createElement("style");
+	style.id = 'svelte-2976389592-style';
+	style.textContent = "[svelte-2976389592]#menu,[svelte-2976389592] #menu{position:absolute;font-size:12px;background:#fff;border:solid 1px silver;z-index:100}[svelte-2976389592].menuitem,[svelte-2976389592] .menuitem{min-width:100px;padding:4px;margin:0}[svelte-2976389592].menuitem:hover,[svelte-2976389592] .menuitem:hover,[svelte-2976389592].menuitem:active,[svelte-2976389592] .menuitem:active{background:aquamarine}[svelte-2976389592].menuitem .menuitem:hover,[svelte-2976389592] .menuitem .menuitem:hover{font-weight:bold}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$10(state, component) {
+	var div, text, p, text_2, p_1, span, text_4, text_6;
+
+	var current_block_type = select_block_type$2(state);
+	var if_block = current_block_type && current_block_type(state, component);
+
+	function click_handler(event) {
 		component.setBgColor();
 	}
-	
-	addEventListener( p, 'click', click_handler );
-	appendNode( createText( "SET BACKGROUND" ), p );
-	appendNode( createText( "\n  " ), div );
-	var p_1 = createElement( 'p' );
-	appendNode( p_1, div );
-	p_1.className = "menuitem";
-	var span = createElement( 'span' );
-	appendNode( span, p_1 );
-	appendNode( createText( "COPY:" ), span );
-	appendNode( createText( "\n    " ), p_1 );
-	var each_block_anchor = createComment();
-	appendNode( each_block_anchor, p_1 );
-	var each_block_value = state.copys;
-	var each_block_iterations = [];
-	
-	for ( var i = 0; i < each_block_value.length; i += 1 ) {
-		each_block_iterations[i] = create_each_block$4( state, each_block_value, each_block_value[i], i, component );
-		each_block_iterations[i].mount( p_1, each_block_anchor );
+
+	var copys = state.copys;
+
+	var each_blocks = [];
+
+	for (var i = 0; i < copys.length; i += 1) {
+		each_blocks[i] = create_each_block$3(state, copys, copys[i], i, component);
 	}
-	
-	appendNode( createText( "\n  " ), div );
-	var if_block_1_anchor = createComment();
-	appendNode( if_block_1_anchor, div );
-	
-	var if_block_1 = state.mode == 'card' && create_if_block_2$1( state, component );
-	
-	if ( if_block_1 ) if_block_1.mount( div, if_block_1_anchor );
+
+	var if_block_2 = (state.mode == 'card') && create_if_block_2$1(state, component);
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
-		},
-		
-		update: function ( changed, state ) {
-			if ( current_block !== ( current_block = get_block( state ) ) ) {
-				if ( if_block ) if_block.destroy( true );
-				if_block = current_block && current_block( state, component );
-				if ( if_block ) if_block.mount( if_block_anchor.parentNode, if_block_anchor );
+		c: function create() {
+			div = createElement("div");
+			if (if_block) if_block.c();
+			text = createText("\n  ");
+			p = createElement("p");
+			p.textContent = "SET BACKGROUND";
+			text_2 = createText("\n  ");
+			p_1 = createElement("p");
+			span = createElement("span");
+			span.textContent = "COPY:";
+			text_4 = createText("\n    ");
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].c();
 			}
-			
-			var each_block_value = state.copys;
-			
-			if ( 'copys' in changed ) {
-				for ( var i = 0; i < each_block_value.length; i += 1 ) {
-					if ( each_block_iterations[i] ) {
-						each_block_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+
+			text_6 = createText("\n  ");
+			if (if_block_2) if_block_2.c();
+			this.h();
+		},
+
+		h: function hydrate() {
+			encapsulateStyles$10(div);
+			div.id = "menu";
+			p.className = "menuitem";
+			addListener(p, "click", click_handler);
+			p_1.className = "menuitem";
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			component.refs.menu = div;
+			if (if_block) if_block.m(div, null);
+			appendNode(text, div);
+			appendNode(p, div);
+			appendNode(text_2, div);
+			appendNode(p_1, div);
+			appendNode(span, p_1);
+			appendNode(text_4, p_1);
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].m(p_1, null);
+			}
+
+			appendNode(text_6, div);
+			if (if_block_2) if_block_2.m(div, null);
+		},
+
+		p: function update(changed, state) {
+			if (current_block_type !== (current_block_type = select_block_type$2(state))) {
+				if (if_block) {
+					if_block.u();
+					if_block.d();
+				}
+				if_block = current_block_type && current_block_type(state, component);
+				if (if_block) if_block.c();
+				if (if_block) if_block.m(div, text);
+			}
+
+			var copys = state.copys;
+
+			if (changed.copys) {
+				for (var i = 0; i < copys.length; i += 1) {
+					if (each_blocks[i]) {
+						each_blocks[i].p(changed, state, copys, copys[i], i);
 					} else {
-						each_block_iterations[i] = create_each_block$4( state, each_block_value, each_block_value[i], i, component );
-						each_block_iterations[i].mount( each_block_anchor.parentNode, each_block_anchor );
+						each_blocks[i] = create_each_block$3(state, copys, copys[i], i, component);
+						each_blocks[i].c();
+						each_blocks[i].m(p_1, null);
 					}
 				}
-			
-				destroyEach( each_block_iterations, true, each_block_value.length );
-			
-				each_block_iterations.length = each_block_value.length;
-			}
-			
-			if ( state.mode == 'card' ) {
-				if ( if_block_1 ) {
-					if_block_1.update( changed, state );
-				} else {
-					if_block_1 = create_if_block_2$1( state, component );
-					if_block_1.mount( if_block_1_anchor.parentNode, if_block_1_anchor );
+
+				for (; i < each_blocks.length; i += 1) {
+					each_blocks[i].u();
+					each_blocks[i].d();
 				}
-			} else if ( if_block_1 ) {
-				if_block_1.destroy( true );
-				if_block_1 = null;
+				each_blocks.length = copys.length;
+			}
+
+			if (state.mode == 'card') {
+				if (if_block_2) {
+					if_block_2.p(changed, state);
+				} else {
+					if_block_2 = create_if_block_2$1(state, component);
+					if_block_2.c();
+					if_block_2.m(div, null);
+				}
+			} else if (if_block_2) {
+				if_block_2.u();
+				if_block_2.d();
+				if_block_2 = null;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			if ( component.refs.menu === div ) component.refs.menu = null;
-			if ( if_block ) if_block.destroy( false );
-			removeEventListener( p, 'click', click_handler );
-			
-			destroyEach( each_block_iterations, false, 0 );
-			
-			if ( if_block_1 ) if_block_1.destroy( false );
-			
-			if ( detach ) {
-				detachNode( div );
+
+		u: function unmount() {
+			detachNode(div);
+			if (if_block) if_block.u();
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].u();
 			}
+
+			if (if_block_2) if_block_2.u();
+		},
+
+		d: function destroy$$1() {
+			if (component.refs.menu === div) component.refs.menu = null;
+			if (if_block) if_block.d();
+			removeListener(p, "click", click_handler);
+
+			destroyEach(each_blocks);
+
+			if (if_block_2) if_block_2.d();
 		}
 	};
 }
 
-function create_if_block$2 ( state, component ) {
-	var p = createElement( 'p' );
-	p.className = "menuitem";
-	
-	function click_handler ( event ) {
+// (2:2) {{#if mode == 'tip'}}
+function create_if_block$2(state, component) {
+	var p;
+
+	function click_handler(event) {
 		component.add();
 	}
-	
-	addEventListener( p, 'click', click_handler );
-	appendNode( createText( "ADD CARD" ), p );
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( p, target, anchor );
+		c: function create() {
+			p = createElement("p");
+			p.textContent = "ADD CARD";
+			this.h();
 		},
-		
-		destroy: function ( detach ) {
-			removeEventListener( p, 'click', click_handler );
-			
-			if ( detach ) {
-				detachNode( p );
-			}
+
+		h: function hydrate() {
+			p.className = "menuitem";
+			addListener(p, "click", click_handler);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(p, target, anchor);
+		},
+
+		u: function unmount() {
+			detachNode(p);
+		},
+
+		d: function destroy$$1() {
+			removeListener(p, "click", click_handler);
 		}
 	};
 }
 
-function create_if_block_1$2 ( state, component ) {
-	var p = createElement( 'p' );
-	p.className = "menuitem";
-	
-	function click_handler ( event ) {
+// (4:27) 
+function create_if_block_1$2(state, component) {
+	var p, text_1, p_1, text_3, p_2;
+
+	function click_handler(event) {
 		component.remove();
 	}
-	
-	addEventListener( p, 'click', click_handler );
-	appendNode( createText( "DELETE" ), p );
-	var text_1 = createText( "\n    " );
-	var p_1 = createElement( 'p' );
-	p_1.className = "menuitem";
-	
-	function click_handler_1 ( event ) {
+
+	function click_handler_1(event) {
 		component.duplicate();
 	}
-	
-	addEventListener( p_1, 'click', click_handler_1 );
-	appendNode( createText( "DUPLICATE" ), p_1 );
-	var text_3 = createText( "\n    " );
-	var p_2 = createElement( 'p' );
-	p_2.className = "menuitem";
-	
-	function click_handler_2 ( event ) {
+
+	function click_handler_2(event) {
 		component.modeChange();
 	}
-	
-	addEventListener( p_2, 'click', click_handler_2 );
-	appendNode( createText( "MODE CHANGE" ), p_2 );
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( p, target, anchor );
-			insertNode( text_1, target, anchor );
-			insertNode( p_1, target, anchor );
-			insertNode( text_3, target, anchor );
-			insertNode( p_2, target, anchor );
+		c: function create() {
+			p = createElement("p");
+			p.textContent = "DELETE";
+			text_1 = createText("\n    ");
+			p_1 = createElement("p");
+			p_1.textContent = "DUPLICATE";
+			text_3 = createText("\n    ");
+			p_2 = createElement("p");
+			p_2.textContent = "MODE CHANGE";
+			this.h();
 		},
-		
-		destroy: function ( detach ) {
-			removeEventListener( p, 'click', click_handler );
-			removeEventListener( p_1, 'click', click_handler_1 );
-			removeEventListener( p_2, 'click', click_handler_2 );
-			
-			if ( detach ) {
-				detachNode( p );
-				detachNode( text_1 );
-				detachNode( p_1 );
-				detachNode( text_3 );
-				detachNode( p_2 );
-			}
+
+		h: function hydrate() {
+			p.className = "menuitem";
+			addListener(p, "click", click_handler);
+			p_1.className = "menuitem";
+			addListener(p_1, "click", click_handler_1);
+			p_2.className = "menuitem";
+			addListener(p_2, "click", click_handler_2);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(p, target, anchor);
+			insertNode(text_1, target, anchor);
+			insertNode(p_1, target, anchor);
+			insertNode(text_3, target, anchor);
+			insertNode(p_2, target, anchor);
+		},
+
+		u: function unmount() {
+			detachNode(p);
+			detachNode(text_1);
+			detachNode(p_1);
+			detachNode(text_3);
+			detachNode(p_2);
+		},
+
+		d: function destroy$$1() {
+			removeListener(p, "click", click_handler);
+			removeListener(p_1, "click", click_handler_1);
+			removeListener(p_2, "click", click_handler_2);
 		}
 	};
 }
 
-function create_each_block$4 ( state, each_block_value, key, key_index, component ) {
-	var text_value;
-	
-	var span = createElement( 'span' );
-	span.className = "menuitem";
-	addEventListener( span, 'click', click_handler$1 );
-	
-	span._svelte = {
-		component: component
-	};
-	
-	var text = createText( text_value = key );
-	appendNode( text, span );
+// (12:4) {{#each copys as key}}
+function create_each_block$3(state, copys, key, key_index, component) {
+	var span, text_value = key, text;
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( span, target, anchor );
+		c: function create() {
+			span = createElement("span");
+			text = createText(text_value);
+			this.h();
 		},
-		
-		update: function ( changed, state, each_block_value, key, key_index ) {
-			if ( text_value !== ( text_value = key ) ) {
+
+		h: function hydrate() {
+			span.className = "menuitem";
+			addListener(span, "click", click_handler$1);
+
+			span._svelte = {
+				component: component
+			};
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(span, target, anchor);
+			appendNode(text, span);
+		},
+
+		p: function update(changed, state, copys, key, key_index) {
+			if ((changed.copys) && text_value !== (text_value = key)) {
 				text.data = text_value;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			removeEventListener( span, 'click', click_handler$1 );
-			
-			if ( detach ) {
-				detachNode( span );
-			}
+
+		u: function unmount() {
+			detachNode(span);
+		},
+
+		d: function destroy$$1() {
+			removeListener(span, "click", click_handler$1);
 		}
 	};
 }
 
-function create_each_block_1$1 ( state, each_block_value, key_1, key_index, component ) {
-	var text_value;
-	
-	var span = createElement( 'span' );
-	span.className = "menuitem";
-	addEventListener( span, 'click', click_handler_1 );
-	
-	span._svelte = {
-		component: component
-	};
-	
-	var text = createText( text_value = key_1 );
-	appendNode( text, span );
+// (19:6) {{#each sizes as key}}
+function create_each_block_1$1(state, sizes, key_1, key_index, component) {
+	var span, text_value = key_1, text;
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( span, target, anchor );
+		c: function create() {
+			span = createElement("span");
+			text = createText(text_value);
+			this.h();
 		},
-		
-		update: function ( changed, state, each_block_value, key_1, key_index ) {
-			if ( text_value !== ( text_value = key_1 ) ) {
+
+		h: function hydrate() {
+			span.className = "menuitem";
+			addListener(span, "click", click_handler_1);
+
+			span._svelte = {
+				component: component
+			};
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(span, target, anchor);
+			appendNode(text, span);
+		},
+
+		p: function update(changed, state, sizes, key_1, key_index) {
+			if ((changed.sizes) && text_value !== (text_value = key_1)) {
 				text.data = text_value;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			removeEventListener( span, 'click', click_handler_1 );
-			
-			if ( detach ) {
-				detachNode( span );
-			}
+
+		u: function unmount() {
+			detachNode(span);
+		},
+
+		d: function destroy$$1() {
+			removeListener(span, "click", click_handler_1);
 		}
 	};
 }
 
-function create_if_block_2$1 ( state, component ) {
-	var p = createElement( 'p' );
-	p.className = "menuitem";
-	var span = createElement( 'span' );
-	appendNode( span, p );
-	appendNode( createText( "SIZE:" ), span );
-	appendNode( createText( "\n      " ), p );
-	var each_block_1_anchor = createComment();
-	appendNode( each_block_1_anchor, p );
-	var each_block_value = state.sizes;
-	var each_block_1_iterations = [];
-	
-	for ( var i = 0; i < each_block_value.length; i += 1 ) {
-		each_block_1_iterations[i] = create_each_block_1$1( state, each_block_value, each_block_value[i], i, component );
-		each_block_1_iterations[i].mount( p, each_block_1_anchor );
+// (16:2) {{#if mode == 'card'}}
+function create_if_block_2$1(state, component) {
+	var p, span, text_1;
+
+	var sizes = state.sizes;
+
+	var each_blocks = [];
+
+	for (var i = 0; i < sizes.length; i += 1) {
+		each_blocks[i] = create_each_block_1$1(state, sizes, sizes[i], i, component);
 	}
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( p, target, anchor );
+		c: function create() {
+			p = createElement("p");
+			span = createElement("span");
+			span.textContent = "SIZE:";
+			text_1 = createText("\n      ");
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].c();
+			}
+			this.h();
 		},
-		
-		update: function ( changed, state ) {
-			var each_block_value = state.sizes;
-			
-			if ( 'sizes' in changed ) {
-				for ( var i = 0; i < each_block_value.length; i += 1 ) {
-					if ( each_block_1_iterations[i] ) {
-						each_block_1_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+
+		h: function hydrate() {
+			p.className = "menuitem";
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(p, target, anchor);
+			appendNode(span, p);
+			appendNode(text_1, p);
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].m(p, null);
+			}
+		},
+
+		p: function update(changed, state) {
+			var sizes = state.sizes;
+
+			if (changed.sizes) {
+				for (var i = 0; i < sizes.length; i += 1) {
+					if (each_blocks[i]) {
+						each_blocks[i].p(changed, state, sizes, sizes[i], i);
 					} else {
-						each_block_1_iterations[i] = create_each_block_1$1( state, each_block_value, each_block_value[i], i, component );
-						each_block_1_iterations[i].mount( each_block_1_anchor.parentNode, each_block_1_anchor );
+						each_blocks[i] = create_each_block_1$1(state, sizes, sizes[i], i, component);
+						each_blocks[i].c();
+						each_blocks[i].m(p, null);
 					}
 				}
-			
-				destroyEach( each_block_1_iterations, true, each_block_value.length );
-			
-				each_block_1_iterations.length = each_block_value.length;
+
+				for (; i < each_blocks.length; i += 1) {
+					each_blocks[i].u();
+					each_blocks[i].d();
+				}
+				each_blocks.length = sizes.length;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			destroyEach( each_block_1_iterations, false, 0 );
-			
-			if ( detach ) {
-				detachNode( p );
+
+		u: function unmount() {
+			detachNode(p);
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].u();
 			}
+		},
+
+		d: function destroy$$1() {
+			destroyEach(each_blocks);
 		}
 	};
 }
 
-function click_handler$1 ( event ) {
+function select_block_type$2(state) {
+	if (state.mode == 'tip') return create_if_block$2;
+	if (state.mode == 'card') return create_if_block_1$2;
+	return null;
+}
+
+function click_handler$1(event) {
 	var component = this._svelte.component;
 	component.copyColor(this);
 }
 
-function click_handler_1 ( event ) {
+function click_handler_1(event) {
 	var component = this._svelte.component;
 	component.setSize(this);
 }
 
-function Context_menu ( options ) {
-	options = options || {};
+function Context_menu(options) {
+	init(this, options);
 	this.refs = {};
-	this._state = assign( template$11.data(), options.data );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css$11 ) add_css$11();
-	
-	this._fragment = create_main_fragment$11( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template$11.oncreate, context: this });
+	this._state = assign(data$9(), options.data);
+
+	if (!document.getElementById("svelte-2976389592-style")) add_css$10();
+
+	var _oncreate = oncreate$9.bind(this);
+
+	if (!options._root) {
+		this._oncreate = [_oncreate];
 	} else {
-		template$11.oncreate.call( this );
+	 	this._root._oncreate.push(_oncreate);
+	 }
+
+	this._fragment = create_main_fragment$10(this._state, this);
+
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+
+		callAll(this._oncreate);
 	}
 }
 
-assign( Context_menu.prototype, template$11.methods, proto );
+assign(Context_menu.prototype, methods$8, proto);
 
-Context_menu.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-};
-
-Context_menu.prototype.teardown = Context_menu.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
-
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
-};
-
-function recompute ( state, newState, oldState, isInitial ) {
-	if ( isInitial || ( 'bgColor' in newState && differs( state.bgColor, oldState.bgColor ) ) ) {
-		state.textColor = newState.textColor = template.computed.textColor( state.bgColor );
-	}
+/* src\svelte\app.html generated by Svelte v1.41.1 */
+const COLOR_TYPE = ['hex', 'rgb', 'hsl'];
+let colortypeindex = 0;
+function textColor(bgColor) {
+	return tinycolor.mostReadable(bgColor, ['#eee', '#111']);
 }
 
-var template = (function () {
-  const COLOR_TYPE = ['hex', 'rgb', 'hsl'];
-  let colortypeindex = 0;
+function data() {
   return {
-    data () {
-      return {
-        color_type: 'hex',
-        // colortypeindex: 0,
-        colorcode: '',
-        cards: [],
-        bgColor: '#1f2532'
-      }
-    },
-    computed: {
-      textColor: bgColor => tinycolor.mostReadable(bgColor, ['#eee', '#111']),
-      // color_type: (colorcode) => COLOR_TYPE[colortypeindex].toUpperCase()
-    },
-    oncreate () {
-      console.log('this', this);
-      this.selectable = new Selectable(this.refs.box, {
-        filter: '.card',
-        tolerance: 'fit',
-        start: (e, position) => {
-          store.trigger('menu_close');
-        },
-        selected: (position, indexs, els) => {
-          store.trigger('cards.SELECT_CARDS', indexs, true);
-        },
-      });
-    },
+    color_type: 'hex',
+    // colortypeindex: 0,
+    colorcode: '',
+    cards: [],
+    bgColor: '#1f2532'
+  }
+}
 
-    methods: {
-      color_typeChange () {
-        ++colortypeindex;
-        colortypeindex %= COLOR_TYPE.length;
-        this.set({color_type: COLOR_TYPE[colortypeindex].toUpperCase()});
-      },
-      addCard () {
-        const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i;
-        const text = validationRegExp.exec(this.get('colorcode'));
-        if (text) {
-          store.trigger('cards.ADD_CARD', {
-            name: '',
-            color: text[1],
-          });
-          this.set({colorcode: ''});
-        }
-      }
+var methods = {
+  color_typeChange () {
+    ++colortypeindex;
+    colortypeindex %= COLOR_TYPE.length;
+    this.set({color_type: COLOR_TYPE[colortypeindex].toUpperCase()});
+  },
+  addCard () {
+    const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i;
+    const text = validationRegExp.exec(this.get('colorcode'));
+    if (text) {
+      store.trigger('cards.ADD_CARD', {
+        name: '',
+        color: text[1],
+      });
+      this.set({colorcode: ''});
     }
   }
-}());
+};
 
-var added_css = false;
-function add_css () {
-	var style = createElement( 'style' );
-	style.textContent = "\n  [svelte-3257585059].ui-selectable-helper, [svelte-3257585059] .ui-selectable-helper {\n    position: absolute;\n    z-index: 100;\n    border: 1px dotted black;\n  }\n  [svelte-3257585059]#colors, [svelte-3257585059] #colors {\n    width: 320px;\n    height: 100vh;\n    position: absolute;\n    margin:0;\n    padding: 20px;\n    top:0;\n    left:0;\n  }\n  [svelte-3257585059]#box, [svelte-3257585059] #box {\n    width: 100%;\n    height: 100%;\n  }\n  [svelte-3257585059]#form_add, [svelte-3257585059] #form_add {\n    margin: 10px 0;\n    \n    display: flex;\n    flex-direction: row;}\n    [svelte-3257585059]#color_type, [svelte-3257585059] #color_type {\n      text-align: center;\n      width: 42px;\n      height: 42px;\n      border-width: 1px 0 1px 1px;\n      border-style: solid;\n      border-top-left-radius: 4px;\n      border-bottom-left-radius: 4px;}\n    [svelte-3257585059]#color_hex, [svelte-3257585059] #color_hex {\n      flex: 1 1 auto; \n      height: 42px;\n      padding: 8px 5px;\n      border-width: 1px 0 1px 1px;\n      border-style: solid;}\n    [svelte-3257585059]#add_btn, [svelte-3257585059] #add_btn {\n      width: 42px;\n      height: 42px;\n      text-align: center;\n      border-width: 1px;\n      border-style: solid;\n      border-top-right-radius: 4px;\n      border-bottom-right-radius: 4px;}\n";
-	appendNode( style, document.head );
-
-	added_css = true;
+function oncreate() {
+  console.log('this', this);
+  this.selectable = new Selectable(this.refs.box, {
+    filter: '.card',
+    tolerance: 'fit',
+    start: (e, position) => {
+      store.trigger('menu_close');
+    },
+    selected: (position, indexs, els) => {
+      store.trigger('cards.SELECT_CARDS', indexs, true);
+    },
+  });
 }
 
-function create_main_fragment ( state, component ) {
-	var div_style_value, div_1_style_value;
-	
-	var div = createElement( 'div' );
-	setAttribute( div, 'svelte-3257585059', '' );
-	div.id = "colors";
-	setAttribute( div, 'ref', "colors" );
-	div.style.cssText = div_style_value = "color: " + ( state.textColor ) + ";";
-	
+function encapsulateStyles(node) {
+	setAttribute(node, "svelte-3114915456", "");
+}
+
+function add_css() {
+	var style = createElement("style");
+	style.id = 'svelte-3114915456-style';
+	style.textContent = "[svelte-3114915456].ui-selectable-helper,[svelte-3114915456] .ui-selectable-helper{position:absolute;z-index:100;border:1px dotted black}[svelte-3114915456]#colors,[svelte-3114915456] #colors{width:320px;height:100vh;position:absolute;margin:0;padding:20px;top:0;left:0}[svelte-3114915456]#box,[svelte-3114915456] #box{width:100%;height:100%}[svelte-3114915456]#form_add,[svelte-3114915456] #form_add{margin:10px 0;display:flex;flex-direction:row}[svelte-3114915456]#color_type,[svelte-3114915456] #color_type{text-align:center;width:42px;height:42px;border-width:1px 0 1px 1px;border-style:solid;border-top-left-radius:4px;border-bottom-left-radius:4px}[svelte-3114915456]#color_hex,[svelte-3114915456] #color_hex{flex:1 1 auto;height:42px;padding:8px 5px;border-width:1px 0 1px 1px;border-style:solid}[svelte-3114915456]#add_btn,[svelte-3114915456] #add_btn{width:42px;height:42px;text-align:center;border-width:1px;border-style:solid;border-top-right-radius:4px;border-bottom-right-radius:4px}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment(state, component) {
+	var div, input, text, button, text_2, button_1, text_4, text_5, hr, text_6, text_8, div_1, text_10;
+
 	var colorpicker = new Color_picker({
-		target: div,
-		_root: component._root || component
+		_root: component._root
 	});
-	
-	appendNode( createText( "\n  " ), div );
-	var hr = createElement( 'hr' );
-	appendNode( hr, div );
-	appendNode( createText( "\n  " ), div );
-	
+
 	var colorlists = new Color_lists({
-		target: div,
-		_root: component._root || component
+		_root: component._root
 	});
-	
-	var text_2 = createText( "\n\n" );
-	var div_1 = createElement( 'div' );
-	setAttribute( div_1, 'svelte-3257585059', '' );
-	div_1.id = "box";
-	div_1.style.cssText = div_1_style_value = "background-color: " + ( state.bgColor ) + ";";
-	component.refs.box = div_1;
-	var each_block_anchor = createComment();
-	appendNode( each_block_anchor, div_1 );
-	var each_block_value = state.cards;
-	var each_block_iterations = [];
-	
-	for ( var i = 0; i < each_block_value.length; i += 1 ) {
-		each_block_iterations[i] = create_each_block( state, each_block_value, each_block_value[i], i, component );
-		each_block_iterations[i].mount( div_1, each_block_anchor );
+
+	var cards = state.cards;
+
+	var each_blocks = [];
+
+	for (var i = 0; i < cards.length; i += 1) {
+		each_blocks[i] = create_each_block(state, cards, cards[i], i, component);
 	}
-	
-	var text_3 = createText( "\n\n" );
-	
+
 	var contextmenu = new Context_menu({
-		target: null,
-		_root: component._root || component
+		_root: component._root
 	});
 
 	return {
-		mount: function ( target, anchor ) {
-			insertNode( div, target, anchor );
-			insertNode( text_2, target, anchor );
-			insertNode( div_1, target, anchor );
-			insertNode( text_3, target, anchor );
-			contextmenu._fragment.mount( target, anchor );
+		c: function create() {
+			div = createElement("div");
+			input = createElement("input");
+			text = createText("\n  ");
+			button = createElement("button");
+			button.textContent = "➕";
+			text_2 = createText("\n  ");
+			button_1 = createElement("button");
+			button_1.textContent = "BG";
+			text_4 = createText("\n  ");
+			colorpicker._fragment.c();
+			text_5 = createText("\n  ");
+			hr = createElement("hr");
+			text_6 = createText("\n  ");
+			colorlists._fragment.c();
+			text_8 = createText("\n\n");
+			div_1 = createElement("div");
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].c();
+			}
+
+			text_10 = createText("\n\n");
+			contextmenu._fragment.c();
+			this.h();
 		},
-		
-		update: function ( changed, state ) {
-			if ( div_style_value !== ( div_style_value = "color: " + ( state.textColor ) + ";" ) ) {
-				div.style.cssText = div_style_value;
+
+		h: function hydrate() {
+			encapsulateStyles(div);
+			div.id = "colors";
+			setAttribute(div, "ref", "colors");
+			setStyle(div, "color", state.textColor);
+			input.type = "text";
+			input.placeholder = "Name";
+			setStyle(input, "color", state.textColor);
+			encapsulateStyles(div_1);
+			div_1.id = "box";
+			setStyle(div_1, "background-color", state.bgColor);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			appendNode(input, div);
+			appendNode(text, div);
+			appendNode(button, div);
+			appendNode(text_2, div);
+			appendNode(button_1, div);
+			appendNode(text_4, div);
+			colorpicker._mount(div, null);
+			appendNode(text_5, div);
+			appendNode(hr, div);
+			appendNode(text_6, div);
+			colorlists._mount(div, null);
+			insertNode(text_8, target, anchor);
+			insertNode(div_1, target, anchor);
+			component.refs.box = div_1;
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].m(div_1, null);
 			}
-			
-			if ( div_1_style_value !== ( div_1_style_value = "background-color: " + ( state.bgColor ) + ";" ) ) {
-				div_1.style.cssText = div_1_style_value;
+
+			insertNode(text_10, target, anchor);
+			contextmenu._mount(target, anchor);
+		},
+
+		p: function update(changed, state) {
+			if (changed.textColor) {
+				setStyle(div, "color", state.textColor);
+				setStyle(input, "color", state.textColor);
 			}
-			
-			var each_block_value = state.cards;
-			
-			if ( 'bgColor' in changed || 'cards' in changed ) {
-				for ( var i = 0; i < each_block_value.length; i += 1 ) {
-					if ( each_block_iterations[i] ) {
-						each_block_iterations[i].update( changed, state, each_block_value, each_block_value[i], i );
+
+			if (changed.bgColor) {
+				setStyle(div_1, "background-color", state.bgColor);
+			}
+
+			var cards = state.cards;
+
+			if (changed.bgColor || changed.cards) {
+				for (var i = 0; i < cards.length; i += 1) {
+					if (each_blocks[i]) {
+						each_blocks[i].p(changed, state, cards, cards[i], i);
 					} else {
-						each_block_iterations[i] = create_each_block( state, each_block_value, each_block_value[i], i, component );
-						each_block_iterations[i].mount( each_block_anchor.parentNode, each_block_anchor );
+						each_blocks[i] = create_each_block(state, cards, cards[i], i, component);
+						each_blocks[i].c();
+						each_blocks[i].m(div_1, null);
 					}
 				}
-			
-				destroyEach( each_block_iterations, true, each_block_value.length );
-			
-				each_block_iterations.length = each_block_value.length;
+
+				for (; i < each_blocks.length; i += 1) {
+					each_blocks[i].u();
+					each_blocks[i].d();
+				}
+				each_blocks.length = cards.length;
 			}
 		},
-		
-		destroy: function ( detach ) {
-			colorpicker.destroy( false );
-			colorlists.destroy( false );
-			if ( component.refs.box === div_1 ) component.refs.box = null;
-			
-			destroyEach( each_block_iterations, false, 0 );
-			
-			contextmenu.destroy( detach );
-			
-			if ( detach ) {
-				detachNode( div );
-				detachNode( text_2 );
-				detachNode( div_1 );
-				detachNode( text_3 );
+
+		u: function unmount() {
+			detachNode(div);
+			detachNode(text_8);
+			detachNode(div_1);
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].u();
 			}
+
+			detachNode(text_10);
+			contextmenu._unmount();
+		},
+
+		d: function destroy$$1() {
+			colorpicker.destroy(false);
+			colorlists.destroy(false);
+			if (component.refs.box === div_1) component.refs.box = null;
+
+			destroyEach(each_blocks);
+
+			contextmenu.destroy(false);
 		}
 	};
 }
 
-function create_each_block ( state, each_block_value, card, index, component ) {
+// (11:2) {{#each cards as card, index}}
+function create_each_block(state, cards, card, index, component) {
+
 	var colorcard = new Color_card({
-		target: null,
-		_root: component._root || component,
+		_root: component._root,
 		data: {
 			bgColor: state.bgColor,
 			card: card,
@@ -13400,79 +13422,70 @@ function create_each_block ( state, each_block_value, card, index, component ) {
 	});
 
 	return {
-		mount: function ( target, anchor ) {
-			colorcard._fragment.mount( target, anchor );
+		c: function create() {
+			colorcard._fragment.c();
 		},
-		
-		update: function ( changed, state, each_block_value, card, index ) {
+
+		m: function mount(target, anchor) {
+			colorcard._mount(target, anchor);
+		},
+
+		p: function update(changed, state, cards, card, index) {
 			var colorcard_changes = {};
-			
-			if ( 'bgColor' in changed ) colorcard_changes.bgColor = state.bgColor;
-			if ( 'cards' in changed ) colorcard_changes.card = card;
+			if (changed.bgColor) colorcard_changes.bgColor = state.bgColor;
+			if (changed.cards) colorcard_changes.card = card;
 			colorcard_changes.index = index;
-			
-			if ( Object.keys( colorcard_changes ).length ) colorcard.set( colorcard_changes );
+			colorcard._set( colorcard_changes );
 		},
-		
-		destroy: function ( detach ) {
-			colorcard.destroy( detach );
+
+		u: function unmount() {
+			colorcard._unmount();
+		},
+
+		d: function destroy$$1() {
+			colorcard.destroy(false);
 		}
 	};
 }
 
-function App ( options ) {
-	options = options || {};
+function App(options) {
+	init(this, options);
 	this.refs = {};
-	this._state = assign( template.data(), options.data );
-	recompute( this._state, this._state, {}, true );
-	
-	this._observers = {
-		pre: Object.create( null ),
-		post: Object.create( null )
-	};
-	
-	this._handlers = Object.create( null );
-	
-	this._root = options._root;
-	this._yield = options._yield;
-	
-	this._torndown = false;
-	if ( !added_css ) add_css();
-	this._renderHooks = [];
-	
-	this._fragment = create_main_fragment( this._state, this );
-	if ( options.target ) this._fragment.mount( options.target, null );
-	
-	this._flush();
-	
-	if ( options._root ) {
-		options._root._renderHooks.push({ fn: template.oncreate, context: this });
+	this._state = assign(data(), options.data);
+	this._recompute({ bgColor: 1 }, this._state);
+
+	if (!document.getElementById("svelte-3114915456-style")) add_css();
+
+	var _oncreate = oncreate.bind(this);
+
+	if (!options._root) {
+		this._oncreate = [_oncreate];
+		this._beforecreate = [];
+		this._aftercreate = [];
 	} else {
-		template.oncreate.call( this );
+	 	this._root._oncreate.push(_oncreate);
+	 }
+
+	this._fragment = create_main_fragment(this._state, this);
+
+	if (options.target) {
+		this._fragment.c();
+		this._fragment.m(options.target, options.anchor || null);
+
+		this._lock = true;
+		callAll(this._beforecreate);
+		callAll(this._oncreate);
+		callAll(this._aftercreate);
+		this._lock = false;
 	}
 }
 
-assign( App.prototype, template.methods, proto );
+assign(App.prototype, methods, proto);
 
-App.prototype._set = function _set ( newState ) {
-	var oldState = this._state;
-	this._state = assign( {}, oldState, newState );
-	recompute( this._state, newState, oldState, false );
-	dispatchObservers( this, this._observers.pre, newState, oldState );
-	if ( this._fragment ) this._fragment.update( newState, this._state );
-	dispatchObservers( this, this._observers.post, newState, oldState );
-	
-	this._flush();
-};
-
-App.prototype.teardown = App.prototype.destroy = function destroy ( detach ) {
-	this.fire( 'destroy' );
-
-	this._fragment.destroy( detach !== false );
-	this._fragment = null;
-
-	this._state = {};
-	this._torndown = true;
+App.prototype._recompute = function _recompute(changed, state) {
+	if (changed.bgColor) {
+		if (differs(state.textColor, (state.textColor = textColor(state.bgColor)))) changed.textColor = true;
+	}
 };
 
 /* eslint  no-new: 0 */
