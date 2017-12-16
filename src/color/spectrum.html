@@ -1,5 +1,5 @@
-<div ref:box class="spectrum">
-  <canvas ref:canvas class="spectrum-canvas" width={{rect.width}} height={{rect.height}}></canvas>
+<div class="spectrum">
+  <canvas ref:canvas class="spectrum-canvas" width={{size}} height={{size}}></canvas>
   <div ref:handle class="color-handle"></div>
 </div>
 
@@ -17,19 +17,11 @@
   export default {
     data () {
       return {
-        rect: {width: 0, height: 0, left: 0, top: 0},
+        size: 150,
         hsv: {h: 0, s: 1, v: 1}
       }
     },
     oncreate () {
-      // get size getBoundingClientRect() / getClientRect()[0]
-      // const rect = this.refs.box.getBoundingClientRect()
-      const rect = {
-        width: this.refs.box.clientWidth,
-        height: this.refs.box.clientHeight,
-      }
-      this.set({rect})
-
       // update oncolorchange
       this.observe('hsv', (hsv) => {
         this.draw(hsv.h)
@@ -47,15 +39,6 @@
       })
     },
     methods: {
-      resize () {
-        // get size getBoundingClientRect() / getClientRect()[0]
-        // const rect = this.refs.box.getBoundingClientRect()
-        const rect = {
-          width: this.refs.box.clientWidth,
-          height: this.refs.box.clientHeight,
-        }
-        this.set({rect})
-      },
       setColor (position) {
         const hsv = this.get('hsv')
         hsv.s = position.percentLeft / 100
@@ -63,10 +46,10 @@
         this.set({ hsv })
       },
       setPosition () {
-        const {width, height} = this.get('rect')
+        const size = this.get('size')
         const hsv = this.get('hsv')
-        this.refs.handle.style.left = width * hsv.s + 'px'
-        this.refs.handle.style.top = height - (height * hsv.v) + 'px'
+        this.refs.handle.style.left = size * hsv.s + 'px'
+        this.refs.handle.style.top = size - (size * hsv.v) + 'px'
       },
       draw (hue = this.get('hsv').h) {
         const canvas = this.refs.canvas

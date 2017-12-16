@@ -5,17 +5,27 @@
     <input class="color-text"
       on:input="input(event)"
       on:updown="updown(event)"
+      on:wheel="updown(event)"
       on:click="focus(event)"
-      :value placeholder="keypress: ↑↓">
-    <ul ref:list class="color-text_list">
-      {{#each formats as fm, i}}
-        <li class="color-text_list-item {{format == fm ? 'active' : ''}}" on:click="set({format: fm})">{{_color.toString(fm)}}</li>
-      {{/each}}
-      {{#if _color.toName()}}
-        <li class="color-text_list-item {{format == 'name' ? 'active' : ''}}" on:click="set({format: 'name'})">{{_color.toName()}}</li>
-      {{/if}}
-    </ul>
-    <!--<button class="color-type" on:click="listToggle()">▼</button>-->
+      style="color: {{textColor}}; background-color: {{_color.toString('rgb')}};"
+      :value
+      placeholder="keypress: ↑↓">
+    {{#if showList}}
+      <ul ref:list class="color-text_list" on:click="set({showList: false})">
+        {{#each formats as fm, i}}
+          <li class="color-text_list-item {{format == fm ? 'active' : ''}}">
+            <span on:click="set({format: fm})">{{_color.toString(fm)}}</span>
+            <span>コピー</span>
+          </li>
+        {{/each}}
+        {{#if _color.toName()}}
+          <li class="color-text_list-item {{format == 'name' ? 'active' : ''}}">
+            <span on:click="set({format: 'name'})">{{_color.toName()}}</span>
+            <span>コピー</span>
+          </li>
+        {{/if}}
+      </ul>
+    {{/if}}
   </div>
 {{/if}}
 
@@ -43,9 +53,10 @@
     }
 
     .color-text {
-      flex: 1 1 auto; /* width: auto; */
       height: var(--size);
-      padding: 0 4px;}
+      padding: 0 4px;
+      text-align: center;
+      flex: 1 1 auto; /* width: auto; */}
     .submit-btn {
       height: var(--size);
       text-align: center;}
@@ -62,7 +73,6 @@
       color: #111;
       background-color: #ddd;
       z-index: 10000;
-      visibility: hidden;
     }
     .color-text_list-item {
       margin: 0;
@@ -89,9 +99,9 @@
   function caretIndex (event, color) {
     const {value, selectionStart} = event.target
     const index = value[0] === '#'
-    ? Math.floor((selectionStart - 1) / 2)
-    // count ',' before selectionStart
-    : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1
+      ? Math.floor((selectionStart - 1) / 2)
+      // count ',' before selectionStart
+      : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1
     return ((value[0] === '#' || color.getAlpha() === 1) && index === 3) || index === 4 ? -1 : index
   }
 
@@ -102,11 +112,13 @@
         color: 'red',
         formats: ['hsl', 'hsv', 'rgb', 'prgb', 'hex'],
         format: 'hex',
+        showList: false,
       }
     },
     computed: {
       _color: (color) => tinycolor(color),
       value: (_color, format) => _color.toString(format),
+      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
     },
     methods: {
       input (event) {
@@ -126,7 +138,9 @@
 
         let color = tinycolor(value)
         const index = caretIndex(event, color)
-        const arrow = (event.key === 'ArrowUp' ? 1 : -1)
+        const arrow = event.type === 'keydown'
+          ? (event.key === 'ArrowUp' ? 1 : -1)
+          : event.deltaY
 
         if (index === -1) {
           const format = this.get('format')
@@ -187,20 +201,22 @@
         }
       },
       focus (event) {
+        this.set({showList: true})
         const index = caretIndex(event, this.get('_color'))
         this.listToggle(index === -1)
 
         console.log('focus.index', index)
       },
       listToggle (flg) {
-        this.refs.list.classList.toggle('active', flg)
-        if (this.refs.list.classList.contains('active')) {
-          const winclick = (event) => {
-            this.refs.list.classList.remove('active')
-            window.removeEventListener('click', winclick, true)
-          }
-          window.addEventListener('click', winclick, true)
-        }
+        this.set({showList: !!flg})
+        // this.refs.list.classList.toggle('active', flg)
+        // if (this.refs.list.classList.contains('active')) {
+        //   const winclick = (event) => {
+        //     this.refs.list.classList.remove('active')
+        //     window.removeEventListener('click', winclick, true)
+        //   }
+        //   window.addEventListener('click', winclick, true)
+        // }
       },
     },
     events: {

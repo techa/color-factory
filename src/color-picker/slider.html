@@ -1,27 +1,24 @@
-<div class="slider {{direction}}" style="width:{{width}}px; height:{{height}}px;">
-  <canvas ref:slider class="slider-canvas" :width :height></canvas>
+<div ref:box class="slider alpha-check-bg {{direction}}">
+  <canvas ref:slider class="slider-canvas" width={{rect.width}} height={{rect.height}}></canvas>
   <div ref:sliderHandle class="slider-handle {{direction}}"></div>
 </div>
+
 <style>
   .slider {
     position: relative;
-    /*margin: 5px;*/
-    background-color: #fff;
-    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),
-                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);
-    background-size: 8px 8px;
-    background-position:0 0, 4px 4px;
-    background-repeat: repeat;
   }
   .slider.vertical {
     cursor: row-resize;
+    height: 100%;
   }
   .slider.horizontal {
     cursor: col-resize;
+    width: 100%;
   }
 
   .slider-canvas {
-    vertical-align: baseline;
+    margin: 0;
+    padding: 0;
   }
   .slider-handle {
     position: absolute;
@@ -32,36 +29,32 @@
   }
   .slider-handle.vertical {
     margin-top: -3px;
-    width: 20px;
+    width: 100%;
     height: 6px;
   }
   .slider-handle.horizontal {
     margin-left: -3px;
     width: 6px;
-    height: 20px;
+    height: 100%;
   }
   .slider-handle::before {
     content: '';
     position: absolute;
+    width: 100%;
+    height: 100%;
     top: 0;
     left: 0;
     border: 1px solid white;
   }
-  .slider-handle.vertical::before {
-    width: 18px;
-    height: 4px;
-  }
-  .slider-handle.horizontal::before {
-    width: 4px;
-    height: 18px;
-  }
 </style>
+
 <script>
   import { MousePosition } from '../mouse.js'
   export default {
     data () {
       return {
-        size: 150,
+        size: 0,
+        rect: {width: 0, height: 0, left: 0, top: 0},
         strokeWidth: 20,
         direction: 'vertical',
         value: 50,
@@ -76,12 +69,32 @@
       height: (direction, size, strokeWidth) => direction === 'vertical' ? size : strokeWidth,
     },
     oncreate () {
+      // get size getBoundingClientRect() / getClientRect()[0]
+      // const rect = this.refs.box.getBoundingClientRect()
+      const rect = {
+        width: this.refs.box.clientWidth,
+        height: this.refs.box.clientHeight,
+      }
+      console.log('rect', rect)
+      this.set({rect})
+      if (rect.width > rect.height) {
+        this.set({
+          direction: 'horizontal'
+        })
+      }
+      this.set({
+        size: Math.max(rect.width, rect.height)
+      })
+
+      this.draw('hue')
+
       this.observe('value', (value) => {
+        this.fire('change')
         this.setPosition(value)
       })
       // picker
       new MousePosition(this.refs.slider, { // eslint-disable-line no-new
-        handle: this.refs.sliderHandle,
+        // handle: this.refs.sliderHandle,
         start: (e, position) => {
           this.setValue(position)
         },
@@ -125,8 +138,16 @@
 
         const [begin, end] = this.get('reverse') ? [1, 0] : [0, 1]
 
-        grd.addColorStop(begin, beginColor + '')
-        grd.addColorStop(end, endColor + '')
+        if (beginColor === 'hue') {
+          // hue gradient bar
+          const len = 12
+          for (let i = 0; i <= len; i++) {
+            grd.addColorStop(1 / len * i, `hsl(${360 / len * i}, 100%, 50%)`)
+          }
+        } else {
+          grd.addColorStop(begin, beginColor + '')
+          grd.addColorStop(end, endColor + '')
+        }
 
         cxt.fillStyle = grd
         cxt.fillRect(0, 0, size, size)

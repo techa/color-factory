@@ -1,28 +1,39 @@
-<div class="hsv-picker">
-  <Slider ref:hue value="{{hsv.h}}" max="359" />
-  <Spectrum ref:spectrum hsv="{{hsv}}" />
-  <Slider ref:alpha value="{{_color.getAlpha() * 100}}" />
+<div class="hsv-picker" style="width:{{size}}px; height:{{size}}px;">
+  <Wheel ref:wheel hue={{hsv.h}} :size />
+  <div class="spectrum-wrapper">
+    <Spectrum ref:spectrum hsv={{hsv}} size={{spectrumSize}} />
+  </div>
+  {{#each ['sp', 'v', 's', 'vp'] as meth, i}}
+    <svg class="spectrum-btn" width="20" height="20" view="0 0 20 20"
+      style={{btnPosition(size,i)}} on:press="spectrumCrement(meth)">
+      <path d="M2,15  L10,5  L18,15 Z" fill={{textColor}} transform="rotate({{ (i+1) * 90 }}, 10, 10)"></path>
+    </svg>
+  {{/each}}
 </div>
 
 <style>
   .hsv-picker {
     position: relative;
+  }
+  .spectrum-wrapper {
+    position: absolute;
     width: 100%;
     height: 100%;
+    top: 0;
+    left: 0;
     display: flex;
-    align-items: stretch;
+    align-items: center;
     justify-content: space-around;
+    pointer-events: none;
   }
-
-  .hsv-picker > :nth-child(2) {
-    margin: 0 8px;
-    flex: 2 1 auto;
+  .spectrum-btn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.6;
   }
-  .hsv-picker > :first-child,
-  .hsv-picker > :last-child {
-  /* .hsv-picker > *:nth-child(2) {
-  .hsv-picker > *:nth-child(2) { */
-    flex: 0 1 30px;
+  .spectrum-btn:active {
+    opacity: 1;
   }
 
   .color-handle {
@@ -53,13 +64,13 @@
   import tinycolor from 'tinycolor2'
   import { on, off } from '../mouse.js'
 
+  import Wheel from './wheel.html'
   import Spectrum from './spectrum.html'
-  import Slider from './slider.html'
 
   export default {
     components: {
+      Wheel,
       Spectrum,
-      Slider,
     },
     data () {
       return {
@@ -75,23 +86,13 @@
       textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
     },
     oncreate () {
-      this.refs.hue.observe('value', (hue) => {
+      this.refs.wheel.observe('hue', (hue) => {
         const hsv = this.get('hsv')
         hsv.h = hue
         this.set({color: tinycolor(hsv)})
       })
       this.refs.spectrum.observe('hsv', (hsv) => {
         this.set({color: tinycolor(hsv)})
-      })
-      this.refs.alpha.observe('value', (value) => {
-        const _color = this.get('_color')
-        this.set({color: _color.setAlpha(value / 100)})
-        // this.set({color: _color.alphas(value / 100)})
-      })
-      this.observe('_color', (_color) => {
-        const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString()
-        // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
-        this.refs.alpha.draw(alphaColor(0), alphaColor(1))
       })
     },
     methods: {

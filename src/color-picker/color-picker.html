@@ -1,12 +1,12 @@
-<div class="color-picker" style="color: {{textColor}}; background-color: {{_color.toString('rgb')}};">
+<div class="color-picker">
   <ColorInput bind:color />
-  <div class="wrapper" style="width: {{size}}px;">
+  <div class="wrapper">
     {{#if mode == 'hsv'}}
-    <HslPicker bind:color size={{size}} />
-    {{else}}
     <HsvPicker bind:color size={{size}} />
+    {{else}}
+    <HslPicker bind:color size={{size}} />
     {{/if}}
-    <Slider ref:alpha value={{_color.getAlpha() * 100}} :size direction="horizontal" />
+    <!-- <Slider ref:alpha value={{_color.getAlpha() * 100}} :size direction="horizontal" /> -->
     <Blender bind:color width={{size}}
       on:color1="this.setColor1(_color)"
       on:color2="this.setColor2(_color)" />
@@ -16,13 +16,23 @@
 <style>
   .color-picker {
     position: relative;
-    padding: 5px;
+    padding: 8px;
     text-align: center;
     color: #4025AD;
   }
   .wrapper {
+    height: 100px;
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+  }
+  .alpha-check-bg {
+    /* 市松模様 */
+    background-color: #fff;
+    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),
+                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);
+    background-size: 8px 8px;
+    background-position:0 0, 4px 4px;
+    background-repeat: repeat;
   }
 </style>
 
@@ -47,7 +57,7 @@
       return {
         size: 200,
         color: tinycolor.random(),
-        mode: 'hsl',
+        mode: 'hsv',
       }
     },
     computed: {
@@ -55,16 +65,16 @@
       textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
     },
     oncreate () {
-      this.refs.alpha.observe('value', (value) => {
-        const _color = this.get('_color')
-        this.set({color: _color.setAlpha(value / 100)})
-        // this.set({color: _color.alphas(value / 100)})
-      })
-      this.observe('_color', (_color) => {
-        const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString()
-        // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
-        this.refs.alpha.draw(alphaColor(0), alphaColor(1))
-      })
+      // this.refs.alpha.observe('value', (value) => {
+      //   const _color = this.get('_color')
+      //   this.set({color: _color.setAlpha(value / 100)})
+      //   // this.set({color: _color.alphas(value / 100)})
+      // })
+      // this.observe('_color', (_color) => {
+      //   const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString()
+      //   // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
+      //   this.refs.alpha.draw(alphaColor(0), alphaColor(1))
+      // })
     },
   }
 </script>
