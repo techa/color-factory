@@ -5,17 +5,16 @@ import json from 'rollup-plugin-json'
 import replace from 'rollup-plugin-replace'
 
 import svelte from 'rollup-plugin-svelte'
-import riot from 'rollup-plugin-riot'
 
 import buble from 'rollup-plugin-buble'
 import uglify from 'rollup-plugin-uglify'
 import savelicense from 'uglify-save-license'
 
 const env = (process.env.NODE_ENV || 'development').trim()
-const suffix = (env === 'production') ? '.min' : (env === 'svelte') ? '.svelte' : ''
+const suffix = (env === 'production') ? '.min' : ''
 
 export default {
-  entry: env === 'svelte' ? 'src/svelte.js' : 'src/index.js',
+  entry: 'src/index.js',
   dest: `dist/bundle${suffix}.js`,
   // https://github.com/rollup/rollup/wiki/JavaScript-API#format
   format: 'iife', // es(default),cjs,iife
@@ -32,24 +31,7 @@ export default {
     replace({
       'process.env.NODE_ENV': JSON.stringify(env)
     }),
-    (env === 'svelte'
-      ? svelte()
-      : riot({
-        include: [
-          './src/components/**.tag',
-        ],
-      })
-    ),
-    // svelte({
-    //   include: [
-    //     './src/color-picker/**.html',
-    //   ],
-    // }),
-    // riot({
-    //   include: [
-    //     './src/components/**.tag',
-    //   ],
-    // }),
+    svelte(),
     (env === 'production' && buble()),
     (env === 'production' && uglify({
       compress: {
