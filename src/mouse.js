@@ -313,6 +313,51 @@ export class Movable extends MousePosition {
   }
 }
 
+/**
+ * Resizable
+ *
+ * @export
+ * @param {element} element
+ * @param {object} options
+ */
+export class Resizable extends MousePosition {
+  constructor (element, options) {
+    const style = window.getComputedStyle(element.parentElement)
+    super(element, Object.assign({
+      containment: element.parentElement,
+      handle: element,
+      draggingClass: 'resizing',
+      minWidth: parseFloat(style.minWidth) || 10,
+      minHeight: parseFloat(style.minHeight) || 10,
+    }, options || {}))
+  }
+  // マウスが押された際の関数
+  mdown (e) {
+    super.mdown(e)
+    // クラス名に .drag を追加
+    this.options.handle.classList.add(this.options.draggingClass)
+  }
+  // マウスカーソルが動いたときに発火
+  mmove (e) {
+    super.mmove(e)
+    const pos = this.position
+    const width = pos.parentRect.width + pos.vectorX
+    const height = pos.parentRect.height + pos.vectorY
+    if (width >= this.options.minWidth) {
+      this.options.containment.style.width = width + 'px'
+    }
+    if (height >= this.options.minHeight) {
+      this.options.containment.style.height = height + 'px'
+    }
+  }
+  // マウスボタンが上がったら発火
+  mup (e) {
+    super.mup(e)
+    // クラス名 .drag も消す
+    this.options.handle.classList.remove(this.options.draggingClass)
+  }
+}
+
 
 export function hitChecker (rect1, rect2, tolerance) {
   return tolerance === 'fit' ? fitHit(rect1, rect2) : touchHit(rect1, rect2)
@@ -483,7 +528,7 @@ export class Selectable extends MousePosition {
   mup (e) {
     super.mup(e)
     const opts = this.options
-      // helper要素を消す
+    // helper要素を消す
     opts.containment.removeChild(this.helper)
     // Callback
     if (opts.selected) {
