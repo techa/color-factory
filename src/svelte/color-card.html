@@ -4,13 +4,13 @@
   <div class="cardtext">
     <h3 class="card_title">{{card.name}}</h3>
     <div>{{card.color}}</div>
-    <div>{{card.color.toString('hsl')}}</div>
+    <div>{{card.color.hsl().string(0)}}</div>
     <div>{{Math.round(contrast * 10) / 10}}</div>
   </div>
   <div class="icon card-delete" on:click="remove()">ｘ</div>
 </div>
 <script>
-  import tinycolor from 'tinycolor2'
+  import Color from 'color'
   import {Movable} from '../mouse'
   import store from '../store'
   function activeIndex () {
@@ -29,13 +29,9 @@
       colorStyle: (card) => {
         return card.textMode
           ? `background-color: transparent; color: ${card.color};`
-          : `background-color: ${card.color}; color: ${tinycolor.mostReadable(card.color, ['#eee', '#111'])};`
+          : `background-color: ${card.color}; color: ${card.color.dark() ? '#fff' : '#000'};`
       },
-      // textColor: card => tinycolor.mostReadable(card.color, ['#eee', '#111']),
-      contrast: (card, bgColor) => tinycolor.readability(card.color, bgColor),
-      //  width: {{width}}px; height: {{height}}px;
-      width: card => card.width || 200,
-      height: card => card.height || 180,
+      contrast: (card, bgColor) => card.color.contrast(Color(bgColor)),
     },
 
     oncreate () {

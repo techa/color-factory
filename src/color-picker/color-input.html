@@ -7,23 +7,23 @@
       on:updown="updown(event)"
       on:wheel="updown(event)"
       on:click="focus(event)"
-      style="color: {{textColor}}; background-color: {{_color.toString('rgb')}};"
+      style="color: {{textColor}}; background-color: {{color.hex()}};"
       :value
       placeholder="keypress: ↑↓">
     {{#if showList}}
       <ul ref:list class="color-text_list" on:click="set({showList: false})">
         {{#each formats as fm, i}}
           <li class="color-text_list-item {{format == fm ? 'active' : ''}}">
-            <span on:click="set({format: fm})">{{_color.toString(fm)}}</span>
+            <span on:click="set({format: fm})">{{color.toString(fm)}}</span>
             <span>コピー</span>
           </li>
         {{/each}}
-        {{#if _color.toName()}}
+        <!-- {{#if color.toName()}}
           <li class="color-text_list-item {{format == 'name' ? 'active' : ''}}">
-            <span on:click="set({format: 'name'})">{{_color.toName()}}</span>
+            <span on:click="set({format: 'name'})">{{color.toName()}}</span>
             <span>コピー</span>
           </li>
-        {{/if}}
+        {{/if}} -->
       </ul>
     {{/if}}
   </div>
@@ -94,7 +94,7 @@
 </style>
 
 <script>
-  import tinycolor from 'tinycolor2'
+  import Color from 'color'
 
   function caretIndex (event, color) {
     const {value, selectionStart} = event.target
@@ -102,28 +102,27 @@
       ? Math.floor((selectionStart - 1) / 2)
       // count ',' before selectionStart
       : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1
-    return ((value[0] === '#' || color.getAlpha() === 1) && index === 3) || index === 4 ? -1 : index
+    return ((value[0] === '#' || color.alpha() === 1) && index === 3) || index === 4 ? -1 : index
   }
 
   export default {
     data () {
       return {
         phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
-        color: 'red',
-        formats: ['hsl', 'hsv', 'rgb', 'prgb', 'hex'],
+        color: Color('#000'),
+        formats: ['hsl', 'rgb', 'hex'],
         format: 'hex',
         showList: false,
       }
     },
     computed: {
-      _color: (color) => tinycolor(color),
-      value: (_color, format) => _color.toString(format),
-      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
+      value: (color, format) => color.toString(format),
+      textColor: (color) => color.dark() ? '#fff' : '#000',
     },
     methods: {
       input (event) {
         const value = event.target.value
-        const color = tinycolor(value)
+        const color = Color(value)
         const format = color.getFormat()
 
         if (color.isValid() && !/^#?[a-f\d]{3,4}$/i.test(value)) {
@@ -136,7 +135,7 @@
           return
         }
 
-        let color = tinycolor(value)
+        let color = Color(value)
         const index = caretIndex(event, color)
         const arrow = event.type === 'keydown'
           ? (event.key === 'ArrowUp' ? 1 : -1)
@@ -154,32 +153,32 @@
             this.set({ format: formats[findex % formats.length] })
           } else {
             // Re: valid Color
-            event.target.value = this.get('_color').toString(format)
+            event.target.value = this.get('color').toString(format)
           }
         } else if (color.isValid()) {
           const format = color.getFormat()
           if (index === 3) {
             // alpla
-            color.setAlpha(color.getAlpha() + arrow / 100)
+            color.alpha(color.alpha() + arrow / 100)
           } else {
             // not alpla
             const plus = arrow
             let param
             switch (format) {
               case 'hsl':
-                param = color.toHsl()
+                param = color.hsl()
                 param.s *= 100
                 param.l *= 100
                 param['hsl'[index]] += plus
                 break
               case 'hsv':
-                param = color.toHsv()
+                param = color.hsv()
                 param.s *= 100
                 param.v *= 100
                 param['hsv'[index]] += plus
                 break
               case 'prgb':
-                param = color.toRgb()
+                param = color.rgb()
                 param.r /= 255
                 param.g /= 255
                 param.b /= 255
@@ -189,11 +188,11 @@
                 param.b *= 255
                 break
               default:
-                param = color.toRgb()
+                param = color.rgb()
                 param['rgb'[index]] += plus
                 break
             }
-            color = tinycolor(param)
+            color = Color(param)
           }
           this.set({ color })
           event.target.selectionStart = selectionStart
@@ -202,7 +201,7 @@
       },
       focus (event) {
         this.set({showList: true})
-        const index = caretIndex(event, this.get('_color'))
+        const index = caretIndex(event, this.get('color'))
         this.listToggle(index === -1)
 
         console.log('focus.index', index)

@@ -52,7 +52,7 @@
   }
 </style>
 <script>
-  import tinycolor from 'tinycolor2'
+  import Color from 'color'
   import { MousePosition } from '../mouse.js'
   export default {
     data () {
@@ -96,11 +96,11 @@
         const size = this.get('width') - 41
         const x = Math.max(0, Math.min(position.x, size))
         const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data
-        const color = tinycolor({r, g, b})
+        const color = Color({r, g, b})
         this.set({ color })
 
         this.refs.handle.style.left = x + 'px'
-        this.refs.handle.style.backgroundColor = tinycolor.mostReadable(color, ['#eee', '#111'])
+        this.refs.handle.style.backgroundColor = color.dark() ? '#fff' : '#000'
       },
       draw () {
         const canvas = this.refs.canvas
@@ -112,8 +112,8 @@
           ? cxt.createLinearGradient(0, 0, 0, h)
           : cxt.createLinearGradient(0, 0, w, 0)
 
-        grd.addColorStop(0.02, tinycolor(this.get('color1')).toRgbString())
-        grd.addColorStop(0.98, tinycolor(this.get('color2')).toRgbString())
+        grd.addColorStop(0.02, Color(this.get('color1')).rgb().string())
+        grd.addColorStop(0.98, Color(this.get('color2')).rgb().string())
 
         cxt.fillStyle = grd
         cxt.fillRect(0, 0, w, h)

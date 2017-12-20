@@ -69,8 +69,6 @@
       height: (direction, size, strokeWidth) => direction === 'vertical' ? size : strokeWidth,
     },
     oncreate () {
-      // get size getBoundingClientRect() / getClientRect()[0]
-      // const rect = this.refs.box.getBoundingClientRect()
       const rect = {
         width: this.refs.box.clientWidth,
         height: this.refs.box.clientHeight,
@@ -105,9 +103,8 @@
     },
     methods: {
       setValue (position) {
-        const max = this.get('max')
-        const min = this.get('min')
-        const side = this.get('direction') === 'vertical' ? 'percentTop' : 'percentLeft'
+        const {max, min, direction} = this.get()
+        const side = direction === 'vertical' ? 'percentTop' : 'percentLeft'
         let per = position[side] / 100
         if (this.get('reverse')) {
           per = 1 - per
@@ -117,10 +114,8 @@
         })
       },
       setPosition (value) {
-        const size = this.get('size')
-        const max = this.get('max')
-        const min = this.get('min')
-        const side = this.get('direction') === 'vertical' ? 'top' : 'left'
+        const {size, max, min, direction} = this.get()
+        const side = direction === 'vertical' ? 'top' : 'left'
         let per = value / (max - min)
         if (this.get('reverse')) {
           per = 1 - per

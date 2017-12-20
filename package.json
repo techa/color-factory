@@ -37,7 +37,7 @@
     "uglify-save-license": "^0.4.1"
   },
   "dependencies": {
-    "diff-match-patch": "^1.0.0",
-    "tinycolor2": "^1.4.1"
+    "color": "^2.0.1",
+    "diff-match-patch": "^1.0.0"
   }
 }

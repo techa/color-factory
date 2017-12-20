@@ -18,7 +18,7 @@
 
 <script>
   import store from '../store'
-  import tinycolor from 'tinycolor2'
+  import Color from 'color'
   import WEBCOLOR      from '../constants/webcolor.json'
   import JISCOLOR_EN   from '../constants/jiscolor_en.json'
   import JISCOLOR_JA   from '../constants/jiscolor_ja.json'
@@ -28,6 +28,7 @@
   import GOE_UNCOATED   from '../constants/goe-uncoated.json'
   import SOLID_COATED   from '../constants/solid-coated.json'
   import SOLID_UNCOATED from '../constants/solid-uncoated.json'
+
 
   export default {
     data () {
@@ -83,7 +84,7 @@
           const [name, color] = el.title.split(' : ')
           store.trigger('menu_open', e, {
             name,
-            color: tinycolor(color)
+            color: Color(color)
           }, 'tip')
         }
       })

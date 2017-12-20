@@ -53,7 +53,7 @@
     },
     computed: {
       _color: (color) => tinycolor(color),
-      hsl: (_color) => _color.toHsl(),
+      hsl: (_color) => _color.hsl(),
       textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
     },
     oncreate () {

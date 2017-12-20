@@ -1,9 +1,9 @@
 import riot from 'riot'
 import {Undo} from '../undo'
-import tinycolor from 'tinycolor2'
+import Color from 'color'
 const storage = window.sessionStorage
 
-tinycolor.prototype.toJSON = function (type) {
+Color.prototype.toJSON = function (type) {
   return this.toString(type)
 }
 
@@ -72,7 +72,7 @@ class Store {
     }
 
     this.cards.forEach((param, index) => {
-      param.color = tinycolor(param.color)
+      param.color = Color(param.color)
       param.zIndex = index
     })
 
@@ -99,7 +99,7 @@ class Store {
 
     // CARDS
     this.on('add_card', (param) => {
-      param.color = tinycolor(param.color)
+      param.color = Color(param.color)
       param.zIndex = this.cards.length
       this.cards.push(param)
       this.trigger('cards_changed', this.cards)

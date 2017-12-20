@@ -1,11 +1,25 @@
 import Histore from './Histore'
 import KeyManager from './KeyManager'
 import defaultpalette from './constants/japanesque'
-import tinycolor from 'tinycolor2'
+import Color from 'color'
 
-tinycolor.prototype.toJSON = function (type) {
-  return this.toString(type)
+Color.prototype.toJSON = function () {
+  return this.hex()
 }
+Color.prototype.toString = function (mode) {
+  console.log('mode', mode)
+  switch (mode) {
+    case 'hsl':
+      return this.hsl().string(0)
+    case 'rgb':
+      return this.rgb().string()
+    default:
+      return this.string()
+  }
+}
+
+console.log('---------')
+
 const storage = window.sessionStorage
 
 // storage.clear()
@@ -15,7 +29,7 @@ const store = new Histore(defaultpalette, {
     store.set('cards', (cards) => {
       console.log('initializer')
       cards.forEach((card, i) => {
-        card.color = tinycolor(card.color)
+        card.color = Color(card.color)
         card.zIndex = card.zIndex == null ? i : card.zIndex
         return card
       })
@@ -27,7 +41,7 @@ const store = new Histore(defaultpalette, {
 // Events
 store.on('cards.ADD_CARD', (card, memo) => {
   store.set('cards', (cards) => {
-    card.color = tinycolor(card.color)
+    card.color = Color(card.color)
     card.zIndex = cards.length
     return [...cards, card]
   }, memo)

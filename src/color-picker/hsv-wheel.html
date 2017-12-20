@@ -82,7 +82,7 @@
     computed: {
       spectrumSize: (size, strokeWidth) => ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2,
       _color: (color) => tinycolor(color),
-      hsv: (_color) => _color.toHsv(),
+      hsv: (_color) => _color.hsv(),
       textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
     },
     oncreate () {

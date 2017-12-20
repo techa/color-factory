@@ -22,7 +22,7 @@
   import ColorLists from './color-lists.html'
   import ContextMenu from './context-menu.html'
 
-  import tinycolor from 'tinycolor2'
+  import Color from 'color'
   import store from '../store'
   import {Selectable} from '../mouse'
 
@@ -46,7 +46,7 @@
       }
     },
     computed: {
-      textColor: bgColor => tinycolor.mostReadable(bgColor, ['#eee', '#111']),
+      textColor: bgColor => Color(bgColor).dark() ? '#fff' : '#000',
       // color_type: (colorcode) => COLOR_TYPE[colortypeindex].toUpperCase()
     },
     oncreate () {

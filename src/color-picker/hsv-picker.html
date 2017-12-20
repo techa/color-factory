@@ -1,7 +1,7 @@
 <div class="hsv-picker">
-  <Slider ref:hue value="{{hsv.h}}" max="359" />
-  <Spectrum ref:spectrum hsv="{{hsv}}" />
-  <Slider ref:alpha value="{{_color.getAlpha() * 100}}" />
+  <Slider ref:hue value="{{color.hue()}}" max="359"/>
+  <Spectrum ref:spectrum bind:color />
+  <Slider ref:alpha value="{{color.alpha() * 100}}" />
 </div>
 
 <style>
@@ -50,7 +50,7 @@
 </style>
 
 <script>
-  import tinycolor from 'tinycolor2'
+  import Color from 'color'
   import { on, off } from '../mouse.js'
 
   import Spectrum from './spectrum.html'
@@ -65,32 +65,24 @@
       return {
         size: 150,
         strokeWidth: 10,
-        color: tinycolor.random(),
+        color: Color('#000'),
       }
     },
     computed: {
       spectrumSize: (size, strokeWidth) => ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2,
-      _color: (color) => tinycolor(color),
-      hsv: (_color) => _color.toHsv(),
-      textColor: (_color) => tinycolor.mostReadable(_color, ['#fff', '#000']),
+      hsv: (color) => color.hsv(),
+      textColor: (color) => color.dark() ? '#fff' : '#000',
     },
     oncreate () {
       this.refs.hue.observe('value', (hue) => {
-        const hsv = this.get('hsv')
-        hsv.h = hue
-        this.set({color: tinycolor(hsv)})
-      })
-      this.refs.spectrum.observe('hsv', (hsv) => {
-        this.set({color: tinycolor(hsv)})
+        this.set({color: this.get('color').hue(hue)})
       })
       this.refs.alpha.observe('value', (value) => {
-        const _color = this.get('_color')
-        this.set({color: _color.setAlpha(value / 100)})
-        // this.set({color: _color.alphas(value / 100)})
+        const color = this.get('color')
+        this.set({color: color.alpha(value / 100)})
       })
-      this.observe('_color', (_color) => {
-        const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString()
-        // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
+      this.observe('color', (color) => {
+        const alphaColor = (alpha) => color.hsv().alpha(alpha).string()
         this.refs.alpha.draw(alphaColor(0), alphaColor(1))
       })
     },
@@ -103,7 +95,7 @@
           hsv[meth[0]] = '1.0'
         }
 
-        this.set({ color: tinycolor(hsv) })
+        this.set({ color: Color(hsv) })
       },
     },
     helpers: {

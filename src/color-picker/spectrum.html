@@ -18,6 +18,7 @@
     data () {
       return {
         rect: {width: 0, height: 0, left: 0, top: 0},
+        color: 'red',
         hsv: {h: 0, s: 1, v: 1}
       }
     },
@@ -31,8 +32,8 @@
       this.set({rect})
 
       // update oncolorchange
-      this.observe('hsv', (hsv) => {
-        this.draw(hsv.h)
+      this.observe('color', (color) => {
+        this.draw(color.hue())
         this.setPosition()
       })
 
@@ -48,8 +49,6 @@
     },
     methods: {
       resize () {
-        // get size getBoundingClientRect() / getClientRect()[0]
-        // const rect = this.refs.box.getBoundingClientRect()
         const rect = {
           width: this.refs.box.clientWidth,
           height: this.refs.box.clientHeight,
@@ -57,18 +56,18 @@
         this.set({rect})
       },
       setColor (position) {
-        const hsv = this.get('hsv')
-        hsv.s = position.percentLeft / 100
-        hsv.v = (100 - position.percentTop) / 100
-        this.set({ hsv })
+        const color = this.get('color')
+          .saturationv(position.percentLeft)
+          .value(100 - position.percentTop)
+        this.set({ color })
       },
       setPosition () {
         const {width, height} = this.get('rect')
-        const hsv = this.get('hsv')
-        this.refs.handle.style.left = width * hsv.s + 'px'
-        this.refs.handle.style.top = height - (height * hsv.v) + 'px'
+        const color = this.get('color')
+        this.refs.handle.style.left = width * color.saturationv() / 100 + 'px'
+        this.refs.handle.style.top = height - (height * color.value() / 100) + 'px'
       },
-      draw (hue = this.get('hsv').h) {
+      draw (hue = this.get('color').hue()) {
         const canvas = this.refs.canvas
         const cxt = canvas.getContext('2d')
         const [w, h] = [canvas.width, canvas.height]
