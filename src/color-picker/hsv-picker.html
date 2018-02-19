@@ -71,7 +71,7 @@
     computed: {
       spectrumSize: (size, strokeWidth) => ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2,
       hsv: (color) => color.hsv(),
-      textColor: (color) => color.dark() ? '#fff' : '#000',
+      textColor: (color) => color.isDark() ? '#fff' : '#000',
     },
     oncreate () {
       this.refs.hue.observe('value', (hue) => {

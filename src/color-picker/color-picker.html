@@ -56,7 +56,7 @@
     },
     computed: {
       _color: (color) => Color(color),
-      textColor: (_color) => _color.dark() ? '#fff' : '#000',
+      textColor: (_color) => _color.isDark() ? '#fff' : '#000',
     },
     oncreate () {
       // this.refs.alpha.observe('value', (value) => {

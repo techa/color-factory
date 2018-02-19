@@ -30,7 +30,7 @@
       colorStyle: (card) => {
         return card.textMode
           ? `background-color: transparent; color: ${card.color};`
-          : `background-color: ${card.color}; color: ${card.color.dark() ? '#fff' : '#000'};`
+          : `background-color: ${card.color}; color: ${card.color.isDark() ? '#fff' : '#000'};`
       },
       contrast: (card, bgColor) => card.color.contrast(Color(bgColor)),
       _width: (width) => `width:${width ? width + 'px' : 'auto'};`,

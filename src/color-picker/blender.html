@@ -100,7 +100,7 @@
         this.set({ color })
 
         this.refs.handle.style.left = x + 'px'
-        this.refs.handle.style.backgroundColor = color.dark() ? '#fff' : '#000'
+        this.refs.handle.style.backgroundColor = color.isDark() ? '#fff' : '#000'
       },
       draw () {
         const canvas = this.refs.canvas

@@ -46,7 +46,7 @@
       }
     },
     computed: {
-      textColor: bgColor => Color(bgColor).dark() ? '#fff' : '#000',
+      textColor: bgColor => Color(bgColor).isDark() ? '#fff' : '#000',
       // color_type: (colorcode) => COLOR_TYPE[colortypeindex].toUpperCase()
     },
     oncreate () {

@@ -117,7 +117,7 @@
     },
     computed: {
       value: (color, format) => color.toString(format),
-      textColor: (color) => color.dark() ? '#fff' : '#000',
+      textColor: (color) => color.isDark() ? '#fff' : '#000',
     },
     methods: {
       input (event) {
