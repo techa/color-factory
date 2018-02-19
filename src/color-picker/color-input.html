@@ -122,10 +122,15 @@
     methods: {
       input (event) {
         const value = event.target.value
-        const color = Color(value)
-        const format = color.getFormat()
 
-        if (color.isValid() && !/^#?[a-f\d]{3,4}$/i.test(value)) {
+        let color
+        try {
+          color = Color(value)
+        } catch (error) {
+          return
+        }
+        const format = color.model
+        if (!/^#?[a-f\d]{3,4}$/i.test(value)) {
           this.set({ color, format })
         }
       },
@@ -135,7 +140,12 @@
           return
         }
 
-        let color = Color(value)
+        let color
+        try {
+          color = Color(value)
+        } catch (error) {
+          return
+        }
         const index = caretIndex(event, color)
         const arrow = event.type === 'keydown'
           ? (event.key === 'ArrowUp' ? 1 : -1)
@@ -143,20 +153,14 @@
 
         if (index === -1) {
           const format = this.get('format')
-          if (color.isValid()) {
-            // change format
-            const formats = this.get('formats')
-            let findex = (formats.indexOf(format) - arrow)
-            if (findex < 0) {
-              findex = formats.length + findex
-            }
-            this.set({ format: formats[findex % formats.length] })
-          } else {
-            // Re: valid Color
-            event.target.value = this.get('color').toString(format)
+          const formats = this.get('formats')
+          let findex = (formats.indexOf(format) - arrow)
+          if (findex < 0) {
+            findex = formats.length + findex
           }
-        } else if (color.isValid()) {
-          const format = color.getFormat()
+          this.set({ format: formats[findex % formats.length] })
+        } else {
+          const format = color.model
           if (index === 3) {
             // alpla
             color.alpha(color.alpha() + arrow / 100)
@@ -166,19 +170,15 @@
             let param
             switch (format) {
               case 'hsl':
-                param = color.hsl()
-                param.s *= 100
-                param.l *= 100
+                param = color.hsl().object()
                 param['hsl'[index]] += plus
                 break
               case 'hsv':
-                param = color.hsv()
-                param.s *= 100
-                param.v *= 100
+                param = color.hsv().object()
                 param['hsv'[index]] += plus
                 break
               case 'prgb':
-                param = color.rgb()
+                param = color.rgb().object()
                 param.r /= 255
                 param.g /= 255
                 param.b /= 255
@@ -188,7 +188,7 @@
                 param.b *= 255
                 break
               default:
-                param = color.rgb()
+                param = color.rgb().object()
                 param['rgb'[index]] += plus
                 break
             }
