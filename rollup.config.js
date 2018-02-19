@@ -14,11 +14,13 @@ const env = (process.env.NODE_ENV || 'development').trim()
 const suffix = (env === 'production') ? '.min' : ''
 
 export default {
-  entry: 'src/index.js',
-  dest: `dist/bundle${suffix}.js`,
-  // https://github.com/rollup/rollup/wiki/JavaScript-API#format
-  format: 'iife', // es(default),cjs,iife
-  sourceMap: true,
+  input: 'src/index.js',
+  output: {
+    file: `dist/bundle${suffix}.js`,
+    // https://github.com/rollup/rollup/wiki/JavaScript-API#format
+    format: 'iife', // es(default),cjs,iife
+  },
+  sourcemap: true,
   // http://qiita.com/cognitom/items/e3ac0da00241f427dad6#appendix
   plugins: [
     commonjs(), // CommonJSモジュールをES6に変換
