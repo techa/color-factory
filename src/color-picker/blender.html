@@ -6,6 +6,7 @@
   </div>
   <dv ref:color2 on:click="fire('color2')" class="blender-btn color2"></dv>
 </div>
+
 <style>
   .blender {
     display: flex;
@@ -51,6 +52,7 @@
     height: inherit;
   }
 </style>
+
 <script>
   import Color from 'color'
   import { MousePosition } from '../mouse.js'
@@ -68,20 +70,20 @@
       new MousePosition(this.refs.blender, { // eslint-disable-line no-new
         handle: this.refs.handle,
         start: (e, position) => {
-          this.setValue(position)
+          this.set({ color: this.getColor(position) })
         },
         drag: (e, position) => {
-          this.setValue(position)
+          this.set({ color: this.getColor(position) })
         },
       })
 
       this.observe('color1', (color1) => {
         console.log('color1', color1)
-        this.refs.color1.style.backgroundColor = color1.toString('hex')
+        this.refs.color1.style.backgroundColor = color1.toString()
         this.draw()
       })
       this.observe('color2', (color2) => {
-        this.refs.color2.style.backgroundColor = color2.toString('hex')
+        this.refs.color2.style.backgroundColor = color2.toString()
         this.draw()
       })
     },
@@ -92,15 +94,15 @@
       setColor2 (color2) {
         this.set({color2})
       },
-      setValue (position) {
+      getColor (position) {
         const size = this.get('width') - 41
         const x = Math.max(0, Math.min(position.x, size))
         const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data
         const color = Color({r, g, b})
-        this.set({ color })
 
         this.refs.handle.style.left = x + 'px'
         this.refs.handle.style.backgroundColor = color.isDark() ? '#fff' : '#000'
+        return color
       },
       draw () {
         const canvas = this.refs.canvas
@@ -118,9 +120,7 @@
         cxt.fillStyle = grd
         cxt.fillRect(0, 0, w, h)
 
-        this.setValue({
-          x: w / 2
-        })
+        this.getColor({ x: w / 2 })
       }
     }
   }
