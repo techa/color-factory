@@ -1,7 +1,6 @@
 import defaultpalette from '../constants/defaultpalette'
 import Histore from './svelte-store-ex.js'
 import Color from 'color'
-import '../Color-ex'
 // storage.clear()
 const store = new Histore(defaultpalette, {
   storage: 'test', // store3000
