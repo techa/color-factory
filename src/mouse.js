@@ -423,42 +423,116 @@ export class Selectable extends MousePosition {
       helper.style.zIndex = '10000'
       helper.style.border = '1px dotted black'
     }
+    this.reset()
 
-    this.selectorString = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)')
-    this.children = Array.from(this.options.containment.querySelectorAll(this.selectorString))
-    this.childrenRects = this.children.map((el) => el.getBoundingClientRect())
-    this.selectIndexs = []
-    this.selectElements = []
+    const callback = (e, that) => {
+      if (e.shiftKey) {
+        this.toggle(that)
+      } else if (!this.children.find(({el}) => el === that).isSelected) {
+        this.unselectAll()
+        this.toggle(that)
+      }
+      // Callback
+      if (opts.selected) {
+        opts.selected(this.position, this.selects)
+      }
+    }
+    function cb (e) { callback(e, this) }
+
+    this.children.forEach(({el}, i) => {
+      el.addEventListener('mousedown', cb)
+    })
+
+    const observer = new MutationObserver((mutations) => { // eslint-disable-line
+      mutations.forEach((mutation) => {
+        // console.log('!!!!!', mutation.type)
+        let change = false
+        for (const el of mutation.addedNodes) {
+          if (el !== helper) {
+            el.addEventListener('mousedown', cb)
+            change = true
+          }
+        }
+        for (const el of mutation.removedNodes) {
+          if (el !== helper) {
+            el.removeEventListener('mousedown', cb)
+            change = true
+          }
+        }
+        if (change) {
+          this.reset()
+        }
+      })
+    })
+    observer.observe(element, { childList: true })
   }
 
+  get selects () {
+    return this.children.filter((child) => child.isSelected)
+  }
 
-  select (i) {
-    const opts = this.options,
-          selectEl = this.children[i]
-    selectEl.classList.add(opts.selectedClass)
-    // Callback
-    if (opts.selecting) {
-      this.position.options.handle = selectEl
-      opts.selecting(this.position, i)
+  reset (isSelected = false) {
+    const opts = this.options
+    const method = isSelected ? 'add' : 'remove'
+    const que = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)')
+    this.children = Array.from(opts.containment.querySelectorAll(que))
+      .map((el, index) => {
+        el.classList[method](opts.selectedClass)
+        return {
+          el,
+          index,
+          rect: el.getBoundingClientRect(),
+          isSelected,
+        }
+      })
+  }
+
+  /**
+   *
+   *
+   * @param {number|element} search
+   * @param {boolean} flg
+   * @memberof Selectable
+   */
+  toggle (search, flg) {
+    const opts = this.options
+    const child = typeof search === 'number'
+      ? this.children[search]
+      : this.children.find(({el}) => el === search)
+    const {el, isSelected} = child
+
+    child.isSelected = flg = flg == null ? !isSelected : flg
+
+    if (flg) {
+      el.classList.add(opts.selectedClass)
+      // Callback
+      if (opts.selecting) {
+        this.position.options.handle = el
+        opts.selecting(this.position, child)
+      }
+    } else {
+      el.classList.remove(opts.selectedClass)
+      // Callback
+      if (opts.unselecting) {
+        this.position.options.handle = el
+        opts.unselecting(this.position, child)
+      }
     }
   }
+
+  select (i) {
+    this.toggle(i, true)
+  }
   selectAll () {
-    this.children.forEach((selectEl, i) => {
+    this.children.forEach((child, i) => {
       this.select(i)
     })
   }
   unselect (i) {
-    const opts = this.options,
-          selectEl = this.children[i]
-    selectEl.classList.remove(opts.selectedClass)
-    // Callback
-    if (opts.unselecting) {
-      this.position.options.handle = selectEl
-      opts.unselecting(this.position, i)
-    }
+    this.toggle(i, false)
   }
   unselectAll () {
-    this.children.forEach((selectEl, i) => {
+    this.children.forEach((child, i) => {
       this.unselect(i)
     })
   }
@@ -488,18 +562,13 @@ export class Selectable extends MousePosition {
     const el = this.options.containment
     const {position, helper} = this
     // array init
-    this.children = Array.from(el.querySelectorAll(this.selectorString))
-    this.childrenRects = this.children.map((el) => el.getBoundingClientRect())
-    this.selectIndexs.length = 0
-    this.selectElements.length = 0
+    if (!e.shiftKey) this.reset()
     // helper追加
     el.appendChild(helper)
     helper.style.left = position.startX + 'px'
     helper.style.top  = position.startY + 'px'
     helper.style.width  = '0px'
     helper.style.height = '0px'
-    // 選択解除
-    this.unselectAll()
   }
 
   // マウスカーソルが動いたときに発火
@@ -511,11 +580,14 @@ export class Selectable extends MousePosition {
     const helperRect = this.helperRect(position)
 
     // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
-    this.childrenRects.forEach((rect2, i) => {
-      if (hitChecker(helperRect, rect2, opts.tolerance)) {
-        this.select(i)
-      } else {
-        this.unselect(i)
+    this.children.forEach(({rect}, i) => {
+      const hit = hitChecker(helperRect, rect, opts.tolerance)
+      if (hit) {
+        if (e.shiftKey) {
+          this.toggle(i)
+        } else {
+          this.toggle(i, hit)
+        }
       }
     })
     // マウスが動いた場所にhelper要素を動かす
@@ -532,13 +604,7 @@ export class Selectable extends MousePosition {
     opts.containment.removeChild(this.helper)
     // Callback
     if (opts.selected) {
-      this.children.forEach((el, i) => {
-        if (el.classList.contains(opts.selectedClass)) {
-          this.selectIndexs.push(i)
-          this.selectElements.push(el)
-        }
-      })
-      opts.selected(this.position, this.selectIndexs, this.selectElements)
+      opts.selected(this.position, this.selects)
     }
   }
 }
