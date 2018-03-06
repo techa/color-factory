@@ -34,11 +34,9 @@
     "rollup-plugin-replace": "^2.0.0",
     "rollup-plugin-svelte": "^4.0.0",
     "rollup-plugin-uglify": "^3.0.0",
-    "svelte": "^1.56.2",
-    "uglify-save-license": "^0.4.1"
+    "svelte": "^1.56.2"
   },
   "dependencies": {
-    "color": "^3.0.0",
-    "diff-match-patch": "^1.0.0"
+    "color": "^3.0.0"
   }
 }

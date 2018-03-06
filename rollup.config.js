@@ -8,7 +8,6 @@ import svelte from 'rollup-plugin-svelte'
 
 import buble from 'rollup-plugin-buble'
 import uglify from 'rollup-plugin-uglify'
-import savelicense from 'uglify-save-license'
 
 const env = (process.env.NODE_ENV || 'development').trim()
 const suffix = (env === 'production') ? '.min' : ''
@@ -19,8 +18,8 @@ export default {
     file: `dist/bundle${suffix}.js`,
     // https://github.com/rollup/rollup/wiki/JavaScript-API#format
     format: 'iife', // es(default),cjs,iife
+    sourcemap: true,
   },
-  sourcemap: true,
   // http://qiita.com/cognitom/items/e3ac0da00241f427dad6#appendix
   plugins: [
     commonjs(), // CommonJSモジュールをES6に変換
@@ -43,9 +42,6 @@ export default {
         },
         drop_console: true
       },
-      output: {
-        comments: savelicense
-      }
     })),
   ],
 }
