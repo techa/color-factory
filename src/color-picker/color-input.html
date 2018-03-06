@@ -7,7 +7,7 @@
       on:updown="updown(event)"
       on:wheel="updown(event)"
       on:click="focus(event)"
-      style="color: {{textColor}}; background-color: {{color.hex()}};"
+      style="color: {{textColor}}; background-color: {{color.rgb()}};"
       :value
       placeholder="keypress: ↑↓">
     {{#if showList}}
@@ -109,15 +109,16 @@
     data () {
       return {
         phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
-        color: Color('#000'),
-        formats: ['hsl', 'rgb', 'hex'],
-        format: 'hex',
+        color: Color('#050'),
+        bgColor: '',
+        models: ['hsl', 'rgb', 'hex'],
+        model: 'hex',
         showList: false,
       }
     },
     computed: {
-      value: (color, format) => color.toString(format),
-      textColor: (color) => color.isDark() ? '#fff' : '#000',
+      value: (color, model) => color.toString(model),
+      textColor: (color, bgColor) => bgColor.alphaBlending(color).isDark() ? '#fff' : '#000',
     },
     methods: {
       input (event) {
@@ -149,18 +150,18 @@
         const index = caretIndex(event, color)
         const arrow = event.type === 'keydown'
           ? (event.key === 'ArrowUp' ? 1 : -1)
-          : event.deltaY
+          : -event.deltaY
 
         if (index === -1) {
-          const format = this.get('format')
-          const formats = this.get('formats')
-          let findex = (formats.indexOf(format) - arrow)
+          const model = this.get('model')
+          const models = this.get('models')
+          let findex = (models.indexOf(model) - arrow)
           if (findex < 0) {
-            findex = formats.length + findex
+            findex = models.length + findex
           }
-          this.set({ format: formats[findex % formats.length] })
+          this.set({ model: models[findex % models.length] })
         } else {
-          const format = color.model
+          const model = color.model
           if (index === 3) {
             // alpla
             color.alpha(color.alpha() + arrow / 100)
@@ -168,7 +169,7 @@
             // not alpla
             const plus = arrow
             let param
-            switch (format) {
+            switch (model) {
               case 'hsl':
                 param = color.hsl().object()
                 param['hsl'[index]] += plus

@@ -13,22 +13,13 @@
       <span class="menuitem" on:click="copyColor(this)">{{key}}</span>
     {{/each}}
   </p>
-  {{#if mode == 'card'}}
-    <p class="menuitem">
-      <span>SIZE:</span>
-      {{#each sizes as key}}
-        <span class="menuitem" on:click="setSize(this)">{{key}}</span>
-      {{/each}}
-    </p>
-  {{/if}}
 </div>
 
 <script>
-  import store from '../store'
+  import store from '../store/store.js'
   import {styler, copyTextToClipboard} from '../utils'
 
-  function activeIndex () {
-    const cards = store.get('cards')
+  function activeIndex (cards) {
     for (let i = 0; i < cards.length; i++) {
       if (cards[i].zIndex === cards.length - 1) {
         return i
@@ -50,7 +41,7 @@
 
       const menuHide = (e) => {
         if (this.get('mode')) {
-          store.trigger('menu_close')
+          store.fire('menu_close')
         }
       }
 
@@ -79,28 +70,29 @@
     },
     methods: {
       add () {
-        store.trigger('cards.ADD_CARD', this.get('activeCard'))
+        store.fire('cards.ADD_CARD', this.get('activeCard'))
       },
       duplicate () {
-        store.trigger('cards.DUPLICATE_CARD', this.get('activeCard'))
+        store.fire('cards.DUPLICATE_CARD', this.get('activeCard'))
       },
       remove () {
         const cards = store.get('cards')
 
         if (cards.some((card) => card.selected)) {
-          console.log('removeselected', activeIndex())
+          console.log('removeselected', activeIndex(cards))
           cards.forEach((card, i) => {
             if (card.selected) {
-              store.trigger('cards.REMOVE_CARD', i)
+              store.fire('cards.REMOVE_CARD', i)
             }
           })
         } else {
-          console.log('remove', activeIndex())
-          store.trigger('cards.REMOVE_CARD', activeIndex())
+          console.log('remove', activeIndex(cards))
+          store.fire('cards.REMOVE_CARD', activeIndex(cards))
         }
       },
       modeChange () {
-        store.trigger('cards.TOGGLE_TEXTMODE', activeIndex())
+        const cards = store.get('cards')
+        store.fire('cards.TOGGLE_TEXTMODE', activeIndex(cards))
       },
 
       setBgColor () {
@@ -110,10 +102,6 @@
         const key = el.textContent.toLowerCase()
         copyTextToClipboard(this.get('activeCard').color.toString(key))
       },
-      setSize (el) {
-        store.trigger('cards.RESIZE_CARD', activeIndex(), +el.textContent)
-        // this.get('activeCard').rectSetter()
-      }
     }
   }
 </script>

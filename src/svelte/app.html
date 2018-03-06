@@ -1,15 +1,15 @@
 <div id="colors" ref="colors" style="color: {{textColor}};">
-  <input type="text" placeholder="Name" style="color: {{textColor}};">
+  <input bind:value="name" placeholder="Name" style="color: {{textColor}};">
   <button>➕</button>
-  <button>BG</button>
-  <ColorPicker />
+  <button on:click="setBgColor(color)">BG</button>
+  <ColorPicker bind:color bgColor="{{$bgColor}}" on:setBgColor="setBgColor(color)" />
   <hr>
   <ColorLists />
 </div>
 
 <div ref:box id="box" style="background-color: {{bgColor}};">
-  {{#each cards as card, index}}
-    <ColorCard :bgColor card={{card}} index={{index}} />
+  {{#each $cards as card, index}}
+    <ColorCard card={{card}} index={{index}} :grayscale />
   {{/each}}
 </div>
 
@@ -23,11 +23,9 @@
   import ContextMenu from './context-menu.html'
 
   import Color from 'color'
-  import store from '../store'
+  import store from '../store/store.js'
   import {Selectable} from '../mouse'
 
-  const COLOR_TYPE = ['hex', 'rgb', 'hsl']
-  let colortypeindex = 0
   export default {
     components: {
       ColorPicker,
@@ -35,19 +33,22 @@
       ColorLists,
       ContextMenu
     },
-
+    store: () => store,
     data () {
       return {
         color_type: 'hex',
         // colortypeindex: 0,
-        colorcode: '',
-        cards: [],
-        bgColor: '#1f2532'
+        name: '',
+        color: Color.random(),
+        selects: [],
+        selectingCard: null,
+        sort: ['none', 'hue', 'saturationl', 'lightness', 'saturationv', 'value'],
+        grayscale: false,
       }
     },
     computed: {
-      textColor: bgColor => Color(bgColor).isDark() ? '#fff' : '#000',
-      // color_type: (colorcode) => COLOR_TYPE[colortypeindex].toUpperCase()
+      textColor: $bgColor => Color($bgColor).isDark() ? '#fff' : '#000',
+      bgColor: ($bgColor, grayscale) => grayscale ? Color($bgColor).grayscale() : Color($bgColor),
     },
     oncreate () {
       console.log('this', this)
@@ -55,31 +56,42 @@
         filter: '.card',
         tolerance: 'fit',
         start: (e, position) => {
-          store.trigger('menu_close')
+          this.store.fire('menu_close')
         },
-        selected: (position, indexs, els) => {
-          store.trigger('cards.SELECT_CARDS', indexs, true)
+        selected: (e) => {
+          const selects = this.selectable.selects
+          if (selects.length === 1) {
+            const color = store.get('cards')[selects[0].index].color
+            this.set({color})
+          }
         },
+      })
+      console.log('this.selectable', this.selectable)
+
+      this.observe('selects', (selects) => {
+        if (selects.length === 1) {
+          const color = store.get('cards')[selects[0].index].color
+          this.set({color})
+        }
       })
     },
 
     methods: {
-      color_typeChange () {
-        ++colortypeindex
-        colortypeindex %= COLOR_TYPE.length
-        this.set({color_type: COLOR_TYPE[colortypeindex].toUpperCase()})
-      },
       addCard () {
         const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i
         const text = validationRegExp.exec(this.get('colorcode'))
         if (text) {
-          store.trigger('cards.ADD_CARD', {
+          this.store.fire('cards.ADD_CARD', {
             name: '',
             color: text[1],
           })
-          this.set({colorcode: ''})
-        }
+          this.set({color: ''})
       }
+      },
+      setBgColor (color) {
+        store.set({bgColor: color})
+        store.memo()
+      },
     }
   }
 </script>

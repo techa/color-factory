@@ -1,12 +1,23 @@
 <div class="color-picker">
-  <ColorInput bind:color />
+  <div class="models">
+    {{#each ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'] as _model}}
+    <button style="{{modelChange(_model, model, bgColor)}}" on:click="set({model: _model})">{{_model.toUpperCase()}}</button>
+    {{/each}}
+  </div>
+  <ColorInput bind:color bind:model :bgColor />
   <div class="wrapper">
     <HsvPicker bind:color size={{size}} />
     <!-- <Slider ref:alpha value={{_color.alpha() * 100}} :size direction="horizontal" /> -->
+    <div class="set">
+      <button style="color:{{color}};" on:click="setBgColor()">
+        {{contrast}}
+      </button>
     <Blender bind:color width={{size}}
       on:color1="this.setColor1(_color)"
       on:color2="this.setColor2(_color)" />
+      <button on:click="alphaBlending()">a=1</button>
   </div>
+</div>
 </div>
 
 <style>
@@ -14,12 +25,20 @@
     position: relative;
     padding: 8px;
     text-align: center;
-    color: #4025AD;
+  }
+  .models {
+    font-size: 0.8em;
   }
   .wrapper {
     height: 100px;
     display: flex;
     flex-direction: column;
+  }
+  .set {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    font-size: 0.8em;
   }
   .alpha-check-bg {
     /* 市松模様 */
@@ -34,6 +53,7 @@
 
 <script>
   import Color from 'color'
+  import {round} from '../utils.js'
 
   import ColorInput from './color-input.html'
   import HsvPicker from './hsv-picker.html'
@@ -50,25 +70,53 @@
     data () {
       return {
         size: 200,
-        color: Color('#000000'),
-        mode: 'hsv',
+        color: '',
+        current: '',
+        bgColor: '',
+        model: 'rgb',
       }
     },
     computed: {
-      _color: (color) => Color(color),
-      textColor: (_color) => _color.isDark() ? '#fff' : '#000',
+      textColor: (color) =>  Color(color).isDark() ? '#fff' : '#000',
+      contrast: (color, bgColor) => round(Color(bgColor).contrast(color), 1),
     },
-    oncreate () {
-      // this.refs.alpha.observe('value', (value) => {
-      //   const _color = this.get('_color')
-      //   this.set({color: _color.alpha(value / 100)})
-      //   // this.set({color: _color.alphas(value / 100)})
-      // })
+    helpers: {
+      modelChange (_model, model, bgColor) {
+        let color = bgColor.mostReadable('#ccc', '#333')
+        if (model === _model) [color, bgColor] = [bgColor, color]
+        return `color: ${color}; background-color: ${bgColor};`
+      },
+    },
+    oncreate (hh) {
+      console.log('h!!!!!!!!!!!!!!!!!1h', this)
+      // const {color, bgColor} = this.get()
+      // console.log(color, bgColor, this)
+      this.observe('model', (model) => {
+        this.get('color')
+        this.set({color: Color(this.get('color'), model)})
+        console.log('value', model)
+      })
+      this.observe('color', (color) => {
+        this.set({color: Color(color)})
+        // console.log('color', color)
+      })
       // this.observe('_color', (_color) => {
       //   const alphaColor = (alpha) => _color.clone().alpha(alpha).toRgbString()
       //   // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
       //   this.refs.alpha.draw(alphaColor(0), alphaColor(1))
       // })
+    },
+    methods: {
+      alphaBlending () {
+        const {color, bgColor} = this.get()
+        this.set({
+          color: bgColor.alphaBlending(color),
+        })
+      },
+      setBgColor (color = this.get('color')) {
+        this.set({bgColor: color})
+        this.fire('setBgColor', color)
+      },
     },
   }
 </script>

@@ -1,19 +1,20 @@
 <div ref:card
   class="card animated bounceIn"
-  style="{{colorStyle}} left: {{left}}px; top: {{top}}px; {{_width + _height}} z-index: {{card.zIndex}};">
+  style="{{cardStyle}} z-index: {{card.zIndex}};">
   <div class="cardtext">
     <h3 class="card_title">{{card.name}}</h3>
     <div>{{card.color}}</div>
     <div>{{card.color.hsl().string(0)}}</div>
-    <div>{{Math.round(contrast * 10) / 10}}</div>
+    <div>{{contrast}}</div>
   </div>
   <div class="icon card-delete" on:click="remove()">ｘ</div>
   <div ref:handle class="icon resize-handle">ｘ</div>
 </div>
 <script>
-  import Color from 'color'
   import {Movable, Resizable} from '../mouse'
-  import store from '../store'
+  import {round} from '../utils.js'
+  import store from '../store/store.js'
+
   function activeIndex () {
     const cards = store.get('cards')
     for (let i = 0; i < cards.length; i++) {
@@ -27,55 +28,80 @@
 
   export default {
     computed: {
-      colorStyle: (card) => {
-        return card.textMode
-          ? `background-color: transparent; color: ${card.color};`
-          : `background-color: ${card.color}; color: ${card.color.isDark() ? '#fff' : '#000'};`
+      cardStyle: (card, grayscale) => {
+        const {width, height, top, left, color, textMode} = card
+        const w = width > 120 ? width + 'px' : 'auto'
+        const h = height > 120 ? height + 'px' : 'auto'
+        const c2 = grayscale ? color.grayscale() : color
+        const colorstyle = textMode
+          ? `background-color: transparent; color: ${c2};`
+          : `background-color: ${c2}; color: ${color.isDark() ? '#fff' : '#000'};`
+        return colorstyle + `width:${w}; height:${h};top:${top}px;left:${left}px;`
       },
-      contrast: (card, bgColor) => card.color.contrast(Color(bgColor)),
-      _width: (width) => `width:${width ? width + 'px' : 'auto'};`,
-      _height: (height) => `height:${height ? height + 'px' : 'auto'};`,
+      contrast: (card, $bgColor) => round(store.get('bgColor').contrast(card.color), 1),
     },
+
 
     oncreate () {
       console.log('card-render')
+      // card position init
       const cardEl = this.refs.card
       const cardRect = cardEl.getBoundingClientRect()
       const box = cardEl.parentElement
-
       const {card, index} = this.get()
-      this.set({ width: card.width ? card.width : cardRect.width })
-      this.set({ height: card.height ? card.height : cardRect.height })
+      const rect = box.getBoundingClientRect()
+      // random positions
+      if (card.left == null) {
+        const maxW = rect.width - Math.max(cardRect.width, 120) - colorsWidth
+        card.left = snap((maxW) * Math.random() + colorsWidth)
+      }
+      if (card.top == null) {
+        const maxH = rect.height - Math.max(cardRect.height, 120)
+        card.top = snap((maxH) * Math.random())
+      }
+      this.store.fire('cards.EDIT_CARD', index, card)
 
-      let selected
+
+      let cards
 
       this.movable = new Movable(cardEl, {
         containment: box,
-        grid: 5,
+        grid: 10,
         axis: 'shift',
         start: (e, position) => {
           e.stopPropagation()
+          store.fire('cards.CARD_FORWARD', index)
 
-          store.trigger('cards.CARD_FORWARD', index, false)
-          selected = store.get('cards')
+          cards = store.get('cards')
         },
-        drag: (e, position, el) => {
-          // cards.forEach((cardEl, i) => {
-          //   if (card !== cardEl) {
-          //     const cardRect = cardRects[i]
-          //     cardEl.style.left = position.adjust(cardRect.left + position.vectorX, 'width', cardRect) + 'px'
-          //     cardEl.style.top  = position.adjust(cardRect.top  + position.vectorY, 'height', cardRect) + 'px'
-          //   }
-          // })
+        drag: (e, position) => {
+          e.stopPropagation()
+          for (const scard of this.root.selectable.selects) {
+            const {index, el, rect} = scard
+            const selectcard = cards[index]
+            scard.left = position.adjust(selectcard.left + position.vectorX, 'width', rect)
+            scard.top = position.adjust(selectcard.top + position.vectorY, 'height', rect)
+
+            el.style.left = scard.left + 'px'
+            el.style.top = scard.top + 'px'
+          }
         },
-        stop: (e, position, el) => {
-          const pos = this.adjust(position)
-          this.set(pos)
-          store.trigger('cards.TRANSLATE_CARD', index, pos.left, pos.top)
+        stop: (e, {left, top}, el) => {
+          const selects = this.root.selectable.selects
+          left = Math.max(colorsWidth, left)
+
+          store.set({cards: (cards) => {
+            for (const scard of selects) {
+              const {index, left, top} = scard
+              const card = cards[index]
+              Object.assign(card, {left, top})
+            }
+            return cards
+          }})
+          store.memo()
         },
         click: (e, position, el) => {
-          store.memo('cards')
-          // this.parent.selectable.select(this.i)
+          store.memo()
         },
       })
       this.resizable = new Resizable(this.refs.handle, {
@@ -88,15 +114,15 @@
         stop: (e) => {
           e.stopPropagation()
           const {width, height} = cardEl.getBoundingClientRect()
-          console.log('width, height', width, height)
-          this.set({width, height})
+          store.fire('cards.EDIT_CARD', index, {width, height})
+          store.memo()
         },
       })
       cardEl.addEventListener('contextmenu', (e) => {
         // デフォルトイベントをキャンセル
         // これを書くことでコンテキストメニューが表示されなくなります
         e.preventDefault()
-        store.trigger('menu_open', e, {
+        store.fire('menu_open', e, {
           name: card.name,
           color: card.color,
         }, 'card')
@@ -104,13 +130,13 @@
 
       // styler(cardEl, position(card, true))
       // this.position(card, true)
-      this.set(this.adjust(card, true))
+      // this.set(this.adjust(card, true))
     },
     methods: {
       adjust (card, init) {
         const rect = this.refs.card.parentElement.getBoundingClientRect()
-        const maxW = rect.width - this.get('width')
-        const maxH = rect.height - this.get('height')
+        const maxW = rect.width - card.width
+        const maxH = rect.height - card.height
         let left, top
 
         if (init && (+card.left < colorsWidth || !card.top)) {
@@ -124,7 +150,7 @@
         return {left, top}
       },
       duplicate () {
-        store.trigger('cards.DUPLICATE_CARD', this.get('activeCard'))
+        store.fire('cards.DUPLICATE_CARD', this.get('activeCard'))
       },
       remove () {
         const cards = store.get('cards')
@@ -133,16 +159,16 @@
           console.log('removeselected', activeIndex())
           cards.forEach((card, i) => {
             if (card.selected) {
-              store.trigger('cards.REMOVE_CARD', i)
+              store.fire('cards.REMOVE_CARD', i)
             }
           })
         } else {
           console.log('remove', activeIndex())
-          store.trigger('cards.REMOVE_CARD', activeIndex())
+          store.fire('cards.REMOVE_CARD', activeIndex())
         }
       },
+    },
     }
-  }
 
   // Utilities
 

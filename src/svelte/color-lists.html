@@ -17,7 +17,8 @@
 </div>
 
 <script>
-  import store from '../store'
+  import store from '../store/store.js'
+  // import store from '../store'
   import Color from 'color'
   import WEBCOLOR      from '../constants/webcolor.json'
   import JISCOLOR_EN   from '../constants/jiscolor_en.json'
@@ -74,7 +75,7 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          store.trigger('cards.ADD_CARD', {name, color})
+          store.fire('cards.ADD_CARD', {name, color})
         }
       })
       colortips.addEventListener('contextmenu', (e) => {
@@ -82,7 +83,7 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          store.trigger('menu_open', e, {
+          store.fire('menu_open', e, {
             name,
             color: Color(color)
           }, 'tip')

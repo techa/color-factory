@@ -1,3 +1,7 @@
+export function round (num, digit) {
+  digit = Math.pow(10, digit)
+  return Math.round(num * digit) / digit
+}
 
 export function kebabCase (str) {
   return str.replace(/^([A-Z])|.([A-Z])/g, (r, m1, m2) => {
@@ -74,4 +78,36 @@ export function copyTextToClipboard (textVal) {
   bodyElm.removeChild(copyFrom)
 
   return retVal
+}
+
+export function eventer (constructor) {
+  const EVENTS = constructor._events = {}
+  Object.assign(constructor, {
+    on (eventName, handler) {
+      (EVENTS[eventName] = EVENTS[eventName] || []).push(handler)
+      return this
+    },
+    off (eventName, handler) {
+      const index = EVENTS[eventName].indexOf(handler)
+      if (~index) EVENTS[eventName].splice(index, 1)
+      return this
+    },
+    once (eventName, handler) {
+      const oncehandler = (...args) => {
+        this.off(eventName, oncehandler)
+        handler(...args)
+      }
+      (EVENTS[eventName] = EVENTS[eventName] || []).push(oncehandler)
+      return this
+    },
+    fire (eventName, ...args) {
+      console.log('fire', eventName)
+      if (EVENTS[eventName]) {
+        EVENTS[eventName].forEach((handler) => handler(...args))
+      } else {
+        console.error(`fire: ${eventName} is undefind`)
+      }
+      return this
+    },
+  })
 }
