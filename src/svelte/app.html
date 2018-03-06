@@ -13,6 +13,23 @@
   {{/each}}
 </div>
 
+<div class="controller" style="color: {{textColor}};">
+  <!-- カード整列 -->
+  <label>X:<select>
+      {{#each sort as ss}}
+      <option value="ss">ss</option>
+      {{/each}}
+    </select>
+  </label>
+  <label>Y:<select>
+      {{#each sort as ss}}
+      <option value="ss">ss</option>
+      {{/each}}
+    </select>
+  </label>
+  <button class="{{grayscale? 'grayscale': ''}}" on:click="set({grayscale: !grayscale})">Grey</button>
+</div>
+
 <ContextMenu />
 
 <script>
@@ -114,6 +131,11 @@
   #box {
     width: 100%;
     height: 100%;
+  }
+  .controller {
+    position: absolute;
+    top: 0;
+    right: 0;
   }
   #form_add {
     margin: 10px 0;
