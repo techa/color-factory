@@ -57,7 +57,6 @@
         // colortypeindex: 0,
         name: '',
         color: Color.random(),
-        selects: [],
         selectingCard: null,
         sort: ['none', 'hue', 'saturationl', 'lightness', 'saturationv', 'value'],
         grayscale: false,
@@ -82,14 +81,6 @@
             this.set({color})
           }
         },
-      })
-      console.log('this.selectable', this.selectable)
-
-      this.observe('selects', (selects) => {
-        if (selects.length === 1) {
-          const color = store.get('cards')[selects[0].index].color
-          this.set({color})
-        }
       })
     },
 
