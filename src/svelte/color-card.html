@@ -8,6 +8,7 @@
     <div>{{contrast}}</div>
   </div>
   <div class="controller">
+    <span class="card-reverse" on:click="reverse()">reverse</span>
     <span class="card-edit" on:click="fire('edit')">edit</span>
     <span class="card-delete" on:click="remove()">ｘ</span>
   </div>
@@ -155,7 +156,10 @@
         return {left, top}
       },
       duplicate () {
-        store.fire('cards.DUPLICATE_CARD', this.get('activeCard'))
+        store.fire('cards.DUPLICATE_CARD', this.get('card').index)
+      },
+      reverse () {
+        store.fire('cards.TOGGLE_TEXTMODE', this.get('card').index)
       },
       remove () {
         const cards = store.get('cards')
