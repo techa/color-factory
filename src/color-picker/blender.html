@@ -1,16 +1,17 @@
 <div class="blender" style="width:{{width}}px; height:{{height}}px;">
-  <dv ref:color1 on:click="fire('color1')" class="blender-btn color1 active"></dv>
+  <dv ref:color1 on:click="setColor1(color)" class="blender-btn color1 active"></dv>
   <div ref:blender class="blender-slider">
     <canvas ref:canvas class="blender-canvas" width={{width-40}} height={{height}}></canvas>
     <div ref:handle class="blender-handle {{direction}}"></div>
   </div>
-  <dv ref:color2 on:click="fire('color2')" class="blender-btn color2"></dv>
+  <dv ref:color2 on:click="setColor2(color)" class="blender-btn color2"></dv>
 </div>
 
 <style>
   .blender {
     display: flex;
     flex-direction: row;
+    margin: 0 5px;
   }
   .blender-slider {
     position: relative;

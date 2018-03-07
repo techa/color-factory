@@ -12,9 +12,7 @@
       <button style="color:{{color}};" on:click="setBgColor()">
         {{contrast}}
       </button>
-    <Blender bind:color width={{size}}
-      on:color1="this.setColor1(_color)"
-      on:color2="this.setColor2(_color)" />
+      <Blender bind:color width={{size}}/>
       <button on:click="alphaBlending()">a=1</button>
   </div>
 </div>
