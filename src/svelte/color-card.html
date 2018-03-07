@@ -3,8 +3,8 @@
   style="{{cardStyle}} z-index: {{card.zIndex}};">
   <div class="cardtext">
     <h3 class="card_title">{{card.name}}</h3>
-    <div>{{card.color}}</div>
-    <div>{{card.color.hsl().string(0)}}</div>
+    <div>{{card.color.rgb()}}</div>
+    <div>{{card.color.hsl()}}</div>
     <div>{{contrast}}</div>
   </div>
   <div class="controller">
