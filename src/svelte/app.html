@@ -1,8 +1,8 @@
 <div id="colors" ref="colors" style="color: {{textColor}};">
-  <input bind:value="name" placeholder="Name" style="color: {{textColor}};">
-  <button>➕</button>
-  <button on:click="setBgColor(color)">BG</button>
-  <ColorPicker bind:color bgColor="{{$bgColor}}" on:setBgColor="setBgColor(color)" />
+  <input bind:value="current.name" placeholder="Name" style="color: {{textColor}};">
+  <button on:click="addCard(current)">➕</button>
+  <button on:click="setBgColor(current.color)">BG</button>
+  <ColorPicker bind:color="current.color" bgColor="{{$bgColor}}" on:setBgColor="setBgColor(current.color)" />
   <hr>
   <ColorLists />
 </div>
@@ -53,10 +53,11 @@
     store: () => store,
     data () {
       return {
-        color_type: 'hex',
-        // colortypeindex: 0,
+        current: {
         name: '',
         color: Color.random(),
+        },
+        memo: null,
         selectingCard: null,
         sort: ['none', 'hue', 'saturationl', 'lightness', 'saturationv', 'value'],
         grayscale: false,
@@ -77,24 +78,20 @@
         selected: (e) => {
           const selects = this.selectable.selects
           if (selects.length === 1) {
-            const color = store.get('cards')[selects[0].index].color
-            this.set({color})
+            const card = store.get('cards')[selects[0].index]
+            const memo = this.get('current')
+            this.set({current: card, memo})
+          } else if (!selects.length) {
+            const current = this.get('memo')
+            this.set({current, memo: current})
           }
         },
       })
     },
 
     methods: {
-      addCard () {
-        const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i
-        const text = validationRegExp.exec(this.get('colorcode'))
-        if (text) {
-          this.store.fire('cards.ADD_CARD', {
-            name: '',
-            color: text[1],
-          })
-          this.set({color: ''})
-      }
+      addCard (current) {
+        this.store.fire('cards.ADD_CARD', current)
       },
       setBgColor (color) {
         store.set({bgColor: color})
