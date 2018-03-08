@@ -14,6 +14,8 @@
 </div>
 
 <div class="controller" style="color: {{textColor}};">
+  <button on:click="store.undo()">Undo</button>
+  <button on:click="store.redo()">Redo</button>
   <!-- カード整列 -->
   <label>X:<select>
       {{#each sort as ss}}
@@ -54,8 +56,8 @@
     data () {
       return {
         current: {
-        name: '',
-        color: Color.random(),
+          name: '',
+          color: Color.random(),
         },
         memo: null,
         selectingCard: null,
