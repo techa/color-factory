@@ -111,8 +111,9 @@
         this.store.memo()
       },
       setBgColor (color) {
-        store.set({bgColor: color})
-        store.memo()
+        const bgColor = this.store.get('bgColor')
+        this.store.set({bgColor: bgColor.alphaBlending(color)})
+        this.store.memo()
       },
     }
   }
