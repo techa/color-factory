@@ -1,10 +1,5 @@
 <div class="color-picker">
-  <div class="models">
-    {{#each models as _model}}
-    <button style="{{modelChange(_model, model, bgColor)}}" on:click="set({model: _model})">{{_model.toUpperCase()}}</button>
-    {{/each}}
-  </div>
-  <ColorInput bind:color bind:model :bgColor />
+  <ColorInput bind:color :bgColor />
   <div class="wrapper">
     <HsvPicker bind:color size={{size}} />
   </div>
@@ -22,9 +17,6 @@
     position: relative;
     padding: 8px;
     text-align: center;
-  }
-  .models {
-    font-size: 0.8em;
   }
   .wrapper {
     height: 100px;
@@ -75,30 +67,21 @@
         color: '',
         current: '',
         bgColor: '',
-        models: ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'],
-        model: 'rgb',
       }
     },
     computed: {
       textColor: (color) =>  Color(color).isDark() ? '#fff' : '#000',
       contrast: (color, bgColor) => round(Color(bgColor).contrast(color), 1),
     },
-    helpers: {
-      modelChange (_model, model, bgColor) {
-        let color = bgColor.mostReadable('#ccc', '#333')
-        if (model === _model) [color, bgColor] = [bgColor, color]
-        return `color: ${color}; background-color: ${bgColor};`
-      },
-    },
     oncreate (hh) {
       console.log('h!!!!!!!!!!!!!!!!!1h', this)
       // const {color, bgColor} = this.get()
       // console.log(color, bgColor, this)
-      this.observe('model', (model) => {
-        this.get('color')
-        this.set({color: Color(this.get('color'), model)})
-        console.log('value', model)
-      })
+      // this.observe('model', (model) => {
+      //   this.get('color')
+      //   this.set({color: Color(this.get('color'), model)})
+      //   console.log('value', model)
+      // })
       this.observe('color', (color) => {
         this.set({color: Color(color)})
         // console.log('color', color)

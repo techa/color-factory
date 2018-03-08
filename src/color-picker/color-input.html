@@ -1,6 +1,11 @@
 {{#if phone}}
   <input type="color">
 {{else}}
+  <div class="models">
+    {{#each models as _model}}
+    <button style="{{modelChange(_model, model, bgColor)}}" on:click="set({model: _model})">{{_model.toUpperCase()}}</button>
+    {{/each}}
+  </div>
   <div class="input-wrapper">
     <input class="color-text"
       on:input="input(event)"
@@ -14,6 +19,12 @@
 {{/if}}
 
 <style>
+  .models {
+    font-size: 0.8em;
+  }
+  .models button {
+    padding: 4px;
+  }
   .input-wrapper {
     --size: 2.5em;
     position: relative;
@@ -44,37 +55,6 @@
     .submit-btn {
       height: var(--size);
       text-align: center;}
-
-    .color-text_list {
-      position: absolute;
-      margin: 0;
-      padding: 0;
-      top: var(--size);
-      left: 0;
-      width: 100%;
-      list-style: none;
-      text-align: left;
-      color: #111;
-      background-color: #ddd;
-      z-index: 10000;
-    }
-    .color-text_list-item {
-      margin: 0;
-      padding: 4px;
-      height: var(--size);
-      list-style: none;
-    }
-    .color-text_list-item.active {
-      font-weight: bold;
-    }
-    .color-text_list-item:hover {
-      background-color: aqua;
-    }
-    /*.color-text:focus + .color-text_list,*/
-    /*.color-text_list:hover,*/
-    .color-text_list.active {
-      visibility: visible;
-    }
 </style>
 
 <script>
@@ -95,13 +75,20 @@
         phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
         color: Color('#050'),
         bgColor: '',
-        models: ['hsl', 'rgb', 'hex'],
-        model: 'hex',
+        models: ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'],
+        model: 'rgb',
       }
     },
     computed: {
       value: (color, model) => color.toString(model),
       textColor: (color, bgColor) => bgColor.alphaBlending(color).isDark() ? '#fff' : '#000',
+    },
+    helpers: {
+      modelChange (_model, model, bgColor) {
+        let color = bgColor.mostReadable('#ccc', '#333')
+        if (model === _model) [color, bgColor] = [bgColor, color]
+        return `color: ${color}; background-color: ${bgColor};`
+      },
     },
     methods: {
       keydown (event) {
@@ -130,14 +117,28 @@
           return
         }
 
+        const model = this.get('model')
         let color
         try {
           color = Color(value)
         } catch (error) {
+          try {
+            const arr = value.match(/.*?\(([-\d.%, ]*)\)/)[1].split(',')
+            color = Color(arr.map((v) => {
+              v = v.trim()
+              if (v.slice(-1) === '%') {
+                v = parseFloat(v) / 100
+              } else {
+                v = parseFloat(v)
+              }
+              return v
+            }), model)
+          } catch (error) {
           return
         }
+        }
+
         const index = caretIndex(event, color)
-        const model = color.model
 
         if (index === -1) {
           const models = this.get('models')
@@ -145,48 +146,36 @@
             ? (event.key === 'ArrowUp' ? 1 : -1)
             : event.deltaY < 0 ? 1 : -1
 
-          let findex = (models.indexOf(model) - arrow)
+          let findex = models.indexOf(model) + arrow
+
           if (findex < 0) {
             findex = models.length + findex
+          } else if (findex >= models.length) {
+            findex -= models.length
           }
-          this.set({ model: models[findex % models.length] })
+          this.set({ model: models[findex] })
         } else {
           const arrow = event.type === 'keydown'
             ? (event.key === 'ArrowUp' ? 1 : -1) * (event.shiftKey ? 10 : 1)
             : event.deltaY < 0 ? 10 : -10
+
+          let param = model === '%' ? color.unitArray() : color[model]().array()
 
           if (index === 3) {
             // alpla
             color = color.alpha(color.alpha() + arrow / 100)
           } else {
             // not alpla
-            const plus = arrow
-            let param
             switch (model) {
-              case 'hsl':
-                param = color.hsl().object()
-                param['hsl'[index]] += plus
-                break
-              case 'hsv':
-                param = color.hsv().object()
-                param['hsv'[index]] += plus
-                break
-              case 'prgb':
-                param = color.rgb().object()
-                param.r /= 255
-                param.g /= 255
-                param.b /= 255
-                param['rgb'[index]] += plus / 100
-                param.r *= 255
-                param.g *= 255
-                param.b *= 255
+              case '%':
+                param[index] += arrow / 100
                 break
               default:
-                param = color.rgb().object()
-                param['rgb'[index]] += plus
+                param[index] += arrow
+                color = Color(param, model)
                 break
             }
-            color = Color(param)
+            color = Color(param, model === '%' ? 'rgb' : model)
           }
           this.set({ color })
           event.target.selectionStart = selectionStart

@@ -1,25 +1,32 @@
 import Color from 'color'
+import store from './store/store.js'
 Color.prototype.toJSON = function () {
   return this[this.model]().object()
 }
 
-Color.prototype.toString = function (mode) {
-  // console.log('mode', mode)
+Color.prototype.toString = function (model) {
+  // console.log('model', model)
   const color = this.alpha(Math.round(this.valpha * 100) / 100)
-  switch (mode) {
+  switch (model) {
     case 'hex':
       return color.hex()
     case 'rgb':
     case 'hsl':
-      return color[mode]().string(0)
-    case 'hsv':
-      const {h, s, v} = color.hsv().round().object()
-      if (color.valpha !== 1) {
-        return `hsva(${h}, ${s}%, ${v}%, ${color.valpha})`
-      }
-      return `hsv(${h}, ${s}%, ${v}%)`
+      return color[model]().string(0)
+    case 'cmyk':
+      const bgColor = store.get('bgColor')
+      const cmyk = bgColor.alphaBlending(color).cmyk().round().array()
+      return `cmyk(${cmyk.join(', ')})`
     default:
-      return color.string(0)
+      if (!(model in color)) {
+        return this.string(0)
+      }
+      let str = model
+      const arr = color[model]().round().array()
+      if (color.valpha !== 1) {
+        str += 'a'
+      }
+      return str + `(${arr.join(', ')})`
   }
 }
 Color.prototype.alphaBlending = function (...colors) {
