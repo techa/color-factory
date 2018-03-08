@@ -1,6 +1,6 @@
 <div class="color-picker">
   <div class="models">
-    {{#each ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'] as _model}}
+    {{#each models as _model}}
     <button style="{{modelChange(_model, model, bgColor)}}" on:click="set({model: _model})">{{_model.toUpperCase()}}</button>
     {{/each}}
   </div>
@@ -71,6 +71,7 @@
         color: '',
         current: '',
         bgColor: '',
+        models: ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'],
         model: 'rgb',
       }
     },
