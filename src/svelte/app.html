@@ -83,9 +83,9 @@
 
           if (selects.length === 1) {
             const {name, color} = store.get('cards')[selects[0].index]
+            const current = this.get('current')
             this.set({current: { name, color }})
             if (!memo) {
-              const current = this.get('current')
               this.set({ memo: current })
             }
           }
