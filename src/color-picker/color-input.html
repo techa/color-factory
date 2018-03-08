@@ -6,6 +6,7 @@
       on:input="input(event)"
       on:updown="updown(event)"
       on:wheel="updown(event)"
+      on:keydown="keydown(event)"
       style="color: {{textColor}}; background-color: {{color.rgb()}};"
       :value
       placeholder="keypress: ↑↓">
@@ -103,6 +104,13 @@
       textColor: (color, bgColor) => bgColor.alphaBlending(color).isDark() ? '#fff' : '#000',
     },
     methods: {
+      keydown (event) {
+        const value = event.target.value
+        const color = Color(value)
+        if (/^#?([a-f\d]{3})$/i.test(value) && event.key === 'Enter') {
+          this.set({ color, model: 'hex' })
+        }
+      },
       input (event) {
         const value = event.target.value
 
@@ -112,10 +120,9 @@
         } catch (error) {
           return
         }
-        const format = color.model
-        if (!/^#?[a-f\d]{3,4}$/i.test(value)) {
-          this.set({ color, format })
-        }
+        if (/^#?([a-f\d]{3})$/i.test(value)) return
+        const model = /^#?([a-f\d]{6})$/i.test(value) ? 'hex' : color.model
+        this.set({ color, model })
       },
       updown (event) {
         const {value, selectionStart, selectionEnd} = event.target
