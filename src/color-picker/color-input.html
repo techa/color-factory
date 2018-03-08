@@ -113,7 +113,11 @@
       },
       updown (event) {
         const {value, selectionStart, selectionEnd} = event.target
-        if (selectionStart !== selectionEnd) {
+        const numbercheckReg = /-?(?:0?\.)?\d{1,3}/g
+        if (
+          selectionStart !== selectionEnd &&
+          !numbercheckReg.test(value.substring(selectionStart, selectionEnd))
+        ) {
           return
         }
 
@@ -178,8 +182,14 @@
             color = Color(param, model === '%' ? 'rgb' : model)
           }
           this.set({ color })
-          event.target.selectionStart = selectionStart
-          event.target.selectionEnd = selectionStart
+          if (model !== 'hex') {
+            let result
+            for (let i = -1; i < index; i++) {
+              result = numbercheckReg.exec(value)
+            }
+            event.target.selectionStart = result.index
+            event.target.selectionEnd = result.index + result[0].length
+          }
         }
       },
     },
