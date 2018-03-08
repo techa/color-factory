@@ -4,7 +4,7 @@
   <button on:click="setBgColor(current.color)">BG</button>
   <ColorPicker bind:color="current.color" bgColor="{{$bgColor}}" on:setBgColor="setBgColor(current.color)" />
   <hr>
-  <ColorLists />
+  <ColorLists on:colorpick="set({current: event.current})" />
 </div>
 
 <div ref:box id="box" style="background-color: {{bgColor}};">
@@ -68,7 +68,7 @@
       bgColor: ($bgColor, grayscale) => grayscale ? Color($bgColor).grayscale() : Color($bgColor),
     },
     oncreate () {
-      console.log('this', this)
+      // Selectable
       this.selectable = new Selectable(this.refs.box, {
         filter: '.card',
         tolerance: 'fit',
@@ -77,13 +77,19 @@
         },
         selected: (e) => {
           const selects = this.selectable.selects
+          const memo = this.get('memo')
+
           if (selects.length === 1) {
-            const card = store.get('cards')[selects[0].index]
-            const memo = this.get('current')
-            this.set({current: card, memo})
-          } else if (!selects.length) {
-            const current = this.get('memo')
-            this.set({current, memo: current})
+            const {name, color} = store.get('cards')[selects[0].index]
+            this.set({current: { name, color }})
+            if (!memo) {
+              const current = this.get('current')
+              this.set({ memo: current })
+            }
+          }
+
+          if (!selects.length && memo) {
+            this.set({current: memo, memo: null})
           }
         },
       })
