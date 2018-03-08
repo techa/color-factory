@@ -7,7 +7,7 @@
   <ColorInput bind:color bind:model :bgColor />
   <div class="wrapper">
     <HsvPicker bind:color size={{size}} />
-    <!-- <Slider ref:alpha value={{_color.alpha() * 100}} :size direction="horizontal" /> -->
+  </div>
     <div class="set">
       <button style="color:{{color}};" on:click="setBgColor()">
         {{contrast}}
@@ -15,7 +15,6 @@
       <Blender bind:color width={{size}}/>
       <button on:click="alphaBlending()">a=1</button>
   </div>
-</div>
 </div>
 
 <style>
@@ -31,12 +30,17 @@
     height: 100px;
     display: flex;
     flex-direction: column;
+    padding: 6px 0;
   }
   .set {
     display: flex;
     align-items: stretch;
     justify-content: space-around;
     font-size: 0.8em;
+  }
+  .set button {
+    width: 30px;
+    padding: 0;
   }
   .alpha-check-bg {
     /* 市松模様 */
