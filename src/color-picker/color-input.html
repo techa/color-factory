@@ -137,20 +137,24 @@
           return
         }
         const index = caretIndex(event, color)
-        const arrow = event.type === 'keydown'
-          ? (event.key === 'ArrowUp' ? 1 : -1)
-          : -event.deltaY
+        const model = color.model
 
         if (index === -1) {
-          const model = this.get('model')
           const models = this.get('models')
+          const arrow = event.type === 'keydown'
+            ? (event.key === 'ArrowUp' ? 1 : -1)
+            : event.deltaY < 0 ? 1 : -1
+
           let findex = (models.indexOf(model) - arrow)
           if (findex < 0) {
             findex = models.length + findex
           }
           this.set({ model: models[findex % models.length] })
         } else {
-          const model = color.model
+          const arrow = event.type === 'keydown'
+            ? (event.key === 'ArrowUp' ? 1 : -1) * (event.shiftKey ? 10 : 1)
+            : event.deltaY < 0 ? 10 : -10
+
           if (index === 3) {
             // alpla
             color = color.alpha(color.alpha() + arrow / 100)
