@@ -95,11 +95,20 @@
           }
         },
       })
+      this.cardsPosition()
     },
 
     methods: {
       addCard (current) {
-        this.store.fire('cards.ADD_CARD', current)
+        this.store.fire('cards.ADD_CARD', Object.assign({}, current))
+      },
+      cardsPosition (x, y) {
+        const cards = this.store.get('cards')
+        cards.forEach((card, i) => {
+          cards[i] = this.store.cardPosition(card, x, y)
+        })
+        this.store.set({cards})
+        this.store.memo()
       },
       setBgColor (color) {
         store.set({bgColor: color})

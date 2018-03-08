@@ -48,22 +48,28 @@
 
     oncreate () {
       console.log('card-render')
-      // card position init
+
       const cardEl = this.refs.card
-      const cardRect = cardEl.getBoundingClientRect()
       const box = cardEl.parentElement
       const {card, index} = this.get()
+
+      // card position init
+      store.cardPosition = (card, x, y) => {
+        const cardRect = cardEl.getBoundingClientRect()
       const rect = box.getBoundingClientRect()
       // random positions
       if (card.left == null) {
+          const byX = x == null ? Math.random() : x(card)
         const maxW = rect.width - Math.max(cardRect.width, 120) - colorsWidth
-        card.left = snap((maxW) * Math.random() + colorsWidth)
+          card.left = snap((maxW) * byX + colorsWidth)
       }
       if (card.top == null) {
+          const byY = y == null ? Math.random() : y(card)
         const maxH = rect.height - Math.max(cardRect.height, 120)
-        card.top = snap((maxH) * Math.random())
+          card.top = snap((maxH) * byY)
+        }
+        return card
       }
-      this.store.fire('cards.EDIT_CARD', index, card)
 
 
       let cards
