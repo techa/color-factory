@@ -1,1964 +1,6 @@
 (function () {
 'use strict';
 
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
-}
-
-var Histore = createCommonjsModule(function (module) {
-(function () {
-  let initDone, storage, undoLimt, memorizeDefault, initializer;
-  let undoKeys = [],
-      redoKeys = [],
-      events = [],
-      listeners = [];
-  const states = {},
-        stringify = JSON.stringify,
-        parse = JSON.parse;
-
-  /**
-   * Histore
-   *
-   * @class Histore
-   * @param {object} data
-   * @param {object} [opts={}]
-   */
-  function Histore (defaultData, opts = {}) {
-    if (!(this instanceof Histore)) {
-      return new Histore(defaultData, opts)
-    }
-    if (initDone) {
-      throw new Error('Histore is already created.')
-    }
-    initDone = true;
-    this.setOptions(opts);
-
-    const data = Object.keys(defaultData).reduce((obj, key) => {
-      let val = storage.getItem(key);
-      val = val ? parse(val) : defaultData[key];
-      if (val === void 0) {
-        throw new Error(`Histore.getItem: ${key} is undefind`)
-      }
-      obj[key] = val;
-      return obj
-    }, {});
-
-    this.set(data, false);
-    if (initializer) {
-      initializer(this);
-    }
-  }
-
-  Histore.prototype = {
-    setOptions (opts) {
-      opts = opts || {};
-      storage = opts.storage;
-      memorizeDefault = typeof opts.memorizeDefault === 'boolean'
-        ? opts.memorizeDefault
-        : !!storage;
-      undoLimt = opts.undoLimt || 50;
-      initializer = opts.initializer;
-      return this
-    },
-    addPlugin (key, plugin) {
-      Object.defineProperty(this, key, {
-        value: plugin
-      });
-    },
-    toJSON () {
-      return states
-    },
-    clear (key) {
-      if (key) {
-        delete states[key];
-        undoKeys = undoKeys.filter((k) => key !== k);
-        redoKeys = redoKeys.filter((k) => key !== k);
-        storage.removeItem(key);
-      } else {
-        // clear all
-        for (let _key in states) {
-          delete states[_key];
-        }
-        undoKeys.length = 0;
-        redoKeys.length = 0;
-        storage.clear();
-      }
-      return this
-    },
-    get (key) {
-      if (!key) {
-        return Object.keys(states).reduce((obj, _key) => {
-          if (states[_key]) {
-            obj[_key] = states[_key].current;
-          }
-          return obj
-        }, {})
-      } else if (Object.prototype.toString.call(key) === '[object RegExp]') {
-        return Object.keys(states).reduce((obj, _key) => {
-          if (key.test(_key) && states[_key]) {
-            obj[_key] = states[_key].current;
-          }
-          return obj
-        }, {})
-      }
-      return states[key].current
-    },
-    getlib (libkey) {
-      const [lib, key] = libkey.split('/');
-      return Object.keys(states).reduce((obj, _key) => {
-        if (states[_key]) {
-          obj[_key] = states[_key].current;
-        }
-        return obj
-      }, {})
-    },
-    setlib (libkey, value) {
-      return Object.keys(states).reduce((obj, _key) => {
-        if (states[_key]) {
-          obj[_key] = states[_key].current;
-        }
-        return obj
-      }, {})
-    },
-    /**
-     * Histore.set()
-     *
-     * @param {string} key
-     * @param {any} value
-     * @param {any} [memo=memorizeDefault]
-     * @returns this
-     */
-    set (key, value, memo = memorizeDefault) {
-      let p;
-      const setter = (key, value, memo) => {
-        // p = (states[key] = states[key] || new State(key)).set(value, memo)
-        if (!states[key]) {
-          states[key] = new State(key);
-          // アクセサディスクリプタ
-          Object.defineProperty(this, key, {
-            enumerable: true,
-            configurable: true,
-            get () {
-              return states[key].current
-            },
-            set (newvalue) {
-              this.set(key, newvalue, memorizeDefault);
-            }
-          });
-        }
-        p = states[key].set(value, memo);
-      };
-
-      if (typeof key === 'string' && value !== void 0) {
-        setter(key, value, memo);
-      } else if (typeof key === 'object') {
-        // key = object
-        memo = value == null ? memorizeDefault : value;
-        for (let _key in key) {
-          setter(_key, key[_key], memo);
-        }
-      } else {
-        throw new TypeError(`Histore.set(key): ${key} is Invalid`)
-      }
-
-      p.then((memoflg) => {
-        console.log('memoflg', memoflg);
-        if (memoflg) {
-          redoKeys.length = 0;
-          undoKeys.push(key);
-        }
-      });
-      // subscribe callback
-      listeners.forEach((listener) => {
-        listener(this);
-      });
-      return this
-    },
-    memo (key) {
-      if (!key || !states[key]) {
-        throw new TypeError(`.memo(key) ${key} missing or states[key] is undefind!`)
-      }
-      states[key].memo().then((memoflg) => {
-        if (memoflg) {
-          redoKeys.length = 0;
-          undoKeys.push(key);
-        }
-      });
-      return this
-    },
-    undo (key) {
-      const len = undoKeys.length;
-      if (!len) {
-        // throw new Error('undoKeys.length == 0')
-        console.info('undoKeys.length == 0');
-      }
-      if (len) {
-        key = key || undoKeys.pop();
-        const stat = states[key];
-        if (stat.canUndo()) {
-          stat.undo();
-          redoKeys.push(key);
-        }
-
-        if (initializer) {
-          initializer(this);
-        }
-        // subscribe callback
-        listeners.forEach((listener) => {
-          listener(this);
-        });
-      }
-      return this
-    },
-    redo (key) {
-      const len = redoKeys.length;
-      if (!len) {
-        // throw new Error('redoKeys.length == 0')
-        console.info('redoKeys.length == 0');
-      }
-      if (len) {
-        key = key || redoKeys.pop();
-        const stat = states[key];
-        if (stat.canRedo()) {
-          stat.redo();
-          undoKeys.push(key);
-
-          if (initializer) {
-            initializer(this);
-          }
-          // subscribe callback
-          listeners.forEach((listener) => {
-            listener(this);
-          });
-        }
-      }
-      return this
-    },
-    on (eventName, handler) {
-      (events[eventName] = events[eventName] || []).push(handler);
-      return this
-    },
-    off (eventName, handler) {
-      const ary = events[eventName];
-      const index = ary.indexOf(handler);
-      if (index !== -1) {
-        events[eventName].splice(index, 1);
-      }
-      return this
-    },
-    one (eventName, handler) {
-      const onehandler = (...args) => {
-        this.off(eventName, onehandler);
-        handler(...args);
-      };
-      (events[eventName] = events[eventName] || []).push(onehandler);
-      return this
-    },
-    trigger (eventName, ...args) {
-      if (events[eventName]) {
-        console.log('trigger', eventName, ...args);
-        events[eventName].forEach((handler) => handler(...args));
-      } else {
-        console.error(`trigger: ${eventName} is undefind`);
-      }
-      return this
-    },
-    fire (eventName, ...args) {
-      return this.trigger(eventName, ...args)
-    },
-    subscribe (key, handler) {
-      if (typeof key === 'function') {
-        listeners.push(key);
-      } else {
-        states[key].listeners.push(handler);
-      }
-      return this
-    },
-  };
-
-
-  /**
-   * states children Class constructor
-   *
-   * @param {string} key
-   * @param {any}    value
-   */
-  function State (key) {
-    this.key = key;
-
-    this.undoStock = [];
-    this.current = null;
-    this.redoStock = [];
-
-    this.events = {};
-    this.listeners = [];
-  }
-  State.prototype = {
-    toJSON () {
-      return this.current
-    },
-    setItem (value) {
-      if (storage) {
-        storage.setItem(this.key, value);
-      }
-    },
-    set (value, memo) {
-      this.remember = new Promise((resolve, reject) => {
-        resolve(stringify(this.current));
-      });
-
-      if (typeof value === 'function') {
-        this.current = value(this.current);
-      } else {
-        this.current = value;
-      }
-
-      return this.remember.then((oldstr) => {
-        const newstr = stringify(this.current);
-        console.log('remember', oldstr !== newstr, memo);
-        if (oldstr !== newstr) {
-          if (memo) {
-            this.redoStock.length = 0;
-            this.undoStock.push(oldstr);
-            while (this.undoStock.length > undoLimt) {
-              this.undoStock.shift();
-            }
-            new Promise(() => { // eslint-disable-line
-              this.setItem(newstr);
-            });
-            console.log('---memory set---');
-          }
-
-          // subscribe
-          this.listeners.forEach((listener) => {
-            listener(this.current);
-          });
-        }
-        return oldstr !== newstr && memo
-      })
-      // let oldstr, newstr
-      // if (memo || this.listeners.length) {
-      //   oldstr = stringify(this.current)
-      // }
-      // if (typeof value === 'function') {
-      //   this.current = value(this.current)
-      // } else {
-      //   this.current = value
-      // }
-      // if (memo || this.listeners.length) {
-      //   newstr = stringify(this.current)
-      // }
-      // if (oldstr !== newstr) {
-      //   if (memo) {
-      //     this.redoStock.length = 0
-      //     this.undoStock.push(oldstr)
-      //     while (this.undoStock.length > undoLimt) {
-      //       this.undoStock.shift()
-      //     }
-
-      //     this.setItem(newstr)
-      //     console.log('---memory set---')
-      //   }
-
-      //   // subscribe
-      //   this.listeners.forEach((listener) => {
-      //     listener(this.current)
-      //   })
-      // }
-      // Do not write processing after here
-      // return this
-    },
-    memo () {
-      return new Promise((resolve) => {
-        const len = this.undoStock.length;
-        const prevstr = stringify(this.undoStock[len - 1]);
-        const currstr = stringify(this.current);
-        if (!len || prevstr !== currstr) {
-          this.undoStock.push(currstr);
-          while (this.undoStock.length > undoLimt) {
-            this.undoStock.shift();
-          }
-          this.setItem(currstr);
-          console.log('---memory memo---');
-        }
-        resolve(!len || prevstr !== currstr);
-      })
-    },
-    canUndo () {
-      return !!this.undoStock.length
-    },
-    canRedo () {
-      return !!this.redoStock.length
-    },
-    undo (err) {
-      const len = this.undoStock.length;
-      if (err && !len) {
-        throw new Error('State.undoStock.length == 0')
-      }
-      if (len) {
-        this.redoStock.push(stringify(this.current));
-        this.current = parse(this.undoStock.pop());
-        this.listeners.forEach((listener) => {
-          listener(this.current);
-        });
-      }
-      return this.current
-    },
-    redo (err) {
-      const len = this.redoStock.length;
-      if (err && !len) {
-        throw new Error('State.redoStock.length == 0')
-      }
-      if (len) {
-        this.undoStock.push(stringify(this.current));
-        this.current = parse(this.redoStock.pop());
-        this.listeners.forEach((listener) => {
-          listener(this.current);
-        });
-      }
-      return this.current
-    },
-  };
-
-  // CommonJS: Export function
-  if ('object' !== 'undefined' && module.exports) {
-    module.exports = Histore;
-    /* global define */
-  } else if (typeof undefined === 'function' && undefined.amd) {
-  // AMD/requirejs: Define the module
-    undefined(function () { return Histore });
-  } else {
-  // Browser: Expose to window
-    window.Histore = Histore;
-  }
-})();
-});
-
-var KeyManager = createCommonjsModule(function (module) {
-(function () {
-  /**
-   * @type {object}
-   */
-  const defaultkeymaps = [
-    {
-      key: 'ctrl+z',
-      action: 'undo',
-      mode: '',
-      // payload: {}
-    },
-    {
-      key: 'ctrl+shift+z',
-      action: 'redo',
-      mode: '',
-      // payload: {}
-    },
-  ];
-  /**
-   * keydown
-   *
-   * @param {function} handler
-   * @returns {function}
-   */
-  function keydownHandler (handler) {
-    return function (e) {
-      if (
-        e.which !== 17 && // Ctrl
-        e.which !== 91 && // Cmd
-        e.which !== 18 && // Alt
-        e.which !== 16 && // Shift
-        !(/^\w$/.test(e.key) && !(e.ctrlKey || e.altKey || e.metaKey)) // [a-zA-Z]
-      ) {
-        handler(e);
-      }
-    }
-  }
-
-  /**
-   * Class KeyManager constructor
-   *
-   * @param {object}  keymaps   keymap
-   * @param {Histore} store     Histore instance
-   * @param {object}  [options] element
-   */
-  function KeyManager (keymaps = defaultkeymaps, store, options) {
-    this.options = Object.assign({element: window}, options || {});
-    this.mode = undefined;
-
-    this.keymaps = [];
-    this.addKeymaps(keymaps);
-
-    this.options.element.addEventListener('keydown', keydownHandler((e) => {
-      const inputTags = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
-      if (inputTags) {
-        // brackets
-        return `fd${inputTags}`
-      }
-      // console.log('e.key', e.key, this.keymaps)
-      this.keymaps.some((keymap) => {
-        const action = this.getAction(e, keymap);
-        if (action) {
-          try {
-            if (typeof action === 'function') {
-              action(e, keymap.payload);
-            } else if (store) {
-              store.trigger(action, e, keymap.payload);
-            } else {
-              throw new Error('keymaps action error')
-            }
-          } catch (err) {
-            console.error(err.message, err.stack);
-          }
-          e.preventDefault();
-          return true
-        }
-      });
-    }));
-  }
-  KeyManager.prototype = {
-    getAction (e, keymap) {
-      const { key, action, mode } = keymap;
-      // if (!this.modeCheck(mode)) return
-      if (e.shiftKey !== /\bshift\b/i.test(key)) return
-      if (e.ctrlKey !== /\bctrl\b/i.test(key)) return
-      if (e.altKey !== /\balt\b/i.test(key)) return
-      if (e.metaKey !== /\b(command|cmd)\b/i.test(key)) return
-
-      const eKey = e.key.replace('Arrow', '').toLowerCase(),
-            keyReg = keymap.key.replace(/\b(shift|ctrl|alt|command|cmd)[-+]/ig, '');
-      // console.log(keyReg, eKey)
-      if (!new RegExp(`${keyReg}$`).test(eKey)) return
-      return action
-    },
-    addKeymap (key, action, mode = '', payload = {}) {
-      this.keymaps.push({ key, action, mode, payload });
-    },
-    addKeymaps (keymaps, mode) {
-      // store.on('undo', (e, payload) => { store.undo() })
-      // [
-        // { key: 'ctrl+z', action: 'undo', mode, payload },
-      // ]
-      if (Object.prototype.toString.call(keymaps) === '[object Array]') {
-        keymaps.forEach((keymap) => {
-          this.keymaps.push(keymap);
-        });
-      } else if (typeof keymaps === 'object') {
-      // {
-        // 'ctrl+z' () { store.undo() },
-      // }
-        Object.keys(keymaps).forEach((key) => {
-          this.addKeymap(key, keymaps[key], mode);
-        });
-      }
-    }
-  };
-
-
-  // CommonJS: Export function
-  if ('object' !== 'undefined' && module.exports) {
-    module.exports = KeyManager;
-  } else if (typeof undefined === 'function' && undefined.amd) {
-  // AMD/requirejs: Define the module
-    undefined(function () { return KeyManager });
-  } else {
-  // Browser: Expose to window
-    window.KeyManager = KeyManager;
-  }
-})();
-});
-
-var defaultpalette = {
-  cards: [
-    {
-      name: 'Comment',
-      color: '#75715E'
-    },
-    {
-      name: 'Comment ',
-      color: '#72747d'
-    },
-    {
-      name: 'String',
-      color: '#EEA9A9'
-    },
-    {
-      name: 'String',
-      color: '#db9da7'
-    },
-    {
-      name: 'Class,Function,Tag attribute',
-      color: '#86C166'
-    },
-    {
-      name: 'Function argument',
-      color: '#EFBB24'
-    },
-    {
-      name: 'Library function,Library constant,Library class/type',
-      color: '#8B81C3'
-    },
-    {
-      name: 'Keyword, Storage, Tag name, Invalid',
-      color: '#778A33'
-    },
-    {
-      name: 'Number, Built-in 今様',
-      color: '#D05A6E'
-    },
-    {
-      name: 'Number, Built-in constant',
-      color: '#c274a7'
-    },
-    {
-      name: 'Variable',
-      color: '#9B90C2'
-    },
-    {
-      name: 'background',
-      color: '#261C29'
-    },
-    {
-      name: 'invisibles',
-      color: '#2C283C'
-    },
-    {
-      name: 'selection',
-      color: '#45553C'
-    },
-    {
-      name: 'text',
-      color: '#F7F1D5'
-    },
-    {
-      name: 'text',
-      color: '#f0ebdb'
-    },
-    {
-      name: 'text',
-      color: '#c28fa5'
-    },
-  ],
-  bgColor: '#261C29'
-};
-
-var tinycolor = createCommonjsModule(function (module) {
-// TinyColor v1.4.1
-// https://github.com/bgrins/TinyColor
-// Brian Grinstead, MIT License
-
-(function(Math) {
-
-var trimLeft = /^\s+/,
-    trimRight = /\s+$/,
-    tinyCounter = 0,
-    mathRound = Math.round,
-    mathMin = Math.min,
-    mathMax = Math.max,
-    mathRandom = Math.random;
-
-function tinycolor (color, opts) {
-
-    color = (color) ? color : '';
-    opts = opts || { };
-
-    // If input is already a tinycolor, return itself
-    if (color instanceof tinycolor) {
-       return color;
-    }
-    // If we are called as a function, call using new instead
-    if (!(this instanceof tinycolor)) {
-        return new tinycolor(color, opts);
-    }
-
-    var rgb = inputToRGB(color);
-    this._originalInput = color,
-    this._r = rgb.r,
-    this._g = rgb.g,
-    this._b = rgb.b,
-    this._a = rgb.a,
-    this._roundA = mathRound(100*this._a) / 100,
-    this._format = opts.format || rgb.format;
-    this._gradientType = opts.gradientType;
-
-    // Don't let the range of [0,255] come back in [0,1].
-    // Potentially lose a little bit of precision here, but will fix issues where
-    // .5 gets interpreted as half of the total, instead of half of 1
-    // If it was supposed to be 128, this was already taken care of by `inputToRgb`
-    if (this._r < 1) { this._r = mathRound(this._r); }
-    if (this._g < 1) { this._g = mathRound(this._g); }
-    if (this._b < 1) { this._b = mathRound(this._b); }
-
-    this._ok = rgb.ok;
-    this._tc_id = tinyCounter++;
-}
-
-tinycolor.prototype = {
-    isDark: function() {
-        return this.getBrightness() < 128;
-    },
-    isLight: function() {
-        return !this.isDark();
-    },
-    isValid: function() {
-        return this._ok;
-    },
-    getOriginalInput: function() {
-      return this._originalInput;
-    },
-    getFormat: function() {
-        return this._format;
-    },
-    getAlpha: function() {
-        return this._a;
-    },
-    getBrightness: function() {
-        //http://www.w3.org/TR/AERT#color-contrast
-        var rgb = this.toRgb();
-        return (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
-    },
-    getLuminance: function() {
-        //http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
-        var rgb = this.toRgb();
-        var RsRGB, GsRGB, BsRGB, R, G, B;
-        RsRGB = rgb.r/255;
-        GsRGB = rgb.g/255;
-        BsRGB = rgb.b/255;
-
-        if (RsRGB <= 0.03928) {R = RsRGB / 12.92;} else {R = Math.pow(((RsRGB + 0.055) / 1.055), 2.4);}
-        if (GsRGB <= 0.03928) {G = GsRGB / 12.92;} else {G = Math.pow(((GsRGB + 0.055) / 1.055), 2.4);}
-        if (BsRGB <= 0.03928) {B = BsRGB / 12.92;} else {B = Math.pow(((BsRGB + 0.055) / 1.055), 2.4);}
-        return (0.2126 * R) + (0.7152 * G) + (0.0722 * B);
-    },
-    setAlpha: function(value) {
-        this._a = boundAlpha(value);
-        this._roundA = mathRound(100*this._a) / 100;
-        return this;
-    },
-    toHsv: function() {
-        var hsv = rgbToHsv(this._r, this._g, this._b);
-        return { h: hsv.h * 360, s: hsv.s, v: hsv.v, a: this._a };
-    },
-    toHsvString: function() {
-        var hsv = rgbToHsv(this._r, this._g, this._b);
-        var h = mathRound(hsv.h * 360), s = mathRound(hsv.s * 100), v = mathRound(hsv.v * 100);
-        return (this._a == 1) ?
-          "hsv("  + h + ", " + s + "%, " + v + "%)" :
-          "hsva(" + h + ", " + s + "%, " + v + "%, "+ this._roundA + ")";
-    },
-    toHsl: function() {
-        var hsl = rgbToHsl(this._r, this._g, this._b);
-        return { h: hsl.h * 360, s: hsl.s, l: hsl.l, a: this._a };
-    },
-    toHslString: function() {
-        var hsl = rgbToHsl(this._r, this._g, this._b);
-        var h = mathRound(hsl.h * 360), s = mathRound(hsl.s * 100), l = mathRound(hsl.l * 100);
-        return (this._a == 1) ?
-          "hsl("  + h + ", " + s + "%, " + l + "%)" :
-          "hsla(" + h + ", " + s + "%, " + l + "%, "+ this._roundA + ")";
-    },
-    toHex: function(allow3Char) {
-        return rgbToHex(this._r, this._g, this._b, allow3Char);
-    },
-    toHexString: function(allow3Char) {
-        return '#' + this.toHex(allow3Char);
-    },
-    toHex8: function(allow4Char) {
-        return rgbaToHex(this._r, this._g, this._b, this._a, allow4Char);
-    },
-    toHex8String: function(allow4Char) {
-        return '#' + this.toHex8(allow4Char);
-    },
-    toRgb: function() {
-        return { r: mathRound(this._r), g: mathRound(this._g), b: mathRound(this._b), a: this._a };
-    },
-    toRgbString: function() {
-        return (this._a == 1) ?
-          "rgb("  + mathRound(this._r) + ", " + mathRound(this._g) + ", " + mathRound(this._b) + ")" :
-          "rgba(" + mathRound(this._r) + ", " + mathRound(this._g) + ", " + mathRound(this._b) + ", " + this._roundA + ")";
-    },
-    toPercentageRgb: function() {
-        return { r: mathRound(bound01(this._r, 255) * 100) + "%", g: mathRound(bound01(this._g, 255) * 100) + "%", b: mathRound(bound01(this._b, 255) * 100) + "%", a: this._a };
-    },
-    toPercentageRgbString: function() {
-        return (this._a == 1) ?
-          "rgb("  + mathRound(bound01(this._r, 255) * 100) + "%, " + mathRound(bound01(this._g, 255) * 100) + "%, " + mathRound(bound01(this._b, 255) * 100) + "%)" :
-          "rgba(" + mathRound(bound01(this._r, 255) * 100) + "%, " + mathRound(bound01(this._g, 255) * 100) + "%, " + mathRound(bound01(this._b, 255) * 100) + "%, " + this._roundA + ")";
-    },
-    toName: function() {
-        if (this._a === 0) {
-            return "transparent";
-        }
-
-        if (this._a < 1) {
-            return false;
-        }
-
-        return hexNames[rgbToHex(this._r, this._g, this._b, true)] || false;
-    },
-    toFilter: function(secondColor) {
-        var hex8String = '#' + rgbaToArgbHex(this._r, this._g, this._b, this._a);
-        var secondHex8String = hex8String;
-        var gradientType = this._gradientType ? "GradientType = 1, " : "";
-
-        if (secondColor) {
-            var s = tinycolor(secondColor);
-            secondHex8String = '#' + rgbaToArgbHex(s._r, s._g, s._b, s._a);
-        }
-
-        return "progid:DXImageTransform.Microsoft.gradient("+gradientType+"startColorstr="+hex8String+",endColorstr="+secondHex8String+")";
-    },
-    toString: function(format) {
-        var formatSet = !!format;
-        format = format || this._format;
-
-        var formattedString = false;
-        var hasAlpha = this._a < 1 && this._a >= 0;
-        var needsAlphaFormat = !formatSet && hasAlpha && (format === "hex" || format === "hex6" || format === "hex3" || format === "hex4" || format === "hex8" || format === "name");
-
-        if (needsAlphaFormat) {
-            // Special case for "transparent", all other non-alpha formats
-            // will return rgba when there is transparency.
-            if (format === "name" && this._a === 0) {
-                return this.toName();
-            }
-            return this.toRgbString();
-        }
-        if (format === "rgb") {
-            formattedString = this.toRgbString();
-        }
-        if (format === "prgb") {
-            formattedString = this.toPercentageRgbString();
-        }
-        if (format === "hex" || format === "hex6") {
-            formattedString = this.toHexString();
-        }
-        if (format === "hex3") {
-            formattedString = this.toHexString(true);
-        }
-        if (format === "hex4") {
-            formattedString = this.toHex8String(true);
-        }
-        if (format === "hex8") {
-            formattedString = this.toHex8String();
-        }
-        if (format === "name") {
-            formattedString = this.toName();
-        }
-        if (format === "hsl") {
-            formattedString = this.toHslString();
-        }
-        if (format === "hsv") {
-            formattedString = this.toHsvString();
-        }
-
-        return formattedString || this.toHexString();
-    },
-    clone: function() {
-        return tinycolor(this.toString());
-    },
-
-    _applyModification: function(fn, args) {
-        var color = fn.apply(null, [this].concat([].slice.call(args)));
-        this._r = color._r;
-        this._g = color._g;
-        this._b = color._b;
-        this.setAlpha(color._a);
-        return this;
-    },
-    lighten: function() {
-        return this._applyModification(lighten, arguments);
-    },
-    brighten: function() {
-        return this._applyModification(brighten, arguments);
-    },
-    darken: function() {
-        return this._applyModification(darken, arguments);
-    },
-    desaturate: function() {
-        return this._applyModification(desaturate, arguments);
-    },
-    saturate: function() {
-        return this._applyModification(saturate, arguments);
-    },
-    greyscale: function() {
-        return this._applyModification(greyscale, arguments);
-    },
-    spin: function() {
-        return this._applyModification(spin, arguments);
-    },
-
-    _applyCombination: function(fn, args) {
-        return fn.apply(null, [this].concat([].slice.call(args)));
-    },
-    analogous: function() {
-        return this._applyCombination(analogous, arguments);
-    },
-    complement: function() {
-        return this._applyCombination(complement, arguments);
-    },
-    monochromatic: function() {
-        return this._applyCombination(monochromatic, arguments);
-    },
-    splitcomplement: function() {
-        return this._applyCombination(splitcomplement, arguments);
-    },
-    triad: function() {
-        return this._applyCombination(triad, arguments);
-    },
-    tetrad: function() {
-        return this._applyCombination(tetrad, arguments);
-    }
-};
-
-// If input is an object, force 1 into "1.0" to handle ratios properly
-// String input requires "1.0" as input, so 1 will be treated as 1
-tinycolor.fromRatio = function(color, opts) {
-    if (typeof color == "object") {
-        var newColor = {};
-        for (var i in color) {
-            if (color.hasOwnProperty(i)) {
-                if (i === "a") {
-                    newColor[i] = color[i];
-                }
-                else {
-                    newColor[i] = convertToPercentage(color[i]);
-                }
-            }
-        }
-        color = newColor;
-    }
-
-    return tinycolor(color, opts);
-};
-
-// Given a string or object, convert that input to RGB
-// Possible string inputs:
-//
-//     "red"
-//     "#f00" or "f00"
-//     "#ff0000" or "ff0000"
-//     "#ff000000" or "ff000000"
-//     "rgb 255 0 0" or "rgb (255, 0, 0)"
-//     "rgb 1.0 0 0" or "rgb (1, 0, 0)"
-//     "rgba (255, 0, 0, 1)" or "rgba 255, 0, 0, 1"
-//     "rgba (1.0, 0, 0, 1)" or "rgba 1.0, 0, 0, 1"
-//     "hsl(0, 100%, 50%)" or "hsl 0 100% 50%"
-//     "hsla(0, 100%, 50%, 1)" or "hsla 0 100% 50%, 1"
-//     "hsv(0, 100%, 100%)" or "hsv 0 100% 100%"
-//
-function inputToRGB(color) {
-
-    var rgb = { r: 0, g: 0, b: 0 };
-    var a = 1;
-    var s = null;
-    var v = null;
-    var l = null;
-    var ok = false;
-    var format = false;
-
-    if (typeof color == "string") {
-        color = stringInputToObject(color);
-    }
-
-    if (typeof color == "object") {
-        if (isValidCSSUnit(color.r) && isValidCSSUnit(color.g) && isValidCSSUnit(color.b)) {
-            rgb = rgbToRgb(color.r, color.g, color.b);
-            ok = true;
-            format = String(color.r).substr(-1) === "%" ? "prgb" : "rgb";
-        }
-        else if (isValidCSSUnit(color.h) && isValidCSSUnit(color.s) && isValidCSSUnit(color.v)) {
-            s = convertToPercentage(color.s);
-            v = convertToPercentage(color.v);
-            rgb = hsvToRgb(color.h, s, v);
-            ok = true;
-            format = "hsv";
-        }
-        else if (isValidCSSUnit(color.h) && isValidCSSUnit(color.s) && isValidCSSUnit(color.l)) {
-            s = convertToPercentage(color.s);
-            l = convertToPercentage(color.l);
-            rgb = hslToRgb(color.h, s, l);
-            ok = true;
-            format = "hsl";
-        }
-
-        if (color.hasOwnProperty("a")) {
-            a = color.a;
-        }
-    }
-
-    a = boundAlpha(a);
-
-    return {
-        ok: ok,
-        format: color.format || format,
-        r: mathMin(255, mathMax(rgb.r, 0)),
-        g: mathMin(255, mathMax(rgb.g, 0)),
-        b: mathMin(255, mathMax(rgb.b, 0)),
-        a: a
-    };
-}
-
-
-// Conversion Functions
-// --------------------
-
-// `rgbToHsl`, `rgbToHsv`, `hslToRgb`, `hsvToRgb` modified from:
-// <http://mjijackson.com/2008/02/rgb-to-hsl-and-rgb-to-hsv-color-model-conversion-algorithms-in-javascript>
-
-// `rgbToRgb`
-// Handle bounds / percentage checking to conform to CSS color spec
-// <http://www.w3.org/TR/css3-color/>
-// *Assumes:* r, g, b in [0, 255] or [0, 1]
-// *Returns:* { r, g, b } in [0, 255]
-function rgbToRgb(r, g, b){
-    return {
-        r: bound01(r, 255) * 255,
-        g: bound01(g, 255) * 255,
-        b: bound01(b, 255) * 255
-    };
-}
-
-// `rgbToHsl`
-// Converts an RGB color value to HSL.
-// *Assumes:* r, g, and b are contained in [0, 255] or [0, 1]
-// *Returns:* { h, s, l } in [0,1]
-function rgbToHsl(r, g, b) {
-
-    r = bound01(r, 255);
-    g = bound01(g, 255);
-    b = bound01(b, 255);
-
-    var max = mathMax(r, g, b), min = mathMin(r, g, b);
-    var h, s, l = (max + min) / 2;
-
-    if(max == min) {
-        h = s = 0; // achromatic
-    }
-    else {
-        var d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch(max) {
-            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g: h = (b - r) / d + 2; break;
-            case b: h = (r - g) / d + 4; break;
-        }
-
-        h /= 6;
-    }
-
-    return { h: h, s: s, l: l };
-}
-
-// `hslToRgb`
-// Converts an HSL color value to RGB.
-// *Assumes:* h is contained in [0, 1] or [0, 360] and s and l are contained [0, 1] or [0, 100]
-// *Returns:* { r, g, b } in the set [0, 255]
-function hslToRgb(h, s, l) {
-    var r, g, b;
-
-    h = bound01(h, 360);
-    s = bound01(s, 100);
-    l = bound01(l, 100);
-
-    function hue2rgb(p, q, t) {
-        if(t < 0) t += 1;
-        if(t > 1) t -= 1;
-        if(t < 1/6) return p + (q - p) * 6 * t;
-        if(t < 1/2) return q;
-        if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-        return p;
-    }
-
-    if(s === 0) {
-        r = g = b = l; // achromatic
-    }
-    else {
-        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        var p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1/3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1/3);
-    }
-
-    return { r: r * 255, g: g * 255, b: b * 255 };
-}
-
-// `rgbToHsv`
-// Converts an RGB color value to HSV
-// *Assumes:* r, g, and b are contained in the set [0, 255] or [0, 1]
-// *Returns:* { h, s, v } in [0,1]
-function rgbToHsv(r, g, b) {
-
-    r = bound01(r, 255);
-    g = bound01(g, 255);
-    b = bound01(b, 255);
-
-    var max = mathMax(r, g, b), min = mathMin(r, g, b);
-    var h, s, v = max;
-
-    var d = max - min;
-    s = max === 0 ? 0 : d / max;
-
-    if(max == min) {
-        h = 0; // achromatic
-    }
-    else {
-        switch(max) {
-            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g: h = (b - r) / d + 2; break;
-            case b: h = (r - g) / d + 4; break;
-        }
-        h /= 6;
-    }
-    return { h: h, s: s, v: v };
-}
-
-// `hsvToRgb`
-// Converts an HSV color value to RGB.
-// *Assumes:* h is contained in [0, 1] or [0, 360] and s and v are contained in [0, 1] or [0, 100]
-// *Returns:* { r, g, b } in the set [0, 255]
- function hsvToRgb(h, s, v) {
-
-    h = bound01(h, 360) * 6;
-    s = bound01(s, 100);
-    v = bound01(v, 100);
-
-    var i = Math.floor(h),
-        f = h - i,
-        p = v * (1 - s),
-        q = v * (1 - f * s),
-        t = v * (1 - (1 - f) * s),
-        mod = i % 6,
-        r = [v, q, p, p, t, v][mod],
-        g = [t, v, v, q, p, p][mod],
-        b = [p, p, t, v, v, q][mod];
-
-    return { r: r * 255, g: g * 255, b: b * 255 };
-}
-
-// `rgbToHex`
-// Converts an RGB color to hex
-// Assumes r, g, and b are contained in the set [0, 255]
-// Returns a 3 or 6 character hex
-function rgbToHex(r, g, b, allow3Char) {
-
-    var hex = [
-        pad2(mathRound(r).toString(16)),
-        pad2(mathRound(g).toString(16)),
-        pad2(mathRound(b).toString(16))
-    ];
-
-    // Return a 3 character hex if possible
-    if (allow3Char && hex[0].charAt(0) == hex[0].charAt(1) && hex[1].charAt(0) == hex[1].charAt(1) && hex[2].charAt(0) == hex[2].charAt(1)) {
-        return hex[0].charAt(0) + hex[1].charAt(0) + hex[2].charAt(0);
-    }
-
-    return hex.join("");
-}
-
-// `rgbaToHex`
-// Converts an RGBA color plus alpha transparency to hex
-// Assumes r, g, b are contained in the set [0, 255] and
-// a in [0, 1]. Returns a 4 or 8 character rgba hex
-function rgbaToHex(r, g, b, a, allow4Char) {
-
-    var hex = [
-        pad2(mathRound(r).toString(16)),
-        pad2(mathRound(g).toString(16)),
-        pad2(mathRound(b).toString(16)),
-        pad2(convertDecimalToHex(a))
-    ];
-
-    // Return a 4 character hex if possible
-    if (allow4Char && hex[0].charAt(0) == hex[0].charAt(1) && hex[1].charAt(0) == hex[1].charAt(1) && hex[2].charAt(0) == hex[2].charAt(1) && hex[3].charAt(0) == hex[3].charAt(1)) {
-        return hex[0].charAt(0) + hex[1].charAt(0) + hex[2].charAt(0) + hex[3].charAt(0);
-    }
-
-    return hex.join("");
-}
-
-// `rgbaToArgbHex`
-// Converts an RGBA color to an ARGB Hex8 string
-// Rarely used, but required for "toFilter()"
-function rgbaToArgbHex(r, g, b, a) {
-
-    var hex = [
-        pad2(convertDecimalToHex(a)),
-        pad2(mathRound(r).toString(16)),
-        pad2(mathRound(g).toString(16)),
-        pad2(mathRound(b).toString(16))
-    ];
-
-    return hex.join("");
-}
-
-// `equals`
-// Can be called with any tinycolor input
-tinycolor.equals = function (color1, color2) {
-    if (!color1 || !color2) { return false; }
-    return tinycolor(color1).toRgbString() == tinycolor(color2).toRgbString();
-};
-
-tinycolor.random = function() {
-    return tinycolor.fromRatio({
-        r: mathRandom(),
-        g: mathRandom(),
-        b: mathRandom()
-    });
-};
-
-
-// Modification Functions
-// ----------------------
-// Thanks to less.js for some of the basics here
-// <https://github.com/cloudhead/less.js/blob/master/lib/less/functions.js>
-
-function desaturate(color, amount) {
-    amount = (amount === 0) ? 0 : (amount || 10);
-    var hsl = tinycolor(color).toHsl();
-    hsl.s -= amount / 100;
-    hsl.s = clamp01(hsl.s);
-    return tinycolor(hsl);
-}
-
-function saturate(color, amount) {
-    amount = (amount === 0) ? 0 : (amount || 10);
-    var hsl = tinycolor(color).toHsl();
-    hsl.s += amount / 100;
-    hsl.s = clamp01(hsl.s);
-    return tinycolor(hsl);
-}
-
-function greyscale(color) {
-    return tinycolor(color).desaturate(100);
-}
-
-function lighten (color, amount) {
-    amount = (amount === 0) ? 0 : (amount || 10);
-    var hsl = tinycolor(color).toHsl();
-    hsl.l += amount / 100;
-    hsl.l = clamp01(hsl.l);
-    return tinycolor(hsl);
-}
-
-function brighten(color, amount) {
-    amount = (amount === 0) ? 0 : (amount || 10);
-    var rgb = tinycolor(color).toRgb();
-    rgb.r = mathMax(0, mathMin(255, rgb.r - mathRound(255 * - (amount / 100))));
-    rgb.g = mathMax(0, mathMin(255, rgb.g - mathRound(255 * - (amount / 100))));
-    rgb.b = mathMax(0, mathMin(255, rgb.b - mathRound(255 * - (amount / 100))));
-    return tinycolor(rgb);
-}
-
-function darken (color, amount) {
-    amount = (amount === 0) ? 0 : (amount || 10);
-    var hsl = tinycolor(color).toHsl();
-    hsl.l -= amount / 100;
-    hsl.l = clamp01(hsl.l);
-    return tinycolor(hsl);
-}
-
-// Spin takes a positive or negative amount within [-360, 360] indicating the change of hue.
-// Values outside of this range will be wrapped into this range.
-function spin(color, amount) {
-    var hsl = tinycolor(color).toHsl();
-    var hue = (hsl.h + amount) % 360;
-    hsl.h = hue < 0 ? 360 + hue : hue;
-    return tinycolor(hsl);
-}
-
-// Combination Functions
-// ---------------------
-// Thanks to jQuery xColor for some of the ideas behind these
-// <https://github.com/infusion/jQuery-xcolor/blob/master/jquery.xcolor.js>
-
-function complement(color) {
-    var hsl = tinycolor(color).toHsl();
-    hsl.h = (hsl.h + 180) % 360;
-    return tinycolor(hsl);
-}
-
-function triad(color) {
-    var hsl = tinycolor(color).toHsl();
-    var h = hsl.h;
-    return [
-        tinycolor(color),
-        tinycolor({ h: (h + 120) % 360, s: hsl.s, l: hsl.l }),
-        tinycolor({ h: (h + 240) % 360, s: hsl.s, l: hsl.l })
-    ];
-}
-
-function tetrad(color) {
-    var hsl = tinycolor(color).toHsl();
-    var h = hsl.h;
-    return [
-        tinycolor(color),
-        tinycolor({ h: (h + 90) % 360, s: hsl.s, l: hsl.l }),
-        tinycolor({ h: (h + 180) % 360, s: hsl.s, l: hsl.l }),
-        tinycolor({ h: (h + 270) % 360, s: hsl.s, l: hsl.l })
-    ];
-}
-
-function splitcomplement(color) {
-    var hsl = tinycolor(color).toHsl();
-    var h = hsl.h;
-    return [
-        tinycolor(color),
-        tinycolor({ h: (h + 72) % 360, s: hsl.s, l: hsl.l}),
-        tinycolor({ h: (h + 216) % 360, s: hsl.s, l: hsl.l})
-    ];
-}
-
-function analogous(color, results, slices) {
-    results = results || 6;
-    slices = slices || 30;
-
-    var hsl = tinycolor(color).toHsl();
-    var part = 360 / slices;
-    var ret = [tinycolor(color)];
-
-    for (hsl.h = ((hsl.h - (part * results >> 1)) + 720) % 360; --results; ) {
-        hsl.h = (hsl.h + part) % 360;
-        ret.push(tinycolor(hsl));
-    }
-    return ret;
-}
-
-function monochromatic(color, results) {
-    results = results || 6;
-    var hsv = tinycolor(color).toHsv();
-    var h = hsv.h, s = hsv.s, v = hsv.v;
-    var ret = [];
-    var modification = 1 / results;
-
-    while (results--) {
-        ret.push(tinycolor({ h: h, s: s, v: v}));
-        v = (v + modification) % 1;
-    }
-
-    return ret;
-}
-
-// Utility Functions
-// ---------------------
-
-tinycolor.mix = function(color1, color2, amount) {
-    amount = (amount === 0) ? 0 : (amount || 50);
-
-    var rgb1 = tinycolor(color1).toRgb();
-    var rgb2 = tinycolor(color2).toRgb();
-
-    var p = amount / 100;
-
-    var rgba = {
-        r: ((rgb2.r - rgb1.r) * p) + rgb1.r,
-        g: ((rgb2.g - rgb1.g) * p) + rgb1.g,
-        b: ((rgb2.b - rgb1.b) * p) + rgb1.b,
-        a: ((rgb2.a - rgb1.a) * p) + rgb1.a
-    };
-
-    return tinycolor(rgba);
-};
-
-
-// Readability Functions
-// ---------------------
-// <http://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef (WCAG Version 2)
-
-// `contrast`
-// Analyze the 2 colors and returns the color contrast defined by (WCAG Version 2)
-tinycolor.readability = function(color1, color2) {
-    var c1 = tinycolor(color1);
-    var c2 = tinycolor(color2);
-    return (Math.max(c1.getLuminance(),c2.getLuminance())+0.05) / (Math.min(c1.getLuminance(),c2.getLuminance())+0.05);
-};
-
-// `isReadable`
-// Ensure that foreground and background color combinations meet WCAG2 guidelines.
-// The third argument is an optional Object.
-//      the 'level' property states 'AA' or 'AAA' - if missing or invalid, it defaults to 'AA';
-//      the 'size' property states 'large' or 'small' - if missing or invalid, it defaults to 'small'.
-// If the entire object is absent, isReadable defaults to {level:"AA",size:"small"}.
-
-// *Example*
-//    tinycolor.isReadable("#000", "#111") => false
-//    tinycolor.isReadable("#000", "#111",{level:"AA",size:"large"}) => false
-tinycolor.isReadable = function(color1, color2, wcag2) {
-    var readability = tinycolor.readability(color1, color2);
-    var wcag2Parms, out;
-
-    out = false;
-
-    wcag2Parms = validateWCAG2Parms(wcag2);
-    switch (wcag2Parms.level + wcag2Parms.size) {
-        case "AAsmall":
-        case "AAAlarge":
-            out = readability >= 4.5;
-            break;
-        case "AAlarge":
-            out = readability >= 3;
-            break;
-        case "AAAsmall":
-            out = readability >= 7;
-            break;
-    }
-    return out;
-
-};
-
-// `mostReadable`
-// Given a base color and a list of possible foreground or background
-// colors for that base, returns the most readable color.
-// Optionally returns Black or White if the most readable color is unreadable.
-// *Example*
-//    tinycolor.mostReadable(tinycolor.mostReadable("#123", ["#124", "#125"],{includeFallbackColors:false}).toHexString(); // "#112255"
-//    tinycolor.mostReadable(tinycolor.mostReadable("#123", ["#124", "#125"],{includeFallbackColors:true}).toHexString();  // "#ffffff"
-//    tinycolor.mostReadable("#a8015a", ["#faf3f3"],{includeFallbackColors:true,level:"AAA",size:"large"}).toHexString(); // "#faf3f3"
-//    tinycolor.mostReadable("#a8015a", ["#faf3f3"],{includeFallbackColors:true,level:"AAA",size:"small"}).toHexString(); // "#ffffff"
-tinycolor.mostReadable = function(baseColor, colorList, args) {
-    var bestColor = null;
-    var bestScore = 0;
-    var readability;
-    var includeFallbackColors, level, size;
-    args = args || {};
-    includeFallbackColors = args.includeFallbackColors ;
-    level = args.level;
-    size = args.size;
-
-    for (var i= 0; i < colorList.length ; i++) {
-        readability = tinycolor.readability(baseColor, colorList[i]);
-        if (readability > bestScore) {
-            bestScore = readability;
-            bestColor = tinycolor(colorList[i]);
-        }
-    }
-
-    if (tinycolor.isReadable(baseColor, bestColor, {"level":level,"size":size}) || !includeFallbackColors) {
-        return bestColor;
-    }
-    else {
-        args.includeFallbackColors=false;
-        return tinycolor.mostReadable(baseColor,["#fff", "#000"],args);
-    }
-};
-
-
-// Big List of Colors
-// ------------------
-// <http://www.w3.org/TR/css3-color/#svg-color>
-var names = tinycolor.names = {
-    aliceblue: "f0f8ff",
-    antiquewhite: "faebd7",
-    aqua: "0ff",
-    aquamarine: "7fffd4",
-    azure: "f0ffff",
-    beige: "f5f5dc",
-    bisque: "ffe4c4",
-    black: "000",
-    blanchedalmond: "ffebcd",
-    blue: "00f",
-    blueviolet: "8a2be2",
-    brown: "a52a2a",
-    burlywood: "deb887",
-    burntsienna: "ea7e5d",
-    cadetblue: "5f9ea0",
-    chartreuse: "7fff00",
-    chocolate: "d2691e",
-    coral: "ff7f50",
-    cornflowerblue: "6495ed",
-    cornsilk: "fff8dc",
-    crimson: "dc143c",
-    cyan: "0ff",
-    darkblue: "00008b",
-    darkcyan: "008b8b",
-    darkgoldenrod: "b8860b",
-    darkgray: "a9a9a9",
-    darkgreen: "006400",
-    darkgrey: "a9a9a9",
-    darkkhaki: "bdb76b",
-    darkmagenta: "8b008b",
-    darkolivegreen: "556b2f",
-    darkorange: "ff8c00",
-    darkorchid: "9932cc",
-    darkred: "8b0000",
-    darksalmon: "e9967a",
-    darkseagreen: "8fbc8f",
-    darkslateblue: "483d8b",
-    darkslategray: "2f4f4f",
-    darkslategrey: "2f4f4f",
-    darkturquoise: "00ced1",
-    darkviolet: "9400d3",
-    deeppink: "ff1493",
-    deepskyblue: "00bfff",
-    dimgray: "696969",
-    dimgrey: "696969",
-    dodgerblue: "1e90ff",
-    firebrick: "b22222",
-    floralwhite: "fffaf0",
-    forestgreen: "228b22",
-    fuchsia: "f0f",
-    gainsboro: "dcdcdc",
-    ghostwhite: "f8f8ff",
-    gold: "ffd700",
-    goldenrod: "daa520",
-    gray: "808080",
-    green: "008000",
-    greenyellow: "adff2f",
-    grey: "808080",
-    honeydew: "f0fff0",
-    hotpink: "ff69b4",
-    indianred: "cd5c5c",
-    indigo: "4b0082",
-    ivory: "fffff0",
-    khaki: "f0e68c",
-    lavender: "e6e6fa",
-    lavenderblush: "fff0f5",
-    lawngreen: "7cfc00",
-    lemonchiffon: "fffacd",
-    lightblue: "add8e6",
-    lightcoral: "f08080",
-    lightcyan: "e0ffff",
-    lightgoldenrodyellow: "fafad2",
-    lightgray: "d3d3d3",
-    lightgreen: "90ee90",
-    lightgrey: "d3d3d3",
-    lightpink: "ffb6c1",
-    lightsalmon: "ffa07a",
-    lightseagreen: "20b2aa",
-    lightskyblue: "87cefa",
-    lightslategray: "789",
-    lightslategrey: "789",
-    lightsteelblue: "b0c4de",
-    lightyellow: "ffffe0",
-    lime: "0f0",
-    limegreen: "32cd32",
-    linen: "faf0e6",
-    magenta: "f0f",
-    maroon: "800000",
-    mediumaquamarine: "66cdaa",
-    mediumblue: "0000cd",
-    mediumorchid: "ba55d3",
-    mediumpurple: "9370db",
-    mediumseagreen: "3cb371",
-    mediumslateblue: "7b68ee",
-    mediumspringgreen: "00fa9a",
-    mediumturquoise: "48d1cc",
-    mediumvioletred: "c71585",
-    midnightblue: "191970",
-    mintcream: "f5fffa",
-    mistyrose: "ffe4e1",
-    moccasin: "ffe4b5",
-    navajowhite: "ffdead",
-    navy: "000080",
-    oldlace: "fdf5e6",
-    olive: "808000",
-    olivedrab: "6b8e23",
-    orange: "ffa500",
-    orangered: "ff4500",
-    orchid: "da70d6",
-    palegoldenrod: "eee8aa",
-    palegreen: "98fb98",
-    paleturquoise: "afeeee",
-    palevioletred: "db7093",
-    papayawhip: "ffefd5",
-    peachpuff: "ffdab9",
-    peru: "cd853f",
-    pink: "ffc0cb",
-    plum: "dda0dd",
-    powderblue: "b0e0e6",
-    purple: "800080",
-    rebeccapurple: "663399",
-    red: "f00",
-    rosybrown: "bc8f8f",
-    royalblue: "4169e1",
-    saddlebrown: "8b4513",
-    salmon: "fa8072",
-    sandybrown: "f4a460",
-    seagreen: "2e8b57",
-    seashell: "fff5ee",
-    sienna: "a0522d",
-    silver: "c0c0c0",
-    skyblue: "87ceeb",
-    slateblue: "6a5acd",
-    slategray: "708090",
-    slategrey: "708090",
-    snow: "fffafa",
-    springgreen: "00ff7f",
-    steelblue: "4682b4",
-    tan: "d2b48c",
-    teal: "008080",
-    thistle: "d8bfd8",
-    tomato: "ff6347",
-    turquoise: "40e0d0",
-    violet: "ee82ee",
-    wheat: "f5deb3",
-    white: "fff",
-    whitesmoke: "f5f5f5",
-    yellow: "ff0",
-    yellowgreen: "9acd32"
-};
-
-// Make it easy to access colors via `hexNames[hex]`
-var hexNames = tinycolor.hexNames = flip(names);
-
-
-// Utilities
-// ---------
-
-// `{ 'name1': 'val1' }` becomes `{ 'val1': 'name1' }`
-function flip(o) {
-    var flipped = { };
-    for (var i in o) {
-        if (o.hasOwnProperty(i)) {
-            flipped[o[i]] = i;
-        }
-    }
-    return flipped;
-}
-
-// Return a valid alpha value [0,1] with all invalid values being set to 1
-function boundAlpha(a) {
-    a = parseFloat(a);
-
-    if (isNaN(a) || a < 0 || a > 1) {
-        a = 1;
-    }
-
-    return a;
-}
-
-// Take input from [0, n] and return it as [0, 1]
-function bound01(n, max) {
-    if (isOnePointZero(n)) { n = "100%"; }
-
-    var processPercent = isPercentage(n);
-    n = mathMin(max, mathMax(0, parseFloat(n)));
-
-    // Automatically convert percentage into number
-    if (processPercent) {
-        n = parseInt(n * max, 10) / 100;
-    }
-
-    // Handle floating point rounding errors
-    if ((Math.abs(n - max) < 0.000001)) {
-        return 1;
-    }
-
-    // Convert into [0, 1] range if it isn't already
-    return (n % max) / parseFloat(max);
-}
-
-// Force a number between 0 and 1
-function clamp01(val) {
-    return mathMin(1, mathMax(0, val));
-}
-
-// Parse a base-16 hex value into a base-10 integer
-function parseIntFromHex(val) {
-    return parseInt(val, 16);
-}
-
-// Need to handle 1.0 as 100%, since once it is a number, there is no difference between it and 1
-// <http://stackoverflow.com/questions/7422072/javascript-how-to-detect-number-as-a-decimal-including-1-0>
-function isOnePointZero(n) {
-    return typeof n == "string" && n.indexOf('.') != -1 && parseFloat(n) === 1;
-}
-
-// Check to see if string passed in is a percentage
-function isPercentage(n) {
-    return typeof n === "string" && n.indexOf('%') != -1;
-}
-
-// Force a hex value to have 2 characters
-function pad2(c) {
-    return c.length == 1 ? '0' + c : '' + c;
-}
-
-// Replace a decimal with it's percentage value
-function convertToPercentage(n) {
-    if (n <= 1) {
-        n = (n * 100) + "%";
-    }
-
-    return n;
-}
-
-// Converts a decimal to a hex value
-function convertDecimalToHex(d) {
-    return Math.round(parseFloat(d) * 255).toString(16);
-}
-// Converts a hex value to a decimal
-function convertHexToDecimal(h) {
-    return (parseIntFromHex(h) / 255);
-}
-
-var matchers = (function() {
-
-    // <http://www.w3.org/TR/css3-values/#integers>
-    var CSS_INTEGER = "[-\\+]?\\d+%?";
-
-    // <http://www.w3.org/TR/css3-values/#number-value>
-    var CSS_NUMBER = "[-\\+]?\\d*\\.\\d+%?";
-
-    // Allow positive/negative integer/number.  Don't capture the either/or, just the entire outcome.
-    var CSS_UNIT = "(?:" + CSS_NUMBER + ")|(?:" + CSS_INTEGER + ")";
-
-    // Actual matching.
-    // Parentheses and commas are optional, but not required.
-    // Whitespace can take the place of commas or opening paren
-    var PERMISSIVE_MATCH3 = "[\\s|\\(]+(" + CSS_UNIT + ")[,|\\s]+(" + CSS_UNIT + ")[,|\\s]+(" + CSS_UNIT + ")\\s*\\)?";
-    var PERMISSIVE_MATCH4 = "[\\s|\\(]+(" + CSS_UNIT + ")[,|\\s]+(" + CSS_UNIT + ")[,|\\s]+(" + CSS_UNIT + ")[,|\\s]+(" + CSS_UNIT + ")\\s*\\)?";
-
-    return {
-        CSS_UNIT: new RegExp(CSS_UNIT),
-        rgb: new RegExp("rgb" + PERMISSIVE_MATCH3),
-        rgba: new RegExp("rgba" + PERMISSIVE_MATCH4),
-        hsl: new RegExp("hsl" + PERMISSIVE_MATCH3),
-        hsla: new RegExp("hsla" + PERMISSIVE_MATCH4),
-        hsv: new RegExp("hsv" + PERMISSIVE_MATCH3),
-        hsva: new RegExp("hsva" + PERMISSIVE_MATCH4),
-        hex3: /^#?([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})$/,
-        hex6: /^#?([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/,
-        hex4: /^#?([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})([0-9a-fA-F]{1})$/,
-        hex8: /^#?([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})$/
-    };
-})();
-
-// `isValidCSSUnit`
-// Take in a single string / number and check to see if it looks like a CSS unit
-// (see `matchers` above for definition).
-function isValidCSSUnit(color) {
-    return !!matchers.CSS_UNIT.exec(color);
-}
-
-// `stringInputToObject`
-// Permissive string parsing.  Take in a number of formats, and output an object
-// based on detected format.  Returns `{ r, g, b }` or `{ h, s, l }` or `{ h, s, v}`
-function stringInputToObject(color) {
-
-    color = color.replace(trimLeft,'').replace(trimRight, '').toLowerCase();
-    var named = false;
-    if (names[color]) {
-        color = names[color];
-        named = true;
-    }
-    else if (color == 'transparent') {
-        return { r: 0, g: 0, b: 0, a: 0, format: "name" };
-    }
-
-    // Try to match string input using regular expressions.
-    // Keep most of the number bounding out of this function - don't worry about [0,1] or [0,100] or [0,360]
-    // Just return an object and let the conversion functions handle that.
-    // This way the result will be the same whether the tinycolor is initialized with string or object.
-    var match;
-    if ((match = matchers.rgb.exec(color))) {
-        return { r: match[1], g: match[2], b: match[3] };
-    }
-    if ((match = matchers.rgba.exec(color))) {
-        return { r: match[1], g: match[2], b: match[3], a: match[4] };
-    }
-    if ((match = matchers.hsl.exec(color))) {
-        return { h: match[1], s: match[2], l: match[3] };
-    }
-    if ((match = matchers.hsla.exec(color))) {
-        return { h: match[1], s: match[2], l: match[3], a: match[4] };
-    }
-    if ((match = matchers.hsv.exec(color))) {
-        return { h: match[1], s: match[2], v: match[3] };
-    }
-    if ((match = matchers.hsva.exec(color))) {
-        return { h: match[1], s: match[2], v: match[3], a: match[4] };
-    }
-    if ((match = matchers.hex8.exec(color))) {
-        return {
-            r: parseIntFromHex(match[1]),
-            g: parseIntFromHex(match[2]),
-            b: parseIntFromHex(match[3]),
-            a: convertHexToDecimal(match[4]),
-            format: named ? "name" : "hex8"
-        };
-    }
-    if ((match = matchers.hex6.exec(color))) {
-        return {
-            r: parseIntFromHex(match[1]),
-            g: parseIntFromHex(match[2]),
-            b: parseIntFromHex(match[3]),
-            format: named ? "name" : "hex"
-        };
-    }
-    if ((match = matchers.hex4.exec(color))) {
-        return {
-            r: parseIntFromHex(match[1] + '' + match[1]),
-            g: parseIntFromHex(match[2] + '' + match[2]),
-            b: parseIntFromHex(match[3] + '' + match[3]),
-            a: convertHexToDecimal(match[4] + '' + match[4]),
-            format: named ? "name" : "hex8"
-        };
-    }
-    if ((match = matchers.hex3.exec(color))) {
-        return {
-            r: parseIntFromHex(match[1] + '' + match[1]),
-            g: parseIntFromHex(match[2] + '' + match[2]),
-            b: parseIntFromHex(match[3] + '' + match[3]),
-            format: named ? "name" : "hex"
-        };
-    }
-
-    return false;
-}
-
-function validateWCAG2Parms(parms) {
-    // return valid WCAG2 parms for isReadable.
-    // If input parms are invalid, return {"level":"AA", "size":"small"}
-    var level, size;
-    parms = parms || {"level":"AA", "size":"small"};
-    level = (parms.level || "AA").toUpperCase();
-    size = (parms.size || "small").toLowerCase();
-    if (level !== "AA" && level !== "AAA") {
-        level = "AA";
-    }
-    if (size !== "small" && size !== "large") {
-        size = "small";
-    }
-    return {"level":level, "size":size};
-}
-
-// Node: Export function
-if ('object' !== "undefined" && module.exports) {
-    module.exports = tinycolor;
-}
-// AMD/requirejs: Define the module
-else if (typeof undefined === 'function' && undefined.amd) {
-    undefined(function () {return tinycolor;});
-}
-// Browser: Expose to window
-else {
-    window.tinycolor = tinycolor;
-}
-
-})(Math);
-});
-
-tinycolor.prototype.toJSON = function (type) {
-  return this.toString(type)
-};
-const storage$1 = window.sessionStorage;
-
-// storage.clear()
-const store = new Histore(defaultpalette, {
-  storage: storage$1,
-  initializer (store) {
-    store.set('cards', (cards) => {
-      console.log('initializer');
-      cards.forEach((card, i) => {
-        card.color = tinycolor(card.color);
-        card.zIndex = card.zIndex == null ? i : card.zIndex;
-        return card
-      });
-      return cards
-    }, false);
-  }
-});
-
-// Events
-store.on('cards.ADD_CARD', (card, memo) => {
-  store.set('cards', (cards) => {
-    card.color = tinycolor(card.color);
-    card.zIndex = cards.length;
-    return [...cards, card]
-  }, memo);
-});
-store.on('cards.DUPLICATE_CARD', (index, memo) => {
-  let newCard = typeof index === 'number' ? store.get('cards')[index] : index;
-  newCard = Object.assign({}, newCard);
-  newCard.left += 10;
-  newCard.top += 10;
-  store.trigger('cards.ADD_CARD', newCard, memo);
-});
-
-store.on('cards.TOGGLE_TEXTMODE', (index, bool, memo) => {
-  store.set('cards', (cards) => {
-    const card = cards[index];
-    card.textMode = typeof bool === 'boolean' ? bool : !card.textMode;
-    return cards
-  }, memo);
-});
-
-store.on('cards.RESIZE_CARD', (index, w, h = w, memo) => {
-  store.set('cards', (cards) => {
-    const card = cards[index];
-    card.width = w;
-    card.height = h;
-    return cards
-  }, memo);
-});
-store.on('cards.TRANSLATE_CARD', (index, left, top, memo) => {
-  store.set('cards', (cards) => {
-    const card = cards[index];
-    card.left = left;
-    card.top = top;
-    return cards
-  }, memo);
-});
-// Don't momorize
-/**
- * @param {array} indexs
- */
-store.on('cards.SELECT_CARDS', (indexs) => {
-  store.set('cards', (cards) => {
-    cards.forEach((card, i) => {
-      if (indexs.indexOf(i) !== -1) {
-        card.selected = true;
-      } else {
-        delete card.selected;
-      }
-    });
-    return cards
-  }, false);
-});
-
-
-store.on('cards.REMOVE_CARD', (index, memo) => {
-  store.set('cards', (cards) => {
-    // cards.splice(index, 1)
-    return cards.slice(0, index).concat(cards.slice(index + 1))
-  }, memo);
-});
-store.on('cards.REMOVE_SELECT_CARDS', (memo) => {
-  store.set('cards', (cards) => {
-    return cards.filter((card) => !card.selected)
-  }, memo);
-});
-store.on('cards.CARD_FORWARD', (index, memo) => {
-  store.set('cards', (cards) => {
-    const currIndex = +cards[index].zIndex;
-    cards.forEach((card, i) => {
-      if (i === index) {
-        card.zIndex = cards.length - 1;
-      } else if (card.zIndex > currIndex) {
-        --card.zIndex;
-      }
-    });
-    return cards
-  }, memo);
-});
-
-store.on('undo', (e, payload) => {
-  store.undo();
-});
-store.on('redo', (e, payload) => {
-  store.redo();
-});
-
-store.addPlugin('keyManager', new KeyManager({
-  'ctrl+z' () { store.undo(); },
-  'ctrl+shift+z' () { store.redo(); },
-}, store));
-
-store.subscribe('cards', (cards) => {
-  console.log('cards', cards);
-});
-console.log('store', store);
-
 function noop() {}
 
 function assign(target) {
@@ -2020,6 +62,22 @@ function setStyle(node, key, value) {
 	node.style.setProperty(key, value);
 }
 
+function selectOption(select, value) {
+	for (var i = 0; i < select.options.length; i += 1) {
+		var option = select.options[i];
+
+		if (option.__value === value) {
+			option.selected = true;
+			return;
+		}
+	}
+}
+
+function selectValue(select) {
+	var selectedOption = select.querySelector(':checked') || select.options[0];
+	return selectedOption && selectedOption.__value;
+}
+
 function blankObject() {
 	return Object.create(null);
 }
@@ -2034,8 +92,12 @@ function destroy(detach) {
 	this._fragment = this._state = null;
 }
 
-function differs(a, b) {
-	return a !== b || ((a && typeof a === 'object') || typeof a === 'function');
+function _differs(a, b) {
+	return a != a ? b == b : a !== b || ((a && typeof a === 'object') || typeof a === 'function');
+}
+
+function _differsImmutable(a, b) {
+	return a != a ? b == b : a !== b;
 }
 
 function dispatchObservers(component, group, changed, newState, oldState) {
@@ -2134,7 +196,7 @@ function _set(newState) {
 		dirty = false;
 
 	for (var key in newState) {
-		if (differs(newState[key], oldState[key])) changed[key] = dirty = true;
+		if (this._differs(newState[key], oldState[key])) changed[key] = dirty = true;
 	}
 	if (!dirty) return;
 
@@ -2150,7 +212,7 @@ function _set(newState) {
 }
 
 function callAll(fns) {
-	while (fns && fns.length) fns.pop()();
+	while (fns && fns.length) fns.shift()();
 }
 
 function _mount(target, anchor) {
@@ -2159,6 +221,10 @@ function _mount(target, anchor) {
 
 function _unmount() {
 	if (this._fragment) this._fragment.u();
+}
+
+function removeFromStore() {
+	this.store._remove(this);
 }
 
 var proto = {
@@ -2172,41 +238,2079 @@ var proto = {
 	_recompute: noop,
 	_set: _set,
 	_mount: _mount,
-	_unmount: _unmount
+	_unmount: _unmount,
+	_differs: _differs
 };
 
-/* src\color-picker\color-input.html generated by Svelte v1.49.0 */
-function caretIndex (event, color) {
+function createCommonjsModule(fn, module) {
+	return module = { exports: {} }, fn(module, module.exports), module.exports;
+}
+
+var colorName = {
+	"aliceblue": [240, 248, 255],
+	"antiquewhite": [250, 235, 215],
+	"aqua": [0, 255, 255],
+	"aquamarine": [127, 255, 212],
+	"azure": [240, 255, 255],
+	"beige": [245, 245, 220],
+	"bisque": [255, 228, 196],
+	"black": [0, 0, 0],
+	"blanchedalmond": [255, 235, 205],
+	"blue": [0, 0, 255],
+	"blueviolet": [138, 43, 226],
+	"brown": [165, 42, 42],
+	"burlywood": [222, 184, 135],
+	"cadetblue": [95, 158, 160],
+	"chartreuse": [127, 255, 0],
+	"chocolate": [210, 105, 30],
+	"coral": [255, 127, 80],
+	"cornflowerblue": [100, 149, 237],
+	"cornsilk": [255, 248, 220],
+	"crimson": [220, 20, 60],
+	"cyan": [0, 255, 255],
+	"darkblue": [0, 0, 139],
+	"darkcyan": [0, 139, 139],
+	"darkgoldenrod": [184, 134, 11],
+	"darkgray": [169, 169, 169],
+	"darkgreen": [0, 100, 0],
+	"darkgrey": [169, 169, 169],
+	"darkkhaki": [189, 183, 107],
+	"darkmagenta": [139, 0, 139],
+	"darkolivegreen": [85, 107, 47],
+	"darkorange": [255, 140, 0],
+	"darkorchid": [153, 50, 204],
+	"darkred": [139, 0, 0],
+	"darksalmon": [233, 150, 122],
+	"darkseagreen": [143, 188, 143],
+	"darkslateblue": [72, 61, 139],
+	"darkslategray": [47, 79, 79],
+	"darkslategrey": [47, 79, 79],
+	"darkturquoise": [0, 206, 209],
+	"darkviolet": [148, 0, 211],
+	"deeppink": [255, 20, 147],
+	"deepskyblue": [0, 191, 255],
+	"dimgray": [105, 105, 105],
+	"dimgrey": [105, 105, 105],
+	"dodgerblue": [30, 144, 255],
+	"firebrick": [178, 34, 34],
+	"floralwhite": [255, 250, 240],
+	"forestgreen": [34, 139, 34],
+	"fuchsia": [255, 0, 255],
+	"gainsboro": [220, 220, 220],
+	"ghostwhite": [248, 248, 255],
+	"gold": [255, 215, 0],
+	"goldenrod": [218, 165, 32],
+	"gray": [128, 128, 128],
+	"green": [0, 128, 0],
+	"greenyellow": [173, 255, 47],
+	"grey": [128, 128, 128],
+	"honeydew": [240, 255, 240],
+	"hotpink": [255, 105, 180],
+	"indianred": [205, 92, 92],
+	"indigo": [75, 0, 130],
+	"ivory": [255, 255, 240],
+	"khaki": [240, 230, 140],
+	"lavender": [230, 230, 250],
+	"lavenderblush": [255, 240, 245],
+	"lawngreen": [124, 252, 0],
+	"lemonchiffon": [255, 250, 205],
+	"lightblue": [173, 216, 230],
+	"lightcoral": [240, 128, 128],
+	"lightcyan": [224, 255, 255],
+	"lightgoldenrodyellow": [250, 250, 210],
+	"lightgray": [211, 211, 211],
+	"lightgreen": [144, 238, 144],
+	"lightgrey": [211, 211, 211],
+	"lightpink": [255, 182, 193],
+	"lightsalmon": [255, 160, 122],
+	"lightseagreen": [32, 178, 170],
+	"lightskyblue": [135, 206, 250],
+	"lightslategray": [119, 136, 153],
+	"lightslategrey": [119, 136, 153],
+	"lightsteelblue": [176, 196, 222],
+	"lightyellow": [255, 255, 224],
+	"lime": [0, 255, 0],
+	"limegreen": [50, 205, 50],
+	"linen": [250, 240, 230],
+	"magenta": [255, 0, 255],
+	"maroon": [128, 0, 0],
+	"mediumaquamarine": [102, 205, 170],
+	"mediumblue": [0, 0, 205],
+	"mediumorchid": [186, 85, 211],
+	"mediumpurple": [147, 112, 219],
+	"mediumseagreen": [60, 179, 113],
+	"mediumslateblue": [123, 104, 238],
+	"mediumspringgreen": [0, 250, 154],
+	"mediumturquoise": [72, 209, 204],
+	"mediumvioletred": [199, 21, 133],
+	"midnightblue": [25, 25, 112],
+	"mintcream": [245, 255, 250],
+	"mistyrose": [255, 228, 225],
+	"moccasin": [255, 228, 181],
+	"navajowhite": [255, 222, 173],
+	"navy": [0, 0, 128],
+	"oldlace": [253, 245, 230],
+	"olive": [128, 128, 0],
+	"olivedrab": [107, 142, 35],
+	"orange": [255, 165, 0],
+	"orangered": [255, 69, 0],
+	"orchid": [218, 112, 214],
+	"palegoldenrod": [238, 232, 170],
+	"palegreen": [152, 251, 152],
+	"paleturquoise": [175, 238, 238],
+	"palevioletred": [219, 112, 147],
+	"papayawhip": [255, 239, 213],
+	"peachpuff": [255, 218, 185],
+	"peru": [205, 133, 63],
+	"pink": [255, 192, 203],
+	"plum": [221, 160, 221],
+	"powderblue": [176, 224, 230],
+	"purple": [128, 0, 128],
+	"rebeccapurple": [102, 51, 153],
+	"red": [255, 0, 0],
+	"rosybrown": [188, 143, 143],
+	"royalblue": [65, 105, 225],
+	"saddlebrown": [139, 69, 19],
+	"salmon": [250, 128, 114],
+	"sandybrown": [244, 164, 96],
+	"seagreen": [46, 139, 87],
+	"seashell": [255, 245, 238],
+	"sienna": [160, 82, 45],
+	"silver": [192, 192, 192],
+	"skyblue": [135, 206, 235],
+	"slateblue": [106, 90, 205],
+	"slategray": [112, 128, 144],
+	"slategrey": [112, 128, 144],
+	"snow": [255, 250, 250],
+	"springgreen": [0, 255, 127],
+	"steelblue": [70, 130, 180],
+	"tan": [210, 180, 140],
+	"teal": [0, 128, 128],
+	"thistle": [216, 191, 216],
+	"tomato": [255, 99, 71],
+	"turquoise": [64, 224, 208],
+	"violet": [238, 130, 238],
+	"wheat": [245, 222, 179],
+	"white": [255, 255, 255],
+	"whitesmoke": [245, 245, 245],
+	"yellow": [255, 255, 0],
+	"yellowgreen": [154, 205, 50]
+};
+
+var isArrayish = function isArrayish(obj) {
+	if (!obj || typeof obj === 'string') {
+		return false;
+	}
+
+	return obj instanceof Array || Array.isArray(obj) ||
+		(obj.length >= 0 && (obj.splice instanceof Function ||
+			(Object.getOwnPropertyDescriptor(obj, (obj.length - 1)) && obj.constructor.name !== 'String')));
+};
+
+var simpleSwizzle = createCommonjsModule(function (module) {
+
+
+
+var concat = Array.prototype.concat;
+var slice = Array.prototype.slice;
+
+var swizzle = module.exports = function swizzle(args) {
+	var results = [];
+
+	for (var i = 0, len = args.length; i < len; i++) {
+		var arg = args[i];
+
+		if (isArrayish(arg)) {
+			// http://jsperf.com/javascript-array-concat-vs-push/98
+			results = concat.call(results, slice.call(arg));
+		} else {
+			results.push(arg);
+		}
+	}
+
+	return results;
+};
+
+swizzle.wrap = function (fn) {
+	return function () {
+		return fn(swizzle(arguments));
+	};
+};
+});
+
+var colorString = createCommonjsModule(function (module) {
+/* MIT license */
+
+
+
+var reverseNames = {};
+
+// create a list of reverse color names
+for (var name in colorName) {
+	if (colorName.hasOwnProperty(name)) {
+		reverseNames[colorName[name]] = name;
+	}
+}
+
+var cs = module.exports = {
+	to: {}
+};
+
+cs.get = function (string) {
+	var prefix = string.substring(0, 3).toLowerCase();
+	var val;
+	var model;
+	switch (prefix) {
+		case 'hsl':
+			val = cs.get.hsl(string);
+			model = 'hsl';
+			break;
+		case 'hwb':
+			val = cs.get.hwb(string);
+			model = 'hwb';
+			break;
+		default:
+			val = cs.get.rgb(string);
+			model = 'rgb';
+			break;
+	}
+
+	if (!val) {
+		return null;
+	}
+
+	return {model: model, value: val};
+};
+
+cs.get.rgb = function (string) {
+	if (!string) {
+		return null;
+	}
+
+	var abbr = /^#([a-f0-9]{3,4})$/i;
+	var hex = /^#([a-f0-9]{6})([a-f0-9]{2})?$/i;
+	var rgba = /^rgba?\(\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*,\s*([+-]?\d+)\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
+	var per = /^rgba?\(\s*([+-]?[\d\.]+)\%\s*,\s*([+-]?[\d\.]+)\%\s*,\s*([+-]?[\d\.]+)\%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
+	var keyword = /(\D+)/;
+
+	var rgb = [0, 0, 0, 1];
+	var match;
+	var i;
+	var hexAlpha;
+
+	if (match = string.match(hex)) {
+		hexAlpha = match[2];
+		match = match[1];
+
+		for (i = 0; i < 3; i++) {
+			// https://jsperf.com/slice-vs-substr-vs-substring-methods-long-string/19
+			var i2 = i * 2;
+			rgb[i] = parseInt(match.slice(i2, i2 + 2), 16);
+		}
+
+		if (hexAlpha) {
+			rgb[3] = Math.round((parseInt(hexAlpha, 16) / 255) * 100) / 100;
+		}
+	} else if (match = string.match(abbr)) {
+		match = match[1];
+		hexAlpha = match[3];
+
+		for (i = 0; i < 3; i++) {
+			rgb[i] = parseInt(match[i] + match[i], 16);
+		}
+
+		if (hexAlpha) {
+			rgb[3] = Math.round((parseInt(hexAlpha + hexAlpha, 16) / 255) * 100) / 100;
+		}
+	} else if (match = string.match(rgba)) {
+		for (i = 0; i < 3; i++) {
+			rgb[i] = parseInt(match[i + 1], 0);
+		}
+
+		if (match[4]) {
+			rgb[3] = parseFloat(match[4]);
+		}
+	} else if (match = string.match(per)) {
+		for (i = 0; i < 3; i++) {
+			rgb[i] = Math.round(parseFloat(match[i + 1]) * 2.55);
+		}
+
+		if (match[4]) {
+			rgb[3] = parseFloat(match[4]);
+		}
+	} else if (match = string.match(keyword)) {
+		if (match[1] === 'transparent') {
+			return [0, 0, 0, 0];
+		}
+
+		rgb = colorName[match[1]];
+
+		if (!rgb) {
+			return null;
+		}
+
+		rgb[3] = 1;
+
+		return rgb;
+	} else {
+		return null;
+	}
+
+	for (i = 0; i < 3; i++) {
+		rgb[i] = clamp(rgb[i], 0, 255);
+	}
+	rgb[3] = clamp(rgb[3], 0, 1);
+
+	return rgb;
+};
+
+cs.get.hsl = function (string) {
+	if (!string) {
+		return null;
+	}
+
+	var hsl = /^hsla?\(\s*([+-]?\d*[\.]?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
+	var match = string.match(hsl);
+
+	if (match) {
+		var alpha = parseFloat(match[4]);
+		var h = ((parseFloat(match[1]) % 360) + 360) % 360;
+		var s = clamp(parseFloat(match[2]), 0, 100);
+		var l = clamp(parseFloat(match[3]), 0, 100);
+		var a = clamp(isNaN(alpha) ? 1 : alpha, 0, 1);
+
+		return [h, s, l, a];
+	}
+
+	return null;
+};
+
+cs.get.hwb = function (string) {
+	if (!string) {
+		return null;
+	}
+
+	var hwb = /^hwb\(\s*([+-]?\d*[\.]?\d+)(?:deg)?\s*,\s*([+-]?[\d\.]+)%\s*,\s*([+-]?[\d\.]+)%\s*(?:,\s*([+-]?[\d\.]+)\s*)?\)$/;
+	var match = string.match(hwb);
+
+	if (match) {
+		var alpha = parseFloat(match[4]);
+		var h = ((parseFloat(match[1]) % 360) + 360) % 360;
+		var w = clamp(parseFloat(match[2]), 0, 100);
+		var b = clamp(parseFloat(match[3]), 0, 100);
+		var a = clamp(isNaN(alpha) ? 1 : alpha, 0, 1);
+		return [h, w, b, a];
+	}
+
+	return null;
+};
+
+cs.to.hex = function () {
+	var rgba = simpleSwizzle(arguments);
+
+	return (
+		'#' +
+		hexDouble(rgba[0]) +
+		hexDouble(rgba[1]) +
+		hexDouble(rgba[2]) +
+		(rgba[3] < 1
+			? (hexDouble(Math.round(rgba[3] * 255)))
+			: '')
+	);
+};
+
+cs.to.rgb = function () {
+	var rgba = simpleSwizzle(arguments);
+
+	return rgba.length < 4 || rgba[3] === 1
+		? 'rgb(' + Math.round(rgba[0]) + ', ' + Math.round(rgba[1]) + ', ' + Math.round(rgba[2]) + ')'
+		: 'rgba(' + Math.round(rgba[0]) + ', ' + Math.round(rgba[1]) + ', ' + Math.round(rgba[2]) + ', ' + rgba[3] + ')';
+};
+
+cs.to.rgb.percent = function () {
+	var rgba = simpleSwizzle(arguments);
+
+	var r = Math.round(rgba[0] / 255 * 100);
+	var g = Math.round(rgba[1] / 255 * 100);
+	var b = Math.round(rgba[2] / 255 * 100);
+
+	return rgba.length < 4 || rgba[3] === 1
+		? 'rgb(' + r + '%, ' + g + '%, ' + b + '%)'
+		: 'rgba(' + r + '%, ' + g + '%, ' + b + '%, ' + rgba[3] + ')';
+};
+
+cs.to.hsl = function () {
+	var hsla = simpleSwizzle(arguments);
+	return hsla.length < 4 || hsla[3] === 1
+		? 'hsl(' + hsla[0] + ', ' + hsla[1] + '%, ' + hsla[2] + '%)'
+		: 'hsla(' + hsla[0] + ', ' + hsla[1] + '%, ' + hsla[2] + '%, ' + hsla[3] + ')';
+};
+
+// hwb is a bit different than rgb(a) & hsl(a) since there is no alpha specific syntax
+// (hwb have alpha optional & 1 is default value)
+cs.to.hwb = function () {
+	var hwba = simpleSwizzle(arguments);
+
+	var a = '';
+	if (hwba.length >= 4 && hwba[3] !== 1) {
+		a = ', ' + hwba[3];
+	}
+
+	return 'hwb(' + hwba[0] + ', ' + hwba[1] + '%, ' + hwba[2] + '%' + a + ')';
+};
+
+cs.to.keyword = function (rgb) {
+	return reverseNames[rgb.slice(0, 3)];
+};
+
+// helpers
+function clamp(num, min, max) {
+	return Math.min(Math.max(min, num), max);
+}
+
+function hexDouble(num) {
+	var str = num.toString(16).toUpperCase();
+	return (str.length < 2) ? '0' + str : str;
+}
+});
+var colorString_1 = colorString.to;
+
+var conversions = createCommonjsModule(function (module) {
+/* MIT license */
+
+
+// NOTE: conversions should only return primitive values (i.e. arrays, or
+//       values that give correct `typeof` results).
+//       do not use box values types (i.e. Number(), String(), etc.)
+
+var reverseKeywords = {};
+for (var key in colorName) {
+	if (colorName.hasOwnProperty(key)) {
+		reverseKeywords[colorName[key]] = key;
+	}
+}
+
+var convert = module.exports = {
+	rgb: {channels: 3, labels: 'rgb'},
+	hsl: {channels: 3, labels: 'hsl'},
+	hsv: {channels: 3, labels: 'hsv'},
+	hwb: {channels: 3, labels: 'hwb'},
+	cmyk: {channels: 4, labels: 'cmyk'},
+	xyz: {channels: 3, labels: 'xyz'},
+	lab: {channels: 3, labels: 'lab'},
+	lch: {channels: 3, labels: 'lch'},
+	hex: {channels: 1, labels: ['hex']},
+	keyword: {channels: 1, labels: ['keyword']},
+	ansi16: {channels: 1, labels: ['ansi16']},
+	ansi256: {channels: 1, labels: ['ansi256']},
+	hcg: {channels: 3, labels: ['h', 'c', 'g']},
+	apple: {channels: 3, labels: ['r16', 'g16', 'b16']},
+	gray: {channels: 1, labels: ['gray']}
+};
+
+// hide .channels and .labels properties
+for (var model in convert) {
+	if (convert.hasOwnProperty(model)) {
+		if (!('channels' in convert[model])) {
+			throw new Error('missing channels property: ' + model);
+		}
+
+		if (!('labels' in convert[model])) {
+			throw new Error('missing channel labels property: ' + model);
+		}
+
+		if (convert[model].labels.length !== convert[model].channels) {
+			throw new Error('channel and label counts mismatch: ' + model);
+		}
+
+		var channels = convert[model].channels;
+		var labels = convert[model].labels;
+		delete convert[model].channels;
+		delete convert[model].labels;
+		Object.defineProperty(convert[model], 'channels', {value: channels});
+		Object.defineProperty(convert[model], 'labels', {value: labels});
+	}
+}
+
+convert.rgb.hsl = function (rgb) {
+	var r = rgb[0] / 255;
+	var g = rgb[1] / 255;
+	var b = rgb[2] / 255;
+	var min = Math.min(r, g, b);
+	var max = Math.max(r, g, b);
+	var delta = max - min;
+	var h;
+	var s;
+	var l;
+
+	if (max === min) {
+		h = 0;
+	} else if (r === max) {
+		h = (g - b) / delta;
+	} else if (g === max) {
+		h = 2 + (b - r) / delta;
+	} else if (b === max) {
+		h = 4 + (r - g) / delta;
+	}
+
+	h = Math.min(h * 60, 360);
+
+	if (h < 0) {
+		h += 360;
+	}
+
+	l = (min + max) / 2;
+
+	if (max === min) {
+		s = 0;
+	} else if (l <= 0.5) {
+		s = delta / (max + min);
+	} else {
+		s = delta / (2 - max - min);
+	}
+
+	return [h, s * 100, l * 100];
+};
+
+convert.rgb.hsv = function (rgb) {
+	var r = rgb[0];
+	var g = rgb[1];
+	var b = rgb[2];
+	var min = Math.min(r, g, b);
+	var max = Math.max(r, g, b);
+	var delta = max - min;
+	var h;
+	var s;
+	var v;
+
+	if (max === 0) {
+		s = 0;
+	} else {
+		s = (delta / max * 1000) / 10;
+	}
+
+	if (max === min) {
+		h = 0;
+	} else if (r === max) {
+		h = (g - b) / delta;
+	} else if (g === max) {
+		h = 2 + (b - r) / delta;
+	} else if (b === max) {
+		h = 4 + (r - g) / delta;
+	}
+
+	h = Math.min(h * 60, 360);
+
+	if (h < 0) {
+		h += 360;
+	}
+
+	v = ((max / 255) * 1000) / 10;
+
+	return [h, s, v];
+};
+
+convert.rgb.hwb = function (rgb) {
+	var r = rgb[0];
+	var g = rgb[1];
+	var b = rgb[2];
+	var h = convert.rgb.hsl(rgb)[0];
+	var w = 1 / 255 * Math.min(r, Math.min(g, b));
+
+	b = 1 - 1 / 255 * Math.max(r, Math.max(g, b));
+
+	return [h, w * 100, b * 100];
+};
+
+convert.rgb.cmyk = function (rgb) {
+	var r = rgb[0] / 255;
+	var g = rgb[1] / 255;
+	var b = rgb[2] / 255;
+	var c;
+	var m;
+	var y;
+	var k;
+
+	k = Math.min(1 - r, 1 - g, 1 - b);
+	c = (1 - r - k) / (1 - k) || 0;
+	m = (1 - g - k) / (1 - k) || 0;
+	y = (1 - b - k) / (1 - k) || 0;
+
+	return [c * 100, m * 100, y * 100, k * 100];
+};
+
+/**
+ * See https://en.m.wikipedia.org/wiki/Euclidean_distance#Squared_Euclidean_distance
+ * */
+function comparativeDistance(x, y) {
+	return (
+		Math.pow(x[0] - y[0], 2) +
+		Math.pow(x[1] - y[1], 2) +
+		Math.pow(x[2] - y[2], 2)
+	);
+}
+
+convert.rgb.keyword = function (rgb) {
+	var reversed = reverseKeywords[rgb];
+	if (reversed) {
+		return reversed;
+	}
+
+	var currentClosestDistance = Infinity;
+	var currentClosestKeyword;
+
+	for (var keyword in colorName) {
+		if (colorName.hasOwnProperty(keyword)) {
+			var value = colorName[keyword];
+
+			// Compute comparative distance
+			var distance = comparativeDistance(rgb, value);
+
+			// Check if its less, if so set as closest
+			if (distance < currentClosestDistance) {
+				currentClosestDistance = distance;
+				currentClosestKeyword = keyword;
+			}
+		}
+	}
+
+	return currentClosestKeyword;
+};
+
+convert.keyword.rgb = function (keyword) {
+	return colorName[keyword];
+};
+
+convert.rgb.xyz = function (rgb) {
+	var r = rgb[0] / 255;
+	var g = rgb[1] / 255;
+	var b = rgb[2] / 255;
+
+	// assume sRGB
+	r = r > 0.04045 ? Math.pow(((r + 0.055) / 1.055), 2.4) : (r / 12.92);
+	g = g > 0.04045 ? Math.pow(((g + 0.055) / 1.055), 2.4) : (g / 12.92);
+	b = b > 0.04045 ? Math.pow(((b + 0.055) / 1.055), 2.4) : (b / 12.92);
+
+	var x = (r * 0.4124) + (g * 0.3576) + (b * 0.1805);
+	var y = (r * 0.2126) + (g * 0.7152) + (b * 0.0722);
+	var z = (r * 0.0193) + (g * 0.1192) + (b * 0.9505);
+
+	return [x * 100, y * 100, z * 100];
+};
+
+convert.rgb.lab = function (rgb) {
+	var xyz = convert.rgb.xyz(rgb);
+	var x = xyz[0];
+	var y = xyz[1];
+	var z = xyz[2];
+	var l;
+	var a;
+	var b;
+
+	x /= 95.047;
+	y /= 100;
+	z /= 108.883;
+
+	x = x > 0.008856 ? Math.pow(x, 1 / 3) : (7.787 * x) + (16 / 116);
+	y = y > 0.008856 ? Math.pow(y, 1 / 3) : (7.787 * y) + (16 / 116);
+	z = z > 0.008856 ? Math.pow(z, 1 / 3) : (7.787 * z) + (16 / 116);
+
+	l = (116 * y) - 16;
+	a = 500 * (x - y);
+	b = 200 * (y - z);
+
+	return [l, a, b];
+};
+
+convert.hsl.rgb = function (hsl) {
+	var h = hsl[0] / 360;
+	var s = hsl[1] / 100;
+	var l = hsl[2] / 100;
+	var t1;
+	var t2;
+	var t3;
+	var rgb;
+	var val;
+
+	if (s === 0) {
+		val = l * 255;
+		return [val, val, val];
+	}
+
+	if (l < 0.5) {
+		t2 = l * (1 + s);
+	} else {
+		t2 = l + s - l * s;
+	}
+
+	t1 = 2 * l - t2;
+
+	rgb = [0, 0, 0];
+	for (var i = 0; i < 3; i++) {
+		t3 = h + 1 / 3 * -(i - 1);
+		if (t3 < 0) {
+			t3++;
+		}
+		if (t3 > 1) {
+			t3--;
+		}
+
+		if (6 * t3 < 1) {
+			val = t1 + (t2 - t1) * 6 * t3;
+		} else if (2 * t3 < 1) {
+			val = t2;
+		} else if (3 * t3 < 2) {
+			val = t1 + (t2 - t1) * (2 / 3 - t3) * 6;
+		} else {
+			val = t1;
+		}
+
+		rgb[i] = val * 255;
+	}
+
+	return rgb;
+};
+
+convert.hsl.hsv = function (hsl) {
+	var h = hsl[0];
+	var s = hsl[1] / 100;
+	var l = hsl[2] / 100;
+	var smin = s;
+	var lmin = Math.max(l, 0.01);
+	var sv;
+	var v;
+
+	l *= 2;
+	s *= (l <= 1) ? l : 2 - l;
+	smin *= lmin <= 1 ? lmin : 2 - lmin;
+	v = (l + s) / 2;
+	sv = l === 0 ? (2 * smin) / (lmin + smin) : (2 * s) / (l + s);
+
+	return [h, sv * 100, v * 100];
+};
+
+convert.hsv.rgb = function (hsv) {
+	var h = hsv[0] / 60;
+	var s = hsv[1] / 100;
+	var v = hsv[2] / 100;
+	var hi = Math.floor(h) % 6;
+
+	var f = h - Math.floor(h);
+	var p = 255 * v * (1 - s);
+	var q = 255 * v * (1 - (s * f));
+	var t = 255 * v * (1 - (s * (1 - f)));
+	v *= 255;
+
+	switch (hi) {
+		case 0:
+			return [v, t, p];
+		case 1:
+			return [q, v, p];
+		case 2:
+			return [p, v, t];
+		case 3:
+			return [p, q, v];
+		case 4:
+			return [t, p, v];
+		case 5:
+			return [v, p, q];
+	}
+};
+
+convert.hsv.hsl = function (hsv) {
+	var h = hsv[0];
+	var s = hsv[1] / 100;
+	var v = hsv[2] / 100;
+	var vmin = Math.max(v, 0.01);
+	var lmin;
+	var sl;
+	var l;
+
+	l = (2 - s) * v;
+	lmin = (2 - s) * vmin;
+	sl = s * vmin;
+	sl /= (lmin <= 1) ? lmin : 2 - lmin;
+	sl = sl || 0;
+	l /= 2;
+
+	return [h, sl * 100, l * 100];
+};
+
+// http://dev.w3.org/csswg/css-color/#hwb-to-rgb
+convert.hwb.rgb = function (hwb) {
+	var h = hwb[0] / 360;
+	var wh = hwb[1] / 100;
+	var bl = hwb[2] / 100;
+	var ratio = wh + bl;
+	var i;
+	var v;
+	var f;
+	var n;
+
+	// wh + bl cant be > 1
+	if (ratio > 1) {
+		wh /= ratio;
+		bl /= ratio;
+	}
+
+	i = Math.floor(6 * h);
+	v = 1 - bl;
+	f = 6 * h - i;
+
+	if ((i & 0x01) !== 0) {
+		f = 1 - f;
+	}
+
+	n = wh + f * (v - wh); // linear interpolation
+
+	var r;
+	var g;
+	var b;
+	switch (i) {
+		default:
+		case 6:
+		case 0: r = v; g = n; b = wh; break;
+		case 1: r = n; g = v; b = wh; break;
+		case 2: r = wh; g = v; b = n; break;
+		case 3: r = wh; g = n; b = v; break;
+		case 4: r = n; g = wh; b = v; break;
+		case 5: r = v; g = wh; b = n; break;
+	}
+
+	return [r * 255, g * 255, b * 255];
+};
+
+convert.cmyk.rgb = function (cmyk) {
+	var c = cmyk[0] / 100;
+	var m = cmyk[1] / 100;
+	var y = cmyk[2] / 100;
+	var k = cmyk[3] / 100;
+	var r;
+	var g;
+	var b;
+
+	r = 1 - Math.min(1, c * (1 - k) + k);
+	g = 1 - Math.min(1, m * (1 - k) + k);
+	b = 1 - Math.min(1, y * (1 - k) + k);
+
+	return [r * 255, g * 255, b * 255];
+};
+
+convert.xyz.rgb = function (xyz) {
+	var x = xyz[0] / 100;
+	var y = xyz[1] / 100;
+	var z = xyz[2] / 100;
+	var r;
+	var g;
+	var b;
+
+	r = (x * 3.2406) + (y * -1.5372) + (z * -0.4986);
+	g = (x * -0.9689) + (y * 1.8758) + (z * 0.0415);
+	b = (x * 0.0557) + (y * -0.2040) + (z * 1.0570);
+
+	// assume sRGB
+	r = r > 0.0031308
+		? ((1.055 * Math.pow(r, 1.0 / 2.4)) - 0.055)
+		: r * 12.92;
+
+	g = g > 0.0031308
+		? ((1.055 * Math.pow(g, 1.0 / 2.4)) - 0.055)
+		: g * 12.92;
+
+	b = b > 0.0031308
+		? ((1.055 * Math.pow(b, 1.0 / 2.4)) - 0.055)
+		: b * 12.92;
+
+	r = Math.min(Math.max(0, r), 1);
+	g = Math.min(Math.max(0, g), 1);
+	b = Math.min(Math.max(0, b), 1);
+
+	return [r * 255, g * 255, b * 255];
+};
+
+convert.xyz.lab = function (xyz) {
+	var x = xyz[0];
+	var y = xyz[1];
+	var z = xyz[2];
+	var l;
+	var a;
+	var b;
+
+	x /= 95.047;
+	y /= 100;
+	z /= 108.883;
+
+	x = x > 0.008856 ? Math.pow(x, 1 / 3) : (7.787 * x) + (16 / 116);
+	y = y > 0.008856 ? Math.pow(y, 1 / 3) : (7.787 * y) + (16 / 116);
+	z = z > 0.008856 ? Math.pow(z, 1 / 3) : (7.787 * z) + (16 / 116);
+
+	l = (116 * y) - 16;
+	a = 500 * (x - y);
+	b = 200 * (y - z);
+
+	return [l, a, b];
+};
+
+convert.lab.xyz = function (lab) {
+	var l = lab[0];
+	var a = lab[1];
+	var b = lab[2];
+	var x;
+	var y;
+	var z;
+
+	y = (l + 16) / 116;
+	x = a / 500 + y;
+	z = y - b / 200;
+
+	var y2 = Math.pow(y, 3);
+	var x2 = Math.pow(x, 3);
+	var z2 = Math.pow(z, 3);
+	y = y2 > 0.008856 ? y2 : (y - 16 / 116) / 7.787;
+	x = x2 > 0.008856 ? x2 : (x - 16 / 116) / 7.787;
+	z = z2 > 0.008856 ? z2 : (z - 16 / 116) / 7.787;
+
+	x *= 95.047;
+	y *= 100;
+	z *= 108.883;
+
+	return [x, y, z];
+};
+
+convert.lab.lch = function (lab) {
+	var l = lab[0];
+	var a = lab[1];
+	var b = lab[2];
+	var hr;
+	var h;
+	var c;
+
+	hr = Math.atan2(b, a);
+	h = hr * 360 / 2 / Math.PI;
+
+	if (h < 0) {
+		h += 360;
+	}
+
+	c = Math.sqrt(a * a + b * b);
+
+	return [l, c, h];
+};
+
+convert.lch.lab = function (lch) {
+	var l = lch[0];
+	var c = lch[1];
+	var h = lch[2];
+	var a;
+	var b;
+	var hr;
+
+	hr = h / 360 * 2 * Math.PI;
+	a = c * Math.cos(hr);
+	b = c * Math.sin(hr);
+
+	return [l, a, b];
+};
+
+convert.rgb.ansi16 = function (args) {
+	var r = args[0];
+	var g = args[1];
+	var b = args[2];
+	var value = 1 in arguments ? arguments[1] : convert.rgb.hsv(args)[2]; // hsv -> ansi16 optimization
+
+	value = Math.round(value / 50);
+
+	if (value === 0) {
+		return 30;
+	}
+
+	var ansi = 30
+		+ ((Math.round(b / 255) << 2)
+		| (Math.round(g / 255) << 1)
+		| Math.round(r / 255));
+
+	if (value === 2) {
+		ansi += 60;
+	}
+
+	return ansi;
+};
+
+convert.hsv.ansi16 = function (args) {
+	// optimization here; we already know the value and don't need to get
+	// it converted for us.
+	return convert.rgb.ansi16(convert.hsv.rgb(args), args[2]);
+};
+
+convert.rgb.ansi256 = function (args) {
+	var r = args[0];
+	var g = args[1];
+	var b = args[2];
+
+	// we use the extended greyscale palette here, with the exception of
+	// black and white. normal palette only has 4 greyscale shades.
+	if (r === g && g === b) {
+		if (r < 8) {
+			return 16;
+		}
+
+		if (r > 248) {
+			return 231;
+		}
+
+		return Math.round(((r - 8) / 247) * 24) + 232;
+	}
+
+	var ansi = 16
+		+ (36 * Math.round(r / 255 * 5))
+		+ (6 * Math.round(g / 255 * 5))
+		+ Math.round(b / 255 * 5);
+
+	return ansi;
+};
+
+convert.ansi16.rgb = function (args) {
+	var color = args % 10;
+
+	// handle greyscale
+	if (color === 0 || color === 7) {
+		if (args > 50) {
+			color += 3.5;
+		}
+
+		color = color / 10.5 * 255;
+
+		return [color, color, color];
+	}
+
+	var mult = (~~(args > 50) + 1) * 0.5;
+	var r = ((color & 1) * mult) * 255;
+	var g = (((color >> 1) & 1) * mult) * 255;
+	var b = (((color >> 2) & 1) * mult) * 255;
+
+	return [r, g, b];
+};
+
+convert.ansi256.rgb = function (args) {
+	// handle greyscale
+	if (args >= 232) {
+		var c = (args - 232) * 10 + 8;
+		return [c, c, c];
+	}
+
+	args -= 16;
+
+	var rem;
+	var r = Math.floor(args / 36) / 5 * 255;
+	var g = Math.floor((rem = args % 36) / 6) / 5 * 255;
+	var b = (rem % 6) / 5 * 255;
+
+	return [r, g, b];
+};
+
+convert.rgb.hex = function (args) {
+	var integer = ((Math.round(args[0]) & 0xFF) << 16)
+		+ ((Math.round(args[1]) & 0xFF) << 8)
+		+ (Math.round(args[2]) & 0xFF);
+
+	var string = integer.toString(16).toUpperCase();
+	return '000000'.substring(string.length) + string;
+};
+
+convert.hex.rgb = function (args) {
+	var match = args.toString(16).match(/[a-f0-9]{6}|[a-f0-9]{3}/i);
+	if (!match) {
+		return [0, 0, 0];
+	}
+
+	var colorString = match[0];
+
+	if (match[0].length === 3) {
+		colorString = colorString.split('').map(function (char) {
+			return char + char;
+		}).join('');
+	}
+
+	var integer = parseInt(colorString, 16);
+	var r = (integer >> 16) & 0xFF;
+	var g = (integer >> 8) & 0xFF;
+	var b = integer & 0xFF;
+
+	return [r, g, b];
+};
+
+convert.rgb.hcg = function (rgb) {
+	var r = rgb[0] / 255;
+	var g = rgb[1] / 255;
+	var b = rgb[2] / 255;
+	var max = Math.max(Math.max(r, g), b);
+	var min = Math.min(Math.min(r, g), b);
+	var chroma = (max - min);
+	var grayscale;
+	var hue;
+
+	if (chroma < 1) {
+		grayscale = min / (1 - chroma);
+	} else {
+		grayscale = 0;
+	}
+
+	if (chroma <= 0) {
+		hue = 0;
+	} else
+	if (max === r) {
+		hue = ((g - b) / chroma) % 6;
+	} else
+	if (max === g) {
+		hue = 2 + (b - r) / chroma;
+	} else {
+		hue = 4 + (r - g) / chroma + 4;
+	}
+
+	hue /= 6;
+	hue %= 1;
+
+	return [hue * 360, chroma * 100, grayscale * 100];
+};
+
+convert.hsl.hcg = function (hsl) {
+	var s = hsl[1] / 100;
+	var l = hsl[2] / 100;
+	var c = 1;
+	var f = 0;
+
+	if (l < 0.5) {
+		c = 2.0 * s * l;
+	} else {
+		c = 2.0 * s * (1.0 - l);
+	}
+
+	if (c < 1.0) {
+		f = (l - 0.5 * c) / (1.0 - c);
+	}
+
+	return [hsl[0], c * 100, f * 100];
+};
+
+convert.hsv.hcg = function (hsv) {
+	var s = hsv[1] / 100;
+	var v = hsv[2] / 100;
+
+	var c = s * v;
+	var f = 0;
+
+	if (c < 1.0) {
+		f = (v - c) / (1 - c);
+	}
+
+	return [hsv[0], c * 100, f * 100];
+};
+
+convert.hcg.rgb = function (hcg) {
+	var h = hcg[0] / 360;
+	var c = hcg[1] / 100;
+	var g = hcg[2] / 100;
+
+	if (c === 0.0) {
+		return [g * 255, g * 255, g * 255];
+	}
+
+	var pure = [0, 0, 0];
+	var hi = (h % 1) * 6;
+	var v = hi % 1;
+	var w = 1 - v;
+	var mg = 0;
+
+	switch (Math.floor(hi)) {
+		case 0:
+			pure[0] = 1; pure[1] = v; pure[2] = 0; break;
+		case 1:
+			pure[0] = w; pure[1] = 1; pure[2] = 0; break;
+		case 2:
+			pure[0] = 0; pure[1] = 1; pure[2] = v; break;
+		case 3:
+			pure[0] = 0; pure[1] = w; pure[2] = 1; break;
+		case 4:
+			pure[0] = v; pure[1] = 0; pure[2] = 1; break;
+		default:
+			pure[0] = 1; pure[1] = 0; pure[2] = w;
+	}
+
+	mg = (1.0 - c) * g;
+
+	return [
+		(c * pure[0] + mg) * 255,
+		(c * pure[1] + mg) * 255,
+		(c * pure[2] + mg) * 255
+	];
+};
+
+convert.hcg.hsv = function (hcg) {
+	var c = hcg[1] / 100;
+	var g = hcg[2] / 100;
+
+	var v = c + g * (1.0 - c);
+	var f = 0;
+
+	if (v > 0.0) {
+		f = c / v;
+	}
+
+	return [hcg[0], f * 100, v * 100];
+};
+
+convert.hcg.hsl = function (hcg) {
+	var c = hcg[1] / 100;
+	var g = hcg[2] / 100;
+
+	var l = g * (1.0 - c) + 0.5 * c;
+	var s = 0;
+
+	if (l > 0.0 && l < 0.5) {
+		s = c / (2 * l);
+	} else
+	if (l >= 0.5 && l < 1.0) {
+		s = c / (2 * (1 - l));
+	}
+
+	return [hcg[0], s * 100, l * 100];
+};
+
+convert.hcg.hwb = function (hcg) {
+	var c = hcg[1] / 100;
+	var g = hcg[2] / 100;
+	var v = c + g * (1.0 - c);
+	return [hcg[0], (v - c) * 100, (1 - v) * 100];
+};
+
+convert.hwb.hcg = function (hwb) {
+	var w = hwb[1] / 100;
+	var b = hwb[2] / 100;
+	var v = 1 - b;
+	var c = v - w;
+	var g = 0;
+
+	if (c < 1) {
+		g = (v - c) / (1 - c);
+	}
+
+	return [hwb[0], c * 100, g * 100];
+};
+
+convert.apple.rgb = function (apple) {
+	return [(apple[0] / 65535) * 255, (apple[1] / 65535) * 255, (apple[2] / 65535) * 255];
+};
+
+convert.rgb.apple = function (rgb) {
+	return [(rgb[0] / 255) * 65535, (rgb[1] / 255) * 65535, (rgb[2] / 255) * 65535];
+};
+
+convert.gray.rgb = function (args) {
+	return [args[0] / 100 * 255, args[0] / 100 * 255, args[0] / 100 * 255];
+};
+
+convert.gray.hsl = convert.gray.hsv = function (args) {
+	return [0, 0, args[0]];
+};
+
+convert.gray.hwb = function (gray) {
+	return [0, 100, gray[0]];
+};
+
+convert.gray.cmyk = function (gray) {
+	return [0, 0, 0, gray[0]];
+};
+
+convert.gray.lab = function (gray) {
+	return [gray[0], 0, 0];
+};
+
+convert.gray.hex = function (gray) {
+	var val = Math.round(gray[0] / 100 * 255) & 0xFF;
+	var integer = (val << 16) + (val << 8) + val;
+
+	var string = integer.toString(16).toUpperCase();
+	return '000000'.substring(string.length) + string;
+};
+
+convert.rgb.gray = function (rgb) {
+	var val = (rgb[0] + rgb[1] + rgb[2]) / 3;
+	return [val / 255 * 100];
+};
+});
+var conversions_1 = conversions.rgb;
+var conversions_2 = conversions.hsl;
+var conversions_3 = conversions.hsv;
+var conversions_4 = conversions.hwb;
+var conversions_5 = conversions.cmyk;
+var conversions_6 = conversions.xyz;
+var conversions_7 = conversions.lab;
+var conversions_8 = conversions.lch;
+var conversions_9 = conversions.hex;
+var conversions_10 = conversions.keyword;
+var conversions_11 = conversions.ansi16;
+var conversions_12 = conversions.ansi256;
+var conversions_13 = conversions.hcg;
+var conversions_14 = conversions.apple;
+var conversions_15 = conversions.gray;
+
+/*
+	this function routes a model to all other models.
+
+	all functions that are routed have a property `.conversion` attached
+	to the returned synthetic function. This property is an array
+	of strings, each with the steps in between the 'from' and 'to'
+	color models (inclusive).
+
+	conversions that are not possible simply are not included.
+*/
+
+function buildGraph() {
+	var graph = {};
+	// https://jsperf.com/object-keys-vs-for-in-with-closure/3
+	var models = Object.keys(conversions);
+
+	for (var len = models.length, i = 0; i < len; i++) {
+		graph[models[i]] = {
+			// http://jsperf.com/1-vs-infinity
+			// micro-opt, but this is simple.
+			distance: -1,
+			parent: null
+		};
+	}
+
+	return graph;
+}
+
+// https://en.wikipedia.org/wiki/Breadth-first_search
+function deriveBFS(fromModel) {
+	var graph = buildGraph();
+	var queue = [fromModel]; // unshift -> queue -> pop
+
+	graph[fromModel].distance = 0;
+
+	while (queue.length) {
+		var current = queue.pop();
+		var adjacents = Object.keys(conversions[current]);
+
+		for (var len = adjacents.length, i = 0; i < len; i++) {
+			var adjacent = adjacents[i];
+			var node = graph[adjacent];
+
+			if (node.distance === -1) {
+				node.distance = graph[current].distance + 1;
+				node.parent = current;
+				queue.unshift(adjacent);
+			}
+		}
+	}
+
+	return graph;
+}
+
+function link(from, to) {
+	return function (args) {
+		return to(from(args));
+	};
+}
+
+function wrapConversion(toModel, graph) {
+	var path = [graph[toModel].parent, toModel];
+	var fn = conversions[graph[toModel].parent][toModel];
+
+	var cur = graph[toModel].parent;
+	while (graph[cur].parent) {
+		path.unshift(graph[cur].parent);
+		fn = link(conversions[graph[cur].parent][cur], fn);
+		cur = graph[cur].parent;
+	}
+
+	fn.conversion = path;
+	return fn;
+}
+
+var route = function (fromModel) {
+	var graph = deriveBFS(fromModel);
+	var conversion = {};
+
+	var models = Object.keys(graph);
+	for (var len = models.length, i = 0; i < len; i++) {
+		var toModel = models[i];
+		var node = graph[toModel];
+
+		if (node.parent === null) {
+			// no possible conversion, or this node is the source model.
+			continue;
+		}
+
+		conversion[toModel] = wrapConversion(toModel, graph);
+	}
+
+	return conversion;
+};
+
+var convert = {};
+
+var models = Object.keys(conversions);
+
+function wrapRaw(fn) {
+	var wrappedFn = function (args) {
+		if (args === undefined || args === null) {
+			return args;
+		}
+
+		if (arguments.length > 1) {
+			args = Array.prototype.slice.call(arguments);
+		}
+
+		return fn(args);
+	};
+
+	// preserve .conversion property if there is one
+	if ('conversion' in fn) {
+		wrappedFn.conversion = fn.conversion;
+	}
+
+	return wrappedFn;
+}
+
+function wrapRounded(fn) {
+	var wrappedFn = function (args) {
+		if (args === undefined || args === null) {
+			return args;
+		}
+
+		if (arguments.length > 1) {
+			args = Array.prototype.slice.call(arguments);
+		}
+
+		var result = fn(args);
+
+		// we're assuming the result is an array here.
+		// see notice in conversions.js; don't use box types
+		// in conversion functions.
+		if (typeof result === 'object') {
+			for (var len = result.length, i = 0; i < len; i++) {
+				result[i] = Math.round(result[i]);
+			}
+		}
+
+		return result;
+	};
+
+	// preserve .conversion property if there is one
+	if ('conversion' in fn) {
+		wrappedFn.conversion = fn.conversion;
+	}
+
+	return wrappedFn;
+}
+
+models.forEach(function (fromModel) {
+	convert[fromModel] = {};
+
+	Object.defineProperty(convert[fromModel], 'channels', {value: conversions[fromModel].channels});
+	Object.defineProperty(convert[fromModel], 'labels', {value: conversions[fromModel].labels});
+
+	var routes = route(fromModel);
+	var routeModels = Object.keys(routes);
+
+	routeModels.forEach(function (toModel) {
+		var fn = routes[toModel];
+
+		convert[fromModel][toModel] = wrapRounded(fn);
+		convert[fromModel][toModel].raw = wrapRaw(fn);
+	});
+});
+
+var colorConvert = convert;
+
+var _slice = [].slice;
+
+var skippedModels = [
+	// to be honest, I don't really feel like keyword belongs in color convert, but eh.
+	'keyword',
+
+	// gray conflicts with some method names, and has its own method defined.
+	'gray',
+
+	// shouldn't really be in color-convert either...
+	'hex'
+];
+
+var hashedModelKeys = {};
+Object.keys(colorConvert).forEach(function (model) {
+	hashedModelKeys[_slice.call(colorConvert[model].labels).sort().join('')] = model;
+});
+
+var limiters = {};
+
+function Color(obj, model) {
+	if (!(this instanceof Color)) {
+		return new Color(obj, model);
+	}
+
+	if (model && model in skippedModels) {
+		model = null;
+	}
+
+	if (model && !(model in colorConvert)) {
+		throw new Error('Unknown model: ' + model);
+	}
+
+	var i;
+	var channels;
+
+	if (!obj) {
+		this.model = 'rgb';
+		this.color = [0, 0, 0];
+		this.valpha = 1;
+	} else if (obj instanceof Color) {
+		this.model = obj.model;
+		this.color = obj.color.slice();
+		this.valpha = obj.valpha;
+	} else if (typeof obj === 'string') {
+		var result = colorString.get(obj);
+		if (result === null) {
+			throw new Error('Unable to parse color from string: ' + obj);
+		}
+
+		this.model = result.model;
+		channels = colorConvert[this.model].channels;
+		this.color = result.value.slice(0, channels);
+		this.valpha = typeof result.value[channels] === 'number' ? result.value[channels] : 1;
+	} else if (obj.length) {
+		this.model = model || 'rgb';
+		channels = colorConvert[this.model].channels;
+		var newArr = _slice.call(obj, 0, channels);
+		this.color = zeroArray(newArr, channels);
+		this.valpha = typeof obj[channels] === 'number' ? obj[channels] : 1;
+	} else if (typeof obj === 'number') {
+		// this is always RGB - can be converted later on.
+		obj &= 0xFFFFFF;
+		this.model = 'rgb';
+		this.color = [
+			(obj >> 16) & 0xFF,
+			(obj >> 8) & 0xFF,
+			obj & 0xFF
+		];
+		this.valpha = 1;
+	} else {
+		this.valpha = 1;
+
+		var keys = Object.keys(obj);
+		if ('alpha' in obj) {
+			keys.splice(keys.indexOf('alpha'), 1);
+			this.valpha = typeof obj.alpha === 'number' ? obj.alpha : 0;
+		}
+
+		var hashedKeys = keys.sort().join('');
+		if (!(hashedKeys in hashedModelKeys)) {
+			throw new Error('Unable to parse color from object: ' + JSON.stringify(obj));
+		}
+
+		this.model = hashedModelKeys[hashedKeys];
+
+		var labels = colorConvert[this.model].labels;
+		var color = [];
+		for (i = 0; i < labels.length; i++) {
+			color.push(obj[labels[i]]);
+		}
+
+		this.color = zeroArray(color);
+	}
+
+	// perform limitations (clamping, etc.)
+	if (limiters[this.model]) {
+		channels = colorConvert[this.model].channels;
+		for (i = 0; i < channels; i++) {
+			var limit = limiters[this.model][i];
+			if (limit) {
+				this.color[i] = limit(this.color[i]);
+			}
+		}
+	}
+
+	this.valpha = Math.max(0, Math.min(1, this.valpha));
+
+	if (Object.freeze) {
+		Object.freeze(this);
+	}
+}
+
+Color.prototype = {
+	toString: function () {
+		return this.string();
+	},
+
+	toJSON: function () {
+		return this[this.model]();
+	},
+
+	string: function (places) {
+		var self = this.model in colorString.to ? this : this.rgb();
+		self = self.round(typeof places === 'number' ? places : 1);
+		var args = self.valpha === 1 ? self.color : self.color.concat(this.valpha);
+		return colorString.to[self.model](args);
+	},
+
+	percentString: function (places) {
+		var self = this.rgb().round(typeof places === 'number' ? places : 1);
+		var args = self.valpha === 1 ? self.color : self.color.concat(this.valpha);
+		return colorString.to.rgb.percent(args);
+	},
+
+	array: function () {
+		return this.valpha === 1 ? this.color.slice() : this.color.concat(this.valpha);
+	},
+
+	object: function () {
+		var result = {};
+		var channels = colorConvert[this.model].channels;
+		var labels = colorConvert[this.model].labels;
+
+		for (var i = 0; i < channels; i++) {
+			result[labels[i]] = this.color[i];
+		}
+
+		if (this.valpha !== 1) {
+			result.alpha = this.valpha;
+		}
+
+		return result;
+	},
+
+	unitArray: function () {
+		var rgb = this.rgb().color;
+		rgb[0] /= 255;
+		rgb[1] /= 255;
+		rgb[2] /= 255;
+
+		if (this.valpha !== 1) {
+			rgb.push(this.valpha);
+		}
+
+		return rgb;
+	},
+
+	unitObject: function () {
+		var rgb = this.rgb().object();
+		rgb.r /= 255;
+		rgb.g /= 255;
+		rgb.b /= 255;
+
+		if (this.valpha !== 1) {
+			rgb.alpha = this.valpha;
+		}
+
+		return rgb;
+	},
+
+	round: function (places) {
+		places = Math.max(places || 0, 0);
+		return new Color(this.color.map(roundToPlace(places)).concat(this.valpha), this.model);
+	},
+
+	alpha: function (val) {
+		if (arguments.length) {
+			return new Color(this.color.concat(Math.max(0, Math.min(1, val))), this.model);
+		}
+
+		return this.valpha;
+	},
+
+	// rgb
+	red: getset('rgb', 0, maxfn(255)),
+	green: getset('rgb', 1, maxfn(255)),
+	blue: getset('rgb', 2, maxfn(255)),
+
+	hue: getset(['hsl', 'hsv', 'hsl', 'hwb', 'hcg'], 0, function (val) { return ((val % 360) + 360) % 360; }), // eslint-disable-line brace-style
+
+	saturationl: getset('hsl', 1, maxfn(100)),
+	lightness: getset('hsl', 2, maxfn(100)),
+
+	saturationv: getset('hsv', 1, maxfn(100)),
+	value: getset('hsv', 2, maxfn(100)),
+
+	chroma: getset('hcg', 1, maxfn(100)),
+	gray: getset('hcg', 2, maxfn(100)),
+
+	white: getset('hwb', 1, maxfn(100)),
+	wblack: getset('hwb', 2, maxfn(100)),
+
+	cyan: getset('cmyk', 0, maxfn(100)),
+	magenta: getset('cmyk', 1, maxfn(100)),
+	yellow: getset('cmyk', 2, maxfn(100)),
+	black: getset('cmyk', 3, maxfn(100)),
+
+	x: getset('xyz', 0, maxfn(100)),
+	y: getset('xyz', 1, maxfn(100)),
+	z: getset('xyz', 2, maxfn(100)),
+
+	l: getset('lab', 0, maxfn(100)),
+	a: getset('lab', 1),
+	b: getset('lab', 2),
+
+	keyword: function (val) {
+		if (arguments.length) {
+			return new Color(val);
+		}
+
+		return colorConvert[this.model].keyword(this.color);
+	},
+
+	hex: function (val) {
+		if (arguments.length) {
+			return new Color(val);
+		}
+
+		return colorString.to.hex(this.rgb().round().color);
+	},
+
+	rgbNumber: function () {
+		var rgb = this.rgb().color;
+		return ((rgb[0] & 0xFF) << 16) | ((rgb[1] & 0xFF) << 8) | (rgb[2] & 0xFF);
+	},
+
+	luminosity: function () {
+		// http://www.w3.org/TR/WCAG20/#relativeluminancedef
+		var rgb = this.rgb().color;
+
+		var lum = [];
+		for (var i = 0; i < rgb.length; i++) {
+			var chan = rgb[i] / 255;
+			lum[i] = (chan <= 0.03928) ? chan / 12.92 : Math.pow(((chan + 0.055) / 1.055), 2.4);
+		}
+
+		return 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
+	},
+
+	contrast: function (color2) {
+		// http://www.w3.org/TR/WCAG20/#contrast-ratiodef
+		var lum1 = this.luminosity();
+		var lum2 = color2.luminosity();
+
+		if (lum1 > lum2) {
+			return (lum1 + 0.05) / (lum2 + 0.05);
+		}
+
+		return (lum2 + 0.05) / (lum1 + 0.05);
+	},
+
+	level: function (color2) {
+		var contrastRatio = this.contrast(color2);
+		if (contrastRatio >= 7.1) {
+			return 'AAA';
+		}
+
+		return (contrastRatio >= 4.5) ? 'AA' : '';
+	},
+
+	isDark: function () {
+		// YIQ equation from http://24ways.org/2010/calculating-color-contrast
+		var rgb = this.rgb().color;
+		var yiq = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
+		return yiq < 128;
+	},
+
+	isLight: function () {
+		return !this.isDark();
+	},
+
+	negate: function () {
+		var rgb = this.rgb();
+		for (var i = 0; i < 3; i++) {
+			rgb.color[i] = 255 - rgb.color[i];
+		}
+		return rgb;
+	},
+
+	lighten: function (ratio) {
+		var hsl = this.hsl();
+		hsl.color[2] += hsl.color[2] * ratio;
+		return hsl;
+	},
+
+	darken: function (ratio) {
+		var hsl = this.hsl();
+		hsl.color[2] -= hsl.color[2] * ratio;
+		return hsl;
+	},
+
+	saturate: function (ratio) {
+		var hsl = this.hsl();
+		hsl.color[1] += hsl.color[1] * ratio;
+		return hsl;
+	},
+
+	desaturate: function (ratio) {
+		var hsl = this.hsl();
+		hsl.color[1] -= hsl.color[1] * ratio;
+		return hsl;
+	},
+
+	whiten: function (ratio) {
+		var hwb = this.hwb();
+		hwb.color[1] += hwb.color[1] * ratio;
+		return hwb;
+	},
+
+	blacken: function (ratio) {
+		var hwb = this.hwb();
+		hwb.color[2] += hwb.color[2] * ratio;
+		return hwb;
+	},
+
+	grayscale: function () {
+		// http://en.wikipedia.org/wiki/Grayscale#Converting_color_to_grayscale
+		var rgb = this.rgb().color;
+		var val = rgb[0] * 0.3 + rgb[1] * 0.59 + rgb[2] * 0.11;
+		return Color.rgb(val, val, val);
+	},
+
+	fade: function (ratio) {
+		return this.alpha(this.valpha - (this.valpha * ratio));
+	},
+
+	opaquer: function (ratio) {
+		return this.alpha(this.valpha + (this.valpha * ratio));
+	},
+
+	rotate: function (degrees) {
+		var hsl = this.hsl();
+		var hue = hsl.color[0];
+		hue = (hue + degrees) % 360;
+		hue = hue < 0 ? 360 + hue : hue;
+		hsl.color[0] = hue;
+		return hsl;
+	},
+
+	mix: function (mixinColor, weight) {
+		// ported from sass implementation in C
+		// https://github.com/sass/libsass/blob/0e6b4a2850092356aa3ece07c6b249f0221caced/functions.cpp#L209
+		var color1 = mixinColor.rgb();
+		var color2 = this.rgb();
+		var p = weight === undefined ? 0.5 : weight;
+
+		var w = 2 * p - 1;
+		var a = color1.alpha() - color2.alpha();
+
+		var w1 = (((w * a === -1) ? w : (w + a) / (1 + w * a)) + 1) / 2.0;
+		var w2 = 1 - w1;
+
+		return Color.rgb(
+				w1 * color1.red() + w2 * color2.red(),
+				w1 * color1.green() + w2 * color2.green(),
+				w1 * color1.blue() + w2 * color2.blue(),
+				color1.alpha() * p + color2.alpha() * (1 - p));
+	}
+};
+
+// model conversion methods and static constructors
+Object.keys(colorConvert).forEach(function (model) {
+	if (skippedModels.indexOf(model) !== -1) {
+		return;
+	}
+
+	var channels = colorConvert[model].channels;
+
+	// conversion methods
+	Color.prototype[model] = function () {
+		if (this.model === model) {
+			return new Color(this);
+		}
+
+		if (arguments.length) {
+			return new Color(arguments, model);
+		}
+
+		var newAlpha = typeof arguments[channels] === 'number' ? channels : this.valpha;
+		return new Color(assertArray(colorConvert[this.model][model].raw(this.color)).concat(newAlpha), model);
+	};
+
+	// 'static' construction methods
+	Color[model] = function (color) {
+		if (typeof color === 'number') {
+			color = zeroArray(_slice.call(arguments), channels);
+		}
+		return new Color(color, model);
+	};
+});
+
+function roundTo(num, places) {
+	return Number(num.toFixed(places));
+}
+
+function roundToPlace(places) {
+	return function (num) {
+		return roundTo(num, places);
+	};
+}
+
+function getset(model, channel, modifier) {
+	model = Array.isArray(model) ? model : [model];
+
+	model.forEach(function (m) {
+		(limiters[m] || (limiters[m] = []))[channel] = modifier;
+	});
+
+	model = model[0];
+
+	return function (val) {
+		var result;
+
+		if (arguments.length) {
+			if (modifier) {
+				val = modifier(val);
+			}
+
+			result = this[model]();
+			result.color[channel] = val;
+			return result;
+		}
+
+		result = this[model]().color[channel];
+		if (modifier) {
+			result = modifier(result);
+		}
+
+		return result;
+	};
+}
+
+function maxfn(max) {
+	return function (v) {
+		return Math.max(0, Math.min(max, v));
+	};
+}
+
+function assertArray(val) {
+	return Array.isArray(val) ? val : [val];
+}
+
+function zeroArray(arr, length) {
+	for (var i = 0; i < length; i++) {
+		if (typeof arr[i] !== 'number') {
+			arr[i] = 0;
+		}
+	}
+
+	return arr;
+}
+
+var color = Color;
+
+function round (num, digit) {
+  digit = Math.pow(10, digit);
+  return Math.round(num * digit) / digit
+}
+
+const numStylekey = ['width', 'height', 'top', 'left'];
+function styler (dom, data) {
+  if (dom[0] === void 0) {
+    dom = [dom];
+  }
+  dom.forEach((el) => {
+    const style = el.style;
+    for (let key in data) {
+      const val = data[key];
+      if (typeof val === 'number' && numStylekey.indexOf(key) !== -1) {
+        style[key] = val + 'px';
+      } else if (val != null) {
+        style[key] = val;
+      }
+    }
+  });
+}
+
+/**
+ * クリップボードコピー関数
+ *
+ * @export
+ * @param {string} textVal
+ * @returns {boolean}
+ */
+function copyTextToClipboard (textVal) {
+  // テキストエリアを用意する
+  const copyFrom = document.createElement('textarea');
+  // テキストエリアへ値をセット
+  copyFrom.textContent = textVal;
+
+  // bodyタグの要素を取得
+  const bodyElm = document.getElementsByTagName('body')[0];
+  // 子要素にテキストエリアを配置
+  bodyElm.appendChild(copyFrom);
+
+  // テキストエリアの値を選択
+  copyFrom.select();
+  // コピーコマンド発行
+  const retVal = document.execCommand('copy');
+  // 追加テキストエリアを削除
+  bodyElm.removeChild(copyFrom);
+
+  return retVal
+}
+
+function eventer (constructor) {
+  const EVENTS = constructor._events = {};
+  Object.assign(constructor, {
+    on (eventName, handler) {
+      (EVENTS[eventName] = EVENTS[eventName] || []).push(handler);
+      return this
+    },
+    off (eventName, handler) {
+      const index = EVENTS[eventName].indexOf(handler);
+      if (~index) EVENTS[eventName].splice(index, 1);
+      return this
+    },
+    once (eventName, handler) {
+      const oncehandler = (...args) => {
+        this.off(eventName, oncehandler);
+        handler(...args);
+      };
+      (EVENTS[eventName] = EVENTS[eventName] || []).push(oncehandler);
+      return this
+    },
+    fire (eventName, ...args) {
+      console.log('fire', eventName);
+      if (EVENTS[eventName]) {
+        EVENTS[eventName].forEach((handler) => handler(...args));
+      } else {
+        console.error(`fire: ${eventName} is undefind`);
+      }
+      return this
+    },
+  });
+}
+
+/* src\color-picker\color-input.html generated by Svelte v1.56.2 */
+
+function caretIndex (event, color$$1) {
   const {value, selectionStart} = event.target;
   const index = value[0] === '#'
     ? Math.floor((selectionStart - 1) / 2)
     // count ',' before selectionStart
     : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1;
-  return ((value[0] === '#' || color.getAlpha() === 1) && index === 3) || index === 4 ? -1 : index
+  return ((value[0] === '#' || color$$1.alpha() === 1) && index === 3) || index === 4 ? -1 : index
 }
 
-function _color$1(color) {
-	return tinycolor(color);
+function value(color$$1, model) {
+	return color$$1.toString(model);
 }
 
-function value(_color, format) {
-	return _color.toString(format);
+function textColor(color$$1, bgColor) {
+	return bgColor.alphaBlending(color$$1).isDark() ? '#fff' : '#000';
 }
 
-function textColor$2(_color) {
-	return tinycolor.mostReadable(_color, ['#fff', '#000']);
-}
-
-function data$2() {
+function data() {
   return {
     phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
-    color: 'red',
-    formats: ['hsl', 'hsv', 'rgb', 'prgb', 'hex'],
-    format: 'hex',
-    showList: false,
+    color: color('#050'),
+    bgColor: '',
+    models: ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'],
+    model: 'rgb',
   }
 }
-
 function updown(node, callback) {
   function onkeydown (event) {
     let time;
@@ -2234,123 +2338,138 @@ function updown(node, callback) {
     }
   }
 }
-
-var methods$1 = {
+function modelChange(_model, model, bgColor) {
+  let color$$1 = bgColor.mostReadable('#ccc', '#333');
+  return model === _model
+    ? `color: ${bgColor}; background-color: ${color$$1};`
+    : `color: ${color$$1}; background-color: transparent;`
+}
+var methods = {
+  keydown (event) {
+    const value = event.target.value;
+    const color$$1 = color(value);
+    if (/^#?([a-f\d]{3})$/i.test(value) && event.key === 'Enter') {
+      this.set({ color: color$$1, model: 'hex' });
+    }
+  },
   input (event) {
     const value = event.target.value;
-    const color = tinycolor(value);
-    const format = color.getFormat();
 
-    if (color.isValid() && !/^#?[a-f\d]{3,4}$/i.test(value)) {
-      this.set({ color, format });
+    let color$$1;
+    try {
+      color$$1 = color(value);
+    } catch (error) {
+      return
     }
+    if (/^#?([a-f\d]{3})$/i.test(value)) return
+    const model = /^#?([a-f\d]{6})$/i.test(value) ? 'hex' : color$$1.model;
+    this.set({ color: color$$1, model });
   },
   updown (event) {
     const {value, selectionStart, selectionEnd} = event.target;
-    if (selectionStart !== selectionEnd) {
+    const numbercheckReg = /-?(?:0?\.)?\d{1,3}/g;
+    if (
+      selectionStart !== selectionEnd &&
+      !numbercheckReg.test(value.substring(selectionStart, selectionEnd))
+    ) {
       return
     }
 
-    let color = tinycolor(value);
-    const index = caretIndex(event, color);
-    const arrow = event.type === 'keydown'
-      ? (event.key === 'ArrowUp' ? 1 : -1)
-      : event.deltaY;
+    const model = this.get('model');
+    let color$$1;
+    try {
+      color$$1 = color(value);
+    } catch (error) {
+      try {
+        const arr = value.match(/.*?\(([-\d.%, ]*)\)/)[1].split(',');
+        color$$1 = color(arr.map((v) => {
+          v = v.trim();
+          if (v.slice(-1) === '%') {
+            v = parseFloat(v) / 100;
+          } else {
+            v = parseFloat(v);
+          }
+          return v
+        }), model);
+      } catch (error) {
+        return
+      }
+    }
+
+    const index = caretIndex(event, color$$1);
 
     if (index === -1) {
-      const format = this.get('format');
-      if (color.isValid()) {
-        // change format
-        const formats = this.get('formats');
-        let findex = (formats.indexOf(format) - arrow);
-        if (findex < 0) {
-          findex = formats.length + findex;
-        }
-        this.set({ format: formats[findex % formats.length] });
-      } else {
-        // Re: valid Color
-        event.target.value = this.get('_color').toString(format);
+      const models = this.get('models');
+      const arrow = event.type === 'keydown'
+        ? (event.key === 'ArrowUp' ? 1 : -1)
+        : event.deltaY < 0 ? 1 : -1;
+
+      let findex = models.indexOf(model) + arrow;
+
+      if (findex < 0) {
+        findex = models.length + findex;
+      } else if (findex >= models.length) {
+        findex -= models.length;
       }
-    } else if (color.isValid()) {
-      const format = color.getFormat();
+      this.set({ model: models[findex] });
+    } else {
+      const arrow = event.type === 'keydown'
+        ? (event.key === 'ArrowUp' ? 1 : -1) * (event.shiftKey ? 10 : 1)
+        : event.deltaY < 0 ? 10 : -10;
+
+      let param = model === '%' ? color$$1.unitArray() : color$$1[model]().array();
+
       if (index === 3) {
         // alpla
-        color.setAlpha(color.getAlpha() + arrow / 100);
+        color$$1 = color$$1.alpha(color$$1.alpha() + arrow / 100);
       } else {
         // not alpla
-        const plus = arrow;
-        let param;
-        switch (format) {
-          case 'hsl':
-            param = color.toHsl();
-            param.s *= 100;
-            param.l *= 100;
-            param['hsl'[index]] += plus;
-            break
-          case 'hsv':
-            param = color.toHsv();
-            param.s *= 100;
-            param.v *= 100;
-            param['hsv'[index]] += plus;
-            break
-          case 'prgb':
-            param = color.toRgb();
-            param.r /= 255;
-            param.g /= 255;
-            param.b /= 255;
-            param['rgb'[index]] += plus / 100;
-            param.r *= 255;
-            param.g *= 255;
-            param.b *= 255;
+        switch (model) {
+          case '%':
+            const val = (param[index] + arrow / 100) * 255;
+            param = color$$1.rgb().array();
+            param[index] = val;
+            color$$1 = color(param, 'rgb');
             break
           default:
-            param = color.toRgb();
-            param['rgb'[index]] += plus;
+            param[index] += arrow;
+            color$$1 = color(param, model);
             break
         }
-        color = tinycolor(param);
       }
-      this.set({ color });
-      event.target.selectionStart = selectionStart;
-      event.target.selectionEnd = selectionStart;
+      this.set({ color: color$$1 });
+      if (model !== 'hex') {
+        let result;
+        for (let i = -1; i < index; i++) {
+          result = numbercheckReg.exec(value);
+        }
+        event.target.selectionStart = result.index;
+        event.target.selectionEnd = result.index + result[0].length;
+      }
     }
-  },
-  focus (event) {
-    this.set({showList: true});
-    const index = caretIndex(event, this.get('_color'));
-    this.listToggle(index === -1);
-
-    console.log('focus.index', index);
-  },
-  listToggle (flg) {
-    this.set({showList: !!flg});
-    // this.refs.list.classList.toggle('active', flg)
-    // if (this.refs.list.classList.contains('active')) {
-    //   const winclick = (event) => {
-    //     this.refs.list.classList.remove('active')
-    //     window.removeEventListener('click', winclick, true)
-    //   }
-    //   window.addEventListener('click', winclick, true)
-    // }
   },
 };
 
-function encapsulateStyles$2(node) {
-	setAttribute(node, "svelte-3531875913", "");
+function encapsulateStyles(node) {
+	setAttribute(node, "svelte-2163666382", "");
 }
 
-function add_css$2() {
+function add_css() {
 	var style = createElement("style");
-	style.id = 'svelte-3531875913-style';
-	style.textContent = "[svelte-3531875913].input-wrapper,[svelte-3531875913] .input-wrapper{--size:2.5em;position:relative;font:normal 1em \"Lucida Grande\", \"Lucida Sans Unicode\", \"Lucida Sans\", Geneva, Verdana, sans-serif;display:flex;flex-direction:row}[svelte-3531875913].input-wrapper > *,[svelte-3531875913] .input-wrapper > *{border-width:1px 1px 1px 0;border-style:solid}[svelte-3531875913].input-wrapper > :first-child,[svelte-3531875913] .input-wrapper > :first-child{border-top-left-radius:4px;border-bottom-left-radius:4px;border-width:1px}[svelte-3531875913].input-wrapper > :last-child,[svelte-3531875913] .input-wrapper > :last-child{border-top-right-radius:4px;border-bottom-right-radius:4px}[svelte-3531875913].color-text,[svelte-3531875913] .color-text{height:var(--size);padding:0 4px;text-align:center;flex:1 1 auto}[svelte-3531875913].submit-btn,[svelte-3531875913] .submit-btn{height:var(--size);text-align:center}[svelte-3531875913].color-text_list,[svelte-3531875913] .color-text_list{position:absolute;margin:0;padding:0;top:var(--size);left:0;width:100%;list-style:none;text-align:left;color:#111;background-color:#ddd;z-index:10000}[svelte-3531875913].color-text_list-item,[svelte-3531875913] .color-text_list-item{margin:0;padding:4px;height:var(--size);list-style:none}[svelte-3531875913].color-text_list-item.active,[svelte-3531875913] .color-text_list-item.active{font-weight:bold}[svelte-3531875913].color-text_list-item:hover,[svelte-3531875913] .color-text_list-item:hover{background-color:aqua}[svelte-3531875913].color-text_list.active,[svelte-3531875913] .color-text_list.active{visibility:visible}";
+	style.id = 'svelte-2163666382-style';
+	style.textContent = "[svelte-2163666382].models,[svelte-2163666382] .models{font-size:0.8em}[svelte-2163666382].models button,[svelte-2163666382] .models button{padding:4px}[svelte-2163666382].input-wrapper,[svelte-2163666382] .input-wrapper{--size:2em;padding:0;position:relative;font:normal 1em \"Lucida Grande\", \"Lucida Sans Unicode\", \"Lucida Sans\", Geneva, Verdana, sans-serif;display:flex;flex-direction:column}[svelte-2163666382].color-text,[svelte-2163666382] .color-text{height:var(--size);padding:0 4px;text-align:center}";
 	appendNode(style, document.head);
 }
 
-function create_main_fragment$2(state, component) {
+function create_main_fragment(component, state) {
 	var if_block_anchor;
 
-	var current_block_type = select_block_type$1(state);
-	var if_block = current_block_type(state, component);
+	function select_block_type(state) {
+		if (state.phone) return create_if_block;
+		return create_if_block_1;
+	}
+	var current_block_type = select_block_type(state);
+	var if_block = current_block_type(component, state);
 
 	return {
 		c: function create() {
@@ -2364,12 +2483,12 @@ function create_main_fragment$2(state, component) {
 		},
 
 		p: function update(changed, state) {
-			if (current_block_type === (current_block_type = select_block_type$1(state)) && if_block) {
+			if (current_block_type === (current_block_type = select_block_type(state)) && if_block) {
 				if_block.p(changed, state);
 			} else {
 				if_block.u();
 				if_block.d();
-				if_block = current_block_type(state, component);
+				if_block = current_block_type(component, state);
 				if_block.c();
 				if_block.m(if_block_anchor.parentNode, if_block_anchor);
 			}
@@ -2386,222 +2505,61 @@ function create_main_fragment$2(state, component) {
 	};
 }
 
-// (15:8) {{#each formats as fm, i}}
-function create_each_block$1(state, formats, fm, i, component) {
-	var li, span, text_value = state._color.toString(fm), text, text_1, span_1, li_class_value;
+// (5:4) {{#each models as _model}}
+function create_each_block(component, state) {
+	var _model = state._model, _model_index = state._model_index;
+	var button, text_value = _model.toUpperCase(), text, button_style_value;
 
 	return {
 		c: function create() {
-			li = createElement("li");
-			span = createElement("span");
+			button = createElement("button");
 			text = createText(text_value);
-			text_1 = createText("\n            ");
-			span_1 = createElement("span");
-			span_1.textContent = "コピー";
 			this.h();
 		},
 
 		h: function hydrate() {
-			addListener(span, "click", click_handler);
+			button.style.cssText = button_style_value = modelChange(_model, state.model, state.bgColor);
+			addListener(button, "click", click_handler);
 
-			span._svelte = {
+			button._svelte = {
 				component: component,
-				formats: formats,
-				i: i
+				models: state.models,
+				_model_index: state._model_index
 			};
-
-			li.className = li_class_value = "color-text_list-item " + (state.format == fm ? 'active' : '');
 		},
 
 		m: function mount(target, anchor) {
-			insertNode(li, target, anchor);
-			appendNode(span, li);
-			appendNode(text, span);
-			appendNode(text_1, li);
-			appendNode(span_1, li);
-		},
-
-		p: function update(changed, state, formats, fm, i) {
-			if ((changed._color || changed.formats) && text_value !== (text_value = state._color.toString(fm))) {
-				text.data = text_value;
-			}
-
-			span._svelte.formats = formats;
-			span._svelte.i = i;
-
-			if ((changed.format || changed.formats) && li_class_value !== (li_class_value = "color-text_list-item " + (state.format == fm ? 'active' : ''))) {
-				li.className = li_class_value;
-			}
-		},
-
-		u: function unmount() {
-			detachNode(li);
-		},
-
-		d: function destroy$$1() {
-			removeListener(span, "click", click_handler);
-		}
-	};
-}
-
-// (21:8) {{#if _color.toName()}}
-function create_if_block_3(state, component) {
-	var li, span, text_value = state._color.toName(), text, text_1, span_1, li_class_value;
-
-	function click_handler_1(event) {
-		component.set({format: 'name'});
-	}
-
-	return {
-		c: function create() {
-			li = createElement("li");
-			span = createElement("span");
-			text = createText(text_value);
-			text_1 = createText("\n            ");
-			span_1 = createElement("span");
-			span_1.textContent = "コピー";
-			this.h();
-		},
-
-		h: function hydrate() {
-			addListener(span, "click", click_handler_1);
-			li.className = li_class_value = "color-text_list-item " + (state.format == 'name' ? 'active' : '');
-		},
-
-		m: function mount(target, anchor) {
-			insertNode(li, target, anchor);
-			appendNode(span, li);
-			appendNode(text, span);
-			appendNode(text_1, li);
-			appendNode(span_1, li);
+			insertNode(button, target, anchor);
+			appendNode(text, button);
 		},
 
 		p: function update(changed, state) {
-			if ((changed._color) && text_value !== (text_value = state._color.toName())) {
+			_model = state._model;
+			_model_index = state._model_index;
+			if ((changed.models) && text_value !== (text_value = _model.toUpperCase())) {
 				text.data = text_value;
 			}
 
-			if ((changed.format) && li_class_value !== (li_class_value = "color-text_list-item " + (state.format == 'name' ? 'active' : ''))) {
-				li.className = li_class_value;
+			if ((changed.models || changed.model || changed.bgColor) && button_style_value !== (button_style_value = modelChange(_model, state.model, state.bgColor))) {
+				button.style.cssText = button_style_value;
 			}
+
+			button._svelte.models = state.models;
+			button._svelte._model_index = state._model_index;
 		},
 
 		u: function unmount() {
-			detachNode(li);
+			detachNode(button);
 		},
 
 		d: function destroy$$1() {
-			removeListener(span, "click", click_handler_1);
-		}
-	};
-}
-
-// (13:4) {{#if showList}}
-function create_if_block_2(state, component) {
-	var ul, each_anchor;
-
-	var formats = state.formats;
-
-	var each_blocks = [];
-
-	for (var i = 0; i < formats.length; i += 1) {
-		each_blocks[i] = create_each_block$1(state, formats, formats[i], i, component);
-	}
-
-	var if_block = (state._color.toName()) && create_if_block_3(state, component);
-
-	function click_handler_1(event) {
-		component.set({showList: false});
-	}
-
-	return {
-		c: function create() {
-			ul = createElement("ul");
-
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].c();
-			}
-
-			each_anchor = createComment();
-			if (if_block) if_block.c();
-			this.h();
-		},
-
-		h: function hydrate() {
-			ul.className = "color-text_list";
-			addListener(ul, "click", click_handler_1);
-		},
-
-		m: function mount(target, anchor) {
-			insertNode(ul, target, anchor);
-
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].m(ul, null);
-			}
-
-			appendNode(each_anchor, ul);
-			if (if_block) if_block.m(ul, null);
-			component.refs.list = ul;
-		},
-
-		p: function update(changed, state) {
-			var formats = state.formats;
-
-			if (changed.format || changed.formats || changed._color) {
-				for (var i = 0; i < formats.length; i += 1) {
-					if (each_blocks[i]) {
-						each_blocks[i].p(changed, state, formats, formats[i], i);
-					} else {
-						each_blocks[i] = create_each_block$1(state, formats, formats[i], i, component);
-						each_blocks[i].c();
-						each_blocks[i].m(ul, each_anchor);
-					}
-				}
-
-				for (; i < each_blocks.length; i += 1) {
-					each_blocks[i].u();
-					each_blocks[i].d();
-				}
-				each_blocks.length = formats.length;
-			}
-
-			if (state._color.toName()) {
-				if (if_block) {
-					if_block.p(changed, state);
-				} else {
-					if_block = create_if_block_3(state, component);
-					if_block.c();
-					if_block.m(ul, null);
-				}
-			} else if (if_block) {
-				if_block.u();
-				if_block.d();
-				if_block = null;
-			}
-		},
-
-		u: function unmount() {
-			detachNode(ul);
-
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].u();
-			}
-
-			if (if_block) if_block.u();
-		},
-
-		d: function destroy$$1() {
-			destroyEach(each_blocks);
-
-			if (if_block) if_block.d();
-			removeListener(ul, "click", click_handler_1);
-			if (component.refs.list === ul) component.refs.list = null;
+			removeListener(button, "click", click_handler);
 		}
 	};
 }
 
 // (1:0) {{#if phone}}
-function create_if_block$1(state, component) {
+function create_if_block(component, state) {
 	var input;
 
 	return {
@@ -2611,7 +2569,7 @@ function create_if_block$1(state, component) {
 		},
 
 		h: function hydrate() {
-			encapsulateStyles$2(input);
+			encapsulateStyles(input);
 			input.type = "color";
 		},
 
@@ -2630,8 +2588,19 @@ function create_if_block$1(state, component) {
 }
 
 // (3:0) {{else}}
-function create_if_block_1$1(state, component) {
-	var div, input, updown_handler, text;
+function create_if_block_1(component, state) {
+	var div, text_1, div_1, input, updown_handler;
+
+	var models = state.models;
+
+	var each_blocks = [];
+
+	for (var i = 0; i < models.length; i += 1) {
+		each_blocks[i] = create_each_block(component, assign({}, state, {
+			_model: models[i],
+			_model_index: i
+		}));
+	}
 
 	function input_handler(event) {
 		component.input(event);
@@ -2641,26 +2610,31 @@ function create_if_block_1$1(state, component) {
 		component.updown(event);
 	}
 
-	function click_handler(event) {
-		component.focus(event);
+	function keydown_handler(event) {
+		component.keydown(event);
 	}
-
-	var if_block = (state.showList) && create_if_block_2(state, component);
 
 	return {
 		c: function create() {
 			div = createElement("div");
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].c();
+			}
+
+			text_1 = createText("\n  ");
+			div_1 = createElement("div");
 			input = createElement("input");
-			text = createText("\n    ");
-			if (if_block) if_block.c();
 			this.h();
 		},
 
 		h: function hydrate() {
-			encapsulateStyles$2(div);
+			encapsulateStyles(div);
+			div.className = "models";
+			encapsulateStyles(div_1);
 			input.className = "color-text";
 			setStyle(input, "color", state.textColor);
-			setStyle(input, "background-color", state._color.toString('rgb'));
+			setStyle(input, "background-color", state.color.rgb());
 			input.value = state.value;
 			input.placeholder = "keypress: ↑↓";
 			addListener(input, "input", input_handler);
@@ -2670,80 +2644,97 @@ function create_if_block_1$1(state, component) {
 			});
 
 			addListener(input, "wheel", wheel_handler);
-			addListener(input, "click", click_handler);
-			div.className = "input-wrapper";
+			addListener(input, "keydown", keydown_handler);
+			div_1.className = "input-wrapper";
 		},
 
 		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
-			appendNode(input, div);
-			appendNode(text, div);
-			if (if_block) if_block.m(div, null);
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].m(div, null);
+			}
+
+			insertNode(text_1, target, anchor);
+			insertNode(div_1, target, anchor);
+			appendNode(input, div_1);
 		},
 
 		p: function update(changed, state) {
+			var models = state.models;
+
+			if (changed.models || changed.model || changed.bgColor) {
+				for (var i = 0; i < models.length; i += 1) {
+					var each_context = assign({}, state, {
+						_model: models[i],
+						_model_index: i
+					});
+
+					if (each_blocks[i]) {
+						each_blocks[i].p(changed, each_context);
+					} else {
+						each_blocks[i] = create_each_block(component, each_context);
+						each_blocks[i].c();
+						each_blocks[i].m(div, null);
+					}
+				}
+
+				for (; i < each_blocks.length; i += 1) {
+					each_blocks[i].u();
+					each_blocks[i].d();
+				}
+				each_blocks.length = models.length;
+			}
+
 			if (changed.textColor) {
 				setStyle(input, "color", state.textColor);
 			}
 
-			if (changed._color) {
-				setStyle(input, "background-color", state._color.toString('rgb'));
+			if (changed.color) {
+				setStyle(input, "background-color", state.color.rgb());
 			}
 
 			if (changed.value) {
 				input.value = state.value;
 			}
-
-			if (state.showList) {
-				if (if_block) {
-					if_block.p(changed, state);
-				} else {
-					if_block = create_if_block_2(state, component);
-					if_block.c();
-					if_block.m(div, null);
-				}
-			} else if (if_block) {
-				if_block.u();
-				if_block.d();
-				if_block = null;
-			}
 		},
 
 		u: function unmount() {
 			detachNode(div);
-			if (if_block) if_block.u();
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].u();
+			}
+
+			detachNode(text_1);
+			detachNode(div_1);
 		},
 
 		d: function destroy$$1() {
+			destroyEach(each_blocks);
+
 			removeListener(input, "input", input_handler);
 			updown_handler.teardown();
 			removeListener(input, "wheel", wheel_handler);
-			removeListener(input, "click", click_handler);
-			if (if_block) if_block.d();
+			removeListener(input, "keydown", keydown_handler);
 		}
 	};
 }
 
 function click_handler(event) {
 	var component = this._svelte.component;
-	var formats = this._svelte.formats, i = this._svelte.i, fm = formats[i];
-	component.set({format: fm});
-}
-
-function select_block_type$1(state) {
-	if (state.phone) return create_if_block$1;
-	return create_if_block_1$1;
+	var models = this._svelte.models, _model_index = this._svelte._model_index, _model = models[_model_index];
+	component.set({model: _model});
 }
 
 function Color_input(options) {
 	init(this, options);
-	this.refs = {};
-	this._state = assign(data$2(), options.data);
-	this._recompute({ color: 1, _color: 1, format: 1 }, this._state);
+	this._state = assign(data(), options.data);
+	this._recompute({ color: 1, model: 1, bgColor: 1 }, this._state);
 
-	if (!document.getElementById("svelte-3531875913-style")) add_css$2();
+	if (!document.getElementById("svelte-2163666382-style")) add_css();
 
-	this._fragment = create_main_fragment$2(this._state, this);
+	this._fragment = create_main_fragment(this, this._state);
 
 	if (options.target) {
 		this._fragment.c();
@@ -2751,19 +2742,15 @@ function Color_input(options) {
 	}
 }
 
-assign(Color_input.prototype, methods$1, proto);
+assign(Color_input.prototype, methods, proto);
 
 Color_input.prototype._recompute = function _recompute(changed, state) {
-	if (changed.color) {
-		if (differs(state._color, (state._color = _color$1(state.color)))) changed._color = true;
+	if (changed.color || changed.model) {
+		if (this._differs(state.value, (state.value = value(state.color, state.model)))) changed.value = true;
 	}
 
-	if (changed._color || changed.format) {
-		if (differs(state.value, (state.value = value(state._color, state.format)))) changed.value = true;
-	}
-
-	if (changed._color) {
-		if (differs(state.textColor, (state.textColor = textColor$2(state._color)))) changed.textColor = true;
+	if (changed.color || changed.bgColor) {
+		if (this._differs(state.textColor, (state.textColor = textColor(state.color, state.bgColor)))) changed.textColor = true;
 	}
 };
 
@@ -2961,12 +2948,12 @@ class PositionManager {
  */
 function on$1 (el, eventNames, callback, useCapture) {
   eventNames.split(' ').forEach((eventName) => {
-    (el || window).addEventListener(eventName, callback, !!useCapture);
+(el || window).addEventListener(eventName, callback, !!useCapture);
   });
 }
 function off (el, eventNames, callback, useCapture) {
   eventNames.split(' ').forEach((eventName) => {
-    (el || window).removeEventListener(eventName, callback, !!useCapture);
+(el || window).removeEventListener(eventName, callback, !!useCapture);
   });
 }
 
@@ -3082,6 +3069,51 @@ class Movable extends MousePosition {
   }
 }
 
+/**
+ * Resizable
+ *
+ * @export
+ * @param {element} element
+ * @param {object} options
+ */
+class Resizable extends MousePosition {
+  constructor (element, options) {
+    const style = window.getComputedStyle(element.parentElement);
+    super(element, Object.assign({
+      containment: element.parentElement,
+      handle: element,
+      draggingClass: 'resizing',
+      minWidth: parseFloat(style.minWidth) || 10,
+      minHeight: parseFloat(style.minHeight) || 10,
+    }, options || {}));
+  }
+  // マウスが押された際の関数
+  mdown (e) {
+    super.mdown(e);
+    // クラス名に .drag を追加
+    this.options.handle.classList.add(this.options.draggingClass);
+  }
+  // マウスカーソルが動いたときに発火
+  mmove (e) {
+    super.mmove(e);
+    const pos = this.position;
+    const width = pos.parentRect.width + pos.vectorX;
+    const height = pos.parentRect.height + pos.vectorY;
+    if (width >= this.options.minWidth) {
+      this.options.containment.style.width = width + 'px';
+    }
+    if (height >= this.options.minHeight) {
+      this.options.containment.style.height = height + 'px';
+    }
+  }
+  // マウスボタンが上がったら発火
+  mup (e) {
+    super.mup(e);
+    // クラス名 .drag も消す
+    this.options.handle.classList.remove(this.options.draggingClass);
+  }
+}
+
 
 function hitChecker (rect1, rect2, tolerance) {
   return tolerance === 'fit' ? fitHit(rect1, rect2) : touchHit(rect1, rect2)
@@ -3147,42 +3179,116 @@ class Selectable extends MousePosition {
       helper.style.zIndex = '10000';
       helper.style.border = '1px dotted black';
     }
+    this.reset();
 
-    this.selectorString = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)');
-    this.children = Array.from(this.options.containment.querySelectorAll(this.selectorString));
-    this.childrenRects = this.children.map((el) => el.getBoundingClientRect());
-    this.selectIndexs = [];
-    this.selectElements = [];
+    const callback = (e, that) => {
+      if (e.shiftKey) {
+        this.toggle(that);
+      } else if (!this.children.find(({el}) => el === that).isSelected) {
+        this.unselectAll();
+        this.toggle(that);
+      }
+      // Callback
+      if (opts.selected) {
+        opts.selected(this.position, this.selects);
+      }
+    };
+    function cb (e) { callback(e, this); }
+
+    this.children.forEach(({el}, i) => {
+      el.addEventListener('mousedown', cb);
+    });
+
+    const observer = new MutationObserver((mutations) => { // eslint-disable-line
+      mutations.forEach((mutation) => {
+        // console.log('!!!!!', mutation.type)
+        let change = false;
+        for (const el of mutation.addedNodes) {
+          if (el !== helper) {
+            el.addEventListener('mousedown', cb);
+            change = true;
+          }
+        }
+        for (const el of mutation.removedNodes) {
+          if (el !== helper) {
+            el.removeEventListener('mousedown', cb);
+            change = true;
+          }
+        }
+        if (change) {
+          this.reset();
+        }
+      });
+    });
+    observer.observe(element, { childList: true });
   }
 
+  get selects () {
+    return this.children.filter((child) => child.isSelected)
+  }
 
-  select (i) {
-    const opts = this.options,
-          selectEl = this.children[i];
-    selectEl.classList.add(opts.selectedClass);
-    // Callback
-    if (opts.selecting) {
-      this.position.options.handle = selectEl;
-      opts.selecting(this.position, i);
+  reset (isSelected = false) {
+    const opts = this.options;
+    const method = isSelected ? 'add' : 'remove';
+    const que = opts.filter + opts.cancel.replace(/(\w+),?/g, ':not($1)');
+    this.children = Array.from(opts.containment.querySelectorAll(que))
+      .map((el, index) => {
+        el.classList[method](opts.selectedClass);
+        return {
+          el,
+          index,
+          rect: el.getBoundingClientRect(),
+          isSelected,
+        }
+      });
+  }
+
+  /**
+   *
+   *
+   * @param {number|element} search
+   * @param {boolean} flg
+   * @memberof Selectable
+   */
+  toggle (search, flg) {
+    const opts = this.options;
+    const child = typeof search === 'number'
+      ? this.children[search]
+      : this.children.find(({el}) => el === search);
+    const {el, isSelected} = child;
+
+    child.isSelected = flg = flg == null ? !isSelected : flg;
+
+    if (flg) {
+      el.classList.add(opts.selectedClass);
+      // Callback
+      if (opts.selecting) {
+        this.position.options.handle = el;
+        opts.selecting(this.position, child);
+      }
+    } else {
+      el.classList.remove(opts.selectedClass);
+      // Callback
+      if (opts.unselecting) {
+        this.position.options.handle = el;
+        opts.unselecting(this.position, child);
+      }
     }
   }
+
+  select (i) {
+    this.toggle(i, true);
+  }
   selectAll () {
-    this.children.forEach((selectEl, i) => {
+    this.children.forEach((child, i) => {
       this.select(i);
     });
   }
   unselect (i) {
-    const opts = this.options,
-          selectEl = this.children[i];
-    selectEl.classList.remove(opts.selectedClass);
-    // Callback
-    if (opts.unselecting) {
-      this.position.options.handle = selectEl;
-      opts.unselecting(this.position, i);
-    }
+    this.toggle(i, false);
   }
   unselectAll () {
-    this.children.forEach((selectEl, i) => {
+    this.children.forEach((child, i) => {
       this.unselect(i);
     });
   }
@@ -3212,18 +3318,13 @@ class Selectable extends MousePosition {
     const el = this.options.containment;
     const {position, helper} = this;
     // array init
-    this.children = Array.from(el.querySelectorAll(this.selectorString));
-    this.childrenRects = this.children.map((el) => el.getBoundingClientRect());
-    this.selectIndexs.length = 0;
-    this.selectElements.length = 0;
+    if (!e.shiftKey) this.reset();
     // helper追加
     el.appendChild(helper);
     helper.style.left = position.startX + 'px';
     helper.style.top  = position.startY + 'px';
     helper.style.width  = '0px';
     helper.style.height = '0px';
-    // 選択解除
-    this.unselectAll();
   }
 
   // マウスカーソルが動いたときに発火
@@ -3235,11 +3336,14 @@ class Selectable extends MousePosition {
     const helperRect = this.helperRect(position);
 
     // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
-    this.childrenRects.forEach((rect2, i) => {
-      if (hitChecker(helperRect, rect2, opts.tolerance)) {
-        this.select(i);
-      } else {
-        this.unselect(i);
+    this.children.forEach(({rect}, i) => {
+      const hit = hitChecker(helperRect, rect, opts.tolerance);
+      if (hit) {
+        if (e.shiftKey) {
+          this.toggle(i);
+        } else {
+          this.toggle(i, hit);
+        }
       }
     });
     // マウスが動いた場所にhelper要素を動かす
@@ -3252,33 +3356,26 @@ class Selectable extends MousePosition {
   mup (e) {
     super.mup(e);
     const opts = this.options;
-      // helper要素を消す
+    // helper要素を消す
     opts.containment.removeChild(this.helper);
     // Callback
     if (opts.selected) {
-      this.children.forEach((el, i) => {
-        if (el.classList.contains(opts.selectedClass)) {
-          this.selectIndexs.push(i);
-          this.selectElements.push(el);
-        }
-      });
-      opts.selected(this.position, this.selectIndexs, this.selectElements);
+      opts.selected(this.position, this.selects);
     }
   }
 }
 
-/* src\color-picker\spectrum.html generated by Svelte v1.49.0 */
-function data$4() {
+/* src\color-picker\spectrum.html generated by Svelte v1.56.2 */
+
+function data$1() {
   return {
     rect: {width: 0, height: 0, left: 0, top: 0},
+    color: 'red',
     hsv: {h: 0, s: 1, v: 1}
   }
 }
-
-var methods$3 = {
+var methods$1 = {
   resize () {
-    // get size getBoundingClientRect() / getClientRect()[0]
-    // const rect = this.refs.box.getBoundingClientRect()
     const rect = {
       width: this.refs.box.clientWidth,
       height: this.refs.box.clientHeight,
@@ -3286,18 +3383,18 @@ var methods$3 = {
     this.set({rect});
   },
   setColor (position) {
-    const hsv = this.get('hsv');
-    hsv.s = position.percentLeft / 100;
-    hsv.v = (100 - position.percentTop) / 100;
-    this.set({ hsv });
+    const color = this.get('color')
+      .saturationv(position.percentLeft)
+      .value(100 - position.percentTop);
+    this.set({ color });
   },
   setPosition () {
     const {width, height} = this.get('rect');
-    const hsv = this.get('hsv');
-    this.refs.handle.style.left = width * hsv.s + 'px';
-    this.refs.handle.style.top = height - (height * hsv.v) + 'px';
+    const color = this.get('color');
+    this.refs.handle.style.left = width * color.saturationv() / 100 + 'px';
+    this.refs.handle.style.top = height - (height * color.value() / 100) + 'px';
   },
-  draw (hue = this.get('hsv').h) {
+  draw (hue = this.get('color').hue()) {
     const canvas = this.refs.canvas;
     const cxt = canvas.getContext('2d');
     const [w, h] = [canvas.width, canvas.height];
@@ -3323,7 +3420,7 @@ var methods$3 = {
   }
 };
 
-function oncreate$3() {
+function oncreate() {
   // get size getBoundingClientRect() / getClientRect()[0]
   // const rect = this.refs.box.getBoundingClientRect()
   const rect = {
@@ -3333,8 +3430,8 @@ function oncreate$3() {
   this.set({rect});
 
   // update oncolorchange
-  this.observe('hsv', (hsv) => {
-    this.draw(hsv.h);
+  this.observe('color', (color) => {
+    this.draw(color.hue());
     this.setPosition();
   });
 
@@ -3348,19 +3445,18 @@ function oncreate$3() {
     },
   })
 }
-
-function encapsulateStyles$4(node) {
-	setAttribute(node, "svelte-1306874950", "");
+function encapsulateStyles$1(node) {
+	setAttribute(node, "svelte-443573314", "");
 }
 
-function add_css$4() {
+function add_css$1() {
 	var style = createElement("style");
-	style.id = 'svelte-1306874950-style';
-	style.textContent = "[svelte-1306874950].spectrum,[svelte-1306874950] .spectrum{position:relative;cursor:crosshair;pointer-events:auto}";
+	style.id = 'svelte-443573314-style';
+	style.textContent = "[svelte-443573314].spectrum,[svelte-443573314] .spectrum{position:relative;cursor:crosshair;pointer-events:auto}";
 	appendNode(style, document.head);
 }
 
-function create_main_fragment$4(state, component) {
+function create_main_fragment$1(component, state) {
 	var div, canvas, canvas_width_value, canvas_height_value, text, div_1;
 
 	return {
@@ -3373,7 +3469,7 @@ function create_main_fragment$4(state, component) {
 		},
 
 		h: function hydrate() {
-			encapsulateStyles$4(div);
+			encapsulateStyles$1(div);
 			canvas.className = "spectrum-canvas";
 			canvas.width = canvas_width_value = state.rect.width;
 			canvas.height = canvas_height_value = state.rect.height;
@@ -3416,19 +3512,19 @@ function create_main_fragment$4(state, component) {
 function Spectrum(options) {
 	init(this, options);
 	this.refs = {};
-	this._state = assign(data$4(), options.data);
+	this._state = assign(data$1(), options.data);
 
-	if (!document.getElementById("svelte-1306874950-style")) add_css$4();
+	if (!document.getElementById("svelte-443573314-style")) add_css$1();
 
-	var _oncreate = oncreate$3.bind(this);
+	var _oncreate = oncreate.bind(this);
 
 	if (!options.root) {
-		this._oncreate = [_oncreate];
-	} else {
-	 	this.root._oncreate.push(_oncreate);
-	 }
+		this._oncreate = [];
+	}
 
-	this._fragment = create_main_fragment$4(this._state, this);
+	this._fragment = create_main_fragment$1(this, this._state);
+
+	this.root._oncreate.push(_oncreate);
 
 	if (options.target) {
 		this._fragment.c();
@@ -3438,9 +3534,10 @@ function Spectrum(options) {
 	}
 }
 
-assign(Spectrum.prototype, methods$3, proto);
+assign(Spectrum.prototype, methods$1, proto);
 
-/* src\color-picker\slider.html generated by Svelte v1.49.0 */
+/* src\color-picker\slider.html generated by Svelte v1.56.2 */
+
 function width(direction, size, strokeWidth) {
 	return direction === 'vertical' ? strokeWidth : size;
 }
@@ -3449,7 +3546,7 @@ function height(direction, size, strokeWidth) {
 	return direction === 'vertical' ? size : strokeWidth;
 }
 
-function data$5() {
+function data$2() {
   return {
     size: 0,
     rect: {width: 0, height: 0, left: 0, top: 0},
@@ -3462,12 +3559,10 @@ function data$5() {
     reverse: false
   }
 }
-
-var methods$4 = {
+var methods$2 = {
   setValue (position) {
-    const max = this.get('max');
-    const min = this.get('min');
-    const side = this.get('direction') === 'vertical' ? 'percentTop' : 'percentLeft';
+    const {max, min, direction} = this.get();
+    const side = direction === 'vertical' ? 'percentTop' : 'percentLeft';
     let per = position[side] / 100;
     if (this.get('reverse')) {
       per = 1 - per;
@@ -3477,10 +3572,8 @@ var methods$4 = {
     });
   },
   setPosition (value) {
-    const size = this.get('size');
-    const max = this.get('max');
-    const min = this.get('min');
-    const side = this.get('direction') === 'vertical' ? 'top' : 'left';
+    const {size, max, min, direction} = this.get();
+    const side = direction === 'vertical' ? 'top' : 'left';
     let per = value / (max - min);
     if (this.get('reverse')) {
       per = 1 - per;
@@ -3514,9 +3607,7 @@ var methods$4 = {
   }
 };
 
-function oncreate$4() {
-  // get size getBoundingClientRect() / getClientRect()[0]
-  // const rect = this.refs.box.getBoundingClientRect()
+function oncreate$1() {
   const rect = {
     width: this.refs.box.clientWidth,
     height: this.refs.box.clientHeight,
@@ -3549,19 +3640,18 @@ function oncreate$4() {
     },
   });
 }
-
-function encapsulateStyles$5(node) {
-	setAttribute(node, "svelte-2144930725", "");
+function encapsulateStyles$2(node) {
+	setAttribute(node, "svelte-1409430516", "");
 }
 
-function add_css$5() {
+function add_css$2() {
 	var style = createElement("style");
-	style.id = 'svelte-2144930725-style';
-	style.textContent = "[svelte-2144930725].slider,[svelte-2144930725] .slider{position:relative}[svelte-2144930725].slider.vertical,[svelte-2144930725] .slider.vertical{cursor:row-resize;height:100%}[svelte-2144930725].slider.horizontal,[svelte-2144930725] .slider.horizontal{cursor:col-resize;width:100%}[svelte-2144930725].slider-canvas,[svelte-2144930725] .slider-canvas{margin:0;padding:0}[svelte-2144930725].slider-handle,[svelte-2144930725] .slider-handle{position:absolute;top:0;left:0;border:1px solid black;pointer-events:none}[svelte-2144930725].slider-handle.vertical,[svelte-2144930725] .slider-handle.vertical{margin-top:-3px;width:100%;height:6px}[svelte-2144930725].slider-handle.horizontal,[svelte-2144930725] .slider-handle.horizontal{margin-left:-3px;width:6px;height:100%}[svelte-2144930725].slider-handle::before,[svelte-2144930725] .slider-handle::before{content:'';position:absolute;width:100%;height:100%;top:0;left:0;border:1px solid white}";
+	style.id = 'svelte-1409430516-style';
+	style.textContent = "[svelte-1409430516].slider,[svelte-1409430516] .slider{position:relative}[svelte-1409430516].slider.vertical,[svelte-1409430516] .slider.vertical{cursor:row-resize;height:100%}[svelte-1409430516].slider.horizontal,[svelte-1409430516] .slider.horizontal{cursor:col-resize;width:100%}[svelte-1409430516].slider-canvas,[svelte-1409430516] .slider-canvas{margin:0;padding:0}[svelte-1409430516].slider-handle,[svelte-1409430516] .slider-handle{position:absolute;top:0;left:0;border:1px solid black;pointer-events:none}[svelte-1409430516].slider-handle.vertical,[svelte-1409430516] .slider-handle.vertical{margin-top:-3px;width:100%;height:6px}[svelte-1409430516].slider-handle.horizontal,[svelte-1409430516] .slider-handle.horizontal{margin-left:-3px;width:6px;height:100%}[svelte-1409430516].slider-handle::before,[svelte-1409430516] .slider-handle::before{content:'';position:absolute;width:100%;height:100%;top:0;left:0;border:1px solid white}";
 	appendNode(style, document.head);
 }
 
-function create_main_fragment$5(state, component) {
+function create_main_fragment$2(component, state) {
 	var div, canvas, canvas_width_value, canvas_height_value, text, div_1, div_1_class_value, div_class_value;
 
 	return {
@@ -3574,7 +3664,7 @@ function create_main_fragment$5(state, component) {
 		},
 
 		h: function hydrate() {
-			encapsulateStyles$5(div);
+			encapsulateStyles$2(div);
 			canvas.className = "slider-canvas";
 			canvas.width = canvas_width_value = state.rect.width;
 			canvas.height = canvas_height_value = state.rect.height;
@@ -3625,20 +3715,20 @@ function create_main_fragment$5(state, component) {
 function Slider(options) {
 	init(this, options);
 	this.refs = {};
-	this._state = assign(data$5(), options.data);
+	this._state = assign(data$2(), options.data);
 	this._recompute({ direction: 1, size: 1, strokeWidth: 1 }, this._state);
 
-	if (!document.getElementById("svelte-2144930725-style")) add_css$5();
+	if (!document.getElementById("svelte-1409430516-style")) add_css$2();
 
-	var _oncreate = oncreate$4.bind(this);
+	var _oncreate = oncreate$1.bind(this);
 
 	if (!options.root) {
-		this._oncreate = [_oncreate];
-	} else {
-	 	this.root._oncreate.push(_oncreate);
-	 }
+		this._oncreate = [];
+	}
 
-	this._fragment = create_main_fragment$5(this._state, this);
+	this._fragment = create_main_fragment$2(this, this._state);
+
+	this.root._oncreate.push(_oncreate);
 
 	if (options.target) {
 		this._fragment.c();
@@ -3648,45 +3738,37 @@ function Slider(options) {
 	}
 }
 
-assign(Slider.prototype, methods$4, proto);
+assign(Slider.prototype, methods$2, proto);
 
 Slider.prototype._recompute = function _recompute(changed, state) {
 	if (changed.direction || changed.size || changed.strokeWidth) {
-		if (differs(state.width, (state.width = width(state.direction, state.size, state.strokeWidth)))) changed.width = true;
-		if (differs(state.height, (state.height = height(state.direction, state.size, state.strokeWidth)))) changed.height = true;
+		if (this._differs(state.width, (state.width = width(state.direction, state.size, state.strokeWidth)))) changed.width = true;
+		if (this._differs(state.height, (state.height = height(state.direction, state.size, state.strokeWidth)))) changed.height = true;
 	}
 };
 
-/* src\color-picker\hsv-picker.html generated by Svelte v1.49.0 */
+/* src\color-picker\hsv-picker.html generated by Svelte v1.56.2 */
+
 function spectrumSize(size, strokeWidth) {
 	return ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2;
 }
 
-function _color$2(color) {
-	return tinycolor(color);
+function hsv(color$$1) {
+	return color$$1.hsv();
 }
 
-function hsv(_color) {
-	return _color.toHsv();
-}
-
-function textColor$3(_color) {
-	return tinycolor.mostReadable(_color, ['#fff', '#000']);
+function textColor$1(color$$1) {
+	return color$$1.isDark() ? '#fff' : '#000';
 }
 
 function data$3() {
   return {
     size: 150,
     strokeWidth: 10,
-    color: tinycolor.random(),
+    color: color('#000'),
   }
 }
-
-
-
-
-
-var methods$2 = {
+var methods$3 = {
   spectrumCrement (meth) {
     const hsv = this.get('hsv');
 
@@ -3695,62 +3777,71 @@ var methods$2 = {
       hsv[meth[0]] = '1.0';
     }
 
-    this.set({ color: tinycolor(hsv) });
+    this.set({ color: color(hsv) });
   },
 };
 
 function oncreate$2() {
   this.refs.hue.observe('value', (hue) => {
-    const hsv = this.get('hsv');
-    hsv.h = hue;
-    this.set({color: tinycolor(hsv)});
-  });
-  this.refs.spectrum.observe('hsv', (hsv) => {
-    this.set({color: tinycolor(hsv)});
+    this.set({color: this.get('color').hue(hue)});
   });
   this.refs.alpha.observe('value', (value) => {
-    const _color = this.get('_color');
-    this.set({color: _color.setAlpha(value / 100)});
-    // this.set({color: _color.alphas(value / 100)})
+    const color$$1 = this.get('color');
+    this.set({color: color$$1.alpha(value / 100)});
   });
-  this.observe('_color', (_color) => {
-    const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString();
-    // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
+  this.observe('color', (color$$1) => {
+    const alphaColor = (alpha) => color$$1.hsv().alpha(alpha).string();
     this.refs.alpha.draw(alphaColor(0), alphaColor(1));
   });
 }
-
 function encapsulateStyles$3(node) {
-	setAttribute(node, "svelte-613414466", "");
+	setAttribute(node, "svelte-3135445724", "");
 }
 
 function add_css$3() {
 	var style = createElement("style");
-	style.id = 'svelte-613414466-style';
-	style.textContent = "[svelte-613414466].hsv-picker,[svelte-613414466] .hsv-picker{position:relative;width:100%;height:100%;display:flex;align-items:stretch;justify-content:space-around}[svelte-613414466].hsv-picker > :nth-child(2),[svelte-613414466] .hsv-picker > :nth-child(2){margin:0 8px;flex:2 1 auto}[svelte-613414466].hsv-picker > :first-child,[svelte-613414466] .hsv-picker > :first-child,[svelte-613414466].hsv-picker > :last-child,[svelte-613414466] .hsv-picker > :last-child{flex:0 1 30px}[svelte-613414466].color-handle,[svelte-613414466] .color-handle{position:absolute;width:10px;height:10px;margin:-5px;top:0;left:0;border:1px solid black;border-radius:5px;text-align:left;pointer-events:none}[svelte-613414466].color-handle::before,[svelte-613414466] .color-handle::before{content:'';position:absolute;width:8px;height:8px;top:0;left:0;border:1px solid white;border-radius:4px}";
+	style.id = 'svelte-3135445724-style';
+	style.textContent = "[svelte-3135445724].hsv-picker,[svelte-3135445724] .hsv-picker{position:relative;width:100%;height:100%;display:flex;align-items:stretch;justify-content:space-around}[svelte-3135445724].hsv-picker > :nth-child(2),[svelte-3135445724] .hsv-picker > :nth-child(2){margin:0 8px;flex:2 1 auto}[svelte-3135445724].hsv-picker > :first-child,[svelte-3135445724] .hsv-picker > :first-child,[svelte-3135445724].hsv-picker > :last-child,[svelte-3135445724] .hsv-picker > :last-child{flex:0 1 30px}[svelte-3135445724].color-handle,[svelte-3135445724] .color-handle{position:absolute;width:10px;height:10px;margin:-5px;top:0;left:0;border:1px solid black;border-radius:5px;text-align:left;pointer-events:none}[svelte-3135445724].color-handle::before,[svelte-3135445724] .color-handle::before{content:'';position:absolute;width:8px;height:8px;top:0;left:0;border:1px solid white;border-radius:4px}";
 	appendNode(style, document.head);
 }
 
-function create_main_fragment$3(state, component) {
-	var div, text, text_1;
+function create_main_fragment$3(component, state) {
+	var div, text, spectrum_updating = {}, text_1;
 
 	var slider = new Slider({
 		root: component.root,
-		data: { value: state.hsv.h, max: 359 }
+		data: { value: state.color.hue(), max: 359 }
 	});
 
 	component.refs.hue = slider;
 
+	var spectrum_initial_data = {};
+	if ('color' in state) {
+		spectrum_initial_data.color = state.color ;
+		spectrum_updating.color = true;
+	}
 	var spectrum = new Spectrum({
 		root: component.root,
-		data: { hsv: state.hsv }
+		data: spectrum_initial_data,
+		_bind: function(changed, childState) {
+			var state = component.get(), newState = {};
+			if (!spectrum_updating.color && changed.color) {
+				newState.color = childState.color;
+			}
+			component._set(newState);
+			spectrum_updating = {};
+		}
+	});
+
+	component.root._beforecreate.push(function() {
+		spectrum._bind({ color: 1 }, spectrum.get());
 	});
 
 	component.refs.spectrum = spectrum;
 
 	var slider_1 = new Slider({
 		root: component.root,
-		data: { value: state._color.getAlpha() * 100 }
+		data: { value: state.color.alpha() * 100 }
 	});
 
 	component.refs.alpha = slider_1;
@@ -3782,15 +3873,19 @@ function create_main_fragment$3(state, component) {
 
 		p: function update(changed, state) {
 			var slider_changes = {};
-			if (changed.hsv) slider_changes.value = state.hsv.h;
+			if (changed.color) slider_changes.value = state.color.hue();
 			slider._set(slider_changes);
 
 			var spectrum_changes = {};
-			if (changed.hsv) spectrum_changes.hsv = state.hsv;
+			if (!spectrum_updating.color && changed.color) {
+				spectrum_changes.color = state.color ;
+				spectrum_updating.color = true;
+			}
 			spectrum._set(spectrum_changes);
+			spectrum_updating = {};
 
 			var slider_1_changes = {};
-			if (changed._color) slider_1_changes.value = state._color.getAlpha() * 100;
+			if (changed.color) slider_1_changes.value = state.color.alpha() * 100;
 			slider_1._set(slider_1_changes);
 		},
 
@@ -3813,21 +3908,21 @@ function Hsv_picker(options) {
 	init(this, options);
 	this.refs = {};
 	this._state = assign(data$3(), options.data);
-	this._recompute({ size: 1, strokeWidth: 1, color: 1, _color: 1 }, this._state);
+	this._recompute({ size: 1, strokeWidth: 1, color: 1 }, this._state);
 
-	if (!document.getElementById("svelte-613414466-style")) add_css$3();
+	if (!document.getElementById("svelte-3135445724-style")) add_css$3();
 
 	var _oncreate = oncreate$2.bind(this);
 
 	if (!options.root) {
-		this._oncreate = [_oncreate];
+		this._oncreate = [];
 		this._beforecreate = [];
 		this._aftercreate = [];
-	} else {
-	 	this.root._oncreate.push(_oncreate);
-	 }
+	}
 
-	this._fragment = create_main_fragment$3(this._state, this);
+	this._fragment = create_main_fragment$3(this, this._state);
+
+	this.root._oncreate.push(_oncreate);
 
 	if (options.target) {
 		this._fragment.c();
@@ -3841,243 +3936,22 @@ function Hsv_picker(options) {
 	}
 }
 
-assign(Hsv_picker.prototype, methods$2, proto);
+assign(Hsv_picker.prototype, methods$3, proto);
 
 Hsv_picker.prototype._recompute = function _recompute(changed, state) {
 	if (changed.size || changed.strokeWidth) {
-		if (differs(state.spectrumSize, (state.spectrumSize = spectrumSize(state.size, state.strokeWidth)))) changed.spectrumSize = true;
+		if (this._differs(state.spectrumSize, (state.spectrumSize = spectrumSize(state.size, state.strokeWidth)))) changed.spectrumSize = true;
 	}
 
 	if (changed.color) {
-		if (differs(state._color, (state._color = _color$2(state.color)))) changed._color = true;
-	}
-
-	if (changed._color) {
-		if (differs(state.hsv, (state.hsv = hsv(state._color)))) changed.hsv = true;
-		if (differs(state.textColor, (state.textColor = textColor$3(state._color)))) changed.textColor = true;
+		if (this._differs(state.hsv, (state.hsv = hsv(state.color)))) changed.hsv = true;
+		if (this._differs(state.textColor, (state.textColor = textColor$1(state.color)))) changed.textColor = true;
 	}
 };
 
-/* src\color-picker\hsl-picker.html generated by Svelte v1.49.0 */
-function _color$3(color) {
-	return tinycolor(color);
-}
+/* src\color-picker\blender.html generated by Svelte v1.56.2 */
 
-function hsl(_color) {
-	return _color.toHsl();
-}
-
-function textColor$4(_color) {
-	return tinycolor.mostReadable(_color, ['#fff', '#000']);
-}
-
-function data$6() {
-  return {
-    size: 150,
-    color: tinycolor.random(),
-  }
-}
-
-var methods$5 = {
-  setColor (position) {
-    const hsl = this.get('hsl');
-    hsl.h = position.percentLeft / 100;
-    hsl.s = (100 - position.percentTop) / 100;
-    this.set({ color: tinycolor.fromRatio(hsl) });
-  },
-  setPosition () {
-    const canvas = this.refs.canvas;
-    const [w, h] = [canvas.width, canvas.height];
-    const hsl = this.get('hsl');
-    this.refs.handle.style.left = w * hsl.h / 360 + 'px';
-    this.refs.handle.style.top = h - (h * hsl.s) + 'px';
-  },
-  draw (lightness = 0.5) {
-    const canvas = this.refs.canvas;
-    const cxt = canvas.getContext('2d');
-    const [w, h] = [canvas.width, canvas.height];
-
-    cxt.clearRect(0, 0, w, h);
-
-    for (let i = 0; i < h; i++) {
-      const grd = cxt.createLinearGradient(0, 0, 0, h);
-      const hue = i / w * 360;
-      grd.addColorStop(0, `hsl(${hue}, 100%, 50%)`);
-      grd.addColorStop(1, `hsl(${hue}, 0%, 50%)`);
-
-      cxt.fillStyle = grd;
-      cxt.fillRect(i, 0, i + 1, h);
-    }
-  }
-};
-
-function oncreate$5() {
-  // canvas init
-  this.draw();
-  this.refs.lightness.draw(tinycolor('#fff'), tinycolor('#000'));
-
-  this.refs.lightness.observe('value', (value) => {
-    const hsl = this.get('hsl');
-    hsl.l = 1 - value / 100;
-    this.set({color: tinycolor(hsl)});
-  });
-
-  // // update oncolorchange
-  this.observe('_color', (_color) => {
-    this.setPosition(_color);
-  });
-  // picker
-  return new MousePosition(this.refs.canvas, {
-    start: (e, position) => {
-      this.setColor(position);
-    },
-    drag: (e, position) => {
-      this.setColor(position);
-    },
-  })
-}
-
-function encapsulateStyles$6(node) {
-	setAttribute(node, "svelte-5250349", "");
-}
-
-function add_css$6() {
-	var style = createElement("style");
-	style.id = 'svelte-5250349-style';
-	style.textContent = "[svelte-5250349].spectrum-wrapper,[svelte-5250349] .spectrum-wrapper{position:relative}[svelte-5250349].color-handle,[svelte-5250349] .color-handle{position:absolute;width:10px;height:10px;margin:-5px;top:0;left:0;border:1px solid black;border-radius:5px;text-align:left;pointer-events:none}[svelte-5250349].color-handle::before,[svelte-5250349] .color-handle::before{content:'';position:absolute;width:8px;height:8px;top:0;left:0;border:1px solid white;border-radius:4px}";
-	appendNode(style, document.head);
-}
-
-function create_main_fragment$6(state, component) {
-	var div, div_1, canvas, canvas_height_value, text, div_2, text_2;
-
-	var slider = new Slider({
-		root: component.root,
-		data: {
-			value: state.hsl.l * 100,
-			size: state.size,
-			direction: "horizontal"
-		}
-	});
-
-	component.refs.lightness = slider;
-
-	return {
-		c: function create() {
-			div = createElement("div");
-			div_1 = createElement("div");
-			canvas = createElement("canvas");
-			text = createText("\n    ");
-			div_2 = createElement("div");
-			text_2 = createText("\n  ");
-			slider._fragment.c();
-			this.h();
-		},
-
-		h: function hydrate() {
-			encapsulateStyles$6(div);
-			canvas.className = "wheel-canvas";
-			canvas.width = state.size;
-			canvas.height = canvas_height_value = state.size - 20;
-			div_2.className = "color-handle";
-			div_1.className = "spectrum-wrapper";
-			div.className = "hsl-picker";
-			setStyle(div, "width", "" + state.size + "px");
-			setStyle(div, "height", "" + state.size + "px");
-		},
-
-		m: function mount(target, anchor) {
-			insertNode(div, target, anchor);
-			appendNode(div_1, div);
-			appendNode(canvas, div_1);
-			component.refs.canvas = canvas;
-			appendNode(text, div_1);
-			appendNode(div_2, div_1);
-			component.refs.handle = div_2;
-			appendNode(text_2, div);
-			slider._mount(div, null);
-		},
-
-		p: function update(changed, state) {
-			if (changed.size) {
-				canvas.width = state.size;
-			}
-
-			if ((changed.size) && canvas_height_value !== (canvas_height_value = state.size - 20)) {
-				canvas.height = canvas_height_value;
-			}
-
-			var slider_changes = {};
-			if (changed.hsl) slider_changes.value = state.hsl.l * 100;
-			if (changed.size) slider_changes.size = state.size;
-			slider._set(slider_changes);
-
-			if (changed.size) {
-				setStyle(div, "width", "" + state.size + "px");
-				setStyle(div, "height", "" + state.size + "px");
-			}
-		},
-
-		u: function unmount() {
-			detachNode(div);
-		},
-
-		d: function destroy$$1() {
-			if (component.refs.canvas === canvas) component.refs.canvas = null;
-			if (component.refs.handle === div_2) component.refs.handle = null;
-			slider.destroy(false);
-			if (component.refs.lightness === slider) component.refs.lightness = null;
-		}
-	};
-}
-
-function Hsl_picker(options) {
-	init(this, options);
-	this.refs = {};
-	this._state = assign(data$6(), options.data);
-	this._recompute({ color: 1, _color: 1 }, this._state);
-
-	if (!document.getElementById("svelte-5250349-style")) add_css$6();
-
-	var _oncreate = oncreate$5.bind(this);
-
-	if (!options.root) {
-		this._oncreate = [_oncreate];
-		this._beforecreate = [];
-		this._aftercreate = [];
-	} else {
-	 	this.root._oncreate.push(_oncreate);
-	 }
-
-	this._fragment = create_main_fragment$6(this._state, this);
-
-	if (options.target) {
-		this._fragment.c();
-		this._fragment.m(options.target, options.anchor || null);
-
-		this._lock = true;
-		callAll(this._beforecreate);
-		callAll(this._oncreate);
-		callAll(this._aftercreate);
-		this._lock = false;
-	}
-}
-
-assign(Hsl_picker.prototype, methods$5, proto);
-
-Hsl_picker.prototype._recompute = function _recompute(changed, state) {
-	if (changed.color) {
-		if (differs(state._color, (state._color = _color$3(state.color)))) changed._color = true;
-	}
-
-	if (changed._color) {
-		if (differs(state.hsl, (state.hsl = hsl(state._color)))) changed.hsl = true;
-		if (differs(state.textColor, (state.textColor = textColor$4(state._color)))) changed.textColor = true;
-	}
-};
-
-/* src\color-picker\blender.html generated by Svelte v1.49.0 */
-function data$7() {
+function data$4() {
   return {
     width: 150,
     height: 20,
@@ -4085,23 +3959,22 @@ function data$7() {
     color2: '#fff',
   }
 }
-
-var methods$6 = {
+var methods$4 = {
   setColor1 (color1) {
     this.set({color1});
   },
   setColor2 (color2) {
     this.set({color2});
   },
-  setValue (position) {
+  getColor (position) {
     const size = this.get('width') - 41;
     const x = Math.max(0, Math.min(position.x, size));
     const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data;
-    const color = tinycolor({r, g, b});
-    this.set({ color });
+    const color$$1 = color({r, g, b});
 
     this.refs.handle.style.left = x + 'px';
-    this.refs.handle.style.backgroundColor = tinycolor.mostReadable(color, ['#eee', '#111']);
+    this.refs.handle.style.backgroundColor = color$$1.isDark() ? '#fff' : '#000';
+    return color$$1
   },
   draw () {
     const canvas = this.refs.canvas;
@@ -4113,61 +3986,60 @@ var methods$6 = {
       ? cxt.createLinearGradient(0, 0, 0, h)
       : cxt.createLinearGradient(0, 0, w, 0);
 
-    grd.addColorStop(0.02, tinycolor(this.get('color1')).toRgbString());
-    grd.addColorStop(0.98, tinycolor(this.get('color2')).toRgbString());
+    grd.addColorStop(0.02, color(this.get('color1')).rgb().string());
+    grd.addColorStop(0.98, color(this.get('color2')).rgb().string());
 
     cxt.fillStyle = grd;
     cxt.fillRect(0, 0, w, h);
 
-    this.setValue({
-      x: w / 2
-    });
+    this.getColor({ x: w / 2 });
   }
 };
 
-function oncreate$6() {
+function oncreate$3() {
   // picker
   new MousePosition(this.refs.blender, { // eslint-disable-line no-new
     handle: this.refs.handle,
     start: (e, position) => {
-      this.setValue(position);
+      this.set({ color: this.getColor(position) });
     },
     drag: (e, position) => {
-      this.setValue(position);
+      this.set({ color: this.getColor(position) });
     },
   });
 
   this.observe('color1', (color1) => {
     console.log('color1', color1);
-    this.refs.color1.style.backgroundColor = color1.toString('hex');
+    this.refs.color1.style.backgroundColor = color1.toString();
     this.draw();
   });
   this.observe('color2', (color2) => {
-    this.refs.color2.style.backgroundColor = color2.toString('hex');
+    this.refs.color2.style.backgroundColor = color2.toString();
     this.draw();
   });
 }
-
-function encapsulateStyles$7(node) {
-	setAttribute(node, "svelte-3059113235", "");
+function encapsulateStyles$4(node) {
+	setAttribute(node, "svelte-4284448913", "");
 }
 
-function add_css$7() {
+function add_css$4() {
 	var style = createElement("style");
-	style.id = 'svelte-3059113235-style';
-	style.textContent = "[svelte-3059113235].blender,[svelte-3059113235] .blender{display:flex;flex-direction:row}[svelte-3059113235].blender-slider,[svelte-3059113235] .blender-slider{position:relative;height:inherit;margin:0 2px;background-color:#fff;background-image:linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);background-size:8px 8px;background-position:0 0, 4px 4px;background-repeat:repeat}[svelte-3059113235].blender-canvas,[svelte-3059113235] .blender-canvas{vertical-align:baseline}[svelte-3059113235].blender-btn,[svelte-3059113235] .blender-btn{display:block;width:inherit;height:inherit;border:1px solid #888888}[svelte-3059113235].blender-handle,[svelte-3059113235] .blender-handle{position:absolute;margin-left:-.5px;width:1px;height:inherit;top:0;left:0;pointer-events:none}[svelte-3059113235].blender-handle.vertical,[svelte-3059113235] .blender-handle.vertical{margin-top:-.5px;width:inherit;height:1px}[svelte-3059113235].blender-handle.horizontal,[svelte-3059113235] .blender-handle.horizontal{margin-left:-.5px;width:1px;height:inherit}";
+	style.id = 'svelte-4284448913-style';
+	style.textContent = "[svelte-4284448913].blender,[svelte-4284448913] .blender{display:flex;flex-direction:row;margin:0 5px}[svelte-4284448913].blender-slider,[svelte-4284448913] .blender-slider{position:relative;height:inherit;margin:0 2px;background-color:#fff;background-image:linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);background-size:8px 8px;background-position:0 0, 4px 4px;background-repeat:repeat}[svelte-4284448913].blender-canvas,[svelte-4284448913] .blender-canvas{vertical-align:baseline}[svelte-4284448913].blender-btn,[svelte-4284448913] .blender-btn{display:block;width:inherit;height:inherit;border:1px solid #888888}[svelte-4284448913].blender-handle,[svelte-4284448913] .blender-handle{position:absolute;margin-left:-.5px;width:1px;height:inherit;top:0;left:0;pointer-events:none}[svelte-4284448913].blender-handle.vertical,[svelte-4284448913] .blender-handle.vertical{margin-top:-.5px;width:inherit;height:1px}[svelte-4284448913].blender-handle.horizontal,[svelte-4284448913] .blender-handle.horizontal{margin-left:-.5px;width:1px;height:inherit}";
 	appendNode(style, document.head);
 }
 
-function create_main_fragment$7(state, component) {
+function create_main_fragment$4(component, state) {
 	var div, dv, text, div_1, canvas, canvas_width_value, text_1, div_2, div_2_class_value, text_3, dv_1;
 
 	function click_handler(event) {
-		component.fire('color1');
+		var state = component.get();
+		component.setColor1(state.color);
 	}
 
 	function click_handler_1(event) {
-		component.fire('color2');
+		var state = component.get();
+		component.setColor2(state.color);
 	}
 
 	return {
@@ -4185,7 +4057,7 @@ function create_main_fragment$7(state, component) {
 		},
 
 		h: function hydrate() {
-			encapsulateStyles$7(div);
+			encapsulateStyles$4(div);
 			dv.className = "blender-btn color1 active";
 			addListener(dv, "click", click_handler);
 			canvas.className = "blender-canvas";
@@ -4258,19 +4130,19 @@ function create_main_fragment$7(state, component) {
 function Blender(options) {
 	init(this, options);
 	this.refs = {};
-	this._state = assign(data$7(), options.data);
+	this._state = assign(data$4(), options.data);
 
-	if (!document.getElementById("svelte-3059113235-style")) add_css$7();
+	if (!document.getElementById("svelte-4284448913-style")) add_css$4();
 
-	var _oncreate = oncreate$6.bind(this);
+	var _oncreate = oncreate$3.bind(this);
 
 	if (!options.root) {
-		this._oncreate = [_oncreate];
-	} else {
-	 	this.root._oncreate.push(_oncreate);
-	 }
+		this._oncreate = [];
+	}
 
-	this._fragment = create_main_fragment$7(this._state, this);
+	this._fragment = create_main_fragment$4(this, this._state);
+
+	this.root._oncreate.push(_oncreate);
 
 	if (options.target) {
 		this._fragment.c();
@@ -4280,53 +4152,59 @@ function Blender(options) {
 	}
 }
 
-assign(Blender.prototype, methods$6, proto);
+assign(Blender.prototype, methods$4, proto);
 
-/* src\color-picker\color-picker.html generated by Svelte v1.49.0 */
-function _color(color) {
-	return tinycolor(color);
+/* src\color-picker\color-picker.html generated by Svelte v1.56.2 */
+
+function textColor$2(color$$1) {
+	return color(color$$1).isDark() ? '#fff' : '#000';
 }
 
-function textColor$1(_color) {
-	return tinycolor.mostReadable(_color, ['#fff', '#000']);
+function contrast(color$$1, bgColor) {
+	return round(color(bgColor).contrast(color$$1), 1);
 }
 
-function data$1() {
+function data$5() {
   return {
     size: 200,
-    color: tinycolor.random(),
-    mode: 'hsv',
+    color: '',
+    current: '',
+    bgColor: '',
   }
 }
+var methods$5 = {
+  alphaBlending () {
+    const {color: color$$1, bgColor} = this.get();
+    this.set({
+      color: bgColor.alphaBlending(color$$1),
+    });
+  },
+  setBgColor (color$$1 = this.get('color')) {
+    this.set({bgColor: color$$1});
+    this.fire('setBgColor', color$$1);
+  },
+};
 
-function oncreate$1() {
-  // this.refs.alpha.observe('value', (value) => {
-  //   const _color = this.get('_color')
-  //   this.set({color: _color.setAlpha(value / 100)})
-  //   // this.set({color: _color.alphas(value / 100)})
-  // })
-  // this.observe('_color', (_color) => {
-  //   const alphaColor = (alpha) => _color.clone().setAlpha(alpha).toRgbString()
-  //   // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
-  //   this.refs.alpha.draw(alphaColor(0), alphaColor(1))
-  // })
+function oncreate$4(hh) {
+  this.observe('color', (color$$1) => {
+    this.set({color: color(color$$1)});
+  });
+}
+function encapsulateStyles$5(node) {
+	setAttribute(node, "svelte-1183333092", "");
 }
 
-function encapsulateStyles$1(node) {
-	setAttribute(node, "svelte-2117978208", "");
-}
-
-function add_css$1() {
+function add_css$5() {
 	var style = createElement("style");
-	style.id = 'svelte-2117978208-style';
-	style.textContent = "[svelte-2117978208].color-picker,[svelte-2117978208] .color-picker{position:relative;padding:8px;text-align:center;color:#4025AD}[svelte-2117978208].wrapper,[svelte-2117978208] .wrapper{height:100px;display:flex;flex-direction:column}[svelte-2117978208].alpha-check-bg,[svelte-2117978208] .alpha-check-bg{background-color:#fff;background-image:linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);background-size:8px 8px;background-position:0 0, 4px 4px;background-repeat:repeat}";
+	style.id = 'svelte-1183333092-style';
+	style.textContent = "[svelte-1183333092].color-picker,[svelte-1183333092] .color-picker{position:relative;padding:8px;text-align:center}[svelte-1183333092].wrapper,[svelte-1183333092] .wrapper{height:100px;display:flex;flex-direction:column;padding:6px 0}[svelte-1183333092].set,[svelte-1183333092] .set{display:flex;align-items:stretch;justify-content:space-around;font-size:0.8em}[svelte-1183333092].set button,[svelte-1183333092] .set button{width:30px;padding:0}[svelte-1183333092].alpha-check-bg,[svelte-1183333092] .alpha-check-bg{background-color:#fff;background-image:linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);background-size:8px 8px;background-position:0 0, 4px 4px;background-repeat:repeat}";
 	appendNode(style, document.head);
 }
 
-function create_main_fragment$1(state, component) {
-	var div, colorinput_updating = {}, text, div_1, text_1, blender_updating = {};
+function create_main_fragment$5(component, state) {
+	var div, colorinput_updating = {}, text, div_1, hsvpicker_updating = {}, text_2, div_2, button, text_3, text_5, blender_updating = {}, text_6, button_1;
 
-	var colorinput_initial_data = {};
+	var colorinput_initial_data = { bgColor: state.bgColor };
 	if ('color' in state) {
 		colorinput_initial_data.color = state.color ;
 		colorinput_updating.color = true;
@@ -4339,146 +4217,14 @@ function create_main_fragment$1(state, component) {
 			if (!colorinput_updating.color && changed.color) {
 				newState.color = childState.color;
 			}
-			colorinput_updating = assign({}, changed);
 			component._set(newState);
 			colorinput_updating = {};
 		}
 	});
 
 	component.root._beforecreate.push(function() {
-		var state = component.get(), childState = colorinput.get(), newState = {};
-		if (!childState) return;
-		if (!colorinput_updating.color) {
-			newState.color = childState.color;
-		}
-		colorinput_updating = { color: true };
-		component._set(newState);
-		colorinput_updating = {};
+		colorinput._bind({ color: 1 }, colorinput.get());
 	});
-
-	var current_block_type = select_block_type(state);
-	var if_block = current_block_type(state, component);
-
-	var blender_initial_data = { width: state.size };
-	if ('color' in state) {
-		blender_initial_data.color = state.color ;
-		blender_updating.color = true;
-	}
-	var blender = new Blender({
-		root: component.root,
-		data: blender_initial_data,
-		_bind: function(changed, childState) {
-			var state = component.get(), newState = {};
-			if (!blender_updating.color && changed.color) {
-				newState.color = childState.color;
-			}
-			blender_updating = assign({}, changed);
-			component._set(newState);
-			blender_updating = {};
-		}
-	});
-
-	component.root._beforecreate.push(function() {
-		var state = component.get(), childState = blender.get(), newState = {};
-		if (!childState) return;
-		if (!blender_updating.color) {
-			newState.color = childState.color;
-		}
-		blender_updating = { color: true };
-		component._set(newState);
-		blender_updating = {};
-	});
-
-	blender.on("color1", function(event) {
-		var state = blender_context.state;
-
-		component.this.setColor1(state._color);
-	});
-	blender.on("color2", function(event) {
-		var state = blender_context.state;
-
-		component.this.setColor2(state._color);
-	});
-
-	var blender_context = {
-		state: state
-	};
-
-	return {
-		c: function create() {
-			div = createElement("div");
-			colorinput._fragment.c();
-			text = createText("\n  ");
-			div_1 = createElement("div");
-			if_block.c();
-			text_1 = createText("\n    \n    ");
-			blender._fragment.c();
-			this.h();
-		},
-
-		h: function hydrate() {
-			encapsulateStyles$1(div);
-			div_1.className = "wrapper";
-			div.className = "color-picker";
-		},
-
-		m: function mount(target, anchor) {
-			insertNode(div, target, anchor);
-			colorinput._mount(div, null);
-			appendNode(text, div);
-			appendNode(div_1, div);
-			if_block.m(div_1, null);
-			appendNode(text_1, div_1);
-			blender._mount(div_1, null);
-		},
-
-		p: function update(changed, state) {
-			var colorinput_changes = {};
-			if (!colorinput_updating.color && changed.color) {
-				colorinput_changes.color = state.color ;
-				colorinput_updating.color = true;
-			}
-			colorinput._set(colorinput_changes);
-			colorinput_updating = {};
-
-			if (current_block_type === (current_block_type = select_block_type(state)) && if_block) {
-				if_block.p(changed, state);
-			} else {
-				if_block.u();
-				if_block.d();
-				if_block = current_block_type(state, component);
-				if_block.c();
-				if_block.m(div_1, text_1);
-			}
-
-			var blender_changes = {};
-			if (changed.size) blender_changes.width = state.size;
-			if (!blender_updating.color && changed.color) {
-				blender_changes.color = state.color ;
-				blender_updating.color = true;
-			}
-			blender._set(blender_changes);
-			blender_updating = {};
-
-			blender_context.state = state;
-		},
-
-		u: function unmount() {
-			detachNode(div);
-			if_block.u();
-		},
-
-		d: function destroy$$1() {
-			colorinput.destroy(false);
-			if_block.d();
-			blender.destroy(false);
-		}
-	};
-}
-
-// (4:4) {{#if mode == 'hsv'}}
-function create_if_block(state, component) {
-	var hsvpicker_updating = {};
 
 	var hsvpicker_initial_data = { size: state.size };
 	if ('color' in state) {
@@ -4493,33 +4239,100 @@ function create_if_block(state, component) {
 			if (!hsvpicker_updating.color && changed.color) {
 				newState.color = childState.color;
 			}
-			hsvpicker_updating = assign({}, changed);
 			component._set(newState);
 			hsvpicker_updating = {};
 		}
 	});
 
 	component.root._beforecreate.push(function() {
-		var state = component.get(), childState = hsvpicker.get(), newState = {};
-		if (!childState) return;
-		if (!hsvpicker_updating.color) {
-			newState.color = childState.color;
-		}
-		hsvpicker_updating = { color: true };
-		component._set(newState);
-		hsvpicker_updating = {};
+		hsvpicker._bind({ color: 1 }, hsvpicker.get());
 	});
+
+	function click_handler(event) {
+		component.setBgColor();
+	}
+
+	var blender_initial_data = { width: state.size };
+	if ('color' in state) {
+		blender_initial_data.color = state.color ;
+		blender_updating.color = true;
+	}
+	var blender = new Blender({
+		root: component.root,
+		data: blender_initial_data,
+		_bind: function(changed, childState) {
+			var state = component.get(), newState = {};
+			if (!blender_updating.color && changed.color) {
+				newState.color = childState.color;
+			}
+			component._set(newState);
+			blender_updating = {};
+		}
+	});
+
+	component.root._beforecreate.push(function() {
+		blender._bind({ color: 1 }, blender.get());
+	});
+
+	function click_handler_1(event) {
+		component.alphaBlending();
+	}
 
 	return {
 		c: function create() {
+			div = createElement("div");
+			colorinput._fragment.c();
+			text = createText("\n  ");
+			div_1 = createElement("div");
 			hsvpicker._fragment.c();
+			text_2 = createText("\n  ");
+			div_2 = createElement("div");
+			button = createElement("button");
+			text_3 = createText(state.contrast);
+			text_5 = createText("\n    ");
+			blender._fragment.c();
+			text_6 = createText("\n    ");
+			button_1 = createElement("button");
+			button_1.textContent = "a=1";
+			this.h();
+		},
+
+		h: function hydrate() {
+			encapsulateStyles$5(div);
+			div_1.className = "wrapper";
+			setStyle(button, "color", state.color);
+			addListener(button, "click", click_handler);
+			addListener(button_1, "click", click_handler_1);
+			div_2.className = "set";
+			div.className = "color-picker";
 		},
 
 		m: function mount(target, anchor) {
-			hsvpicker._mount(target, anchor);
+			insertNode(div, target, anchor);
+			colorinput._mount(div, null);
+			appendNode(text, div);
+			appendNode(div_1, div);
+			hsvpicker._mount(div_1, null);
+			appendNode(text_2, div);
+			appendNode(div_2, div);
+			appendNode(button, div_2);
+			appendNode(text_3, button);
+			appendNode(text_5, div_2);
+			blender._mount(div_2, null);
+			appendNode(text_6, div_2);
+			appendNode(button_1, div_2);
 		},
 
 		p: function update(changed, state) {
+			var colorinput_changes = {};
+			if (changed.bgColor) colorinput_changes.bgColor = state.bgColor;
+			if (!colorinput_updating.color && changed.color) {
+				colorinput_changes.color = state.color ;
+				colorinput_updating.color = true;
+			}
+			colorinput._set(colorinput_changes);
+			colorinput_updating = {};
+
 			var hsvpicker_changes = {};
 			if (changed.size) hsvpicker_changes.size = state.size;
 			if (!hsvpicker_updating.color && changed.color) {
@@ -4529,108 +4342,56 @@ function create_if_block(state, component) {
 			hsvpicker._set(hsvpicker_changes);
 			hsvpicker_updating = {};
 
-			
+			if (changed.contrast) {
+				text_3.data = state.contrast;
+			}
+
+			if (changed.color) {
+				setStyle(button, "color", state.color);
+			}
+
+			var blender_changes = {};
+			if (changed.size) blender_changes.width = state.size;
+			if (!blender_updating.color && changed.color) {
+				blender_changes.color = state.color ;
+				blender_updating.color = true;
+			}
+			blender._set(blender_changes);
+			blender_updating = {};
 		},
 
 		u: function unmount() {
-			hsvpicker._unmount();
+			detachNode(div);
 		},
 
 		d: function destroy$$1() {
+			colorinput.destroy(false);
 			hsvpicker.destroy(false);
+			removeListener(button, "click", click_handler);
+			blender.destroy(false);
+			removeListener(button_1, "click", click_handler_1);
 		}
 	};
-}
-
-// (6:4) {{else}}
-function create_if_block_1(state, component) {
-	var hslpicker_updating = {};
-
-	var hslpicker_initial_data = { size: state.size };
-	if ('color' in state) {
-		hslpicker_initial_data.color = state.color ;
-		hslpicker_updating.color = true;
-	}
-	var hslpicker = new Hsl_picker({
-		root: component.root,
-		data: hslpicker_initial_data,
-		_bind: function(changed, childState) {
-			var state = component.get(), newState = {};
-			if (!hslpicker_updating.color && changed.color) {
-				newState.color = childState.color;
-			}
-			hslpicker_updating = assign({}, changed);
-			component._set(newState);
-			hslpicker_updating = {};
-		}
-	});
-
-	component.root._beforecreate.push(function() {
-		var state = component.get(), childState = hslpicker.get(), newState = {};
-		if (!childState) return;
-		if (!hslpicker_updating.color) {
-			newState.color = childState.color;
-		}
-		hslpicker_updating = { color: true };
-		component._set(newState);
-		hslpicker_updating = {};
-	});
-
-	return {
-		c: function create() {
-			hslpicker._fragment.c();
-		},
-
-		m: function mount(target, anchor) {
-			hslpicker._mount(target, anchor);
-		},
-
-		p: function update(changed, state) {
-			var hslpicker_changes = {};
-			if (changed.size) hslpicker_changes.size = state.size;
-			if (!hslpicker_updating.color && changed.color) {
-				hslpicker_changes.color = state.color ;
-				hslpicker_updating.color = true;
-			}
-			hslpicker._set(hslpicker_changes);
-			hslpicker_updating = {};
-
-			
-		},
-
-		u: function unmount() {
-			hslpicker._unmount();
-		},
-
-		d: function destroy$$1() {
-			hslpicker.destroy(false);
-		}
-	};
-}
-
-function select_block_type(state) {
-	if (state.mode == 'hsv') return create_if_block;
-	return create_if_block_1;
 }
 
 function Color_picker(options) {
 	init(this, options);
-	this._state = assign(data$1(), options.data);
-	this._recompute({ color: 1, _color: 1 }, this._state);
+	this._state = assign(data$5(), options.data);
+	this._recompute({ color: 1, bgColor: 1 }, this._state);
 
-	if (!document.getElementById("svelte-2117978208-style")) add_css$1();
+	if (!document.getElementById("svelte-1183333092-style")) add_css$5();
 
-	var _oncreate = oncreate$1.bind(this);
+	var _oncreate = oncreate$4.bind(this);
 
 	if (!options.root) {
-		this._oncreate = [_oncreate];
+		this._oncreate = [];
 		this._beforecreate = [];
 		this._aftercreate = [];
-	} else {
-	 	this.root._oncreate.push(_oncreate);
-	 }
+	}
 
-	this._fragment = create_main_fragment$1(this._state, this);
+	this._fragment = create_main_fragment$5(this, this._state);
+
+	this.root._oncreate.push(_oncreate);
 
 	if (options.target) {
 		this._fragment.c();
@@ -4644,53 +4405,580 @@ function Color_picker(options) {
 	}
 }
 
-assign(Color_picker.prototype, proto);
+assign(Color_picker.prototype, methods$5, proto);
 
 Color_picker.prototype._recompute = function _recompute(changed, state) {
 	if (changed.color) {
-		if (differs(state._color, (state._color = _color(state.color)))) changed._color = true;
+		if (this._differs(state.textColor, (state.textColor = textColor$2(state.color)))) changed.textColor = true;
 	}
 
-	if (changed._color) {
-		if (differs(state.textColor, (state.textColor = textColor$1(state._color)))) changed.textColor = true;
+	if (changed.color || changed.bgColor) {
+		if (this._differs(state.contrast, (state.contrast = contrast(state.color, state.bgColor)))) changed.contrast = true;
 	}
 };
 
-/* src\svelte\color-card.html generated by Svelte v1.49.0 */
-function activeIndex () {
-  const cards = store.get('cards');
-  for (let i = 0; i < cards.length; i++) {
-    if (cards[i].zIndex === cards.length - 1) {
-      return i
+var defaultpalette = {
+  cards: [
+    {
+      name: 'turquoise',
+      color: '#40E0D0'
+    },
+    {
+      name: 'salmon',
+      color: '#FA8072'
+    },
+    {
+      name: 'red',
+      color: '#ff5555'
+    },
+    {
+      name: 'red2',
+      color: '#fc0e49'
+    },
+    {
+      name: 'red3',
+      color: '#fe3265'
+    },
+    {
+      name: 'yellow',
+      color: '#FFD54F'
+    },
+    {
+      name: 'teal',
+      color: '#11c1b0'
+    },
+    {
+      name: 'navy',
+      color: '#1f2532'
+    },
+    {
+      name: 'light',
+      color: '#7F8C9A'
+    },
+    {
+      name: 'dark',
+      color: '#323a45'
+    },
+    {
+      name: 'ivy',
+      color: '#514a56'
+    },
+    {
+      name: 'purple',
+      color: '#a234d5'
+    },
+    {
+      name: 'red4',
+      color: '#d74059'
+    },
+  ],
+  bgColor: '#1f2532'
+}
+
+function Store(state, options) {
+	this._observers = { pre: blankObject(), post: blankObject() };
+	this._changeHandlers = [];
+	this._dependents = [];
+
+	this._computed = blankObject();
+	this._sortedComputedProperties = [];
+
+	this._state = assign({}, state);
+	this._differs = options && options.immutable ? _differsImmutable : _differs;
+}
+
+assign(Store.prototype, {
+	_add: function(component, props) {
+		this._dependents.push({
+			component: component,
+			props: props
+		});
+	},
+
+	_init: function(props) {
+		var state = {};
+		for (var i = 0; i < props.length; i += 1) {
+			var prop = props[i];
+			state['$' + prop] = this._state[prop];
+		}
+		return state;
+	},
+
+	_remove: function(component) {
+		var i = this._dependents.length;
+		while (i--) {
+			if (this._dependents[i].component === component) {
+				this._dependents.splice(i, 1);
+				return;
+			}
+		}
+	},
+
+	_sortComputedProperties: function() {
+		var computed = this._computed;
+		var sorted = this._sortedComputedProperties = [];
+		var cycles;
+		var visited = blankObject();
+
+		function visit(key) {
+			if (cycles[key]) {
+				throw new Error('Cyclical dependency detected');
+			}
+
+			if (visited[key]) return;
+			visited[key] = true;
+
+			var c = computed[key];
+
+			if (c) {
+				cycles[key] = true;
+				c.deps.forEach(visit);
+				sorted.push(c);
+			}
+		}
+
+		for (var key in this._computed) {
+			cycles = blankObject();
+			visit(key);
+		}
+	},
+
+	compute: function(key, deps, fn) {
+		var store = this;
+		var value;
+
+		var c = {
+			deps: deps,
+			update: function(state, changed, dirty) {
+				var values = deps.map(function(dep) {
+					if (dep in changed) dirty = true;
+					return state[dep];
+				});
+
+				if (dirty) {
+					var newValue = fn.apply(null, values);
+					if (store._differs(newValue, value)) {
+						value = newValue;
+						changed[key] = true;
+						state[key] = value;
+					}
+				}
+			}
+		};
+
+		c.update(this._state, {}, true);
+
+		this._computed[key] = c;
+		this._sortComputedProperties();
+	},
+
+	get: get,
+
+	observe: observe,
+
+	onchange: function(callback) {
+		this._changeHandlers.push(callback);
+
+		var store = this;
+
+		return {
+			cancel: function() {
+				var index = store._changeHandlers.indexOf(callback);
+				if (~index) store._changeHandlers.splice(index, 1);
+			}
+		};
+	},
+
+	set: function(newState) {
+		var oldState = this._state,
+			changed = this._changed = {},
+			dirty = false;
+
+		for (var key in newState) {
+			if (this._computed[key]) throw new Error("'" + key + "' is a read-only property");
+			if (this._differs(newState[key], oldState[key])) changed[key] = dirty = true;
+		}
+		if (!dirty) return;
+
+		this._state = assign({}, oldState, newState);
+
+		for (var i = 0; i < this._sortedComputedProperties.length; i += 1) {
+			this._sortedComputedProperties[i].update(this._state, changed);
+		}
+
+		for (var i = 0; i < this._changeHandlers.length; i += 1) {
+			this._changeHandlers[i](this._state, changed);
+		}
+
+		dispatchObservers(this, this._observers.pre, changed, this._state, oldState);
+
+		var dependents = this._dependents.slice(); // guard against mutations
+		for (var i = 0; i < dependents.length; i += 1) {
+			var dependent = dependents[i];
+			var componentState = {};
+			dirty = false;
+
+			for (var j = 0; j < dependent.props.length; j += 1) {
+				var prop = dependent.props[j];
+				if (prop in changed) {
+					componentState['$' + prop] = this._state[prop];
+					dirty = true;
+				}
+			}
+
+			if (dirty) dependent.component.set(componentState);
+		}
+
+		dispatchObservers(this, this._observers.post, changed, this._state, oldState);
+	}
+});
+
+const defaultkeymaps = [
+  {
+    key: 'ctrl+z',
+    action: 'undo',
+    mode: '',
+    // payload: {}
+  },
+  {
+    key: 'ctrl+shift+z',
+    action: 'redo',
+    mode: '',
+    // payload: {}
+  },
+];
+/**
+ * keydown
+ *
+ * @param {function} handler
+ * @returns {function}
+ */
+function keydownHandler (handler) {
+  return function (e) {
+    if (
+      e.which !== 17 && // Ctrl
+      e.which !== 91 && // Cmd
+      e.which !== 18 && // Alt
+      e.which !== 16 && // Shift
+      !(/^\w$/.test(e.key) && !(e.ctrlKey || e.altKey || e.metaKey)) // [a-zA-Z]
+    ) {
+      handler(e);
     }
   }
 }
 
+class KeyManager {
+  constructor (store, options = {}) {
+    const {keymaps} = this.options = Object.assign({
+      element: window,
+      keymaps: defaultkeymaps,
+    }, options);
+    this.mode = options.mode;
+    this.keymaps = [];
+
+    this.addKeymaps(keymaps);
+
+    this.options.element.addEventListener('keydown', keydownHandler((e) => {
+      const inputTags = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+      if (inputTags) {
+        // brackets
+        return `fd${inputTags}`
+      }
+      // console.log('e.key', e.key, this.keymaps)
+      this.keymaps.some((keymap) => {
+        const action = this.getAction(e, keymap);
+        if (action) {
+          try {
+            if (typeof action === 'function') {
+              action(e, keymap.payload);
+            } else if (store) {
+              if (typeof store[action] === 'function') {
+                store[action](e, keymap.payload);
+              } else {
+                store.fire(action, e, keymap.payload);
+              }
+            } else {
+              throw new Error('keymaps action error')
+            }
+          } catch (err) {
+            console.error(err.message, err.stack);
+          }
+          e.preventDefault();
+          return true
+        }
+      });
+    }));
+  }
+
+  getAction (e, keymap) {
+    const { key, action, mode } = keymap;
+    // if (!this.modeCheck(mode)) return
+    if (e.shiftKey !== /\bshift\b/i.test(key)) return
+    if (e.ctrlKey !== /\bctrl\b/i.test(key)) return
+    if (e.altKey !== /\balt\b/i.test(key)) return
+    if (e.metaKey !== /\b(command|cmd)\b/i.test(key)) return
+
+    const eKey = e.key.replace('Arrow', '').toLowerCase();
+    const keyReg = key.replace(/\b(shift|ctrl|alt|command|cmd)[-+]/ig, '');
+    // console.log(keyReg, eKey)
+    if (!new RegExp(`${keyReg}$`).test(eKey)) return
+    return action
+  }
+
+  addKeymap (key, action, mode = '', payload = {}) {
+    this.keymaps.push({ key, action, mode, payload });
+  }
+
+  addKeymaps (keymaps, mode) {
+    // store.on('undo', (e, payload) => { store.undo() })
+    // [
+    //   { key: 'ctrl+z', action: 'undo', mode, payload },
+    // ]
+    if (Array.isArray(keymaps)) {
+      for (const keymap of keymaps) {
+        this.keymaps.push(keymap);
+      }
+    } else if (typeof keymaps === 'object') {
+    // {
+      // 'ctrl+z' () { store.undo() },
+    // }
+      for (const [key, action] of Object.entries(keymaps)) {
+        this.addKeymap(key, action, mode);
+      }
+    }
+  }
+}
+
+class Histore extends Store {
+  constructor (state, options) {
+    const {storage, init, keymaps} = options;
+    if (storage) {
+      const data = window.localStorage.getItem(storage);
+      state = JSON.parse(data) || state;
+    }
+
+    if (init) init(state);
+    super(state, options);
+    eventer(this);
+    this._keyManager = new KeyManager(this, options);
+    this.options = options;
+
+    const undostock = [];
+    const redostock = [];
+    const history = this._history = {
+      undostock,
+      redostock,
+      memo: false,
+    };
+
+    let oldstate = JSON.stringify(state);
+    this.onchange((newstate, changed) => {
+      const newstateJSON = JSON.stringify(newstate);
+      if (newstateJSON !== oldstate) {
+        console.log('change', newstateJSON !== oldstate);
+        switch (history.memo) {
+          case 'undo':
+            redostock.push(oldstate);
+            break
+          case 'redo':
+            undostock.push(oldstate);
+            break
+          case true:
+            undostock.push(oldstate);
+            if (undostock.length > 10) {
+              undostock.shift();
+            }
+            redostock.splice(0, redostock.length);
+            break
+        }
+        if (history.memo) {
+          if (storage) {
+            window.localStorage.setItem(storage, newstateJSON);
+          }
+          oldstate = newstateJSON;
+        }
+        console.log('memo', history.memo, history);
+      }
+      history.memo = false;
+      console.log('State', this.get());
+    });
+
+    this.methodToEventHandler('undo', 'redo');
+    // this.on('undo', this.undo.bind(this))
+    // this.on('redo', this.redo.bind(this))
+  }
+  methodToEventHandler (...eventnames) {
+    for (const eventname of eventnames) {
+      if (typeof this[eventname] === 'function') {
+        this.on(eventname, this[eventname].bind(this));
+      }
+    }
+  }
+  set (newState) {
+    for (const key in newState) {
+      if (typeof newState[key] === 'function') {
+        newState[key] = newState[key](this.get(key));
+      }
+    }
+    super.set(newState);
+  }
+  memo () {
+    this._history.memo = true;
+    this.set(this.get());
+  }
+  _parse (state) {
+    if (typeof state === 'string') {
+      state = JSON.parse(state) || state;
+    }
+    const {init} = this.options;
+    if (init) init(state);
+    return state
+  }
+  undo () {
+    const history = this._history;
+    if (history.undostock.length) {
+      this._history.memo = 'undo';
+      this.set(this._parse(history.undostock.pop()));
+    }
+  }
+  redo () {
+    const history = this._history;
+    if (history.redostock.length) {
+      this._history.memo = 'redo';
+      this.set(this._parse(history.redostock.pop()));
+    }
+  }
+}
+
+// storage.clear()
+const store = new Histore(defaultpalette, {
+  storage: 'test', // store3000
+  keymaps: [
+    {
+      key: 'ctrl+z',
+      action: 'undo',
+    },
+    {
+      key: 'ctrl+shift+z',
+      action: 'redo',
+    },
+    {
+      key: 'ctrl+a',
+      action: 'selectAll',
+    },
+  ],
+  // immutable: true,
+  init (state) {
+    if (state.cards) {
+      for (let i = 0; i < state.cards.length; i++) {
+        const card = state.cards[i];
+        card.color = color(card.color);
+        card.index = i;
+        card.zIndex = card.zIndex == null ? i : card.zIndex;
+      }
+    }
+    state.bgColor = color(state.bgColor);
+    console.log('Color, Color()', state);
+  }
+});
+// store.observe('bgColor', (bgColor) => {
+//   store.set({bgColor: Color(bgColor)})
+// })
+// store.onchange((state, changed) => {
+//   for (const key of Object.keys(changed)) {
+//     const value = state[key]
+//     switch (key) {
+//       case 'bgColor':
+//         state[key] = Color(value)
+//         break
+//       default:
+//         break
+//     }
+//   }
+//   console.log('onchange')
+// })
+
+// Events
+store.on('cards.ADD_CARD', (card) => {
+  store.set({cards: (cards) => {
+    card.color = color(card.color);
+    card.zIndex = cards.length;
+    card.index = cards.length;
+    return [...cards, store.cardPosition(card)]
+  }});
+  store.memo();
+});
+store.on('cards.DUPLICATE_CARD', (index) => {
+  let newCard = typeof index === 'number' ? store.get('cards')[index] : index;
+  newCard = Object.assign({}, newCard);
+  newCard.left += 10;
+  newCard.top += 10;
+  store.fire('cards.ADD_CARD', newCard);
+});
+
+store.on('cards.EDIT_CARD', (index, param) => {
+  store.set({cards: (cards) => {
+    const card = cards[index];
+    Object.assign(card, param);
+    return cards
+  }});
+});
+// @params {array} indexs
+store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
+  store.set({cards: (cards) => {
+    indexs.map((index) => {
+      const card = cards[index];
+      card.textMode = typeof bool === 'boolean' ? bool : !card.textMode;
+    });
+    return cards
+  }});
+});
+
+// @params {array} indexs
+store.on('cards.REMOVE_CARD', (indexs) => {
+  store.set({cards: (cards) => {
+    return cards.filter((card, i) => !~indexs.indexOf(i))
+  }});
+});
+
+store.on('cards.CARD_FORWARD', (index) => {
+  store.set({cards: (cards) => {
+    const currIndex = +cards[index].zIndex;
+    cards.forEach((card, i) => {
+      if (i === index) {
+        card.zIndex = cards.length - 1;
+      } else if (card.zIndex > currIndex) {
+        --card.zIndex;
+      }
+    });
+    return cards
+  }});
+});
+
+/* src\svelte\color-card.html generated by Svelte v1.56.2 */
+
 const colorsWidth = 320;
 
-function colorStyle(card) {
-  return card.textMode
-    ? `background-color: transparent; color: ${card.color};`
-    : `background-color: ${card.color}; color: ${tinycolor.mostReadable(card.color, ['#eee', '#111'])};`
+function cardStyle(card, grayscale) {
+  const {width, height, top, left, color, textMode} = card;
+  const w = width > 120 ? width + 'px' : 'auto';
+  const h = height > 120 ? height + 'px' : 'auto';
+  const c2 = grayscale ? color.grayscale() : color;
+  const colorstyle = textMode
+    ? `background-color: transparent; color: ${c2};`
+    : `background-color: ${c2}; color: ${color.isDark() ? '#fff' : '#000'};`;
+  return colorstyle + `width:${w}; height:${h};top:${top}px;left:${left}px;`
 }
 
-function contrast(card, bgColor) {
-	return tinycolor.readability(card.color, bgColor);
+function contrast$1(card, $bgColor) {
+	return round(store.get('bgColor').contrast(card.color), 1);
 }
 
-function width$1(card) {
-	return card.width || 200;
-}
-
-function height$1(card) {
-	return card.height || 180;
-}
-
-var methods$7 = {
+var methods$6 = {
   adjust (card, init$$1) {
     const rect = this.refs.card.parentElement.getBoundingClientRect();
-    const maxW = rect.width - this.get('width');
-    const maxH = rect.height - this.get('height');
+    const maxW = rect.width - card.width;
+    const maxH = rect.height - card.height;
     let left, top;
 
     if (init$$1 && (+card.left < colorsWidth || !card.top)) {
@@ -4703,69 +4991,103 @@ var methods$7 = {
     }
     return {left, top}
   },
-  duplicate () {
-    store.trigger('cards.DUPLICATE_CARD', this.get('activeCard'));
+  reverse () {
+    store.fire('cards.TOGGLE_TEXTMODE', [this.get('card').index]);
   },
   remove () {
-    const cards = store.get('cards');
-
-    if (cards.some((card) => card.selected)) {
-      console.log('removeselected', activeIndex());
-      cards.forEach((card, i) => {
-        if (card.selected) {
-          store.trigger('cards.REMOVE_CARD', i);
-        }
-      });
-    } else {
-      console.log('remove', activeIndex());
-      store.trigger('cards.REMOVE_CARD', activeIndex());
-    }
+    store.fire('cards.REMOVE_CARD', [this.get('card').index]);
   },
 };
 
-function oncreate$7() {
+function oncreate$5() {
   console.log('card-render');
+
   const cardEl = this.refs.card;
   const box = cardEl.parentElement;
-
   const {card, index} = this.get();
 
-  let selected;
+  // card position init
+  store.cardPosition = (card, x, y) => {
+    const cardRect = cardEl.getBoundingClientRect();
+    const rect = box.getBoundingClientRect();
+    // random positions
+    if (card.left == null || x != null) {
+      const byX = x == null ? Math.random() : x(card);
+      const maxW = rect.width - Math.max(cardRect.width, 120) - colorsWidth;
+      card.left = snap((maxW) * byX + colorsWidth);
+    }
+    if (card.top == null || y != null) {
+      const byY = y == null ? Math.random() : y(card);
+      const maxH = rect.height - Math.max(cardRect.height, 120);
+      card.top = snap((maxH) * byY);
+    }
+    return card
+  };
+
+
+  let cards;
 
   this.movable = new Movable(cardEl, {
     containment: box,
-    grid: 5,
+    grid: 10,
     axis: 'shift',
     start: (e, position) => {
       e.stopPropagation();
+      store.fire('cards.CARD_FORWARD', index);
 
-      store.trigger('cards.CARD_FORWARD', index, false);
-      selected = store.get('cards');
+      cards = store.get('cards');
     },
-    drag: (e, position, el) => {
-      // cards.forEach((cardEl, i) => {
-      //   if (card !== cardEl) {
-      //     const cardRect = cardRects[i]
-      //     cardEl.style.left = position.adjust(cardRect.left + position.vectorX, 'width', cardRect) + 'px'
-      //     cardEl.style.top  = position.adjust(cardRect.top  + position.vectorY, 'height', cardRect) + 'px'
-      //   }
-      // })
+    drag: (e, position) => {
+      e.stopPropagation();
+      for (const scard of this.root.selectable.selects) {
+        const {index, el, rect} = scard;
+        const selectcard = cards[index];
+        scard.left = position.adjust(selectcard.left + position.vectorX, 'width', rect);
+        scard.top = position.adjust(selectcard.top + position.vectorY, 'height', rect);
+
+        el.style.left = scard.left + 'px';
+        el.style.top = scard.top + 'px';
+      }
     },
-    stop: (e, position, el) => {
-      const pos = this.adjust(position);
-      this.set(pos);
-      store.trigger('cards.TRANSLATE_CARD', index, pos.left, pos.top);
+    stop: (e, {left, top}, el) => {
+      const selects = this.root.selectable.selects;
+      left = Math.max(colorsWidth, left);
+
+      store.set({cards: (cards) => {
+        for (const scard of selects) {
+          const {index, left, top} = scard;
+          const card = cards[index];
+          Object.assign(card, {left, top});
+        }
+        return cards
+      }});
+      store.set({sortX: 'none', sortY: 'none'});
+      store.memo();
     },
     click: (e, position, el) => {
-      store.memo('cards');
-      // this.parent.selectable.select(this.i)
+      store.memo();
     },
   });
+  this.resizable = new Resizable(this.refs.handle, {
+    start: (e) => {
+      e.stopPropagation();
+    },
+    drag: (e) => {
+      e.stopPropagation();
+    },
+    stop: (e) => {
+      e.stopPropagation();
+      const {width, height} = cardEl.getBoundingClientRect();
+      store.fire('cards.EDIT_CARD', index, {width, height});
+      store.memo();
+    },
+  });
+
   cardEl.addEventListener('contextmenu', (e) => {
     // デフォルトイベントをキャンセル
     // これを書くことでコンテキストメニューが表示されなくなります
     e.preventDefault();
-    store.trigger('menu_open', e, {
+    store.fire('menu_open', e, {
       name: card.name,
       color: card.color,
     }, 'card');
@@ -4773,9 +5095,8 @@ function oncreate$7() {
 
   // styler(cardEl, position(card, true))
   // this.position(card, true)
-  this.set(this.adjust(card, true));
+  // this.set(this.adjust(card, true))
 }
-
 // Utilities
 
 function snap (n, grid = 5) {
@@ -4785,21 +5106,25 @@ function clamp (val, max, min = 0) {
   return Math.min(Math.max(min, val), max)
 }
 
-function encapsulateStyles$8(node) {
-	setAttribute(node, "svelte-3144337615", "");
+function encapsulateStyles$6(node) {
+	setAttribute(node, "svelte-2127399107", "");
 }
 
-function add_css$8() {
+function add_css$6() {
 	var style = createElement("style");
-	style.id = 'svelte-3144337615-style';
-	style.textContent = "[svelte-3144337615].card,[svelte-3144337615] .card{position:absolute;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:6px;width:200px;height:180px;user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none}[svelte-3144337615].card.selected,[svelte-3144337615] .card.selected{outline:1px dashed black;box-shadow:0 0 0 1px white}[svelte-3144337615].card.active,[svelte-3144337615] .card.active{z-index:100}[svelte-3144337615].cardtext,[svelte-3144337615] .cardtext{padding:8px;width:100%;white-space:wrap}[svelte-3144337615].card_title,[svelte-3144337615] .card_title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}[svelte-3144337615].icon,[svelte-3144337615] .icon{position:absolute;display:none;width:20px;height:20px;margin:5px;top:0;right:0}[svelte-3144337615].card:hover .icon,[svelte-3144337615] .card:hover .icon{display:block}";
+	style.id = 'svelte-2127399107-style';
+	style.textContent = "[svelte-2127399107].card,[svelte-2127399107] .card{position:absolute;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:6px;min-width:120px;min-height:120px;user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none}[svelte-2127399107].card.selected,[svelte-2127399107] .card.selected{outline:1px dashed black;box-shadow:0 0 0 1px white}[svelte-2127399107].card.active,[svelte-2127399107] .card.active{z-index:100}[svelte-2127399107].cardtext,[svelte-2127399107] .cardtext{padding:8px;width:100%;white-space:wrap}[svelte-2127399107].card_title,[svelte-2127399107] .card_title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}[svelte-2127399107].icon,[svelte-2127399107] .icon{position:absolute;display:none;width:20px;height:20px}[svelte-2127399107].card:hover .icon,[svelte-2127399107] .card:hover .icon,[svelte-2127399107].card:hover .controller,[svelte-2127399107] .card:hover .controller{display:block}[svelte-2127399107].controller,[svelte-2127399107] .controller{position:absolute;display:none;height:20px;top:0;right:0;margin:5px}[svelte-2127399107].resize-handle,[svelte-2127399107] .resize-handle{bottom:0;right:0;cursor:nwse-resize}";
 	appendNode(style, document.head);
 }
 
-function create_main_fragment$8(state, component) {
-	var div, div_1, h3, text_value = state.card.name, text, text_1, div_2, text_2_value = state.card.color, text_2, text_3, div_3, text_4_value = state.card.color.toString('hsl'), text_4, text_5, div_4, text_6_value = state.Math.round(state.contrast * 10) / 10, text_6, text_8, div_5, div_style_value;
+function create_main_fragment$6(component, state) {
+	var div, div_1, h3, text_value = state.card.name, text, text_1, div_2, text_2_value = state.card.color.rgb(), text_2, text_3, div_3, text_4_value = state.card.color.hsl(), text_4, text_5, div_4, text_6, text_8, div_5, span, text_10, span_1, text_13, div_6, div_style_value;
 
 	function click_handler(event) {
+		component.reverse();
+	}
+
+	function click_handler_1(event) {
 		component.remove();
 	}
 
@@ -4817,21 +5142,31 @@ function create_main_fragment$8(state, component) {
 			text_4 = createText(text_4_value);
 			text_5 = createText("\n    ");
 			div_4 = createElement("div");
-			text_6 = createText(text_6_value);
+			text_6 = createText(state.contrast);
 			text_8 = createText("\n  ");
 			div_5 = createElement("div");
-			div_5.textContent = "ｘ";
+			span = createElement("span");
+			span.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>";
+			text_10 = createText("\n    ");
+			span_1 = createElement("span");
+			span_1.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>";
+			text_13 = createText("\n  ");
+			div_6 = createElement("div");
 			this.h();
 		},
 
 		h: function hydrate() {
-			encapsulateStyles$8(div);
+			encapsulateStyles$6(div);
 			h3.className = "card_title";
 			div_1.className = "cardtext";
-			div_5.className = "icon card-delete";
-			addListener(div_5, "click", click_handler);
+			span.className = "card-reverse";
+			addListener(span, "click", click_handler);
+			span_1.className = "card-delete";
+			addListener(span_1, "click", click_handler_1);
+			div_5.className = "controller";
+			div_6.className = "icon resize-handle";
 			div.className = "card animated bounceIn";
-			div.style.cssText = div_style_value = "" + state.colorStyle + " left: " + state.left + "px; top: " + state.top + "px; z-index: " + state.card.zIndex + ";";
+			div.style.cssText = div_style_value = "" + state.cardStyle + " z-index: " + state.card.zIndex + ";";
 		},
 
 		m: function mount(target, anchor) {
@@ -4850,6 +5185,12 @@ function create_main_fragment$8(state, component) {
 			appendNode(text_6, div_4);
 			appendNode(text_8, div);
 			appendNode(div_5, div);
+			appendNode(span, div_5);
+			appendNode(text_10, div_5);
+			appendNode(span_1, div_5);
+			appendNode(text_13, div);
+			appendNode(div_6, div);
+			component.refs.handle = div_6;
 			component.refs.card = div;
 		},
 
@@ -4858,19 +5199,19 @@ function create_main_fragment$8(state, component) {
 				text.data = text_value;
 			}
 
-			if ((changed.card) && text_2_value !== (text_2_value = state.card.color)) {
+			if ((changed.card) && text_2_value !== (text_2_value = state.card.color.rgb())) {
 				text_2.data = text_2_value;
 			}
 
-			if ((changed.card) && text_4_value !== (text_4_value = state.card.color.toString('hsl'))) {
+			if ((changed.card) && text_4_value !== (text_4_value = state.card.color.hsl())) {
 				text_4.data = text_4_value;
 			}
 
-			if ((changed.Math || changed.contrast) && text_6_value !== (text_6_value = state.Math.round(state.contrast * 10) / 10)) {
-				text_6.data = text_6_value;
+			if (changed.contrast) {
+				text_6.data = state.contrast;
 			}
 
-			if ((changed.colorStyle || changed.left || changed.top || changed.card) && div_style_value !== (div_style_value = "" + state.colorStyle + " left: " + state.left + "px; top: " + state.top + "px; z-index: " + state.card.zIndex + ";")) {
+			if ((changed.cardStyle || changed.card) && div_style_value !== (div_style_value = "" + state.cardStyle + " z-index: " + state.card.zIndex + ";")) {
 				div.style.cssText = div_style_value;
 			}
 		},
@@ -4880,7 +5221,9 @@ function create_main_fragment$8(state, component) {
 		},
 
 		d: function destroy$$1() {
-			removeListener(div_5, "click", click_handler);
+			removeListener(span, "click", click_handler);
+			removeListener(span_1, "click", click_handler_1);
+			if (component.refs.handle === div_6) component.refs.handle = null;
 			if (component.refs.card === div) component.refs.card = null;
 		}
 	};
@@ -4889,20 +5232,20 @@ function create_main_fragment$8(state, component) {
 function Color_card(options) {
 	init(this, options);
 	this.refs = {};
-	this._state = assign({ Math : Math }, options.data);
-	this._recompute({ card: 1, bgColor: 1 }, this._state);
+	this._state = assign({}, options.data);
+	this._recompute({ card: 1, grayscale: 1, $bgColor: 1 }, this._state);
 
-	if (!document.getElementById("svelte-3144337615-style")) add_css$8();
+	if (!document.getElementById("svelte-2127399107-style")) add_css$6();
 
-	var _oncreate = oncreate$7.bind(this);
+	var _oncreate = oncreate$5.bind(this);
 
 	if (!options.root) {
-		this._oncreate = [_oncreate];
-	} else {
-	 	this.root._oncreate.push(_oncreate);
-	 }
+		this._oncreate = [];
+	}
 
-	this._fragment = create_main_fragment$8(this._state, this);
+	this._fragment = create_main_fragment$6(this, this._state);
+
+	this.root._oncreate.push(_oncreate);
 
 	if (options.target) {
 		this._fragment.c();
@@ -4912,20 +5255,15 @@ function Color_card(options) {
 	}
 }
 
-assign(Color_card.prototype, methods$7, proto);
+assign(Color_card.prototype, methods$6, proto);
 
 Color_card.prototype._recompute = function _recompute(changed, state) {
-	if (changed.card) {
-		if (differs(state.colorStyle, (state.colorStyle = colorStyle(state.card)))) changed.colorStyle = true;
+	if (changed.card || changed.grayscale) {
+		if (this._differs(state.cardStyle, (state.cardStyle = cardStyle(state.card, state.grayscale)))) changed.cardStyle = true;
 	}
 
-	if (changed.card || changed.bgColor) {
-		if (differs(state.contrast, (state.contrast = contrast(state.card, state.bgColor)))) changed.contrast = true;
-	}
-
-	if (changed.card) {
-		if (differs(state.width, (state.width = width$1(state.card)))) changed.width = true;
-		if (differs(state.height, (state.height = height$1(state.card)))) changed.height = true;
+	if (changed.card || changed.$bgColor) {
+		if (this._differs(state.contrast, (state.contrast = contrast$1(state.card, state.$bgColor)))) changed.contrast = true;
 	}
 };
 
@@ -12290,12 +12628,13 @@ var SOLID_UNCOATED = {
 	"HEXACHROME®YellowU": "#ffe210"
 };
 
-/* src\svelte\color-lists.html generated by Svelte v1.49.0 */
+/* src\svelte\color-lists.html generated by Svelte v1.56.2 */
+
 function list_1(colorlists, colorlistsIndex) {
 	return colorlists[colorlistsIndex].list;
 }
 
-function data$8() {
+function data$6() {
   return {
     colorlists: [
       { name: 'Web Color',
@@ -12306,12 +12645,12 @@ function data$8() {
         list: parser(JISCOLOR_JA) },
       { name: 'GOOGLE MATERIAL',
         list: Object.keys(MATERIALCOLOR).reduce((ary, key) => {
-          MATERIALCOLOR[key].forEach((color, i) => {
+          MATERIALCOLOR[key].forEach((color$$1, i) => {
             let name = key;
             if (i === 0)      name += 50;
             else if (i < 10)  name += i * 100;
             else if (i >= 10) name += ['A100', 'A200', 'A400', 'A700'][i % 10];
-            ary.push({name, color});
+            ary.push({name, color: color$$1});
           });
           return ary
         }, []) },
@@ -12329,33 +12668,30 @@ function data$8() {
     colorlistsIndex: 0
   }
 }
-
 function title(tip) {
   return tip.name + ' : ' + tip.color
 }
-
-function oncreate$8() {
+function oncreate$6() {
   const colortips = this.refs.colortips;
   colortips.addEventListener('click', (e) => {
     const el = e.target;
     if (el.classList.contains('tip')) {
-      const [name, color] = el.title.split(' : ');
-      store.trigger('cards.ADD_CARD', {name, color});
+      const [name, color$$1] = el.title.split(' : ');
+      this.fire('colorpick', {current: { name, color: color$$1 }});
     }
   });
   colortips.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     const el = e.target;
     if (el.classList.contains('tip')) {
-      const [name, color] = el.title.split(' : ');
-      store.trigger('menu_open', e, {
+      const [name, color$$1] = el.title.split(' : ');
+      store.fire('menu_open', e, {
         name,
-        color: tinycolor(color)
+        color: color(color$$1)
       }, 'tip');
     }
   });
 }
-
 function parser (list, temp) {
   return Object.keys(list).map(key => ({
     name: temp ? temp(key, list[key]) : key,
@@ -12369,18 +12705,18 @@ function pantone (list) {
   }))
 }
 
-function encapsulateStyles$9(node) {
-	setAttribute(node, "svelte-3330610401", "");
+function encapsulateStyles$7(node) {
+	setAttribute(node, "svelte-3496960041", "");
 }
 
-function add_css$9() {
+function add_css$7() {
 	var style = createElement("style");
-	style.id = 'svelte-3330610401-style';
-	style.textContent = "[svelte-3330610401]#colorlists,[svelte-3330610401] #colorlists{width:280px;font-size:20px;margin:10px 0;display:block}[svelte-3330610401]#colorlists option,[svelte-3330610401] #colorlists option{background:#fff;color:#111}[svelte-3330610401]#colorlists option:hover,[svelte-3330610401] #colorlists option:hover{background:aquamarine}[svelte-3330610401].tip,[svelte-3330610401] .tip{width:20px;height:20px;margin:0;padding:0;display:inline-block}[svelte-3330610401].wrapper,[svelte-3330610401] .wrapper{position:relative;height:calc(100% - 420px);margin:0}[svelte-3330610401].scrollbar-wrapper,[svelte-3330610401] .scrollbar-wrapper{position:relative;height:100%;overflow:hidden}[svelte-3330610401].scrollbar-body,[svelte-3330610401] .scrollbar-body{width:calc(100% + 17px);height:100%;overflow-y:scroll}[svelte-3330610401].scrollbar-content,[svelte-3330610401] .scrollbar-content{display:flex;flex-wrap:wrap}";
+	style.id = 'svelte-3496960041-style';
+	style.textContent = "[svelte-3496960041]#colorlists,[svelte-3496960041] #colorlists{width:280px;font-size:20px;margin:10px 0;display:block}[svelte-3496960041]#colorlists option,[svelte-3496960041] #colorlists option{background:#fff;color:#111}[svelte-3496960041]#colorlists option:hover,[svelte-3496960041] #colorlists option:hover{background:aquamarine}[svelte-3496960041].tip,[svelte-3496960041] .tip{width:20px;height:20px;margin:0;padding:0;display:inline-block}[svelte-3496960041].wrapper,[svelte-3496960041] .wrapper{position:relative;height:calc(100% - 420px);margin:0}[svelte-3496960041].scrollbar-wrapper,[svelte-3496960041] .scrollbar-wrapper{position:relative;height:100%;overflow:hidden}[svelte-3496960041].scrollbar-body,[svelte-3496960041] .scrollbar-body{width:calc(100% + 17px);height:100%;overflow-y:scroll}[svelte-3496960041].scrollbar-content,[svelte-3496960041] .scrollbar-content{display:flex;flex-wrap:wrap}";
 	appendNode(style, document.head);
 }
 
-function create_main_fragment$9(state, component) {
+function create_main_fragment$7(component, state) {
 	var div, select, text, div_1, div_2, div_3;
 
 	var colorlists = state.colorlists;
@@ -12388,19 +12724,25 @@ function create_main_fragment$9(state, component) {
 	var each_blocks = [];
 
 	for (var i = 0; i < colorlists.length; i += 1) {
-		each_blocks[i] = create_each_block$2(state, colorlists, colorlists[i], i, component);
+		each_blocks[i] = create_each_block$1(component, assign({}, state, {
+			data: colorlists[i],
+			index: i
+		}));
 	}
 
 	function change_handler(event) {
 		component.set({colorlistsIndex: +select.value});
 	}
 
-	var list_2 = state.list;
+	var list = state.list;
 
 	var each_1_blocks = [];
 
-	for (var i = 0; i < list_2.length; i += 1) {
-		each_1_blocks[i] = create_each_block_1(state, list_2, list_2[i], i, component);
+	for (var i = 0; i < list.length; i += 1) {
+		each_1_blocks[i] = create_each_block_1(component, assign({}, state, {
+			tip: list[i],
+			tip_index: i
+		}));
 	}
 
 	return {
@@ -12424,7 +12766,7 @@ function create_main_fragment$9(state, component) {
 		},
 
 		h: function hydrate() {
-			encapsulateStyles$9(div);
+			encapsulateStyles$7(div);
 			select.id = "colorlists";
 			addListener(select, "change", change_handler);
 			div_3.className = "scrollbar-content";
@@ -12458,10 +12800,15 @@ function create_main_fragment$9(state, component) {
 
 			if (changed.colorlists) {
 				for (var i = 0; i < colorlists.length; i += 1) {
+					var each_context = assign({}, state, {
+						data: colorlists[i],
+						index: i
+					});
+
 					if (each_blocks[i]) {
-						each_blocks[i].p(changed, state, colorlists, colorlists[i], i);
+						each_blocks[i].p(changed, each_context);
 					} else {
-						each_blocks[i] = create_each_block$2(state, colorlists, colorlists[i], i, component);
+						each_blocks[i] = create_each_block$1(component, each_context);
 						each_blocks[i].c();
 						each_blocks[i].m(select, null);
 					}
@@ -12474,14 +12821,19 @@ function create_main_fragment$9(state, component) {
 				each_blocks.length = colorlists.length;
 			}
 
-			var list_2 = state.list;
+			var list = state.list;
 
 			if (changed.list) {
-				for (var i = 0; i < list_2.length; i += 1) {
+				for (var i = 0; i < list.length; i += 1) {
+					var each_1_context = assign({}, state, {
+						tip: list[i],
+						tip_index: i
+					});
+
 					if (each_1_blocks[i]) {
-						each_1_blocks[i].p(changed, state, list_2, list_2[i], i);
+						each_1_blocks[i].p(changed, each_1_context);
 					} else {
-						each_1_blocks[i] = create_each_block_1(state, list_2, list_2[i], i, component);
+						each_1_blocks[i] = create_each_block_1(component, each_1_context);
 						each_1_blocks[i].c();
 						each_1_blocks[i].m(div_3, null);
 					}
@@ -12491,7 +12843,7 @@ function create_main_fragment$9(state, component) {
 					each_1_blocks[i].u();
 					each_1_blocks[i].d();
 				}
-				each_1_blocks.length = list_2.length;
+				each_1_blocks.length = list.length;
 			}
 		},
 
@@ -12520,7 +12872,8 @@ function create_main_fragment$9(state, component) {
 }
 
 // (3:4) {{#each colorlists as data, index}}
-function create_each_block$2(state, colorlists, data_1, index, component) {
+function create_each_block$1(component, state) {
+	var data_1 = state.data, index = state.index;
 	var option, text_value = data_1.name, text;
 
 	return {
@@ -12540,7 +12893,9 @@ function create_each_block$2(state, colorlists, data_1, index, component) {
 			appendNode(text, option);
 		},
 
-		p: function update(changed, state, colorlists, data_1, index) {
+		p: function update(changed, state) {
+			data_1 = state.data;
+			index = state.index;
 			if ((changed.colorlists) && text_value !== (text_value = data_1.name)) {
 				text.data = text_value;
 			}
@@ -12557,7 +12912,8 @@ function create_each_block$2(state, colorlists, data_1, index, component) {
 }
 
 // (11:8) {{#each list as tip}}
-function create_each_block_1(state, list_2, tip, tip_index, component) {
+function create_each_block_1(component, state) {
+	var tip = state.tip, tip_index = state.tip_index;
 	var div, div_title_value;
 
 	return {
@@ -12576,7 +12932,9 @@ function create_each_block_1(state, list_2, tip, tip_index, component) {
 			insertNode(div, target, anchor);
 		},
 
-		p: function update(changed, state, list_2, tip, tip_index) {
+		p: function update(changed, state) {
+			tip = state.tip;
+			tip_index = state.tip_index;
 			if ((changed.list) && div_title_value !== (div_title_value = title(tip))) {
 				div.title = div_title_value;
 			}
@@ -12597,20 +12955,20 @@ function create_each_block_1(state, list_2, tip, tip_index, component) {
 function Color_lists(options) {
 	init(this, options);
 	this.refs = {};
-	this._state = assign(data$8(), options.data);
+	this._state = assign(data$6(), options.data);
 	this._recompute({ colorlists: 1, colorlistsIndex: 1 }, this._state);
 
-	if (!document.getElementById("svelte-3330610401-style")) add_css$9();
+	if (!document.getElementById("svelte-3496960041-style")) add_css$7();
 
-	var _oncreate = oncreate$8.bind(this);
+	var _oncreate = oncreate$6.bind(this);
 
 	if (!options.root) {
-		this._oncreate = [_oncreate];
-	} else {
-	 	this.root._oncreate.push(_oncreate);
-	 }
+		this._oncreate = [];
+	}
 
-	this._fragment = create_main_fragment$9(this._state, this);
+	this._fragment = create_main_fragment$7(this, this._state);
+
+	this.root._oncreate.push(_oncreate);
 
 	if (options.target) {
 		this._fragment.c();
@@ -12624,121 +12982,52 @@ assign(Color_lists.prototype, proto);
 
 Color_lists.prototype._recompute = function _recompute(changed, state) {
 	if (changed.colorlists || changed.colorlistsIndex) {
-		if (differs(state.list, (state.list = list_1(state.colorlists, state.colorlistsIndex)))) changed.list = true;
+		if (this._differs(state.list, (state.list = list_1(state.colorlists, state.colorlistsIndex)))) changed.list = true;
 	}
 };
 
-const numStylekey = ['width', 'height', 'top', 'left'];
-function styler (dom, data) {
-  if (dom[0] === void 0) {
-    dom = [dom];
-  }
-  dom.forEach((el) => {
-    const style = el.style;
-    for (let key in data) {
-      const val = data[key];
-      if (typeof val === 'number' && numStylekey.indexOf(key) !== -1) {
-        style[key] = val + 'px';
-      } else if (val != null) {
-        style[key] = val;
-      }
-    }
-  });
-}
+/* src\svelte\context-menu.html generated by Svelte v1.56.2 */
 
-
-/**
- * クリップボードコピー関数
- *
- * @export
- * @param {string} textVal
- * @returns {boolean}
- */
-function copyTextToClipboard (textVal) {
-  // テキストエリアを用意する
-  const copyFrom = document.createElement('textarea');
-  // テキストエリアへ値をセット
-  copyFrom.textContent = textVal;
-
-  // bodyタグの要素を取得
-  const bodyElm = document.getElementsByTagName('body')[0];
-  // 子要素にテキストエリアを配置
-  bodyElm.appendChild(copyFrom);
-
-  // テキストエリアの値を選択
-  copyFrom.select();
-  // コピーコマンド発行
-  const retVal = document.execCommand('copy');
-  // 追加テキストエリアを削除
-  bodyElm.removeChild(copyFrom);
-
-  return retVal
-}
-
-/* src\svelte\context-menu.html generated by Svelte v1.49.0 */
-function activeIndex$1 () {
-  const cards = store.get('cards');
-  for (let i = 0; i < cards.length; i++) {
-    if (cards[i].zIndex === cards.length - 1) {
-      return i
-    }
-  }
-}
-function data$9() {
+function data$7() {
   return {
     mode: false,
     activeCard: null,
-    copys: 'HEX,RGB,HSL'.split(','),
+    copys: ['hex', 'rgb', 'hsl'],
     sizes: [120, 240, 360],
   }
 }
-
-var methods$8 = {
+var methods$7 = {
   add () {
-    store.trigger('cards.ADD_CARD', this.get('activeCard'));
+    store.fire('cards.ADD_CARD', this.get('activeCard'));
   },
   duplicate () {
-    store.trigger('cards.DUPLICATE_CARD', this.get('activeCard'));
+    store.fire('cards.DUPLICATE_CARD', this.get('activeCard'));
   },
   remove () {
-    const cards = store.get('cards');
-
-    if (cards.some((card) => card.selected)) {
-      console.log('removeselected', activeIndex$1());
-      cards.forEach((card, i) => {
-        if (card.selected) {
-          store.trigger('cards.REMOVE_CARD', i);
-        }
-      });
-    } else {
-      console.log('remove', activeIndex$1());
-      store.trigger('cards.REMOVE_CARD', activeIndex$1());
+    const selects = this.root.selectable.selects;
+    if (selects.length) {
+      store.fire('cards.REMOVE_CARD', selects.map((select) => select.index));
     }
   },
-  modeChange () {
-    store.trigger('cards.TOGGLE_TEXTMODE', activeIndex$1());
+  reverse () {
+    const selects = this.root.selectable.selects;
+    if (selects.length) {
+      store.fire('cards.TOGGLE_TEXTMODE', selects.map((select) => select.index));
+    }
   },
 
-  setBgColor () {
-    store.set('bgColor', this.get('activeCard').color);
+  copyColor (model) {
+    copyTextToClipboard(this.get('activeCard').color[model]());
   },
-  copyColor (el) {
-    const key = el.textContent.toLowerCase();
-    copyTextToClipboard(this.get('activeCard').color.toString(key));
-  },
-  setSize (el) {
-    store.trigger('cards.RESIZE_CARD', activeIndex$1(), +el.textContent);
-    // this.get('activeCard').rectSetter()
-  }
 };
 
-function oncreate$9() {
+function oncreate$7() {
   console.log('menu-render');
   const menu = this.refs.menu;
 
   const menuHide = (e) => {
     if (this.get('mode')) {
-      store.trigger('menu_close');
+      store.fire('menu_close');
     }
   };
 
@@ -12765,65 +13054,41 @@ function oncreate$9() {
     document.removeEventListener('click', menuHide);
   });
 }
-
-function encapsulateStyles$10(node) {
-	setAttribute(node, "svelte-2976389592", "");
+function encapsulateStyles$8(node) {
+	setAttribute(node, "svelte-1324848163", "");
 }
 
-function add_css$10() {
+function add_css$8() {
 	var style = createElement("style");
-	style.id = 'svelte-2976389592-style';
-	style.textContent = "[svelte-2976389592]#menu,[svelte-2976389592] #menu{position:absolute;font-size:12px;background:#fff;border:solid 1px silver;z-index:100}[svelte-2976389592].menuitem,[svelte-2976389592] .menuitem{min-width:100px;padding:4px;margin:0}[svelte-2976389592].menuitem:hover,[svelte-2976389592] .menuitem:hover,[svelte-2976389592].menuitem:active,[svelte-2976389592] .menuitem:active{background:aquamarine}[svelte-2976389592].menuitem .menuitem:hover,[svelte-2976389592] .menuitem .menuitem:hover{font-weight:bold}";
+	style.id = 'svelte-1324848163-style';
+	style.textContent = "[svelte-1324848163]#menu,[svelte-1324848163] #menu{position:absolute;font-size:12px;background:#fff;border:solid 1px silver;z-index:100}[svelte-1324848163].menuitem,[svelte-1324848163] .menuitem{min-width:100px;padding:4px;margin:0}[svelte-1324848163].menuitem:hover,[svelte-1324848163] .menuitem:hover,[svelte-1324848163].menuitem:active,[svelte-1324848163] .menuitem:active{background:aquamarine}[svelte-1324848163].menuitem .menuitem:hover,[svelte-1324848163] .menuitem .menuitem:hover{font-weight:bold}";
 	appendNode(style, document.head);
 }
 
-function create_main_fragment$10(state, component) {
-	var div, text, p, text_2, p_1, span, text_4, text_6;
+function create_main_fragment$8(component, state) {
+	var div, text;
 
-	var current_block_type = select_block_type$2(state);
-	var if_block = current_block_type && current_block_type(state, component);
-
-	function click_handler(event) {
-		component.setBgColor();
+	function select_block_type(state) {
+		if (state.mode == 'tip') return create_if_block$1;
+		if (state.mode == 'card') return create_if_block_1$1;
+		return null;
 	}
+	var current_block_type = select_block_type(state);
+	var if_block = current_block_type && current_block_type(component, state);
 
-	var copys = state.copys;
-
-	var each_blocks = [];
-
-	for (var i = 0; i < copys.length; i += 1) {
-		each_blocks[i] = create_each_block$3(state, copys, copys[i], i, component);
-	}
-
-	var if_block_2 = (state.mode == 'card') && create_if_block_2$1(state, component);
+	var if_block_2 = (state.activeCard) && create_if_block_2(component, state);
 
 	return {
 		c: function create() {
 			div = createElement("div");
 			if (if_block) if_block.c();
-			text = createText("\n  ");
-			p = createElement("p");
-			p.textContent = "SET BACKGROUND";
-			text_2 = createText("\n  ");
-			p_1 = createElement("p");
-			span = createElement("span");
-			span.textContent = "COPY:";
-			text_4 = createText("\n    ");
-
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].c();
-			}
-
-			text_6 = createText("\n  ");
+			text = createText("\n\n  ");
 			if (if_block_2) if_block_2.c();
 			this.h();
 		},
 
 		h: function hydrate() {
-			encapsulateStyles$10(div);
-			p.className = "menuitem";
-			addListener(p, "click", click_handler);
-			p_1.className = "menuitem";
+			encapsulateStyles$8(div);
 			div.id = "menu";
 		},
 
@@ -12831,57 +13096,26 @@ function create_main_fragment$10(state, component) {
 			insertNode(div, target, anchor);
 			if (if_block) if_block.m(div, null);
 			appendNode(text, div);
-			appendNode(p, div);
-			appendNode(text_2, div);
-			appendNode(p_1, div);
-			appendNode(span, p_1);
-			appendNode(text_4, p_1);
-
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].m(p_1, null);
-			}
-
-			appendNode(text_6, div);
 			if (if_block_2) if_block_2.m(div, null);
 			component.refs.menu = div;
 		},
 
 		p: function update(changed, state) {
-			if (current_block_type !== (current_block_type = select_block_type$2(state))) {
+			if (current_block_type !== (current_block_type = select_block_type(state))) {
 				if (if_block) {
 					if_block.u();
 					if_block.d();
 				}
-				if_block = current_block_type && current_block_type(state, component);
+				if_block = current_block_type && current_block_type(component, state);
 				if (if_block) if_block.c();
 				if (if_block) if_block.m(div, text);
 			}
 
-			var copys = state.copys;
-
-			if (changed.copys) {
-				for (var i = 0; i < copys.length; i += 1) {
-					if (each_blocks[i]) {
-						each_blocks[i].p(changed, state, copys, copys[i], i);
-					} else {
-						each_blocks[i] = create_each_block$3(state, copys, copys[i], i, component);
-						each_blocks[i].c();
-						each_blocks[i].m(p_1, null);
-					}
-				}
-
-				for (; i < each_blocks.length; i += 1) {
-					each_blocks[i].u();
-					each_blocks[i].d();
-				}
-				each_blocks.length = copys.length;
-			}
-
-			if (state.mode == 'card') {
+			if (state.activeCard) {
 				if (if_block_2) {
 					if_block_2.p(changed, state);
 				} else {
-					if_block_2 = create_if_block_2$1(state, component);
+					if_block_2 = create_if_block_2(component, state);
 					if_block_2.c();
 					if_block_2.m(div, null);
 				}
@@ -12895,20 +13129,11 @@ function create_main_fragment$10(state, component) {
 		u: function unmount() {
 			detachNode(div);
 			if (if_block) if_block.u();
-
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].u();
-			}
-
 			if (if_block_2) if_block_2.u();
 		},
 
 		d: function destroy$$1() {
 			if (if_block) if_block.d();
-			removeListener(p, "click", click_handler);
-
-			destroyEach(each_blocks);
-
 			if (if_block_2) if_block_2.d();
 			if (component.refs.menu === div) component.refs.menu = null;
 		}
@@ -12916,7 +13141,7 @@ function create_main_fragment$10(state, component) {
 }
 
 // (2:2) {{#if mode == 'tip'}}
-function create_if_block$2(state, component) {
+function create_if_block$1(component, state) {
 	var p;
 
 	function click_handler(event) {
@@ -12950,31 +13175,24 @@ function create_if_block$2(state, component) {
 }
 
 // (4:27) 
-function create_if_block_1$2(state, component) {
-	var p, text_1, p_1, text_3, p_2;
+function create_if_block_1$1(component, state) {
+	var p, text_1, p_1;
 
 	function click_handler(event) {
 		component.remove();
 	}
 
 	function click_handler_1(event) {
-		component.duplicate();
-	}
-
-	function click_handler_2(event) {
-		component.modeChange();
+		component.reverse();
 	}
 
 	return {
 		c: function create() {
 			p = createElement("p");
-			p.textContent = "DELETE";
+			p.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\n      DELETE";
 			text_1 = createText("\n    ");
 			p_1 = createElement("p");
-			p_1.textContent = "DUPLICATE";
-			text_3 = createText("\n    ");
-			p_2 = createElement("p");
-			p_2.textContent = "MODE CHANGE";
+			p_1.innerHTML = "<i class=\"fas fa-undo fa-fw\"></i>\n      REVERSE";
 			this.h();
 		},
 
@@ -12983,166 +13201,126 @@ function create_if_block_1$2(state, component) {
 			addListener(p, "click", click_handler);
 			p_1.className = "menuitem";
 			addListener(p_1, "click", click_handler_1);
-			p_2.className = "menuitem";
-			addListener(p_2, "click", click_handler_2);
 		},
 
 		m: function mount(target, anchor) {
 			insertNode(p, target, anchor);
 			insertNode(text_1, target, anchor);
 			insertNode(p_1, target, anchor);
-			insertNode(text_3, target, anchor);
-			insertNode(p_2, target, anchor);
 		},
 
 		u: function unmount() {
 			detachNode(p);
 			detachNode(text_1);
 			detachNode(p_1);
-			detachNode(text_3);
-			detachNode(p_2);
 		},
 
 		d: function destroy$$1() {
 			removeListener(p, "click", click_handler);
 			removeListener(p_1, "click", click_handler_1);
-			removeListener(p_2, "click", click_handler_2);
 		}
 	};
 }
 
-// (12:4) {{#each copys as key}}
-function create_each_block$3(state, copys, key, key_index, component) {
-	var span, text_value = key, text;
-
-	return {
-		c: function create() {
-			span = createElement("span");
-			text = createText(text_value);
-			this.h();
-		},
-
-		h: function hydrate() {
-			span.className = "menuitem";
-			addListener(span, "click", click_handler$1);
-
-			span._svelte = {
-				component: component
-			};
-		},
-
-		m: function mount(target, anchor) {
-			insertNode(span, target, anchor);
-			appendNode(text, span);
-		},
-
-		p: function update(changed, state, copys, key, key_index) {
-			if ((changed.copys) && text_value !== (text_value = key)) {
-				text.data = text_value;
-			}
-		},
-
-		u: function unmount() {
-			detachNode(span);
-		},
-
-		d: function destroy$$1() {
-			removeListener(span, "click", click_handler$1);
-		}
-	};
-}
-
-// (19:6) {{#each sizes as key}}
-function create_each_block_1$1(state, sizes, key, key_index, component) {
-	var span, text_value = key, text;
-
-	return {
-		c: function create() {
-			span = createElement("span");
-			text = createText(text_value);
-			this.h();
-		},
-
-		h: function hydrate() {
-			span.className = "menuitem";
-			addListener(span, "click", click_handler_1);
-
-			span._svelte = {
-				component: component
-			};
-		},
-
-		m: function mount(target, anchor) {
-			insertNode(span, target, anchor);
-			appendNode(text, span);
-		},
-
-		p: function update(changed, state, sizes, key, key_index) {
-			if ((changed.sizes) && text_value !== (text_value = key)) {
-				text.data = text_value;
-			}
-		},
-
-		u: function unmount() {
-			detachNode(span);
-		},
-
-		d: function destroy$$1() {
-			removeListener(span, "click", click_handler_1);
-		}
-	};
-}
-
-// (16:2) {{#if mode == 'card'}}
-function create_if_block_2$1(state, component) {
-	var p, span, text_1;
-
-	var sizes = state.sizes;
-
-	var each_blocks = [];
-
-	for (var i = 0; i < sizes.length; i += 1) {
-		each_blocks[i] = create_each_block_1$1(state, sizes, sizes[i], i, component);
-	}
+// (16:2) {{#each copys as model}}
+function create_each_block$2(component, state) {
+	var model = state.model, model_index = state.model_index;
+	var p, text, text_1_value = state.activeCard.color[model](), text_1;
 
 	return {
 		c: function create() {
 			p = createElement("p");
-			span = createElement("span");
-			span.textContent = "SIZE:";
-			text_1 = createText("\n      ");
-
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].c();
-			}
+			text = createText("COPY: ");
+			text_1 = createText(text_1_value);
 			this.h();
 		},
 
 		h: function hydrate() {
 			p.className = "menuitem";
+			addListener(p, "click", click_handler$1);
+
+			p._svelte = {
+				component: component,
+				copys: state.copys,
+				model_index: state.model_index
+			};
 		},
 
 		m: function mount(target, anchor) {
 			insertNode(p, target, anchor);
-			appendNode(span, p);
+			appendNode(text, p);
 			appendNode(text_1, p);
-
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].m(p, null);
-			}
 		},
 
 		p: function update(changed, state) {
-			var sizes = state.sizes;
+			model = state.model;
+			model_index = state.model_index;
+			if ((changed.activeCard || changed.copys) && text_1_value !== (text_1_value = state.activeCard.color[model]())) {
+				text_1.data = text_1_value;
+			}
 
-			if (changed.sizes) {
-				for (var i = 0; i < sizes.length; i += 1) {
+			p._svelte.copys = state.copys;
+			p._svelte.model_index = state.model_index;
+		},
+
+		u: function unmount() {
+			detachNode(p);
+		},
+
+		d: function destroy$$1() {
+			removeListener(p, "click", click_handler$1);
+		}
+	};
+}
+
+// (15:2) {{#if activeCard}}
+function create_if_block_2(component, state) {
+	var each_anchor;
+
+	var copys = state.copys;
+
+	var each_blocks = [];
+
+	for (var i = 0; i < copys.length; i += 1) {
+		each_blocks[i] = create_each_block$2(component, assign({}, state, {
+			model: copys[i],
+			model_index: i
+		}));
+	}
+
+	return {
+		c: function create() {
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].c();
+			}
+
+			each_anchor = createComment();
+		},
+
+		m: function mount(target, anchor) {
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].m(target, anchor);
+			}
+
+			insertNode(each_anchor, target, anchor);
+		},
+
+		p: function update(changed, state) {
+			var copys = state.copys;
+
+			if (changed.copys || changed.activeCard) {
+				for (var i = 0; i < copys.length; i += 1) {
+					var each_context = assign({}, state, {
+						model: copys[i],
+						model_index: i
+					});
+
 					if (each_blocks[i]) {
-						each_blocks[i].p(changed, state, sizes, sizes[i], i);
+						each_blocks[i].p(changed, each_context);
 					} else {
-						each_blocks[i] = create_each_block_1$1(state, sizes, sizes[i], i, component);
+						each_blocks[i] = create_each_block$2(component, each_context);
 						each_blocks[i].c();
-						each_blocks[i].m(p, null);
+						each_blocks[i].m(each_anchor.parentNode, each_anchor);
 					}
 				}
 
@@ -13150,16 +13328,16 @@ function create_if_block_2$1(state, component) {
 					each_blocks[i].u();
 					each_blocks[i].d();
 				}
-				each_blocks.length = sizes.length;
+				each_blocks.length = copys.length;
 			}
 		},
 
 		u: function unmount() {
-			detachNode(p);
-
 			for (var i = 0; i < each_blocks.length; i += 1) {
 				each_blocks[i].u();
 			}
+
+			detachNode(each_anchor);
 		},
 
 		d: function destroy$$1() {
@@ -13168,38 +13346,28 @@ function create_if_block_2$1(state, component) {
 	};
 }
 
-function select_block_type$2(state) {
-	if (state.mode == 'tip') return create_if_block$2;
-	if (state.mode == 'card') return create_if_block_1$2;
-	return null;
-}
-
 function click_handler$1(event) {
 	var component = this._svelte.component;
-	component.copyColor(this);
-}
-
-function click_handler_1(event) {
-	var component = this._svelte.component;
-	component.setSize(this);
+	var copys = this._svelte.copys, model_index = this._svelte.model_index, model = copys[model_index];
+	component.copyColor(model);
 }
 
 function Context_menu(options) {
 	init(this, options);
 	this.refs = {};
-	this._state = assign(data$9(), options.data);
+	this._state = assign(data$7(), options.data);
 
-	if (!document.getElementById("svelte-2976389592-style")) add_css$10();
+	if (!document.getElementById("svelte-1324848163-style")) add_css$8();
 
-	var _oncreate = oncreate$9.bind(this);
+	var _oncreate = oncreate$7.bind(this);
 
 	if (!options.root) {
-		this._oncreate = [_oncreate];
-	} else {
-	 	this.root._oncreate.push(_oncreate);
-	 }
+		this._oncreate = [];
+	}
 
-	this._fragment = create_main_fragment$10(this._state, this);
+	this._fragment = create_main_fragment$8(this, this._state);
+
+	this.root._oncreate.push(_oncreate);
 
 	if (options.target) {
 		this._fragment.c();
@@ -13209,86 +13377,235 @@ function Context_menu(options) {
 	}
 }
 
-assign(Context_menu.prototype, methods$8, proto);
+assign(Context_menu.prototype, methods$7, proto);
 
-/* src\svelte\app.html generated by Svelte v1.49.0 */
-const COLOR_TYPE = ['hex', 'rgb', 'hsl'];
-let colortypeindex = 0;
-function textColor(bgColor) {
-	return tinycolor.mostReadable(bgColor, ['#eee', '#111']);
+/* src\svelte\app.html generated by Svelte v1.56.2 */
+
+function textColor$3($bgColor) {
+	return color($bgColor).isDark() ? '#fff' : '#000';
 }
 
-function data() {
+function bgColor($bgColor, grayscale) {
+	return grayscale ? color($bgColor).grayscale() : color($bgColor);
+}
+
+function data$8() {
   return {
-    color_type: 'hex',
-    // colortypeindex: 0,
-    colorcode: '',
-    cards: [],
-    bgColor: '#1f2532'
+    current: {
+      name: '',
+      color: color.random(),
+    },
+    memo: null,
+    selectingCard: null,
+    sort: ['hue', 'saturationl', 'lightness', 'saturationv', 'value', 'chroma', 'gray', 'contrast'],
+    grayscale: false,
   }
 }
-
-var methods = {
-  color_typeChange () {
-    ++colortypeindex;
-    colortypeindex %= COLOR_TYPE.length;
-    this.set({color_type: COLOR_TYPE[colortypeindex].toUpperCase()});
+var methods$8 = {
+  addCard (current) {
+    this.store.fire('cards.ADD_CARD', Object.assign({}, current));
   },
-  addCard () {
-    const validationRegExp = /^(#?[a-f\d]{3}(?:[a-f\d]{3})?)(?:\s*\W?\s(.+))?/i;
-    const text = validationRegExp.exec(this.get('colorcode'));
-    if (text) {
-      store.trigger('cards.ADD_CARD', {
-        name: '',
-        color: text[1],
-      });
-      this.set({colorcode: ''});
+  cardsPosition (sortXY, value) {
+    if (sortXY && value) {
+      this.store.set({[sortXY]: value});
     }
-  }
+    const {cards, sortX, sortY} = this.store.get();
+    const caller = (sort) => {
+      if (!sort || sort === 'none') {
+        return null
+      }
+      return (card) => {
+        switch (sort) {
+          case 'random':
+            return Math.random()
+          case 'contrast':
+            return (this.store.get('bgColor')[sort](card.color) - 1) / 20
+          default:
+            const by = sort === 'hue' ? 360 : 100;
+            return card.color[sort]() / by
+        }
+      }
+    };
+    cards.forEach((card, i) => {
+      cards[i] = this.store.cardPosition(card, caller(sortX), caller(sortY));
+    });
+    this.store.set({cards});
+    this.store.memo();
+  },
+  setBgColor (color$$1) {
+    const bgColor = this.store.get('bgColor');
+    this.store.set({bgColor: bgColor.alphaBlending(color$$1)});
+    this.store.memo();
+  },
 };
 
-function oncreate() {
-  console.log('this', this);
+function oncreate$8() {
+  // Selectable
   this.selectable = new Selectable(this.refs.box, {
     filter: '.card',
     tolerance: 'fit',
     start: (e, position) => {
-      store.trigger('menu_close');
+      this.store.fire('menu_close');
     },
-    selected: (position, indexs, els) => {
-      store.trigger('cards.SELECT_CARDS', indexs, true);
+    selected: (e) => {
+      const selects = this.selectable.selects;
+      const memo = this.get('memo');
+
+      if (selects.length === 1) {
+        const {name, color: color$$1} = store.get('cards')[selects[0].index];
+        const current = this.get('current');
+        this.set({current: { name, color: color$$1 }});
+        if (!memo) {
+          this.set({ memo: current });
+        }
+      }
+
+      if (!selects.length && memo) {
+        this.set({current: memo, memo: null});
+      }
     },
   });
+
+  this.store.on('selectAll', () => {
+    this.selectable.selectAll();
+  });
+  this.cardsPosition();
+}
+function store_1() {
+	return store;
 }
 
-function encapsulateStyles(node) {
-	setAttribute(node, "svelte-3114915456", "");
+function encapsulateStyles$9(node) {
+	setAttribute(node, "svelte-3959340892", "");
 }
 
-function add_css() {
+function add_css$9() {
 	var style = createElement("style");
-	style.id = 'svelte-3114915456-style';
-	style.textContent = "[svelte-3114915456].ui-selectable-helper,[svelte-3114915456] .ui-selectable-helper{position:absolute;z-index:100;border:1px dotted black}[svelte-3114915456]#colors,[svelte-3114915456] #colors{width:320px;height:100vh;position:absolute;margin:0;padding:20px;top:0;left:0}[svelte-3114915456]#box,[svelte-3114915456] #box{width:100%;height:100%}[svelte-3114915456]#form_add,[svelte-3114915456] #form_add{margin:10px 0;display:flex;flex-direction:row}[svelte-3114915456]#color_type,[svelte-3114915456] #color_type{text-align:center;width:42px;height:42px;border-width:1px 0 1px 1px;border-style:solid;border-top-left-radius:4px;border-bottom-left-radius:4px}[svelte-3114915456]#color_hex,[svelte-3114915456] #color_hex{flex:1 1 auto;height:42px;padding:8px 5px;border-width:1px 0 1px 1px;border-style:solid}[svelte-3114915456]#add_btn,[svelte-3114915456] #add_btn{width:42px;height:42px;text-align:center;border-width:1px;border-style:solid;border-top-right-radius:4px;border-bottom-right-radius:4px}";
+	style.id = 'svelte-3959340892-style';
+	style.textContent = "[svelte-3959340892]#colors,[svelte-3959340892] #colors{width:320px;height:100vh;position:absolute;margin:0;padding:20px;top:0;left:0}[svelte-3959340892]#box,[svelte-3959340892] #box{width:100%;height:100%}[svelte-3959340892].top-input-wrapper,[svelte-3959340892] .top-input-wrapper{display:flex;flex-direction:row;justify-content:space-between;align-items:stretch;width:100%}[svelte-3959340892].top-input-wrapper > div,[svelte-3959340892] .top-input-wrapper > div{height:2em;border-width:1px 1px 1px 0;border-style:solid}[svelte-3959340892].top-input-wrapper > div > *,[svelte-3959340892] .top-input-wrapper > div > *{height:100%;width:100%}[svelte-3959340892].top-input-wrapper > :first-child,[svelte-3959340892] .top-input-wrapper > :first-child{border-width:1px;border-top-left-radius:4px;border-bottom-left-radius:4px;padding:0 8px}[svelte-3959340892].top-input-wrapper > :last-child,[svelte-3959340892] .top-input-wrapper > :last-child{border-width:1px;border-top-right-radius:4px;border-bottom-right-radius:4px}[svelte-3959340892].controller,[svelte-3959340892] .controller{position:absolute;top:0;right:0;z-index:5000}[svelte-3959340892]#form_add,[svelte-3959340892] #form_add{margin:10px 0;display:flex;flex-direction:row}[svelte-3959340892]#color_type,[svelte-3959340892] #color_type{text-align:center;width:42px;height:42px;border-width:1px 0 1px 1px;border-style:solid;border-top-left-radius:4px;border-bottom-left-radius:4px}[svelte-3959340892]#color_hex,[svelte-3959340892] #color_hex{flex:1 1 auto;height:42px;padding:8px 5px;border-width:1px 0 1px 1px;border-style:solid}[svelte-3959340892]#add_btn,[svelte-3959340892] #add_btn{width:42px;height:42px;text-align:center;border-width:1px;border-style:solid;border-top-right-radius:4px;border-bottom-right-radius:4px}";
 	appendNode(style, document.head);
 }
 
-function create_main_fragment(state, component) {
-	var div, input, text, button, text_2, button_1, text_4, text_5, hr, text_6, text_8, div_1, text_10;
+function create_main_fragment$9(component, state) {
+	var div, div_1, div_2, input, input_updating = false, text_1, div_3, button, text_3, div_4, button_1, text_6, colorpicker_updating = {}, text_7, hr, text_8, text_10, div_5, text_12, div_6, button_2, text_14, button_3, text_16, label, text_17, select, option, text_18, select_updating = false, text_20, label_1, text_21, select_1, option_1, text_22, select_1_updating = false, text_24, button_4, button_4_class_value, text_27;
 
+	function input_input_handler() {
+		var state = component.get();
+		input_updating = true;
+		state.current.name = input.value;
+		component.set({ current: state.current });
+		input_updating = false;
+	}
+
+	function click_handler(event) {
+		var state = component.get();
+		component.addCard(state.current);
+	}
+
+	function click_handler_1(event) {
+		var state = component.get();
+		component.setBgColor(state.current.color);
+	}
+
+	var colorpicker_initial_data = { bgColor: state.$bgColor };
+	if ('color' in state.current) {
+		colorpicker_initial_data.color = state.current.color;
+		colorpicker_updating.color = true;
+	}
 	var colorpicker = new Color_picker({
-		root: component.root
+		root: component.root,
+		data: colorpicker_initial_data,
+		_bind: function(changed, childState) {
+			var state = component.get(), newState = {};
+			if (!colorpicker_updating.color && changed.color) {
+				state.current.color = childState.color;
+				newState.current = state.current;
+			}
+			component._set(newState);
+			colorpicker_updating = {};
+		}
+	});
+
+	component.root._beforecreate.push(function() {
+		colorpicker._bind({ color: 1 }, colorpicker.get());
+	});
+
+	colorpicker.on("setBgColor", function(event) {
+		component.setBgColor(state.current.color);
 	});
 
 	var colorlists = new Color_lists({
 		root: component.root
 	});
 
-	var cards = state.cards;
+	colorlists.on("colorpick", function(event) {
+		component.set({current: event.current});
+	});
+
+	var $cards = state.$cards;
 
 	var each_blocks = [];
 
-	for (var i = 0; i < cards.length; i += 1) {
-		each_blocks[i] = create_each_block(state, cards, cards[i], i, component);
+	for (var i_2 = 0; i_2 < $cards.length; i_2 += 1) {
+		each_blocks[i_2] = create_each_block$3(component, assign({}, state, {
+			card: $cards[i_2],
+			index: i_2
+		}));
+	}
+
+	function click_handler_2(event) {
+		component.store.undo();
+	}
+
+	function click_handler_3(event) {
+		component.store.redo();
+	}
+
+	var sort = state.sort;
+
+	var each_1_blocks = [];
+
+	for (var i_2 = 0; i_2 < sort.length; i_2 += 1) {
+		each_1_blocks[i_2] = create_each_block_1$1(component, assign({}, state, {
+			key: sort[i_2],
+			key_index: i_2
+		}));
+	}
+
+	function select_change_handler() {
+		select_updating = true;
+		component.set({ $sortX: selectValue(select) });
+		select_updating = false;
+	}
+
+	function change_handler(event) {
+		component.cardsPosition('sortX', select.value);
+	}
+
+	var sort = state.sort;
+
+	var each_2_blocks = [];
+
+	for (var i_2 = 0; i_2 < sort.length; i_2 += 1) {
+		each_2_blocks[i_2] = create_each_block_2(component, assign({}, state, {
+			key: sort[i_2],
+			key_index: i_2
+		}));
+	}
+
+	function select_1_change_handler() {
+		select_1_updating = true;
+		component.set({ $sortY: selectValue(select_1) });
+		select_1_updating = false;
+	}
+
+	function change_handler_1(event) {
+		component.cardsPosition('sortY', select_1.value);
+	}
+
+	function click_handler_4(event) {
+		var state = component.get();
+		component.set({grayscale: !state.grayscale});
 	}
 
 	var contextmenu = new Context_menu({
@@ -13298,134 +13615,337 @@ function create_main_fragment(state, component) {
 	return {
 		c: function create() {
 			div = createElement("div");
+			div_1 = createElement("div");
+			div_2 = createElement("div");
 			input = createElement("input");
-			text = createText("\n  ");
+			text_1 = createText("\n    ");
+			div_3 = createElement("div");
 			button = createElement("button");
 			button.textContent = "➕";
-			text_2 = createText("\n  ");
+			text_3 = createText("\n    ");
+			div_4 = createElement("div");
 			button_1 = createElement("button");
 			button_1.textContent = "BG";
-			text_4 = createText("\n  ");
+			text_6 = createText("\n\n  ");
 			colorpicker._fragment.c();
-			text_5 = createText("\n  ");
+			text_7 = createText("\n  ");
 			hr = createElement("hr");
-			text_6 = createText("\n  ");
+			text_8 = createText("\n  ");
 			colorlists._fragment.c();
-			text_8 = createText("\n\n");
-			div_1 = createElement("div");
+			text_10 = createText("\n\n");
+			div_5 = createElement("div");
 
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].c();
+			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
+				each_blocks[i_2].c();
 			}
 
-			text_10 = createText("\n\n");
+			text_12 = createText("\n\n");
+			div_6 = createElement("div");
+			button_2 = createElement("button");
+			button_2.innerHTML = "<i class=\"fas fa-undo\"></i>";
+			text_14 = createText("\n  ");
+			button_3 = createElement("button");
+			button_3.innerHTML = "<i class=\"fas fa-redo\"></i>";
+			text_16 = createText("\n  \n  ");
+			label = createElement("label");
+			text_17 = createText("X:\n    ");
+			select = createElement("select");
+			option = createElement("option");
+			text_18 = createText("---");
+
+			for (var i_2 = 0; i_2 < each_1_blocks.length; i_2 += 1) {
+				each_1_blocks[i_2].c();
+			}
+
+			text_20 = createText("\n  ");
+			label_1 = createElement("label");
+			text_21 = createText("Y:\n    ");
+			select_1 = createElement("select");
+			option_1 = createElement("option");
+			text_22 = createText("---");
+
+			for (var i_2 = 0; i_2 < each_2_blocks.length; i_2 += 1) {
+				each_2_blocks[i_2].c();
+			}
+
+			text_24 = createText("\n  ");
+			button_4 = createElement("button");
+			button_4.textContent = "gray";
+			text_27 = createText("\n\n");
 			contextmenu._fragment.c();
 			this.h();
 		},
 
 		h: function hydrate() {
-			encapsulateStyles(div);
-			input.type = "text";
+			encapsulateStyles$9(div);
+			addListener(input, "input", input_input_handler);
 			input.placeholder = "Name";
 			setStyle(input, "color", state.textColor);
+			addListener(button, "click", click_handler);
+			addListener(button_1, "click", click_handler_1);
+			div_1.className = "top-input-wrapper";
 			div.id = "colors";
 			setAttribute(div, "ref", "colors");
 			setStyle(div, "color", state.textColor);
-			encapsulateStyles(div_1);
-			div_1.id = "box";
-			setStyle(div_1, "background-color", state.bgColor);
+			encapsulateStyles$9(div_5);
+			div_5.id = "box";
+			setStyle(div_5, "background-color", state.bgColor);
+			encapsulateStyles$9(div_6);
+			addListener(button_2, "click", click_handler_2);
+			addListener(button_3, "click", click_handler_3);
+			option.__value = "none";
+			option.value = option.__value;
+			addListener(select, "change", select_change_handler);
+			if (!('$sortX' in state)) component.root._beforecreate.push(select_change_handler);
+			addListener(select, "change", change_handler);
+			option_1.__value = "none";
+			option_1.value = option_1.__value;
+			addListener(select_1, "change", select_1_change_handler);
+			if (!('$sortY' in state)) component.root._beforecreate.push(select_1_change_handler);
+			addListener(select_1, "change", change_handler_1);
+			button_4.className = button_4_class_value = state.grayscale? 'grayscale': '';
+			addListener(button_4, "click", click_handler_4);
+			div_6.className = "controller";
+			setStyle(div_6, "color", state.textColor);
 		},
 
 		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
-			appendNode(input, div);
-			appendNode(text, div);
-			appendNode(button, div);
-			appendNode(text_2, div);
-			appendNode(button_1, div);
-			appendNode(text_4, div);
-			colorpicker._mount(div, null);
-			appendNode(text_5, div);
-			appendNode(hr, div);
-			appendNode(text_6, div);
-			colorlists._mount(div, null);
-			insertNode(text_8, target, anchor);
-			insertNode(div_1, target, anchor);
+			appendNode(div_1, div);
+			appendNode(div_2, div_1);
+			appendNode(input, div_2);
 
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].m(div_1, null);
+			input.value = state.current.name;
+
+			appendNode(text_1, div_1);
+			appendNode(div_3, div_1);
+			appendNode(button, div_3);
+			appendNode(text_3, div_1);
+			appendNode(div_4, div_1);
+			appendNode(button_1, div_4);
+			appendNode(text_6, div);
+			colorpicker._mount(div, null);
+			appendNode(text_7, div);
+			appendNode(hr, div);
+			appendNode(text_8, div);
+			colorlists._mount(div, null);
+			insertNode(text_10, target, anchor);
+			insertNode(div_5, target, anchor);
+
+			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
+				each_blocks[i_2].m(div_5, null);
 			}
 
-			component.refs.box = div_1;
-			insertNode(text_10, target, anchor);
+			component.refs.box = div_5;
+			insertNode(text_12, target, anchor);
+			insertNode(div_6, target, anchor);
+			appendNode(button_2, div_6);
+			appendNode(text_14, div_6);
+			appendNode(button_3, div_6);
+			appendNode(text_16, div_6);
+			appendNode(label, div_6);
+			appendNode(text_17, label);
+			appendNode(select, label);
+			appendNode(option, select);
+			appendNode(text_18, option);
+
+			for (var i_2 = 0; i_2 < each_1_blocks.length; i_2 += 1) {
+				each_1_blocks[i_2].m(select, null);
+			}
+
+			selectOption(select, state.$sortX);
+
+			appendNode(text_20, div_6);
+			appendNode(label_1, div_6);
+			appendNode(text_21, label_1);
+			appendNode(select_1, label_1);
+			appendNode(option_1, select_1);
+			appendNode(text_22, option_1);
+
+			for (var i_2 = 0; i_2 < each_2_blocks.length; i_2 += 1) {
+				each_2_blocks[i_2].m(select_1, null);
+			}
+
+			selectOption(select_1, state.$sortY);
+
+			appendNode(text_24, div_6);
+			appendNode(button_4, div_6);
+			insertNode(text_27, target, anchor);
 			contextmenu._mount(target, anchor);
 		},
 
 		p: function update(changed, state) {
+			if (!input_updating) input.value = state.current.name;
 			if (changed.textColor) {
 				setStyle(input, "color", state.textColor);
+			}
+
+			var colorpicker_changes = {};
+			if (changed.$bgColor) colorpicker_changes.bgColor = state.$bgColor;
+			if (!colorpicker_updating.color && changed.current) {
+				colorpicker_changes.color = state.current.color;
+				colorpicker_updating.color = true;
+			}
+			colorpicker._set(colorpicker_changes);
+			colorpicker_updating = {};
+
+			if (changed.textColor) {
 				setStyle(div, "color", state.textColor);
 			}
 
-			var cards = state.cards;
+			var $cards = state.$cards;
 
-			if (changed.bgColor || changed.cards) {
-				for (var i = 0; i < cards.length; i += 1) {
-					if (each_blocks[i]) {
-						each_blocks[i].p(changed, state, cards, cards[i], i);
+			if (changed.$cards || changed.grayscale) {
+				for (var i_2 = 0; i_2 < $cards.length; i_2 += 1) {
+					var each_context = assign({}, state, {
+						card: $cards[i_2],
+						index: i_2
+					});
+
+					if (each_blocks[i_2]) {
+						each_blocks[i_2].p(changed, each_context);
 					} else {
-						each_blocks[i] = create_each_block(state, cards, cards[i], i, component);
-						each_blocks[i].c();
-						each_blocks[i].m(div_1, null);
+						each_blocks[i_2] = create_each_block$3(component, each_context);
+						each_blocks[i_2].c();
+						each_blocks[i_2].m(div_5, null);
 					}
 				}
 
-				for (; i < each_blocks.length; i += 1) {
-					each_blocks[i].u();
-					each_blocks[i].d();
+				for (; i_2 < each_blocks.length; i_2 += 1) {
+					each_blocks[i_2].u();
+					each_blocks[i_2].d();
 				}
-				each_blocks.length = cards.length;
+				each_blocks.length = $cards.length;
 			}
 
 			if (changed.bgColor) {
-				setStyle(div_1, "background-color", state.bgColor);
+				setStyle(div_5, "background-color", state.bgColor);
+			}
+
+			var sort = state.sort;
+
+			if (changed.sort) {
+				for (var i_2 = 0; i_2 < sort.length; i_2 += 1) {
+					var each_1_context = assign({}, state, {
+						key: sort[i_2],
+						key_index: i_2
+					});
+
+					if (each_1_blocks[i_2]) {
+						each_1_blocks[i_2].p(changed, each_1_context);
+					} else {
+						each_1_blocks[i_2] = create_each_block_1$1(component, each_1_context);
+						each_1_blocks[i_2].c();
+						each_1_blocks[i_2].m(select, null);
+					}
+				}
+
+				for (; i_2 < each_1_blocks.length; i_2 += 1) {
+					each_1_blocks[i_2].u();
+					each_1_blocks[i_2].d();
+				}
+				each_1_blocks.length = sort.length;
+			}
+
+			if (!select_updating) selectOption(select, state.$sortX);
+
+			var sort = state.sort;
+
+			if (changed.sort) {
+				for (var i_2 = 0; i_2 < sort.length; i_2 += 1) {
+					var each_2_context = assign({}, state, {
+						key: sort[i_2],
+						key_index: i_2
+					});
+
+					if (each_2_blocks[i_2]) {
+						each_2_blocks[i_2].p(changed, each_2_context);
+					} else {
+						each_2_blocks[i_2] = create_each_block_2(component, each_2_context);
+						each_2_blocks[i_2].c();
+						each_2_blocks[i_2].m(select_1, null);
+					}
+				}
+
+				for (; i_2 < each_2_blocks.length; i_2 += 1) {
+					each_2_blocks[i_2].u();
+					each_2_blocks[i_2].d();
+				}
+				each_2_blocks.length = sort.length;
+			}
+
+			if (!select_1_updating) selectOption(select_1, state.$sortY);
+			if ((changed.grayscale) && button_4_class_value !== (button_4_class_value = state.grayscale? 'grayscale': '')) {
+				button_4.className = button_4_class_value;
+			}
+
+			if (changed.textColor) {
+				setStyle(div_6, "color", state.textColor);
 			}
 		},
 
 		u: function unmount() {
 			detachNode(div);
-			detachNode(text_8);
-			detachNode(div_1);
+			detachNode(text_10);
+			detachNode(div_5);
 
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].u();
+			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
+				each_blocks[i_2].u();
 			}
 
-			detachNode(text_10);
+			detachNode(text_12);
+			detachNode(div_6);
+
+			for (var i_2 = 0; i_2 < each_1_blocks.length; i_2 += 1) {
+				each_1_blocks[i_2].u();
+			}
+
+			for (var i_2 = 0; i_2 < each_2_blocks.length; i_2 += 1) {
+				each_2_blocks[i_2].u();
+			}
+
+			detachNode(text_27);
 			contextmenu._unmount();
 		},
 
 		d: function destroy$$1() {
+			removeListener(input, "input", input_input_handler);
+			removeListener(button, "click", click_handler);
+			removeListener(button_1, "click", click_handler_1);
 			colorpicker.destroy(false);
 			colorlists.destroy(false);
 
 			destroyEach(each_blocks);
 
-			if (component.refs.box === div_1) component.refs.box = null;
+			if (component.refs.box === div_5) component.refs.box = null;
+			removeListener(button_2, "click", click_handler_2);
+			removeListener(button_3, "click", click_handler_3);
+
+			destroyEach(each_1_blocks);
+
+			removeListener(select, "change", select_change_handler);
+			removeListener(select, "change", change_handler);
+
+			destroyEach(each_2_blocks);
+
+			removeListener(select_1, "change", select_1_change_handler);
+			removeListener(select_1, "change", change_handler_1);
+			removeListener(button_4, "click", click_handler_4);
 			contextmenu.destroy(false);
 		}
 	};
 }
 
-// (11:2) {{#each cards as card, index}}
-function create_each_block(state, cards, card, index, component) {
+// (16:2) {{#each $cards as card, index}}
+function create_each_block$3(component, state) {
+	var card = state.card, index = state.index;
 
 	var colorcard = new Color_card({
 		root: component.root,
 		data: {
-			bgColor: state.bgColor,
 			card: card,
-			index: index
+			index: index,
+			grayscale: state.grayscale
 		}
 	});
 
@@ -13438,11 +13958,13 @@ function create_each_block(state, cards, card, index, component) {
 			colorcard._mount(target, anchor);
 		},
 
-		p: function update(changed, state, cards, card, index) {
+		p: function update(changed, state) {
+			card = state.card;
+			index = state.index;
 			var colorcard_changes = {};
-			if (changed.bgColor) colorcard_changes.bgColor = state.bgColor;
-			if (changed.cards) colorcard_changes.card = card;
+			if (changed.$cards) colorcard_changes.card = card;
 			colorcard_changes.index = index;
+			if (changed.grayscale) colorcard_changes.grayscale = state.grayscale;
 			colorcard._set(colorcard_changes);
 		},
 
@@ -13456,25 +13978,117 @@ function create_each_block(state, cards, card, index, component) {
 	};
 }
 
+// (35:6) {{#each sort as key}}
+function create_each_block_1$1(component, state) {
+	var key = state.key, key_index = state.key_index;
+	var option, text_value = key, text, option_value_value;
+
+	return {
+		c: function create() {
+			option = createElement("option");
+			text = createText(text_value);
+			this.h();
+		},
+
+		h: function hydrate() {
+			option.__value = option_value_value = key;
+			option.value = option.__value;
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(option, target, anchor);
+			appendNode(text, option);
+		},
+
+		p: function update(changed, state) {
+			key = state.key;
+			key_index = state.key_index;
+			if ((changed.sort) && text_value !== (text_value = key)) {
+				text.data = text_value;
+			}
+
+			if ((changed.sort) && option_value_value !== (option_value_value = key)) {
+				option.__value = option_value_value;
+			}
+
+			option.value = option.__value;
+		},
+
+		u: function unmount() {
+			detachNode(option);
+		},
+
+		d: noop
+	};
+}
+
+// (44:6) {{#each sort as key}}
+function create_each_block_2(component, state) {
+	var key = state.key, key_index = state.key_index;
+	var option, text_value = key, text, option_value_value;
+
+	return {
+		c: function create() {
+			option = createElement("option");
+			text = createText(text_value);
+			this.h();
+		},
+
+		h: function hydrate() {
+			option.__value = option_value_value = key;
+			option.value = option.__value;
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(option, target, anchor);
+			appendNode(text, option);
+		},
+
+		p: function update(changed, state) {
+			key = state.key;
+			key_index = state.key_index;
+			if ((changed.sort) && text_value !== (text_value = key)) {
+				text.data = text_value;
+			}
+
+			if ((changed.sort) && option_value_value !== (option_value_value = key)) {
+				option.__value = option_value_value;
+			}
+
+			option.value = option.__value;
+		},
+
+		u: function unmount() {
+			detachNode(option);
+		},
+
+		d: noop
+	};
+}
+
 function App(options) {
 	init(this, options);
+	this.store = store_1();
 	this.refs = {};
-	this._state = assign(data(), options.data);
-	this._recompute({ bgColor: 1 }, this._state);
+	this._state = assign(this.store._init(["bgColor","cards","sortX","sortY"]), data$8(), options.data);
+	this.store._add(this, ["bgColor","cards","sortX","sortY"]);
+	this._recompute({ $bgColor: 1, grayscale: 1 }, this._state);
 
-	if (!document.getElementById("svelte-3114915456-style")) add_css();
+	this._handlers.destroy = [removeFromStore];
 
-	var _oncreate = oncreate.bind(this);
+	if (!document.getElementById("svelte-3959340892-style")) add_css$9();
+
+	var _oncreate = oncreate$8.bind(this);
 
 	if (!options.root) {
-		this._oncreate = [_oncreate];
+		this._oncreate = [];
 		this._beforecreate = [];
 		this._aftercreate = [];
-	} else {
-	 	this.root._oncreate.push(_oncreate);
-	 }
+	}
 
-	this._fragment = create_main_fragment(this._state, this);
+	this._fragment = create_main_fragment$9(this, this._state);
+
+	this.root._oncreate.push(_oncreate);
 
 	if (options.target) {
 		this._fragment.c();
@@ -13488,58 +14102,116 @@ function App(options) {
 	}
 }
 
-assign(App.prototype, methods, proto);
+assign(App.prototype, methods$8, proto);
 
 App.prototype._recompute = function _recompute(changed, state) {
-	if (changed.bgColor) {
-		if (differs(state.textColor, (state.textColor = textColor(state.bgColor)))) changed.textColor = true;
+	if (changed.$bgColor) {
+		if (this._differs(state.textColor, (state.textColor = textColor$3(state.$bgColor)))) changed.textColor = true;
+	}
+
+	if (changed.$bgColor || changed.grayscale) {
+		if (this._differs(state.bgColor, (state.bgColor = bgColor(state.$bgColor, state.grayscale)))) changed.bgColor = true;
 	}
 };
 
+color.prototype.toJSON = function () {
+  return this[this.model]().object()
+};
+
+color.prototype.toString = function (model = this.model) {
+  // console.log('model', model)
+  const color$$1 = this.alpha(Math.round(this.valpha * 100) / 100);
+  switch (model) {
+    case 'hex':
+      return color$$1.hex()
+    case 'rgb':
+    case 'hsl':
+      return color$$1[model]().string(0)
+    case 'prgb':
+    case '%':
+      return color$$1.percentString(0)
+    case 'cmyk':
+      const bgColor = store.get('bgColor');
+      const cmyk = bgColor.alphaBlending(color$$1).cmyk().round().array();
+      return `cmyk(${cmyk.join(', ')})`
+    default:
+      if (!(model in color$$1)) {
+        return this.string(0)
+      }
+      let str = model;
+      const arr = color$$1[model]().round().array();
+      if (color$$1.valpha !== 1) {
+        str += 'a';
+      }
+      return str + `(${arr.join(', ')})`
+  }
+};
+color.prototype.alphaBlending = function (...colors) {
+  return alphaBlending(this, ...colors)
+};
+color.prototype.contrast = function (txtColor) {
+  let bgColor = this;
+  if (this.valpha !== 1 && txtColor.valpha !== 1) {
+    bgColor = this.alphaBlending();
+    txtColor = bgColor.alphaBlending(txtColor);
+  } else {
+    bgColor = this.valpha === 1 ? this : txtColor.alphaBlending(this);
+    txtColor = txtColor.valpha === 1 ? txtColor : this.alphaBlending(txtColor);
+  }
+  let lum1 = bgColor.luminosity();
+  let lum2 = txtColor.luminosity();
+
+  if (lum1 > lum2) [lum1, lum2] = [lum2, lum1];
+  return (lum2 + 0.05) / (lum1 + 0.05)
+};
+
+color.prototype.mostReadable = function (...colors) {
+  let mostlum = 0;
+  let mostread;
+  for (const color$$1 of colors) {
+    const cntrast = this.contrast(color(color$$1));
+    if (mostlum < cntrast) {
+      mostlum = cntrast;
+      mostread = color$$1;
+    }
+  }
+  return mostread
+};
+color.random = function () {
+  return color('#' + Math.random().toString(16).slice(2, 8))
+};
+
+/**
+ * Alpha Blending in CSS
+ *
+ * <-back   layer   front->
+ * Color.alphaBlending('rgba(...)', txtColor)
+ *
+ * @export
+ * @param {Color} colors indexが深いほど手前。index0が一番奥の色
+ * @see https://engineering.canva.com/2017/12/04/WebGL-David-Guan/
+ * @returns
+ */
+function alphaBlending (...colors) {
+  return color(colors
+    .map((color$$1) => color(color$$1).rgb().array())
+    .reduce((back, front) => {
+      const color$$1 = [];
+      const a = front[3] == null ? 1 : front[3];
+      for (let i = 0; i < 3; i++) {
+        color$$1[i] = front[i] * a + back[i] * (1 - a);
+      }
+      return color$$1
+    }, [255, 255, 255, 1])
+  )
+}
+
 /* eslint  no-new: 0 */
-const app = new App({
+
+new App({
   target: document.querySelector('#root'),
-  data: store.get()
+  store,
 });
-
-store.subscribe((data) => {
-  app.set(data);
-});
-
-
-// testing
-// const histore = Histore(store.getState())
-// console.log('histore', histore)
-// console.log('histore', histore.get())
-// console.log('histore.get(cards)1', histore.get('cards'))
-
-
-// histore.one('cards.add_card', (param) => {
-//   const cards = histore.get('cards')
-//   param.color = param.color
-//   param.zIndex = cards.length
-//   histore.push('cards', (cards) => {
-//     return [...cards, param]
-//   })
-// })
-// histore.trigger('add_card', {
-//   color: '#456456',
-//   name: 'sdsvfe'
-// })
-// histore.trigger('add_card', {
-//   color: '#852855',
-//   name: 'kijjk,'
-// })
-
-// console.log('histore.get(cards)2', histore.get('cards'))
-
-// histore.undo()
-// console.log('histore.get(cards)3', histore.get('cards'))
-
-// histore.redo()
-// console.log('histore.get(cards)3', histore.get('cards'))
-
-// console.log('JSON.stringify(histore)', JSON.stringify(histore))
 
 }());
 //# sourceMappingURL=bundle.js.map
