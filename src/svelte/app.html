@@ -118,7 +118,6 @@
         this.store.fire('cards.ADD_CARD', Object.assign({}, current))
       },
       cardsPosition (sortXY, value) {
-        console.log(sortXY, value)
         if (sortXY && value) {
           this.store.set({[sortXY]: value})
         }
@@ -135,7 +134,6 @@
                 return (this.store.get('bgColor')[sort](card.color) - 1) / 20
               default:
                 const by = sort === 'hue' ? 360 : 100
-                console.log('sort', sort)
                 return card.color[sort]() / by
             }
           }
