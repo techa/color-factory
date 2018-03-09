@@ -1,34 +1,43 @@
 {
   "name": "color-factory",
-  "version": "0.1.0",
-  "description": "Color Card",
+  "version": "0.10.0",
+  "description": "Color scheme Consideration",
+  "author": "techa",
+  "license": "MIT",
+  "homepage": "https://techa.github.io/color-factory",
+  "repository": "techa/color-factory",
+  "bug": {
+    "url": "https://github.com/techa/color-factory/issues"
+  },
+  "keywords": [
+    "Color Card",
+    "Color scheme"
+  ],
   "main": "src/index.js",
   "scripts": {
     "start": "npm-run-all -p watch browse",
     "clean": "rm -rf dist/*",
-    "watch": "onchange \"src/**/*.{js,tag}\" -d 100 -- npm run build:dev",
+    "watch": "onchange \"src/**/*.{js,html}\" -d 100 -- npm run build:dev",
     "browse": "browser-sync start --server --index \"index.html\" --files \"src/**/.css, dist/bundle.js\" --no-notify",
+    "build": "npm-run-all build:*",
     "build:dev": "rollup -c",
-    "build": "rollup -c ./rollup.config.production.js"
+    "build:prod": "set NODE_ENV=production && rollup -c ./rollup.config.js"
   },
-  "keywords": [
-    "Color Card",
-    "Color"
-  ],
-  "author": "techa",
-  "license": "MIT",
   "devDependencies": {
-    "npm-run-all": "^3.1.1",
-    "onchange": "^3.0.2",
-    "rollup": "^0.36.3",
-    "rollup-plugin-commonjs": "^5.0.5",
-    "rollup-plugin-node-resolve": "^2.0.0",
-    "rollup-plugin-riot": "^0.4.3",
-    "rollup-plugin-uglify": "^1.0.1",
-    "uglify-js": "git+https://github.com/mishoo/UglifyJS2.git#harmony"
+    "babel-core": "^6.26.0",
+    "npm-run-all": "^4.1.2",
+    "onchange": "^3.3.0",
+    "rollup": "^0.56.4",
+    "rollup-plugin-babel": "^3.0.3",
+    "rollup-plugin-commonjs": "^9.0.0",
+    "rollup-plugin-json": "^2.3.0",
+    "rollup-plugin-node-resolve": "^3.0.3",
+    "rollup-plugin-replace": "^2.0.0",
+    "rollup-plugin-svelte": "^4.0.0",
+    "rollup-plugin-uglify": "^3.0.0",
+    "svelte": "^1.56.2"
   },
   "dependencies": {
-    "diff-match-patch": "^1.0.0",
-    "riot": "^2.6.7"
+    "color": "^3.0.0"
   }
 }

@@ -1,0 +1,140 @@
+<div class="hsv-picker">
+  <Slider ref:hue value="{{color.hue()}}" max="359"/>
+  <Spectrum ref:spectrum bind:color />
+  <Slider ref:alpha value="{{color.alpha() * 100}}" />
+</div>
+
+<style>
+  .hsv-picker {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+  }
+
+  .hsv-picker > :nth-child(2) {
+    margin: 0 8px;
+    flex: 2 1 auto;
+  }
+  .hsv-picker > :first-child,
+  .hsv-picker > :last-child {
+  /* .hsv-picker > *:nth-child(2) {
+  .hsv-picker > *:nth-child(2) { */
+    flex: 0 1 30px;
+  }
+
+  .color-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px;
+    top: 0;
+    left: 0;
+    border: 1px solid black;
+    border-radius: 5px;
+    text-align: left;
+    pointer-events: none;
+  }
+  .color-handle::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    top: 0;
+    left: 0;
+    border: 1px solid white;
+    border-radius: 4px;
+  }
+</style>
+
+<script>
+  import Color from 'color'
+  import { on, off } from '../mouse.js'
+
+  import Spectrum from './spectrum.html'
+  import Slider from './slider.html'
+
+  export default {
+    components: {
+      Spectrum,
+      Slider,
+    },
+    data () {
+      return {
+        size: 150,
+        strokeWidth: 10,
+        color: Color('#000'),
+      }
+    },
+    computed: {
+      spectrumSize: (size, strokeWidth) => ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2,
+      hsv: (color) => color.hsv(),
+      textColor: (color) => color.isDark() ? '#fff' : '#000',
+    },
+    oncreate () {
+      this.refs.hue.observe('value', (hue) => {
+        this.set({color: this.get('color').hue(hue)})
+      })
+      this.refs.alpha.observe('value', (value) => {
+        const color = this.get('color')
+        this.set({color: color.alpha(value / 100)})
+      })
+      this.observe('color', (color) => {
+        const alphaColor = (alpha) => color.hsv().alpha(alpha).string()
+        this.refs.alpha.draw(alphaColor(0), alphaColor(1))
+      })
+    },
+    methods: {
+      spectrumCrement (meth) {
+        const hsv = this.get('hsv')
+
+        hsv[meth[0]] += meth[1] ? 0.01 : -0.01
+        if (hsv[meth[0]] === 1) {
+          hsv[meth[0]] = '1.0'
+        }
+
+        this.set({ color: Color(hsv) })
+      },
+    },
+    helpers: {
+      btnPosition (size, i) {
+        const center = size / 2
+        const radius = (center - 20)
+        const btnsize = 20
+        const left = center + radius * Math.cos(i * 90 / 180 * Math.PI) - btnsize / 2
+        const top = center + radius * Math.sin(i * 90 / 180 * Math.PI) - btnsize / 2
+
+        return `left: ${left}px; top: ${top}px;`
+      },
+    },
+    events: {
+      press (node, callback) {
+        function onmousedown (event) {
+          callback(event)
+
+          let time = setTimeout(() => {
+            clearTimeout(time)
+            time = setInterval(() => callback(event), 150)
+          }, 300)
+
+          function onmouseup (e) {
+            clearInterval(time)
+            off(window, 'mouseup touchcancel touchend', onmousedown)
+          }
+
+          on(window, 'mouseup touchcancel touchend', onmouseup)
+        }
+
+        on(node, 'mousedown touchstart', onmousedown)
+
+        return {
+          teardown () {
+            off(node, 'mousedown touchstart', onmousedown)
+          }
+        }
+      }
+    }
+  }
+</script>

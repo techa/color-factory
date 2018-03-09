@@ -1,0 +1,237 @@
+<div id="colors" ref="colors" style="color: {{textColor}};">
+  <div class="top-input-wrapper">
+    <div>
+      <input bind:value="current.name" placeholder="Name" style="color: {{textColor}};">
+    </div>
+    <div><button on:click="addCard(current)">➕</button></div>
+    <div><button on:click="setBgColor(current.color)">BG</button></div>
+  </div>
+
+  <ColorPicker bind:color="current.color" bgColor="{{$bgColor}}" on:setBgColor="setBgColor(current.color)" />
+  <hr>
+  <ColorLists on:colorpick="set({current: event.current})" />
+</div>
+
+<div ref:box id="box" style="background-color: {{bgColor}};">
+  {{#each $cards as card, index}}
+    <ColorCard card={{card}} index={{index}} :grayscale />
+  {{/each}}
+</div>
+
+<div class="controller" style="color: {{textColor}};">
+  <button on:click="store.undo()">
+    <i class="fas fa-undo"></i>
+    <!-- ↩️ -->
+  </button>
+  <button on:click="store.redo()">
+    <i class="fas fa-redo"></i>
+    <!-- ↪️ -->
+  </button>
+  <!-- カード整列 -->
+  <label>
+    X:
+    <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
+      <option value="none">---</option>
+      {{#each sort as key}}
+      <option value="{{key}}">{{key}}</option>
+      {{/each}}
+    </select>
+  </label>
+  <label>
+    Y:
+    <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
+      <option value="none">---</option>
+      {{#each sort as key}}
+      <option value="{{key}}">{{key}}</option>
+      {{/each}}
+    </select>
+  </label>
+  <button class="{{grayscale? 'grayscale': ''}}" on:click="set({grayscale: !grayscale})">gray</button>
+</div>
+
+<ContextMenu />
+
+<script>
+  import ColorPicker from '../color-picker/color-picker.html'
+
+  import ColorCard from './color-card.html'
+  import ColorLists from './color-lists.html'
+  import ContextMenu from './context-menu.html'
+
+  import Color from 'color'
+  import store from '../store/store.js'
+  import {Selectable} from '../mouse'
+
+  export default {
+    components: {
+      ColorPicker,
+      ColorCard,
+      ColorLists,
+      ContextMenu
+    },
+    store: () => store,
+    data () {
+      return {
+        current: {
+          name: '',
+          color: Color.random(),
+        },
+        memo: null,
+        selectingCard: null,
+        sort: ['hue', 'saturationl', 'lightness', 'saturationv', 'value', 'chroma', 'gray', 'contrast'],
+        grayscale: false,
+      }
+    },
+    computed: {
+      textColor: $bgColor => Color($bgColor).isDark() ? '#fff' : '#000',
+      bgColor: ($bgColor, grayscale) => grayscale ? Color($bgColor).grayscale() : Color($bgColor),
+    },
+    oncreate () {
+      // Selectable
+      this.selectable = new Selectable(this.refs.box, {
+        filter: '.card',
+        tolerance: 'fit',
+        start: (e, position) => {
+          this.store.fire('menu_close')
+        },
+        selected: (e) => {
+          const selects = this.selectable.selects
+          const memo = this.get('memo')
+
+          if (selects.length === 1) {
+            const {name, color} = store.get('cards')[selects[0].index]
+            const current = this.get('current')
+            this.set({current: { name, color }})
+            if (!memo) {
+              this.set({ memo: current })
+            }
+          }
+
+          if (!selects.length && memo) {
+            this.set({current: memo, memo: null})
+          }
+        },
+      })
+
+      this.store.on('selectAll', () => {
+        this.selectable.selectAll()
+      })
+      this.cardsPosition()
+    },
+
+    methods: {
+      addCard (current) {
+        this.store.fire('cards.ADD_CARD', Object.assign({}, current))
+      },
+      cardsPosition (sortXY, value) {
+        if (sortXY && value) {
+          this.store.set({[sortXY]: value})
+        }
+        const {cards, sortX, sortY} = this.store.get()
+        const caller = (sort) => {
+          if (!sort || sort === 'none') {
+            return null
+          }
+          return (card) => {
+            switch (sort) {
+              case 'random':
+                return Math.random()
+              case 'contrast':
+                return (this.store.get('bgColor')[sort](card.color) - 1) / 20
+              default:
+                const by = sort === 'hue' ? 360 : 100
+                return card.color[sort]() / by
+            }
+          }
+        }
+        cards.forEach((card, i) => {
+          cards[i] = this.store.cardPosition(card, caller(sortX), caller(sortY))
+        })
+        this.store.set({cards})
+        this.store.memo()
+      },
+      setBgColor (color) {
+        const bgColor = this.store.get('bgColor')
+        this.store.set({bgColor: bgColor.alphaBlending(color)})
+        this.store.memo()
+      },
+    }
+  }
+</script>
+
+<style>
+  #colors {
+    width: 320px;
+    height: 100vh;
+    position: absolute;
+    margin:0;
+    padding: 20px;
+    top:0;
+    left:0;
+  }
+  #box {
+    width: 100%;
+    height: 100%;
+  }
+  .top-input-wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: stretch;
+    width: 100%;
+  }
+  .top-input-wrapper > div {
+    height: 2em;
+    border-width: 1px 1px 1px 0;
+    border-style: solid;
+  }
+  .top-input-wrapper > div > * {
+    height: 100%;
+    width: 100%;
+  }
+  .top-input-wrapper > :first-child {
+    border-width: 1px;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    padding: 0 8px;
+    /* flex: 1 1 auto; */
+  }
+  .top-input-wrapper > :last-child {
+    border-width: 1px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+  }
+  .controller {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 5000;
+  }
+  #form_add {
+    margin: 10px 0;
+    /*font-size: 16px;*/
+    display: flex;
+    flex-direction: row;}
+    #color_type {
+      text-align: center;
+      width: 42px;
+      height: 42px;
+      border-width: 1px 0 1px 1px;
+      border-style: solid;
+      border-top-left-radius: 4px;
+      border-bottom-left-radius: 4px;}
+    #color_hex {
+      flex: 1 1 auto; /* width: auto; */
+      height: 42px;
+      padding: 8px 5px;
+      border-width: 1px 0 1px 1px;
+      border-style: solid;}
+    #add_btn {
+      width: 42px;
+      height: 42px;
+      text-align: center;
+      border-width: 1px;
+      border-style: solid;
+      border-top-right-radius: 4px;
+      border-bottom-right-radius: 4px;}
+</style>

@@ -1,0 +1,241 @@
+<div ref:card
+  class="card animated bounceIn"
+  style="{{cardStyle}} z-index: {{card.zIndex}};">
+  <div class="cardtext">
+    <h3 class="card_title">{{card.name}}</h3>
+    <div>{{card.color.rgb()}}</div>
+    <div>{{card.color.hsl()}}</div>
+    <div>{{contrast}}</div>
+  </div>
+  <div class="controller">
+    <span class="card-reverse" on:click="reverse()">
+      <i class="fas fa-sync fa-fw"></i>
+      <!-- 🔃 -->
+    </span>
+    <span class="card-delete" on:click="remove()">
+      <i class="fas fa-times fa-fw"></i>
+      <!-- ✖️ -->
+    </span>
+  </div>
+  <div ref:handle class="icon resize-handle"></div>
+</div>
+
+<script>
+  import {Movable, Resizable} from '../mouse'
+  import {round} from '../utils.js'
+  import store from '../store/store.js'
+
+  const colorsWidth = 320
+
+  export default {
+    computed: {
+      cardStyle: (card, grayscale) => {
+        const {width, height, top, left, color, textMode} = card
+        const w = width > 120 ? width + 'px' : 'auto'
+        const h = height > 120 ? height + 'px' : 'auto'
+        const c2 = grayscale ? color.grayscale() : color
+        const colorstyle = textMode
+          ? `background-color: transparent; color: ${c2};`
+          : `background-color: ${c2}; color: ${color.isDark() ? '#fff' : '#000'};`
+        return colorstyle + `width:${w}; height:${h};top:${top}px;left:${left}px;`
+      },
+      contrast: (card, $bgColor) => round(store.get('bgColor').contrast(card.color), 1),
+    },
+
+
+    oncreate () {
+      console.log('card-render')
+
+      const cardEl = this.refs.card
+      const box = cardEl.parentElement
+      const {card, index} = this.get()
+
+      // card position init
+      store.cardPosition = (card, x, y) => {
+        const cardRect = cardEl.getBoundingClientRect()
+        const rect = box.getBoundingClientRect()
+        // random positions
+        if (card.left == null || x != null) {
+          const byX = x == null ? Math.random() : x(card)
+          const maxW = rect.width - Math.max(cardRect.width, 120) - colorsWidth
+          card.left = snap((maxW) * byX + colorsWidth)
+        }
+        if (card.top == null || y != null) {
+          const byY = y == null ? Math.random() : y(card)
+          const maxH = rect.height - Math.max(cardRect.height, 120)
+          card.top = snap((maxH) * byY)
+        }
+        return card
+      }
+
+
+      let cards
+
+      this.movable = new Movable(cardEl, {
+        containment: box,
+        grid: 10,
+        axis: 'shift',
+        start: (e, position) => {
+          e.stopPropagation()
+          store.fire('cards.CARD_FORWARD', index)
+
+          cards = store.get('cards')
+        },
+        drag: (e, position) => {
+          e.stopPropagation()
+          for (const scard of this.root.selectable.selects) {
+            const {index, el, rect} = scard
+            const selectcard = cards[index]
+            scard.left = position.adjust(selectcard.left + position.vectorX, 'width', rect)
+            scard.top = position.adjust(selectcard.top + position.vectorY, 'height', rect)
+
+            el.style.left = scard.left + 'px'
+            el.style.top = scard.top + 'px'
+          }
+        },
+        stop: (e, {left, top}, el) => {
+          const selects = this.root.selectable.selects
+          left = Math.max(colorsWidth, left)
+
+          store.set({cards: (cards) => {
+            for (const scard of selects) {
+              const {index, left, top} = scard
+              const card = cards[index]
+              Object.assign(card, {left, top})
+            }
+            return cards
+          }})
+          store.set({sortX: 'none', sortY: 'none'})
+          store.memo()
+        },
+        click: (e, position, el) => {
+          store.memo()
+        },
+      })
+      this.resizable = new Resizable(this.refs.handle, {
+        start: (e) => {
+          e.stopPropagation()
+        },
+        drag: (e) => {
+          e.stopPropagation()
+        },
+        stop: (e) => {
+          e.stopPropagation()
+          const {width, height} = cardEl.getBoundingClientRect()
+          store.fire('cards.EDIT_CARD', index, {width, height})
+          store.memo()
+        },
+      })
+
+      cardEl.addEventListener('contextmenu', (e) => {
+        // デフォルトイベントをキャンセル
+        // これを書くことでコンテキストメニューが表示されなくなります
+        e.preventDefault()
+        store.fire('menu_open', e, {
+          name: card.name,
+          color: card.color,
+        }, 'card')
+      }, false)
+
+      // styler(cardEl, position(card, true))
+      // this.position(card, true)
+      // this.set(this.adjust(card, true))
+    },
+    methods: {
+      adjust (card, init) {
+        const rect = this.refs.card.parentElement.getBoundingClientRect()
+        const maxW = rect.width - card.width
+        const maxH = rect.height - card.height
+        let left, top
+
+        if (init && (+card.left < colorsWidth || !card.top)) {
+          // random positions
+          left = snap((maxW - colorsWidth) * Math.random() + colorsWidth)
+          top = snap((maxH) * Math.random())
+        } else {
+          left = clamp(card.left, maxW, colorsWidth)
+          top = clamp(card.top, maxH)
+        }
+        return {left, top}
+      },
+      reverse () {
+        store.fire('cards.TOGGLE_TEXTMODE', [this.get('card').index])
+      },
+      remove () {
+        store.fire('cards.REMOVE_CARD', [this.get('card').index])
+      },
+    },
+  }
+
+  // Utilities
+
+  function snap (n, grid = 5) {
+    return Math.round(n / grid) * grid
+  }
+  function clamp (val, max, min = 0) {
+    return Math.min(Math.max(min, val), max)
+  }
+</script>
+
+<style>
+  .card {
+    position: absolute;
+    text-align:center;
+    font-size:12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    min-width: 120px;
+    min-height: 120px;
+    /* resize:both;
+    overflow: hidden; */
+    user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+  }
+  .card.selected {
+    outline: 1px dashed black;
+    box-shadow: 0 0 0 1px white;
+  }
+  .card.active {
+    z-index: 100;
+  }
+  .cardtext {
+    /*font-size: 14pt;*/
+    padding: 8px;
+    width: 100%;
+    white-space: wrap;
+  }
+  .card_title {
+    /*font-size: 18pt;*/
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    /*font-weight: bold;*/
+  }
+  .icon {
+    position: absolute;
+    display: none;
+    width: 20px;
+    height: 20px;
+  }
+  .card:hover .icon,
+  .card:hover .controller {
+    display: block;
+  }
+  .controller {
+    position: absolute;
+    display: none;
+    height: 20px;
+    top: 0;
+    right: 0;
+    margin: 5px;
+  }
+  .resize-handle {
+    bottom: 0;
+    right: 0;
+    cursor: nwse-resize;
+  }
+</style>

@@ -1,0 +1,116 @@
+<div ref:menu id="menu">
+  {{#if mode == 'tip'}}
+    <p class="menuitem" on:click="add()">ADD CARD</p>
+  {{elseif mode == 'card'}}
+    <p class="menuitem" on:click="remove()">
+      <i class="fas fa-times fa-fw"></i>
+      DELETE
+    </p>
+    <p class="menuitem" on:click="reverse()">
+      <i class="fas fa-undo fa-fw"></i>
+      REVERSE
+    </p>
+  {{/if}}
+
+  {{#if activeCard}}
+  {{#each copys as model}}
+    <p class="menuitem" on:click="copyColor(model)">
+      COPY: {{activeCard.color[model]()}}
+    </p>
+  {{/each}}
+  {{/if}}
+</div>
+
+<script>
+  import store from '../store/store.js'
+  import {styler, copyTextToClipboard} from '../utils'
+
+  export default {
+    data () {
+      return {
+        mode: false,
+        activeCard: null,
+        copys: ['hex', 'rgb', 'hsl'],
+        sizes: [120, 240, 360],
+      }
+    },
+    oncreate () {
+      console.log('menu-render')
+      const menu = this.refs.menu
+
+      const menuHide = (e) => {
+        if (this.get('mode')) {
+          store.fire('menu_close')
+        }
+      }
+
+      store.on('menu_open', (e, card, mode) => {
+        styler(menu, {
+          left: e.clientX,
+          top: e.clientY,
+          display: 'block'
+        })
+
+        // 'tip' or 'card'
+        console.log('card', card)
+        this.set({mode, activeCard: card})
+
+
+        window.addEventListener('blur', menuHide)
+        document.addEventListener('click', menuHide)
+      })
+
+      store.on('menu_close', (e) => {
+        menu.style.display = 'none'
+        this.set({mode: false})
+        window.removeEventListener('blur', menuHide)
+        document.removeEventListener('click', menuHide)
+      })
+    },
+    methods: {
+      add () {
+        store.fire('cards.ADD_CARD', this.get('activeCard'))
+      },
+      duplicate () {
+        store.fire('cards.DUPLICATE_CARD', this.get('activeCard'))
+      },
+      remove () {
+        const selects = this.root.selectable.selects
+        if (selects.length) {
+          store.fire('cards.REMOVE_CARD', selects.map((select) => select.index))
+        }
+      },
+      reverse () {
+        const selects = this.root.selectable.selects
+        if (selects.length) {
+          store.fire('cards.TOGGLE_TEXTMODE', selects.map((select) => select.index))
+        }
+      },
+
+      copyColor (model) {
+        copyTextToClipboard(this.get('activeCard').color[model]())
+      },
+    }
+  }
+</script>
+
+<style>
+  #menu {
+    position: absolute;
+    font-size:12px;
+    background: #fff;
+    border: solid 1px silver;
+    z-index: 100;
+  }
+  .menuitem {
+    min-width: 100px;
+    padding: 4px;
+    margin: 0;
+  }
+  .menuitem:hover, .menuitem:active {
+    background: aquamarine;
+  }
+  .menuitem .menuitem:hover {
+    font-weight: bold;
+  }
+</style>

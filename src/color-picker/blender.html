@@ -1,0 +1,128 @@
+<div class="blender" style="width:{{width}}px; height:{{height}}px;">
+  <dv ref:color1 on:click="setColor1(color)" class="blender-btn color1 active"></dv>
+  <div ref:blender class="blender-slider">
+    <canvas ref:canvas class="blender-canvas" width={{width-40}} height={{height}}></canvas>
+    <div ref:handle class="blender-handle {{direction}}"></div>
+  </div>
+  <dv ref:color2 on:click="setColor2(color)" class="blender-btn color2"></dv>
+</div>
+
+<style>
+  .blender {
+    display: flex;
+    flex-direction: row;
+    margin: 0 5px;
+  }
+  .blender-slider {
+    position: relative;
+    height: inherit;
+    margin: 0 2px;
+    background-color: #fff;
+    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),
+                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);
+    background-size: 8px 8px;
+    background-position:0 0, 4px 4px;
+    background-repeat: repeat;
+  }
+  .blender-canvas {
+    vertical-align: baseline;
+  }
+  .blender-btn {
+    display: block;
+    width: inherit;
+    height: inherit;
+    border: 1px solid #888888;
+  }
+  .blender-handle {
+    position: absolute;
+    margin-left: -.5px;
+    width: 1px;
+    height: inherit;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+  }
+  .blender-handle.vertical {
+    margin-top: -.5px;
+    width: inherit;
+    height: 1px;
+  }
+  .blender-handle.horizontal {
+    margin-left: -.5px;
+    width: 1px;
+    height: inherit;
+  }
+</style>
+
+<script>
+  import Color from 'color'
+  import { MousePosition } from '../mouse.js'
+  export default {
+    data () {
+      return {
+        width: 150,
+        height: 20,
+        color1: '#000',
+        color2: '#fff',
+      }
+    },
+    oncreate () {
+      // picker
+      new MousePosition(this.refs.blender, { // eslint-disable-line no-new
+        handle: this.refs.handle,
+        start: (e, position) => {
+          this.set({ color: this.getColor(position) })
+        },
+        drag: (e, position) => {
+          this.set({ color: this.getColor(position) })
+        },
+      })
+
+      this.observe('color1', (color1) => {
+        console.log('color1', color1)
+        this.refs.color1.style.backgroundColor = color1.toString()
+        this.draw()
+      })
+      this.observe('color2', (color2) => {
+        this.refs.color2.style.backgroundColor = color2.toString()
+        this.draw()
+      })
+    },
+    methods: {
+      setColor1 (color1) {
+        this.set({color1})
+      },
+      setColor2 (color2) {
+        this.set({color2})
+      },
+      getColor (position) {
+        const size = this.get('width') - 41
+        const x = Math.max(0, Math.min(position.x, size))
+        const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data
+        const color = Color({r, g, b})
+
+        this.refs.handle.style.left = x + 'px'
+        this.refs.handle.style.backgroundColor = color.isDark() ? '#fff' : '#000'
+        return color
+      },
+      draw () {
+        const canvas = this.refs.canvas
+        const cxt = canvas.getContext('2d')
+        const [w, h] = [canvas.width, canvas.height]
+        cxt.clearRect(0, 0, w, h)
+
+        const grd = this.get('direction') === 'vertical'
+          ? cxt.createLinearGradient(0, 0, 0, h)
+          : cxt.createLinearGradient(0, 0, w, 0)
+
+        grd.addColorStop(0.02, Color(this.get('color1')).rgb().string())
+        grd.addColorStop(0.98, Color(this.get('color2')).rgb().string())
+
+        cxt.fillStyle = grd
+        cxt.fillRect(0, 0, w, h)
+
+        this.getColor({ x: w / 2 })
+      }
+    }
+  }
+</script>

@@ -1,0 +1,94 @@
+<div class="color-picker">
+  <ColorInput bind:color :bgColor />
+  <div class="wrapper">
+    <HsvPicker bind:color size={{size}} />
+  </div>
+  <div class="set">
+    <button style="color:{{color}};" on:click="setBgColor()">
+      {{contrast}}
+    </button>
+    <Blender bind:color width={{size}}/>
+    <button on:click="alphaBlending()">a=1</button>
+  </div>
+</div>
+
+<style>
+  .color-picker {
+    position: relative;
+    padding: 8px;
+    text-align: center;
+  }
+  .wrapper {
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    padding: 6px 0;
+  }
+  .set {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    font-size: 0.8em;
+  }
+  .set button {
+    width: 30px;
+    padding: 0;
+  }
+  .alpha-check-bg {
+    /* 市松模様 */
+    background-color: #fff;
+    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),
+                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);
+    background-size: 8px 8px;
+    background-position:0 0, 4px 4px;
+    background-repeat: repeat;
+  }
+</style>
+
+<script>
+  import Color from 'color'
+  import {round} from '../utils.js'
+
+  import ColorInput from './color-input.html'
+  import HsvPicker from './hsv-picker.html'
+  import Slider from './slider.html'
+  import Blender from './blender.html'
+
+  export default {
+    components: {
+      ColorInput,
+      HsvPicker,
+      Slider,
+      Blender,
+    },
+    data () {
+      return {
+        size: 200,
+        color: '',
+        current: '',
+        bgColor: '',
+      }
+    },
+    computed: {
+      textColor: (color) =>  Color(color).isDark() ? '#fff' : '#000',
+      contrast: (color, bgColor) => round(Color(bgColor).contrast(color), 1),
+    },
+    oncreate (hh) {
+      this.observe('color', (color) => {
+        this.set({color: Color(color)})
+      })
+    },
+    methods: {
+      alphaBlending () {
+        const {color, bgColor} = this.get()
+        this.set({
+          color: bgColor.alphaBlending(color),
+        })
+      },
+      setBgColor (color = this.get('color')) {
+        this.set({bgColor: color})
+        this.fire('setBgColor', color)
+      },
+    },
+  }
+</script>

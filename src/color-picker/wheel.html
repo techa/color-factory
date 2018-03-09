@@ -1,0 +1,104 @@
+<div class="wheel">
+  <canvas ref:canvas class="wheel-canvas" width={{size}} height={{size}}></canvas>
+  <div ref:handle class="color-handle"></div>
+</div>
+<style>
+  .wheel {
+    position: relative;
+  }
+</style>
+
+<script>
+  import { MousePosition } from '../mouse.js'
+
+  export default {
+    data () {
+      return {
+        size: 150,
+        strokeWidth: 10,
+        hue: 0
+      }
+    },
+    computed: {
+      center: (size) => size / 2,
+      inRadius: (center, strokeWidth) => center - strokeWidth,
+    },
+    oncreate () {
+      // canvas init
+      this.draw()
+
+      // update oncolorchange
+      this.observe('hue', (hue) => {
+        this.setPosition(hue)
+      })
+      // picker
+      return new MousePosition(this.refs.canvas, {
+        start: (e, position) => {
+          if (this.positionTest(position)) {
+            this.setColor(position)
+          }
+        },
+        drag: (e, position) => {
+          this.setColor(position)
+        },
+      })
+    },
+    methods: {
+      positionRd (r, deg) {
+        const d = (deg - 90) / 180 * Math.PI
+        const center = this.get('center')
+        return [
+          Math.floor((center + r * Math.cos(d)) * 100) / 100,
+          Math.floor((center + r * Math.sin(d)) * 100) / 100,
+        ]
+      },
+      positionTest (position) {
+        const center = this.get('center')
+        const radius = this.get('inRadius')
+        const x = center - position.x,
+              y = center - position.y,
+              r = Math.hypot(x, y)
+        return radius <= r && r <= center
+      },
+      setColor (position) {
+        const center = this.get('center')
+        const x = center - position.x,
+              y = center - position.y
+
+        const hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90
+
+        this.set({
+          hue: hue < 0 ? 360 + hue : hue
+        })
+      },
+      setPosition (hue) {
+        const radius = this.get('inRadius')
+        const strokeWidth = this.get('strokeWidth')
+        const [mx, my] = this.positionRd(radius + strokeWidth / 2, hue)
+        this.refs.handle.style.left = mx + 'px'
+        this.refs.handle.style.top = my  + 'px'
+      },
+      draw () {
+        const center = this.get('center')
+        const radius = this.get('inRadius')
+
+        const canvas = this.refs.canvas
+        const cxt = canvas.getContext('2d')
+        cxt.clearRect(0, 0, canvas.width, canvas.height)
+
+        for (let i = 0; i < 360; i++) {
+          cxt.beginPath()
+
+          cxt.fillStyle = `hsl(${i}, 100%, 50%)`
+
+          cxt.moveTo(...this.positionRd(radius, i))
+          cxt.lineTo(...this.positionRd(center - 1, i))
+          cxt.lineTo(...this.positionRd(center - 1, i + 1.5))
+          cxt.lineTo(...this.positionRd(radius, i + 1.5))
+          cxt.closePath()
+          cxt.fill()
+        }
+      }
+    }
+  }
+</script>

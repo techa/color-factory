@@ -13,3 +13,30 @@ html, body, #root {
   /*  背面にある要素のマウスイベントを発火する */
   pointer-events: none;
 }
+:root {
+  --bg:   #261C29; /* 紫紺 */
+  --text: #F7F1D5; /* 菜の花 */
+  --invisibles: #4025AD; /*  */
+  --selection: #45553C; /*  */
+  --comment: #91989F; /* 銀鼠 */
+  --comment: #8B2929; /* 灰 */
+  --string: #EEA9A9; /* 鴇 */
+  --numeric: #D05A6E; /* 今様 */
+  --constant: #F596AA; /*  */
+  --keyword: #7F8F46; /* 鶯 */
+  --argument: #838A2D; /* 苔 */
+  --keyword: #6C6024; /* 鶯 */
+  --variable: #9B90C2; /* 楝 */
+  --storagetype: #EFBB24; /* 鬱金 */
+  --class: #8B81C3; /* 藤 */
+  --function: #86C166; /* 苗 */
+  --function: #91AD70; /* 柳染 */
+  --argument: #7BB35D; /*  */
+  --argument: #E16B8C; /* 紅梅 */
+
+  --argument: #FEDFE1; /* 桜 */
+  --constant: #ca91b6; /* 桜 */
+
+  --constant: #c274a7; /* 桜 */
+  --constant: #B07736; /* 桜 */
+}

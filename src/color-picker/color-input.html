@@ -1,0 +1,212 @@
+{{#if phone}}
+  <input type="color">
+{{else}}
+  <div class="models">
+    {{#each models as _model}}
+    <button style="{{modelChange(_model, model, bgColor)}}" on:click="set({model: _model})">{{_model.toUpperCase()}}</button>
+    {{/each}}
+  </div>
+  <div class="input-wrapper">
+    <input class="color-text"
+      on:input="input(event)"
+      on:updown="updown(event)"
+      on:wheel="updown(event)"
+      on:keydown="keydown(event)"
+      style="color: {{textColor}}; background-color: {{color.rgb()}};"
+      :value
+      placeholder="keypress: ↑↓">
+  </div>
+{{/if}}
+
+<style>
+  .models {
+    font-size: 0.8em;
+  }
+  .models button {
+    padding: 4px;
+  }
+  .input-wrapper {
+    --size: 2em;
+    padding: 0;
+    position: relative;
+    /*margin: 10px 0;*/
+    font: normal 1em "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;}
+
+    .color-text {
+      height: var(--size);
+      padding: 0 4px;
+      text-align: center;}
+</style>
+
+<script>
+  import Color from 'color'
+
+  function caretIndex (event, color) {
+    const {value, selectionStart} = event.target
+    const index = value[0] === '#'
+      ? Math.floor((selectionStart - 1) / 2)
+      // count ',' before selectionStart
+      : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1
+    return ((value[0] === '#' || color.alpha() === 1) && index === 3) || index === 4 ? -1 : index
+  }
+
+  export default {
+    data () {
+      return {
+        phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
+        color: Color('#050'),
+        bgColor: '',
+        models: ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'],
+        model: 'rgb',
+      }
+    },
+    computed: {
+      value: (color, model) => color.toString(model),
+      textColor: (color, bgColor) => bgColor.alphaBlending(color).isDark() ? '#fff' : '#000',
+    },
+    helpers: {
+      modelChange (_model, model, bgColor) {
+        let color = bgColor.mostReadable('#ccc', '#333')
+        return model === _model
+          ? `color: ${bgColor}; background-color: ${color};`
+          : `color: ${color}; background-color: transparent;`
+      },
+    },
+    methods: {
+      keydown (event) {
+        const value = event.target.value
+        const color = Color(value)
+        if (/^#?([a-f\d]{3})$/i.test(value) && event.key === 'Enter') {
+          this.set({ color, model: 'hex' })
+        }
+      },
+      input (event) {
+        const value = event.target.value
+
+        let color
+        try {
+          color = Color(value)
+        } catch (error) {
+          return
+        }
+        if (/^#?([a-f\d]{3})$/i.test(value)) return
+        const model = /^#?([a-f\d]{6})$/i.test(value) ? 'hex' : color.model
+        this.set({ color, model })
+      },
+      updown (event) {
+        const {value, selectionStart, selectionEnd} = event.target
+        const numbercheckReg = /-?(?:0?\.)?\d{1,3}/g
+        if (
+          selectionStart !== selectionEnd &&
+          !numbercheckReg.test(value.substring(selectionStart, selectionEnd))
+        ) {
+          return
+        }
+
+        const model = this.get('model')
+        let color
+        try {
+          color = Color(value)
+        } catch (error) {
+          try {
+            const arr = value.match(/.*?\(([-\d.%, ]*)\)/)[1].split(',')
+            color = Color(arr.map((v) => {
+              v = v.trim()
+              if (v.slice(-1) === '%') {
+                v = parseFloat(v) / 100
+              } else {
+                v = parseFloat(v)
+              }
+              return v
+            }), model)
+          } catch (error) {
+            return
+          }
+        }
+
+        const index = caretIndex(event, color)
+
+        if (index === -1) {
+          const models = this.get('models')
+          const arrow = event.type === 'keydown'
+            ? (event.key === 'ArrowUp' ? 1 : -1)
+            : event.deltaY < 0 ? 1 : -1
+
+          let findex = models.indexOf(model) + arrow
+
+          if (findex < 0) {
+            findex = models.length + findex
+          } else if (findex >= models.length) {
+            findex -= models.length
+          }
+          this.set({ model: models[findex] })
+        } else {
+          const arrow = event.type === 'keydown'
+            ? (event.key === 'ArrowUp' ? 1 : -1) * (event.shiftKey ? 10 : 1)
+            : event.deltaY < 0 ? 10 : -10
+
+          let param = model === '%' ? color.unitArray() : color[model]().array()
+
+          if (index === 3) {
+            // alpla
+            color = color.alpha(color.alpha() + arrow / 100)
+          } else {
+            // not alpla
+            switch (model) {
+              case '%':
+                const val = (param[index] + arrow / 100) * 255
+                param = color.rgb().array()
+                param[index] = val
+                color = Color(param, 'rgb')
+                break
+              default:
+                param[index] += arrow
+                color = Color(param, model)
+                break
+            }
+          }
+          this.set({ color })
+          if (model !== 'hex') {
+            let result
+            for (let i = -1; i < index; i++) {
+              result = numbercheckReg.exec(value)
+            }
+            event.target.selectionStart = result.index
+            event.target.selectionEnd = result.index + result[0].length
+          }
+        }
+      },
+    },
+    events: {
+      updown (node, callback) {
+        function onkeydown (event) {
+          let time
+          if (/Arrow(Up|Down)/.test(event.key)) {
+            callback(event)
+            time = setTimeout(() => {
+              clearTimeout(time)
+              time = setInterval(() => callback(event), 100)
+            }, 300)
+          }
+          function onkeyup (e) {
+            clearInterval(time)
+            time = null
+            node.removeEventListener('keyup', onkeyup, false)
+          }
+
+          node.addEventListener('keyup', onkeyup, false)
+        }
+
+        node.addEventListener('keydown', onkeydown, false)
+
+        return {
+          teardown () {
+            node.removeEventListener('keydown', onkeydown, false)
+          }
+        }
+      }
+    }
+  }
+</script>
