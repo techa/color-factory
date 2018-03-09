@@ -2,8 +2,14 @@
   {{#if mode == 'tip'}}
     <p class="menuitem" on:click="add()">ADD CARD</p>
   {{elseif mode == 'card'}}
-    <p class="menuitem" on:click="remove()">DELETE</p>
-    <p class="menuitem" on:click="reverse()">REVERSE</p>
+    <p class="menuitem" on:click="remove()">
+      <i class="fas fa-times fa-fw"></i>
+      DELETE
+    </p>
+    <p class="menuitem" on:click="reverse()">
+      <i class="fas fa-undo fa-fw"></i>
+      REVERSE
+    </p>
   {{/if}}
 
   {{#if activeCard}}

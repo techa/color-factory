@@ -1,7 +1,7 @@
 <div id="colors" ref="colors" style="color: {{textColor}};">
   <div class="top-input-wrapper">
     <div>
-  <input bind:value="current.name" placeholder="Name" style="color: {{textColor}};">
+      <input bind:value="current.name" placeholder="Name" style="color: {{textColor}};">
     </div>
     <div><button on:click="addCard(current)">➕</button></div>
     <div><button on:click="setBgColor(current.color)">BG</button></div>
@@ -19,8 +19,14 @@
 </div>
 
 <div class="controller" style="color: {{textColor}};">
-  <button on:click="store.undo()">Undo</button>
-  <button on:click="store.redo()">Redo</button>
+  <button on:click="store.undo()">
+    <i class="fas fa-undo"></i>
+    <!-- ↩️ -->
+  </button>
+  <button on:click="store.redo()">
+    <i class="fas fa-redo"></i>
+    <!-- ↪️ -->
+  </button>
   <!-- カード整列 -->
   <label>
     X:

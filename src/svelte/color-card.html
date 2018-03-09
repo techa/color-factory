@@ -8,8 +8,14 @@
     <div>{{contrast}}</div>
   </div>
   <div class="controller">
-    <span class="card-reverse" on:click="reverse()">reverse</span>
-    <span class="card-delete" on:click="remove()">ｘ</span>
+    <span class="card-reverse" on:click="reverse()">
+      <i class="fas fa-sync fa-fw"></i>
+      <!-- 🔃 -->
+    </span>
+    <span class="card-delete" on:click="remove()">
+      <i class="fas fa-times fa-fw"></i>
+      <!-- ✖️ -->
+    </span>
   </div>
   <div ref:handle class="icon resize-handle"></div>
 </div>
@@ -47,16 +53,16 @@
       // card position init
       store.cardPosition = (card, x, y) => {
         const cardRect = cardEl.getBoundingClientRect()
-      const rect = box.getBoundingClientRect()
-      // random positions
+        const rect = box.getBoundingClientRect()
+        // random positions
         if (card.left == null || x != null) {
           const byX = x == null ? Math.random() : x(card)
-        const maxW = rect.width - Math.max(cardRect.width, 120) - colorsWidth
+          const maxW = rect.width - Math.max(cardRect.width, 120) - colorsWidth
           card.left = snap((maxW) * byX + colorsWidth)
-      }
+        }
         if (card.top == null || y != null) {
           const byY = y == null ? Math.random() : y(card)
-        const maxH = rect.height - Math.max(cardRect.height, 120)
+          const maxH = rect.height - Math.max(cardRect.height, 120)
           card.top = snap((maxH) * byY)
         }
         return card
