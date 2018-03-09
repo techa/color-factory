@@ -22,12 +22,8 @@ Color Factory
     * [PANTONE®](http://www.pantone.com): Source https://github.com/frontendstacked/color-palettes-for-sass
 * Save Storage
 
-# Card Menu
-* 表示
-    * rgb, hsl, hsv, hex...
-
 # Dependencies
-* [riot.js](https://svelte.technology/)
+* [svelte.js](https://svelte.technology/)
 * [color.js](https://github.com/Qix-/color)
 
 # insp
