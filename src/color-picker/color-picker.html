@@ -3,12 +3,12 @@
   <div class="wrapper">
     <HsvPicker bind:color size={{size}} />
   </div>
-    <div class="set">
-      <button style="color:{{color}};" on:click="setBgColor()">
-        {{contrast}}
-      </button>
-      <Blender bind:color width={{size}}/>
-      <button on:click="alphaBlending()">a=1</button>
+  <div class="set">
+    <button style="color:{{color}};" on:click="setBgColor()">
+      {{contrast}}
+    </button>
+    <Blender bind:color width={{size}}/>
+    <button on:click="alphaBlending()">a=1</button>
   </div>
 </div>
 
@@ -74,23 +74,9 @@
       contrast: (color, bgColor) => round(Color(bgColor).contrast(color), 1),
     },
     oncreate (hh) {
-      console.log('h!!!!!!!!!!!!!!!!!1h', this)
-      // const {color, bgColor} = this.get()
-      // console.log(color, bgColor, this)
-      // this.observe('model', (model) => {
-      //   this.get('color')
-      //   this.set({color: Color(this.get('color'), model)})
-      //   console.log('value', model)
-      // })
       this.observe('color', (color) => {
         this.set({color: Color(color)})
-        // console.log('color', color)
       })
-      // this.observe('_color', (_color) => {
-      //   const alphaColor = (alpha) => _color.clone().alpha(alpha).toRgbString()
-      //   // const alphaColor = (alpha) => _color().alphas(alpha).toString('rgb')
-      //   this.refs.alpha.draw(alphaColor(0), alphaColor(1))
-      // })
     },
     methods: {
       alphaBlending () {
