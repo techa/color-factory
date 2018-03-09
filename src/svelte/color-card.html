@@ -19,15 +19,6 @@
   import {round} from '../utils.js'
   import store from '../store/store.js'
 
-  function activeIndex () {
-    const cards = store.get('cards')
-    for (let i = 0; i < cards.length; i++) {
-      if (cards[i].zIndex === cards.length - 1) {
-        return i
-      }
-    }
-  }
-
   const colorsWidth = 320
 
   export default {
@@ -160,26 +151,11 @@
         }
         return {left, top}
       },
-      duplicate () {
-        store.fire('cards.DUPLICATE_CARD', this.get('card').index)
-      },
       reverse () {
-        store.fire('cards.TOGGLE_TEXTMODE', this.get('card').index)
+        store.fire('cards.TOGGLE_TEXTMODE', [this.get('card').index])
       },
       remove () {
-        const cards = store.get('cards')
-
-        if (cards.some((card) => card.selected)) {
-          console.log('removeselected', activeIndex())
-          cards.forEach((card, i) => {
-            if (card.selected) {
-              store.fire('cards.REMOVE_CARD', i)
-            }
-          })
-        } else {
-          console.log('remove', activeIndex())
-          store.fire('cards.REMOVE_CARD', activeIndex())
-        }
+        store.fire('cards.REMOVE_CARD', [this.get('card').index])
       },
     },
   }
