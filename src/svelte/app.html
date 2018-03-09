@@ -17,15 +17,21 @@
   <button on:click="store.undo()">Undo</button>
   <button on:click="store.redo()">Redo</button>
   <!-- カード整列 -->
-  <label>X:<select>
-      {{#each sort as ss}}
-      <option value="ss">ss</option>
+  <label>
+    X:
+    <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
+      <option value="none">---</option>
+      {{#each sort as key}}
+      <option value="{{key}}">{{key}}</option>
       {{/each}}
     </select>
   </label>
-  <label>Y:<select>
-      {{#each sort as ss}}
-      <option value="ss">ss</option>
+  <label>
+    Y:
+    <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
+      <option value="none">---</option>
+      {{#each sort as key}}
+      <option value="{{key}}">{{key}}</option>
       {{/each}}
     </select>
   </label>
@@ -61,7 +67,7 @@
         },
         memo: null,
         selectingCard: null,
-        sort: ['none', 'hue', 'saturationl', 'lightness', 'saturationv', 'value'],
+        sort: ['hue', 'saturationl', 'lightness', 'saturationv', 'value', 'chroma', 'gray', 'contrast'],
         grayscale: false,
       }
     },
@@ -102,10 +108,31 @@
       addCard (current) {
         this.store.fire('cards.ADD_CARD', Object.assign({}, current))
       },
-      cardsPosition (x, y) {
-        const cards = this.store.get('cards')
+      cardsPosition (sortXY, value) {
+        console.log(sortXY, value)
+        if (sortXY && value) {
+          this.store.set({[sortXY]: value})
+        }
+        const {cards, sortX, sortY} = this.store.get()
+        const caller = (sort) => {
+          if (!sort || sort === 'none') {
+            return null
+          }
+          return (card) => {
+            switch (sort) {
+              case 'random':
+                return Math.random()
+              case 'contrast':
+                return (this.store.get('bgColor')[sort](card.color) - 1) / 20
+              default:
+                const by = sort === 'hue' ? 360 : 100
+                console.log('sort', sort)
+                return card.color[sort]() / by
+            }
+          }
+        }
         cards.forEach((card, i) => {
-          cards[i] = this.store.cardPosition(card, x, y)
+          cards[i] = this.store.cardPosition(card, caller(sortX), caller(sortY))
         })
         this.store.set({cards})
         this.store.memo()

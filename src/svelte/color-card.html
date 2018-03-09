@@ -49,12 +49,12 @@
         const cardRect = cardEl.getBoundingClientRect()
       const rect = box.getBoundingClientRect()
       // random positions
-      if (card.left == null) {
+        if (card.left == null || x != null) {
           const byX = x == null ? Math.random() : x(card)
         const maxW = rect.width - Math.max(cardRect.width, 120) - colorsWidth
           card.left = snap((maxW) * byX + colorsWidth)
       }
-      if (card.top == null) {
+        if (card.top == null || y != null) {
           const byY = y == null ? Math.random() : y(card)
         const maxH = rect.height - Math.max(cardRect.height, 120)
           card.top = snap((maxH) * byY)
