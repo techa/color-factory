@@ -6,37 +6,113 @@ html, body, #root {
   height: 100vh;
   overflow: hidden;
 }
-#text {
-  position: fixed;
-  right: 20px;
-  color: #7F8C9A;
-  /*  背面にある要素のマウスイベントを発火する */
-  pointer-events: none;
+
+/*!
+ * animate.css -http://daneden.me/animate
+ * Version - 3.6.0
+ * Licensed under the MIT license - http://opensource.org/licenses/MIT
+ *
+ * Copyright (c) 2018 Daniel Eden
+ */
+
+ .animated {
+  -webkit-animation-duration: 1s;
+  animation-duration: 1s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
 }
-:root {
-  --bg:   #261C29; /* 紫紺 */
-  --text: #F7F1D5; /* 菜の花 */
-  --invisibles: #4025AD; /*  */
-  --selection: #45553C; /*  */
-  --comment: #91989F; /* 銀鼠 */
-  --comment: #8B2929; /* 灰 */
-  --string: #EEA9A9; /* 鴇 */
-  --numeric: #D05A6E; /* 今様 */
-  --constant: #F596AA; /*  */
-  --keyword: #7F8F46; /* 鶯 */
-  --argument: #838A2D; /* 苔 */
-  --keyword: #6C6024; /* 鶯 */
-  --variable: #9B90C2; /* 楝 */
-  --storagetype: #EFBB24; /* 鬱金 */
-  --class: #8B81C3; /* 藤 */
-  --function: #86C166; /* 苗 */
-  --function: #91AD70; /* 柳染 */
-  --argument: #7BB35D; /*  */
-  --argument: #E16B8C; /* 紅梅 */
 
-  --argument: #FEDFE1; /* 桜 */
-  --constant: #ca91b6; /* 桜 */
+@-webkit-keyframes bounceIn {
+  from,
+  20%,
+  40%,
+  60%,
+  80%,
+  to {
+    -webkit-animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
 
-  --constant: #c274a7; /* 桜 */
-  --constant: #B07736; /* 桜 */
+  0% {
+    opacity: 0;
+    -webkit-transform: scale3d(0.3, 0.3, 0.3);
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+
+  20% {
+    -webkit-transform: scale3d(1.1, 1.1, 1.1);
+    transform: scale3d(1.1, 1.1, 1.1);
+  }
+
+  40% {
+    -webkit-transform: scale3d(0.9, 0.9, 0.9);
+    transform: scale3d(0.9, 0.9, 0.9);
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: scale3d(1.03, 1.03, 1.03);
+    transform: scale3d(1.03, 1.03, 1.03);
+  }
+
+  80% {
+    -webkit-transform: scale3d(0.97, 0.97, 0.97);
+    transform: scale3d(0.97, 0.97, 0.97);
+  }
+
+  to {
+    opacity: 1;
+    -webkit-transform: scale3d(1, 1, 1);
+    transform: scale3d(1, 1, 1);
+  }
+}
+@keyframes bounceIn {
+  from,
+  20%,
+  40%,
+  60%,
+  80%,
+  to {
+    -webkit-animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+
+  0% {
+    opacity: 0;
+    -webkit-transform: scale3d(0.3, 0.3, 0.3);
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+
+  20% {
+    -webkit-transform: scale3d(1.1, 1.1, 1.1);
+    transform: scale3d(1.1, 1.1, 1.1);
+  }
+
+  40% {
+    -webkit-transform: scale3d(0.9, 0.9, 0.9);
+    transform: scale3d(0.9, 0.9, 0.9);
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: scale3d(1.03, 1.03, 1.03);
+    transform: scale3d(1.03, 1.03, 1.03);
+  }
+
+  80% {
+    -webkit-transform: scale3d(0.97, 0.97, 0.97);
+    transform: scale3d(0.97, 0.97, 0.97);
+  }
+
+  to {
+    opacity: 1;
+    -webkit-transform: scale3d(1, 1, 1);
+    transform: scale3d(1, 1, 1);
+  }
+}
+.bounceIn {
+  -webkit-animation-duration: 0.75s;
+  animation-duration: 0.75s;
+  -webkit-animation-name: bounceIn;
+  animation-name: bounceIn;
 }
