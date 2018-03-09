@@ -156,14 +156,16 @@
             // not alpla
             switch (model) {
               case '%':
-                param[index] += arrow / 100
+                const val = (param[index] + arrow / 100) * 255
+                param = color.rgb().array()
+                param[index] = val
+                color = Color(param, 'rgb')
                 break
               default:
                 param[index] += arrow
                 color = Color(param, model)
                 break
             }
-            color = Color(param, model === '%' ? 'rgb' : model)
           }
           this.set({ color })
           if (model !== 'hex') {

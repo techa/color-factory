@@ -4,7 +4,7 @@ Color.prototype.toJSON = function () {
   return this[this.model]().object()
 }
 
-Color.prototype.toString = function (model) {
+Color.prototype.toString = function (model = this.model) {
   // console.log('model', model)
   const color = this.alpha(Math.round(this.valpha * 100) / 100)
   switch (model) {
@@ -13,6 +13,9 @@ Color.prototype.toString = function (model) {
     case 'rgb':
     case 'hsl':
       return color[model]().string(0)
+    case 'prgb':
+    case '%':
+      return color.percentString(0)
     case 'cmyk':
       const bgColor = store.get('bgColor')
       const cmyk = bgColor.alphaBlending(color).cmyk().round().array()
