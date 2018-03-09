@@ -3,35 +3,28 @@
     <p class="menuitem" on:click="add()">ADD CARD</p>
   {{elseif mode == 'card'}}
     <p class="menuitem" on:click="remove()">DELETE</p>
-    <p class="menuitem" on:click="duplicate()">DUPLICATE</p>
-    <p class="menuitem" on:click="modeChange()">MODE CHANGE</p>
+    <p class="menuitem" on:click="reverse()">REVERSE</p>
   {{/if}}
-  <p class="menuitem" on:click="setBgColor()">SET BACKGROUND</p>
-  <p class="menuitem">
-    <span>COPY:</span>
-    {{#each copys as key}}
-      <span class="menuitem" on:click="copyColor(this)">{{key}}</span>
-    {{/each}}
-  </p>
+
+  {{#if activeCard}}
+  {{#each copys as model}}
+    <p class="menuitem" on:click="copyColor(model)">
+      COPY: {{activeCard.color[model]()}}
+    </p>
+  {{/each}}
+  {{/if}}
 </div>
 
 <script>
   import store from '../store/store.js'
   import {styler, copyTextToClipboard} from '../utils'
 
-  function activeIndex (cards) {
-    for (let i = 0; i < cards.length; i++) {
-      if (cards[i].zIndex === cards.length - 1) {
-        return i
-      }
-    }
-  }
   export default {
     data () {
       return {
         mode: false,
         activeCard: null,
-        copys: 'HEX,RGB,HSL'.split(','),
+        copys: ['hex', 'rgb', 'hsl'],
         sizes: [120, 240, 360],
       }
     },
@@ -76,31 +69,20 @@
         store.fire('cards.DUPLICATE_CARD', this.get('activeCard'))
       },
       remove () {
-        const cards = store.get('cards')
-
-        if (cards.some((card) => card.selected)) {
-          console.log('removeselected', activeIndex(cards))
-          cards.forEach((card, i) => {
-            if (card.selected) {
-              store.fire('cards.REMOVE_CARD', i)
-            }
-          })
-        } else {
-          console.log('remove', activeIndex(cards))
-          store.fire('cards.REMOVE_CARD', activeIndex(cards))
+        const selects = this.root.selectable.selects
+        if (selects.length) {
+          store.fire('cards.REMOVE_CARD', selects.map((select) => select.index))
         }
       },
-      modeChange () {
-        const cards = store.get('cards')
-        store.fire('cards.TOGGLE_TEXTMODE', activeIndex(cards))
+      reverse () {
+        const selects = this.root.selectable.selects
+        if (selects.length) {
+          store.fire('cards.TOGGLE_TEXTMODE', selects.map((select) => select.index))
+        }
       },
 
-      setBgColor () {
-        store.set('bgColor', this.get('activeCard').color)
-      },
-      copyColor (el) {
-        const key = el.textContent.toLowerCase()
-        copyTextToClipboard(this.get('activeCard').color.toString(key))
+      copyColor (model) {
+        copyTextToClipboard(this.get('activeCard').color[model]())
       },
     }
   }

@@ -36,49 +36,49 @@ const store = new Histore(defaultpalette, {
 // })
 
 // Events
-store.on('cards.ADD_CARD', (card, memo) => {
+store.on('cards.ADD_CARD', (card) => {
   store.set({cards: (cards) => {
     card.color = Color(card.color)
     card.zIndex = cards.length
-    return [...cards, card]
-  }}, memo)
+    card.index = cards.length
+    return [...cards, store.cardPosition(card)]
+  }})
+  store.memo()
 })
-store.on('cards.DUPLICATE_CARD', (index, memo) => {
+store.on('cards.DUPLICATE_CARD', (index) => {
   let newCard = typeof index === 'number' ? store.get('cards')[index] : index
   newCard = Object.assign({}, newCard)
   newCard.left += 10
   newCard.top += 10
-  store.fire('cards.ADD_CARD', newCard, memo)
+  store.fire('cards.ADD_CARD', newCard)
 })
 
-store.on('cards.EDIT_CARD', (index, param, memo) => {
+store.on('cards.EDIT_CARD', (index, param) => {
   store.set({cards: (cards) => {
     const card = cards[index]
     Object.assign(card, param)
     return cards
-  }}, memo)
+  }})
 })
-
-store.on('cards.TOGGLE_TEXTMODE', (index, bool, memo) => {
+// @params {array} indexs
+store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
   store.set({cards: (cards) => {
-    const card = cards[index]
-    card.textMode = typeof bool === 'boolean' ? bool : !card.textMode
+    indexs.map((index) => {
+      const card = cards[index]
+      card.textMode = typeof bool === 'boolean' ? bool : !card.textMode
+    })
     return cards
-  }}, memo)
+  }})
 })
 
-store.on('cards.REMOVE_CARD', (index, memo) => {
+// @params {array} indexs
+store.on('cards.REMOVE_CARD', (indexs) => {
   store.set({cards: (cards) => {
-    // cards.splice(index, 1)
-    return cards.slice(0, index).concat(cards.slice(index + 1))
-  }}, memo)
+    return cards.filter((card, i) => !~indexs.indexOf(i))
+  }})
 })
-store.on('cards.REMOVE_SELECT_CARDS', (memo) => {
-  store.set({cards: (cards) => {
-    return cards.filter((card) => !card.selected)
-  }}, memo)
-})
-store.on('cards.CARD_FORWARD', (index, memo) => {
+
+store.on('cards.CARD_FORWARD', (index) => {
   store.set({cards: (cards) => {
     const currIndex = +cards[index].zIndex
     cards.forEach((card, i) => {
@@ -89,7 +89,7 @@ store.on('cards.CARD_FORWARD', (index, memo) => {
       }
     })
     return cards
-  }}, memo)
+  }})
 })
 
 export default store
