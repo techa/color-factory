@@ -26,34 +26,17 @@
     padding: 4px;
   }
   .input-wrapper {
-    --size: 2.5em;
+    --size: 2em;
+    padding: 0;
     position: relative;
     /*margin: 10px 0;*/
     font: normal 1em "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
     display: flex;
-    flex-direction: row;}
-
-    .input-wrapper > * {
-      border-width: 1px 1px 1px 0;
-      border-style: solid;
-    }
-    .input-wrapper > :first-child {
-      border-top-left-radius: 4px;
-      border-bottom-left-radius: 4px;
-      border-width: 1px;
-    }
-    .input-wrapper > :last-child {
-      border-top-right-radius: 4px;
-      border-bottom-right-radius: 4px;
-    }
+    flex-direction: column;}
 
     .color-text {
       height: var(--size);
       padding: 0 4px;
-      text-align: center;
-      flex: 1 1 auto; /* width: auto; */}
-    .submit-btn {
-      height: var(--size);
       text-align: center;}
 </style>
 
@@ -86,8 +69,9 @@
     helpers: {
       modelChange (_model, model, bgColor) {
         let color = bgColor.mostReadable('#ccc', '#333')
-        if (model === _model) [color, bgColor] = [bgColor, color]
-        return `color: ${color}; background-color: ${bgColor};`
+        return model === _model
+          ? `color: ${bgColor}; background-color: ${color};`
+          : `color: ${color}; background-color: transparent;`
       },
     },
     methods: {
@@ -138,8 +122,8 @@
               return v
             }), model)
           } catch (error) {
-          return
-        }
+            return
+          }
         }
 
         const index = caretIndex(event, color)
