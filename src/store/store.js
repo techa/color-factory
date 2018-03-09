@@ -83,6 +83,7 @@ store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
     })
     return cards
   }})
+  store.memo()
 })
 
 // @params {array} indexs
@@ -90,6 +91,7 @@ store.on('cards.REMOVE_CARD', (indexs) => {
   store.set({cards: (cards) => {
     return cards.filter((card, i) => !~indexs.indexOf(i))
   }})
+  store.memo()
 })
 
 store.on('cards.CARD_FORWARD', (index) => {
