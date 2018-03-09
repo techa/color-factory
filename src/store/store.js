@@ -4,6 +4,20 @@ import Color from 'color'
 // storage.clear()
 const store = new Histore(defaultpalette, {
   storage: 'test', // store3000
+  keymaps: [
+    {
+      key: 'ctrl+z',
+      action: 'undo',
+    },
+    {
+      key: 'ctrl+shift+z',
+      action: 'redo',
+    },
+    {
+      key: 'ctrl+a',
+      action: 'selectAll',
+    },
+  ],
   // immutable: true,
   init (state) {
     if (state.cards) {

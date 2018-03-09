@@ -33,8 +33,11 @@ function keydownHandler (handler) {
 }
 
 export default class KeyManager {
-  constructor (store, options = {}, keymaps = defaultkeymaps) {
-    this.options = Object.assign({element: window}, options)
+  constructor (store, options = {}) {
+    const {keymaps} = this.options = Object.assign({
+      element: window,
+      keymaps: defaultkeymaps,
+    }, options)
     this.mode = options.mode
     this.keymaps = []
 

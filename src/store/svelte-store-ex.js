@@ -22,7 +22,7 @@ function changeCheck (state, changed, before) {
 
 export default class Histore extends Store {
   constructor (state, options) {
-    const {storage, init} = options
+    const {storage, init, keymaps} = options
     if (storage) {
       const data = window.localStorage.getItem(storage)
       state = JSON.parse(data) || state
@@ -31,7 +31,7 @@ export default class Histore extends Store {
     if (init) init(state)
     super(state, options)
     eventer(this)
-    this._keyManager = new KeyManager(this)
+    this._keyManager = new KeyManager(this, options)
     this.options = options
 
     const undostock = []
