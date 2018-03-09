@@ -101,6 +101,10 @@
           }
         },
       })
+
+      this.store.on('selectAll', () => {
+        this.selectable.selectAll()
+      })
       this.cardsPosition()
     },
 
