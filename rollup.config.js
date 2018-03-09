@@ -6,7 +6,7 @@ import replace from 'rollup-plugin-replace'
 
 import svelte from 'rollup-plugin-svelte'
 
-import buble from 'rollup-plugin-buble'
+import babel from 'rollup-plugin-babel'
 import uglify from 'rollup-plugin-uglify'
 
 const env = (process.env.NODE_ENV || 'development').trim()
@@ -33,7 +33,7 @@ export default {
       'process.env.NODE_ENV': JSON.stringify(env)
     }),
     svelte(),
-    (env === 'production' && buble()),
+    (env === 'production' && babel()),
     (env === 'production' && uglify({
       compress: {
         dead_code: true,
