@@ -30,7 +30,7 @@
   import GOE_UNCOATED   from '../constants/goe-uncoated.json'
   import SOLID_COATED   from '../constants/solid-coated.json'
   import SOLID_UNCOATED from '../constants/solid-uncoated.json'
-
+  import CRAYOLA   from '../constants/crayola.json'
 
   export default {
     data () {
@@ -51,6 +51,8 @@
             }, []) },
           { name: 'RAL',
             list: parser(RALCOLOUR) },
+          { name: 'CRAYOLA',
+            list: parser(CRAYOLA) },
           { name: 'PANTONE® Goe™ Coated',
             list: pantone(GOE_COATED) },
           { name: 'PANTONE® Goe™ Uncoated',
