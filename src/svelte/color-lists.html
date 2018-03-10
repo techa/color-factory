@@ -38,10 +38,6 @@
         colorlists: [
           { name: 'Web Color',
             list: parser(WEBCOLOR) },
-          { name: 'JIS EN',
-            list: parser(JISCOLOR_EN) },
-          { name: 'JIS JA',
-            list: parser(JISCOLOR_JA) },
           { name: 'GOOGLE MATERIAL',
             list: Object.keys(MATERIALCOLOR).reduce((ary, key) => {
               MATERIALCOLOR[key].forEach((color, i) => {
@@ -63,6 +59,10 @@
             list: pantone(SOLID_COATED) },
           { name: 'PANTONE® solid Uncoated',
             list: pantone(SOLID_UNCOATED) },
+          { name: 'JIS EN',
+            list: parser(JISCOLOR_EN) },
+          { name: 'JIS JA',
+            list: parser(JISCOLOR_JA) },
         ],
         colorlistsIndex: 0
       }
@@ -76,7 +76,7 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          this.fire('colorpick', {current: { name, color }})
+          this.fire('colorpick', {current: { name, color: Color(color) }})
         }
       })
       colortips.addEventListener('contextmenu', (e) => {
