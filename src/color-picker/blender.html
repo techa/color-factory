@@ -1,7 +1,7 @@
-<div class="blender" style="width:{{width}}px; height:{{height}}px;">
-  <dv ref:color1 on:click="setColor1(color)" class="blender-btn color1 active"></dv>
+<div class="blender">
+  <dv ref:color1 on:click="setColor1(color)" class="blender-btn color1"></dv>
   <div ref:blender class="blender-slider">
-    <canvas ref:canvas class="blender-canvas" width={{width-40}} height={{height}}></canvas>
+    <canvas ref:canvas class="blender-canvas" width={{rect.width}} height={{rect.height}}></canvas>
     <div ref:handle class="blender-handle {{direction}}"></div>
   </div>
   <dv ref:color2 on:click="setColor2(color)" class="blender-btn color2"></dv>
@@ -9,13 +9,16 @@
 
 <style>
   .blender {
+    height: 100%;
     display: flex;
+    align-items: stretch;
     flex-direction: row;
-    margin: 0 5px;
+    justify-content: space-around;
   }
   .blender-slider {
     position: relative;
     height: inherit;
+    flex: 2 1 auto;
     margin: 0 2px;
     background-color: #fff;
     background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),
@@ -31,6 +34,7 @@
     display: block;
     width: inherit;
     height: inherit;
+    flex: 0 1 20px;
     border: 1px solid #888888;
   }
   .blender-handle {
@@ -60,13 +64,17 @@
   export default {
     data () {
       return {
-        width: 150,
-        height: 20,
+        rect: {width: 0, height: 0, left: 0, top: 0},
         color1: '#000',
         color2: '#fff',
       }
     },
     oncreate () {
+      const rect = {
+        width: this.refs.blender.clientWidth,
+        height: this.refs.blender.clientHeight,
+      }
+      this.set({rect})
       // picker
       new MousePosition(this.refs.blender, { // eslint-disable-line no-new
         handle: this.refs.handle,
@@ -79,7 +87,6 @@
       })
 
       this.observe('color1', (color1) => {
-        console.log('color1', color1)
         this.refs.color1.style.backgroundColor = color1.toString()
         this.draw()
       })
@@ -96,8 +103,8 @@
         this.set({color2})
       },
       getColor (position) {
-        const size = this.get('width') - 41
-        const x = Math.max(0, Math.min(position.x, size))
+        const {width} = this.get('rect')
+        const x = Math.max(0, Math.min(position.x, width - 40.5))
         const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data
         const color = Color({r, g, b})
 
