@@ -1,9 +1,9 @@
 <div class="color-picker">
   <ColorInput bind:color :bgColor />
-  <div class="wrapper">
+  <div class="picker-body">
     <HsvPicker bind:color size={{size}} />
   </div>
-  <div class="set">
+  <div class="picker-footer">
     <div class="button">
       <button class="contrast {{bgColor.level(color)}}" style="color:{{color}};" on:click="setBgColor()">
         {{contrast}}
@@ -24,13 +24,13 @@
     padding: 8px;
     text-align: center;
   }
-  .wrapper {
+  .picker-body {
     height: 100px;
     display: flex;
     flex-direction: column;
     padding: 6px 0;
   }
-  .set {
+  .picker-footer {
     width: 100%;
     height: 20px;
     display: flex;
@@ -39,15 +39,15 @@
     justify-content: space-around;
     font-size: 0.8em;
   }
-  .set > :nth-child(2) {
+  .picker-footer > :nth-child(2) {
     margin: 0 8px;
     flex: 2 1 auto;
   }
-  .set > :first-child,
-  .set > :last-child {
+  .picker-footer > :first-child,
+  .picker-footer > :last-child {
     flex: 0 1 30px;
   }
-  .set button {
+  .picker-footer button {
     width: 30px;
     padding: 0;
   }
