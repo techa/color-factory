@@ -1,4 +1,4 @@
-<div id="colors" ref="colors" style="color: {{textColor}};">
+<div id="controller" style="color: {{textColor}};">
   <div class="tool-box">
     <button on:click="store.undo()" title="Undo: ctrl+z">
       <i class="fas fa-undo"></i>
@@ -15,16 +15,47 @@
       <i class="fas fa-trash"></i>
     </button>
   </div>
-  <div class="top-input-wrapper">
+
+  <!-- カード整列 -->
+  <div class="button-set border radius">
+    <div><button on:click="cardsPosition('sortX')">X</button></div>
+    <ladel class="select-wrapper">
+      <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
+        <option value="none">---</option>
+        {{#each sort as key}}
+        <option value="{{key}}">{{key}}</option>
+        {{/each}}
+      </select>
+    </ladel>
+
+    <div><button>Y</button></div>
+    <ladel class="select-wrapper">
+      <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
+        <option value="none">---</option>
+        {{#each sort as key}}
+        <option value="{{key}}">{{key}}</option>
+        {{/each}}
+      </select>
+    </ladel>
+  </div>
+
+  <hr>
+
+  <div class="top-input-wrapper button-set border radius">
     <div>
       <input bind:value="current.name" placeholder="Name" style="color: {{textColor}};">
     </div>
-    <div><button on:click="addCard(current, true)" title="Add Card: text" style="color: {{current.color}};">➕</button></div>
+    <div>
+      <button
+        on:click="addCard(current, true)"
+        title="Add Card: text"
+        style="color: {{current.color}};">➕</button>
+    </div>
     <div>
       <button
         on:click="addCard(current)"
         title="Add Card: fill"
-        style="color:{{current.color.isDark() ? '#fff' : '#000'}};background-color: {{current.color}};">➕</button>
+        style="color:{{current.color.isDark()?'#fff':'#000'}};background-color: {{current.color}};">➕</button>
     </div>
     <div><button on:click="setBgColor(current.color)" title="set Background Color">BG</button></div>
   </div>
@@ -40,26 +71,8 @@
   {{/each}}
 </div>
 
-<div class="controller" style="color: {{textColor}};">
-  <!-- カード整列 -->
-  <label>
-    X:
-    <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
-      <option value="none">---</option>
-      {{#each sort as key}}
-      <option value="{{key}}">{{key}}</option>
-      {{/each}}
-    </select>
-  </label>
-  <label>
-    Y:
-    <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
-      <option value="none">---</option>
-      {{#each sort as key}}
-      <option value="{{key}}">{{key}}</option>
-      {{/each}}
-    </select>
-  </label>
+<div class="links" style="color: {{textColor}};">
+  <a href="https://github.com/techa/color-factory"><i class="fab fa-github fa-fw"></i></a>
 </div>
 
 <ContextMenu />
@@ -201,7 +214,10 @@
 </script>
 
 <style>
-  #colors {
+  option {
+    color: #111;
+  }
+  #controller {
     width: 320px;
     height: 100vh;
     position: absolute;
@@ -218,64 +234,22 @@
     padding-bottom: 10px;
   }
   .top-input-wrapper {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: stretch;
     width: 100%;
   }
   .top-input-wrapper > div {
     height: 2em;
-    border-width: 1px 1px 1px 0;
-    border-style: solid;
   }
   .top-input-wrapper > div > * {
     height: 100%;
     width: 100%;
   }
-  .top-input-wrapper > :first-child {
-    border-width: 1px;
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
+  .top-input-wrapper input {
     padding: 0 8px;
-    /* flex: 1 1 auto; */
   }
-  .top-input-wrapper > :last-child {
-    border-width: 1px;
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-  }
-  .controller {
+  .links {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 4px;
+    right: 4px;
     z-index: 5000;
   }
-  #form_add {
-    margin: 10px 0;
-    /*font-size: 16px;*/
-    display: flex;
-    flex-direction: row;}
-    #color_type {
-      text-align: center;
-      width: 42px;
-      height: 42px;
-      border-width: 1px 0 1px 1px;
-      border-style: solid;
-      border-top-left-radius: 4px;
-      border-bottom-left-radius: 4px;}
-    #color_hex {
-      flex: 1 1 auto; /* width: auto; */
-      height: 42px;
-      padding: 8px 5px;
-      border-width: 1px 0 1px 1px;
-      border-style: solid;}
-    #add_btn {
-      width: 42px;
-      height: 42px;
-      text-align: center;
-      border-width: 1px;
-      border-style: solid;
-      border-top-right-radius: 4px;
-      border-bottom-right-radius: 4px;}
 </style>

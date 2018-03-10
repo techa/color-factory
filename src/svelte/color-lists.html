@@ -1,9 +1,11 @@
 <div class="wrapper">
-  <select id="colorlists" on:change="set({colorlistsIndex: +this.value})">
-    {{#each colorlists as data, index}}
-      <option value={{index}}>{{data.name}}</option>
-    {{/each}}
-  </select>
+  <div class="select-wrapper">
+    <select id="colorlists" on:change="set({colorlistsIndex: +this.value})">
+      {{#each colorlists as data, index}}
+        <option value={{index}}>{{data.name}}</option>
+      {{/each}}
+    </select>
+  </div>
 
   <div class="scrollbar-wrapper">
     <div class="scrollbar-body">

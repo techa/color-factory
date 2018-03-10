@@ -6,6 +6,79 @@ html, body, #root {
   height: 100vh;
   overflow: hidden;
 }
+/* chrome blue */
+textarea, input, button { outline: none; }
+:focus {
+  outline-color: transparent;
+  outline-style: none;
+}
+
+/*
+<ladel class="select-wrapper">
+  <select>
+    <option value=""></option>
+  </select>
+</ladel>
+*/
+.button-set {
+  width: 100%;
+  display: flex;
+  align-content: stretch;
+  flex-direction: row;
+  justify-content: space-around;
+}
+.button-set button,
+.button-set input {
+  height: 100%;
+}
+.button-set.border > * {
+  border-width: 1px 1px 1px 0;
+  border-style: solid;
+}
+.button-set.border > :first-child {
+  border-width: 1px;
+}
+.button-set.border.radius > :first-child {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+.button-set.border.radius > :last-child {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+/*
+<ladel class="select-wrapper">
+  <select>
+    <option value=""></option>
+  </select>
+</ladel>
+*/
+.select-wrapper {
+  position: relative;
+  display: block;
+}
+.select-wrapper > select {
+  /* 三角非表示: https://caniuse.com/#feat=css-appearance */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding: 0 1.5em 0 0;
+  height: 100%;
+}
+.select-wrapper::after {
+  content: '▼';
+  position: absolute;
+  right: 0.5em;
+  top: 0.5em;
+  font-size: 0.7em;
+  pointer-events: none;
+}
+/* IEの下三角非表示 */
+.select-wrapper > select::-ms-expand {
+  display: none;
+}
+
 .resize-handle {
   width: 10px;
   height: 10px;
@@ -13,8 +86,9 @@ html, body, #root {
   bottom: 0;
   right: 0;
   /* https://mdn.mozillademos.org/files/6083/resize.png */
-  background: center center no-repeat url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoV2luZG93cykiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6N0VEMDM0MjkxNEVGMTFFM0FDOUFDQTA3NzU5REYzOUYiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6N0VEMDM0MkExNEVGMTFFM0FDOUFDQTA3NzU5REYzOUYiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo3RUQwMzQyNzE0RUYxMUUzQUM5QUNBMDc3NTlERjM5RiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDo3RUQwMzQyODE0RUYxMUUzQUM5QUNBMDc3NTlERjM5RiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PtxfYRoAAAA6SURBVHjaYvj//z8DDvz//Pnz/5kYcIAXL14w3L59m4ERpBovwGYsTitgxpJsBYaxKFZgMxaZDRBgAKzudgWRWiBuAAAAAElFTkSuQmCC');
+  background: center center no-repeat url('../../assets/resize.png');
 }
+
 /*!
  * animate.css -http://daneden.me/animate
  * Version - 3.6.0
