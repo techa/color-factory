@@ -95,6 +95,25 @@
       bgColor: ($bgColor, grayscale) => grayscale ? Color($bgColor).grayscale() : Color($bgColor),
     },
     oncreate () {
+      const box = this.refs.box
+      const cardSize = 120
+      const colorsWidth = 320
+      // card position init
+      store.cardPosition = (card, x, y) => {
+        const rect = box.getBoundingClientRect()
+        // random positions
+        if (card.left == null || x != null) {
+          const byX = x == null ? Math.random() : x(card)
+          const maxW = rect.width - cardSize - colorsWidth
+          card.left = Math.round((maxW) * byX + colorsWidth)
+        }
+        if (card.top == null || y != null) {
+          const byY = y == null ? Math.random() : y(card)
+          const maxH = rect.height - cardSize
+          card.top = Math.round((maxH) * byY)
+        }
+        return card
+      }
       // Selectable
       this.selectable = new Selectable(this.refs.box, {
         filter: '.card',

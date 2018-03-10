@@ -50,25 +50,6 @@
       const box = cardEl.parentElement
       const {card, index} = this.get()
 
-      // card position init
-      store.cardPosition = (card, x, y) => {
-        const cardRect = cardEl.getBoundingClientRect()
-        const rect = box.getBoundingClientRect()
-        // random positions
-        if (card.left == null || x != null) {
-          const byX = x == null ? Math.random() : x(card)
-          const maxW = rect.width - Math.max(cardRect.width, 120) - colorsWidth
-          card.left = snap((maxW) * byX + colorsWidth)
-        }
-        if (card.top == null || y != null) {
-          const byY = y == null ? Math.random() : y(card)
-          const maxH = rect.height - Math.max(cardRect.height, 120)
-          card.top = snap((maxH) * byY)
-        }
-        return card
-      }
-
-
       let cards
 
       this.movable = new Movable(cardEl, {
@@ -136,28 +117,8 @@
           color: card.color,
         }, 'card')
       }, false)
-
-      // styler(cardEl, position(card, true))
-      // this.position(card, true)
-      // this.set(this.adjust(card, true))
     },
     methods: {
-      adjust (card, init) {
-        const rect = this.refs.card.parentElement.getBoundingClientRect()
-        const maxW = rect.width - card.width
-        const maxH = rect.height - card.height
-        let left, top
-
-        if (init && (+card.left < colorsWidth || !card.top)) {
-          // random positions
-          left = snap((maxW - colorsWidth) * Math.random() + colorsWidth)
-          top = snap((maxH) * Math.random())
-        } else {
-          left = clamp(card.left, maxW, colorsWidth)
-          top = clamp(card.top, maxH)
-        }
-        return {left, top}
-      },
       reverse () {
         store.fire('cards.TOGGLE_TEXTMODE', [this.get('card').index])
       },
@@ -167,14 +128,6 @@
     },
   }
 
-  // Utilities
-
-  function snap (n, grid = 5) {
-    return Math.round(n / grid) * grid
-  }
-  function clamp (val, max, min = 0) {
-    return Math.min(Math.max(min, val), max)
-  }
 </script>
 
 <style>
