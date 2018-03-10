@@ -3,7 +3,7 @@
 {{else}}
   <div class="models">
     {{#each models as _model}}
-    <button style="{{modelChange(_model, model, bgColor)}}" on:click="set({model: _model})">{{_model.toUpperCase()}}</button>
+    <div><button style="{{modelStyler(_model, model, color, bgColor, textColor)}}" on:click="set({model: _model})">{{_model.toUpperCase()}}</button></div>
     {{/each}}
   </div>
   <div class="input-wrapper">
@@ -20,6 +20,11 @@
 
 <style>
   .models {
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    flex-direction: row;
+    justify-content: space-around;
     font-size: 0.8em;
   }
   .models button {
@@ -67,11 +72,10 @@
       textColor: (color, bgColor) => bgColor.alphaBlending(color).isDark() ? '#fff' : '#000',
     },
     helpers: {
-      modelChange (_model, model, bgColor) {
-        let color = bgColor.mostReadable('#ccc', '#333')
+      modelStyler (_model, model, color, bgColor, textColor) {
         return model === _model
-          ? `color: ${bgColor}; background-color: ${color};`
-          : `color: ${color}; background-color: transparent;`
+          ? `color: ${textColor}; background-color: ${color};`
+          : `color: ${bgColor.mostReadable('#ccc', '#333')}; background-color: transparent;`
       },
     },
     methods: {
