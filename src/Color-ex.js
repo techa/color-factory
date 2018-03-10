@@ -1,7 +1,25 @@
 import Color from 'color'
 import store from './store/store.js'
+import xkcd from './constants/xkcd.json'
 Color.prototype.toJSON = function () {
   return this[this.model]().object()
+}
+
+Color.prototype.nearColorName = function () {
+  const hsl = this.hsl().object()
+  let difference = 50
+  let name = ''
+  xkcd.forEach(([_name, _hsl]) => {
+    let diff = 0
+    for (const key in hsl) {
+      diff += Math.abs(hsl[key] - (_hsl[key] || Color(_hsl).hsl().object()[key]))
+    }
+    if (diff < difference) {
+      difference = diff
+      name = _name
+    }
+  })
+  return name
 }
 
 Color.prototype.toString = function (model) {
