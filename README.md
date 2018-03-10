@@ -3,8 +3,15 @@ Color Factory
 > デジタルカラーカードで配色考察とかしちゃう君
 
 ## Features
+* Color cards
+    * fill/text
+    * movable
+    * sortable: hue, saturationl, lightness, saturationv, value, chroma, gray, contrast
+    * filter: grayscale
+    * undo/redo
 * Color tools
-    * tones: saturation, lightness, hue
+    * input model(format): Hex, RGB, HSL, HSV, XYZ, LAB, CMYK
+    * HSV Color picker
     * mixer:
         * between 2colors mixer
     * [WCAG2.0 1.4.3 Contrast](https://www.w3.org/TR/2008/REC-WCAG20-20081211/#visual-audio-contrast)
@@ -22,11 +29,11 @@ Color Factory
     * [PANTONE®](http://www.pantone.com): Source https://github.com/frontendstacked/color-palettes-for-sass
 * Save Storage
 
-# Dependencies
+## Dependencies
 * [svelte.js](https://svelte.technology/)
 * [color.js](https://github.com/Qix-/color)
 
-# insp
-* [](https://developer.mozilla.org/ja/docs/Web/CSS/CSS_Colors/Color_picker_tool)
+## Inspiration
+* [mozilla/Color picker tool](https://developer.mozilla.org/ja/docs/Web/CSS/CSS_Colors/Color_picker_tool)
 
 
