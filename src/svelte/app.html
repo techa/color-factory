@@ -20,7 +20,8 @@
     <div>
       <input bind:value="current.name" placeholder="Name" style="color: {{textColor}};">
     </div>
-    <div><button on:click="addCard(current)">➕</button></div>
+    <div><button on:click="addCard(current, true)" style="color: {{current.color}};">➕</button></div>
+    <div><button on:click="addCard(current)" style="background-color: {{current.color}};">➕</button></div>
     <div><button on:click="setBgColor(current.color)">BG</button></div>
   </div>
 
@@ -147,8 +148,8 @@
     },
 
     methods: {
-      addCard (current) {
-        this.store.fire('cards.ADD_CARD', Object.assign({}, current))
+      addCard (current, textMode) {
+        this.store.fire('cards.ADD_CARD', Object.assign({textMode}, current))
       },
       cardsPosition (sortXY, value) {
         if (sortXY && value) {
