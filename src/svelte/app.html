@@ -24,7 +24,6 @@
     <div><button on:click="cardsPosition('sortX')">X</button></div>
     <ladel class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
-        <option value="none">---</option>
         {{#each sort as key}}
         <option value="{{key.value}}">{{key.name}}</option>
         {{/each}}
@@ -34,7 +33,6 @@
     <div><button on:click="cardsPosition('sortY')">Y</button></div>
     <ladel class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
-        <option value="none">---</option>
         {{#each sort as key}}
         <option value="{{key.value}}">{{key.name}}</option>
         {{/each}}
@@ -92,6 +90,8 @@
   import {Selectable} from '../mouse'
 
   const sort = [
+    {name: '---', value: 'none'},
+    {name: 'Random', value: 'random'},
     {name: 'Hue', value: 'hue'},
     {name: 'S(HSL)', value: 'saturationl'},
     {name: 'L(HSL)', value: 'lightness'},
@@ -149,7 +149,6 @@
         switch (sort) {
           case null:
           case undefined:
-          case 'none':
           case 'random':
             return Math.random()
           case 'contrast':
@@ -163,16 +162,17 @@
         return dirctionflg ? by : 1 - by
       }
       // card position init
-      store.cardPosition = (card, x, y) => {
+      store.cardPosition = (card) => {
         const rect = box.getBoundingClientRect()
+        const {sortX, sortY} = this.store.get()
         // random positions
-        if (card.left == null || x != null) {
+        if (card.left == null || sortX !== 'none') {
           const maxW = rect.width - cardSize - colorsWidth
-          card.left = Math.round((maxW) * byer(x, card) + colorsWidth)
+          card.left = Math.round((maxW) * byer(sortX, card) + colorsWidth)
         }
-        if (card.top == null || y != null) {
+        if (card.top == null || sortY !== 'none') {
           const maxH = rect.height - cardSize
-          card.top = Math.round((maxH) * byer(y, card))
+          card.top = Math.round((maxH) * byer(sortY, card))
         }
         return card
       }
@@ -221,9 +221,9 @@
         if (sortXY && value) {
           this.store.set({[sortXY]: value})
         }
-        const {cards, sortX, sortY} = this.store.get()
+        const {cards} = this.store.get()
         cards.forEach((card, i) => {
-          cards[i] = this.store.cardPosition(card, sortX, sortY)
+          cards[i] = this.store.cardPosition(card)
         })
         this.store.set({cards})
         this.store.memo()
