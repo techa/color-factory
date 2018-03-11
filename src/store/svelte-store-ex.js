@@ -22,9 +22,9 @@ function changeCheck (state, changed, before) {
 
 export default class Histore extends Store {
   constructor (state, options) {
-    const {storage, init, keymaps} = options
-    if (storage) {
-      const data = window.localStorage.getItem(storage)
+    const {storageKey, init} = options
+    if (storageKey) {
+      const data = window.localStorage.getItem(storageKey)
       state = JSON.parse(data) || state
     }
 
@@ -34,45 +34,16 @@ export default class Histore extends Store {
     this._keyManager = new KeyManager(this, options)
     this.options = options
 
-    const undostock = []
-    const redostock = []
-    const history = this._history = {
-      undostock,
-      redostock,
+    this.storageKey = storageKey
+    this._storageKeys = [this.storageKey]
+    this._history = {
+      oldstate: JSON.stringify(state),
+      undostock: [],
+      redostock: [],
       memo: false,
     }
 
-    let oldstate = JSON.stringify(state)
-    this.onchange((newstate, changed) => {
-      const newstateJSON = JSON.stringify(newstate)
-      if (newstateJSON !== oldstate) {
-        console.log('change', newstateJSON !== oldstate)
-        switch (history.memo) {
-          case 'undo':
-            redostock.push(oldstate)
-            break
-          case 'redo':
-            undostock.push(oldstate)
-            break
-          case true:
-            undostock.push(oldstate)
-            if (undostock.length > 10) {
-              undostock.shift()
-            }
-            redostock.splice(0, redostock.length)
-            break
-        }
-        if (history.memo) {
-          if (storage) {
-            window.localStorage.setItem(storage, newstateJSON)
-          }
-          oldstate = newstateJSON
-        }
-        console.log('memo', history.memo, history)
-      }
-      history.memo = false
-      console.log('State', this.get())
-    })
+    this.onchange(this._save.bind(this))
 
     this.methodToEventHandler('undo', 'redo')
     // this.on('undo', this.undo.bind(this))
@@ -95,7 +66,57 @@ export default class Histore extends Store {
   }
   memo () {
     this._history.memo = true
-    this.set(this.get())
+    this._save(this.get())
+  }
+  load (storageKey) {
+    const data = window.localStorage.getItem(storageKey)
+    const state = JSON.parse(data)
+    this.storageKey = storageKey
+    this._history = {
+      oldstate: JSON.stringify(state),
+      undostock: [],
+      redostock: [],
+      memo: false,
+    }
+    this.set(state)
+  }
+  save (storageKey) {
+    this._storageKeys.push(storageKey)
+    this.storageKey = storageKey
+    this._history.memo = true
+    this._save(this.get())
+  }
+  _save (newstate, changed) {
+    const newstateJSON = JSON.stringify(newstate)
+    const {oldstate, undostock, redostock, memo} = this._history
+    const storageKey = this.storageKey
+    if (newstateJSON !== oldstate) {
+      console.log('change', newstateJSON !== oldstate)
+      switch (memo) {
+        case 'undo':
+          redostock.push(oldstate)
+          break
+        case 'redo':
+          undostock.push(oldstate)
+          break
+        case true:
+          undostock.push(oldstate)
+          if (undostock.length > 10) {
+            undostock.shift()
+          }
+          redostock.splice(0, redostock.length)
+          break
+      }
+      if (memo) {
+        if (storageKey) {
+          window.localStorage.setItem(storageKey, newstateJSON)
+        }
+        this._history.oldstate = newstateJSON
+      }
+      console.log('memo', memo)
+    }
+    this._history.memo = false
+    console.log('State', this.get())
   }
   _parse (state) {
     if (typeof state === 'string') {
