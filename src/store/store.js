@@ -44,13 +44,6 @@ store.on('cards.ADD_CARD', (card) => {
   }})
   store.memo()
 })
-store.on('cards.DUPLICATE_CARD', (index) => {
-  let newCard = typeof index === 'number' ? store.get('cards')[index] : index
-  newCard = Object.assign({}, newCard)
-  newCard.left += 10
-  newCard.top += 10
-  store.fire('cards.ADD_CARD', newCard)
-})
 
 store.on('cards.EDIT_CARD', (index, param) => {
   store.set({cards: (cards) => {
@@ -58,6 +51,22 @@ store.on('cards.EDIT_CARD', (index, param) => {
     Object.assign(card, param)
     return cards
   }})
+})
+// @params {array} indexs
+store.on('cards.DUPLICATE_CARD', (indexs) => {
+  store.set({cards: (cards) => {
+    const newCards = indexs.map((index, i) => {
+      const card = Object.assign({}, cards[index])
+      card.color = Color(card.color)
+      card.zIndex = cards.length + i
+      card.index = cards.length + i
+      card.left += 30
+      card.top += 30
+      return store.cardPosition(card)
+    })
+    return cards.concat(newCards)
+  }})
+  store.memo()
 })
 // @params {array} indexs
 store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
