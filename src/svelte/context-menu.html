@@ -2,6 +2,10 @@
   {{#if mode == 'tip'}}
     <p class="menuitem" on:click="add()">ADD CARD</p>
   {{elseif mode == 'card'}}
+    <p class="menuitem" on:click="duplicate()">
+      <i class="fas fa-copy fa-fw"></i>
+      DUPLICATE
+    </p>
     <p class="menuitem" on:click="reverse()">
       <i class="fas fa-sync fa-fw"></i>
       REVERSE
@@ -72,7 +76,17 @@
         store.fire('cards.ADD_CARD', this.get('activeCard'))
       },
       duplicate () {
-        store.fire('cards.DUPLICATE_CARD', this.get('activeCard'))
+        const selects = this.root.selectable.selects
+        // const howmany = selects.length
+        if (selects.length) {
+          store.fire('cards.DUPLICATE_CARD', selects.map((select) => select.index))
+        }
+        // // reselect
+        // const cards = store.get('cards')
+        // this.root.selectable.reset()
+        // for (let i = cards.length - 1; i >= cards.length - howmany; i--) {
+        //   this.root.selectable.select(i)
+        // }
       },
       remove () {
         const selects = this.root.selectable.selects

@@ -1,7 +1,7 @@
 <div ref:card
   class="card animated bounceIn"
   style="{{cardStyle}} z-index: {{card.zIndex}};">
-  <div class="cardtext">
+  <div class="cardtext {{textvisible? '': 'textvisible'}}">
     <h3 class="card_title">{{card.name}}</h3>
     <div>{{card.color.rgb()}}</div>
     <div>{{card.color.hsl()}}</div>
@@ -157,6 +157,9 @@
     padding: 8px;
     width: 100%;
     white-space: wrap;
+  }
+  .cardtext.textvisible {
+    display: none;
   }
   .card_title {
     /*font-size: 18pt;*/
