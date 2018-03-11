@@ -4879,13 +4879,6 @@ store.on('cards.ADD_CARD', (card) => {
   }});
   store.memo();
 });
-store.on('cards.DUPLICATE_CARD', (index) => {
-  let newCard = typeof index === 'number' ? store.get('cards')[index] : index;
-  newCard = Object.assign({}, newCard);
-  newCard.left += 10;
-  newCard.top += 10;
-  store.fire('cards.ADD_CARD', newCard);
-});
 
 store.on('cards.EDIT_CARD', (index, param) => {
   store.set({cards: (cards) => {
@@ -4893,6 +4886,22 @@ store.on('cards.EDIT_CARD', (index, param) => {
     Object.assign(card, param);
     return cards
   }});
+});
+// @params {array} indexs
+store.on('cards.DUPLICATE_CARD', (indexs) => {
+  store.set({cards: (cards) => {
+    const newCards = indexs.map((index, i) => {
+      const card = Object.assign({}, cards[index]);
+      card.color = color(card.color);
+      card.zIndex = cards.length + i;
+      card.index = cards.length + i;
+      card.left += 30;
+      card.top += 30;
+      return store.cardPosition(card)
+    });
+    return cards.concat(newCards)
+  }});
+  store.memo();
 });
 // @params {array} indexs
 store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
@@ -5033,13 +5042,13 @@ function oncreate$5() {
 }
 function add_css$6() {
 	var style = createElement("style");
-	style.id = 'svelte-kvjppz-style';
-	style.textContent = ".svelte-kvjppz.card,.svelte-kvjppz .card{position:absolute;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:6px;min-width:120px;min-height:120px;user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none}.svelte-kvjppz.card.selected:not(.dragging),.svelte-kvjppz .card.selected:not(.dragging){outline:1px dashed black;box-shadow:0 0 0 1px white}.svelte-kvjppz.cardtext,.svelte-kvjppz .cardtext{padding:8px;width:100%;white-space:wrap}.svelte-kvjppz.card_title,.svelte-kvjppz .card_title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.svelte-kvjppz.icon,.svelte-kvjppz .icon{position:absolute;display:none;width:20px;height:20px}.svelte-kvjppz.card:hover .icon,.svelte-kvjppz .card:hover .icon,.svelte-kvjppz.card:hover .controller,.svelte-kvjppz .card:hover .controller{display:block}.svelte-kvjppz.controller,.svelte-kvjppz .controller{position:absolute;display:none;height:20px;top:0;right:0;margin:5px}.svelte-kvjppz.resize-handle,.svelte-kvjppz .resize-handle{bottom:0;right:0;cursor:nwse-resize}";
+	style.id = 'svelte-1daz1ls-style';
+	style.textContent = ".svelte-1daz1ls.card,.svelte-1daz1ls .card{position:absolute;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:6px;min-width:120px;min-height:120px;user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none}.svelte-1daz1ls.card.selected:not(.dragging),.svelte-1daz1ls .card.selected:not(.dragging){outline:1px dashed black;box-shadow:0 0 0 1px white}.svelte-1daz1ls.cardtext,.svelte-1daz1ls .cardtext{padding:8px;width:100%;white-space:wrap}.svelte-1daz1ls.cardtext.textvisible,.svelte-1daz1ls .cardtext.textvisible{display:none}.svelte-1daz1ls.card_title,.svelte-1daz1ls .card_title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.svelte-1daz1ls.icon,.svelte-1daz1ls .icon{position:absolute;display:none;width:20px;height:20px}.svelte-1daz1ls.card:hover .icon,.svelte-1daz1ls .card:hover .icon,.svelte-1daz1ls.card:hover .controller,.svelte-1daz1ls .card:hover .controller{display:block}.svelte-1daz1ls.controller,.svelte-1daz1ls .controller{position:absolute;display:none;height:20px;top:0;right:0;margin:5px}.svelte-1daz1ls.resize-handle,.svelte-1daz1ls .resize-handle{bottom:0;right:0;cursor:nwse-resize}";
 	appendNode(style, document.head);
 }
 
 function create_main_fragment$6(component, state) {
-	var div, div_1, h3, text_value = state.card.name, text, text_1, div_2, text_2_value = state.card.color.rgb(), text_2, text_3, div_3, text_4_value = state.card.color.hsl(), text_4, text_5, div_4, text_6, text_8, div_5, span, text_10, span_1, text_13, div_6, div_style_value;
+	var div, div_1, h3, text_value = state.card.name, text, text_1, div_2, text_2_value = state.card.color.rgb(), text_2, text_3, div_3, text_4_value = state.card.color.hsl(), text_4, text_5, div_4, text_6, div_1_class_value, text_8, div_5, span, text_10, span_1, text_13, div_6, div_style_value;
 
 	function click_handler(event) {
 		component.reverse();
@@ -5078,14 +5087,14 @@ function create_main_fragment$6(component, state) {
 
 		h: function hydrate() {
 			h3.className = "card_title";
-			div_1.className = "cardtext";
+			div_1.className = div_1_class_value = "cardtext " + (state.textvisible? '': 'textvisible');
 			span.className = "card-reverse";
 			addListener(span, "click", click_handler);
 			span_1.className = "card-delete";
 			addListener(span_1, "click", click_handler_1);
 			div_5.className = "controller";
 			div_6.className = "icon resize-handle";
-			div.className = "card animated bounceIn svelte-kvjppz";
+			div.className = "card animated bounceIn svelte-1daz1ls";
 			div.style.cssText = div_style_value = "" + state.cardStyle + " z-index: " + state.card.zIndex + ";";
 		},
 
@@ -5131,6 +5140,10 @@ function create_main_fragment$6(component, state) {
 				text_6.data = state.contrast;
 			}
 
+			if ((changed.textvisible) && div_1_class_value !== (div_1_class_value = "cardtext " + (state.textvisible? '': 'textvisible'))) {
+				div_1.className = div_1_class_value;
+			}
+
 			if ((changed.cardStyle || changed.card) && div_style_value !== (div_style_value = "" + state.cardStyle + " z-index: " + state.card.zIndex + ";")) {
 				div.style.cssText = div_style_value;
 			}
@@ -5158,7 +5171,7 @@ function Color_card(options) {
 
 	this._handlers.destroy = [removeFromStore];
 
-	if (!document.getElementById("svelte-kvjppz-style")) add_css$6();
+	if (!document.getElementById("svelte-1daz1ls-style")) add_css$6();
 
 	var _oncreate = oncreate$5.bind(this);
 
@@ -13333,7 +13346,17 @@ var methods$6 = {
     store.fire('cards.ADD_CARD', this.get('activeCard'));
   },
   duplicate () {
-    store.fire('cards.DUPLICATE_CARD', this.get('activeCard'));
+    const selects = this.root.selectable.selects;
+    // const howmany = selects.length
+    if (selects.length) {
+      store.fire('cards.DUPLICATE_CARD', selects.map((select) => select.index));
+    }
+    // // reselect
+    // const cards = store.get('cards')
+    // this.root.selectable.reset()
+    // for (let i = cards.length - 1; i >= cards.length - howmany; i--) {
+    //   this.root.selectable.select(i)
+    // }
   },
   remove () {
     const selects = this.root.selectable.selects;
@@ -13505,23 +13528,30 @@ function create_if_block$1(component, state) {
 
 // (4:27) 
 function create_if_block_1$1(component, state) {
-	var p, text_1, p_1;
+	var p, text_1, p_1, text_3, p_2;
 
 	function click_handler(event) {
-		component.reverse();
+		component.duplicate();
 	}
 
 	function click_handler_1(event) {
+		component.reverse();
+	}
+
+	function click_handler_2(event) {
 		component.remove();
 	}
 
 	return {
 		c: function create() {
 			p = createElement("p");
-			p.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>\n      REVERSE";
+			p.innerHTML = "<i class=\"fas fa-copy fa-fw\"></i>\n      DUPLICATE";
 			text_1 = createText("\n    ");
 			p_1 = createElement("p");
-			p_1.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\n      DELETE";
+			p_1.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>\n      REVERSE";
+			text_3 = createText("\n    ");
+			p_2 = createElement("p");
+			p_2.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\n      DELETE";
 			this.h();
 		},
 
@@ -13530,28 +13560,35 @@ function create_if_block_1$1(component, state) {
 			addListener(p, "click", click_handler);
 			p_1.className = "menuitem";
 			addListener(p_1, "click", click_handler_1);
+			p_2.className = "menuitem";
+			addListener(p_2, "click", click_handler_2);
 		},
 
 		m: function mount(target, anchor) {
 			insertNode(p, target, anchor);
 			insertNode(text_1, target, anchor);
 			insertNode(p_1, target, anchor);
+			insertNode(text_3, target, anchor);
+			insertNode(p_2, target, anchor);
 		},
 
 		u: function unmount() {
 			detachNode(p);
 			detachNode(text_1);
 			detachNode(p_1);
+			detachNode(text_3);
+			detachNode(p_2);
 		},
 
 		d: function destroy$$1() {
 			removeListener(p, "click", click_handler);
 			removeListener(p_1, "click", click_handler_1);
+			removeListener(p_2, "click", click_handler_2);
 		}
 	};
 }
 
-// (16:2) {{#each copys as model}}
+// (20:2) {{#each copys as model}}
 function create_each_block$2(component, state) {
 	var model = state.model, model_index = state.model_index;
 	var p, text, text_1_value = state.activeCard.color[model](), text_1;
@@ -13602,7 +13639,7 @@ function create_each_block$2(component, state) {
 	};
 }
 
-// (15:2) {{#if activeCard}}
+// (19:2) {{#if activeCard}}
 function create_if_block_2(component, state) {
 	var each_anchor;
 
@@ -13747,10 +13784,7 @@ function data$8() {
     selectingCard: null,
     sort,
     grayscale: false,
-    sortX: 'none',
-    sortXdir: false,
-    sortY: 'none',
-    sortYdir: false,
+    textvisible: true,
   }
 }
 var methods$7 = {
@@ -13875,7 +13909,7 @@ function add_css$9() {
 }
 
 function create_main_fragment$9(component, state) {
-	var div, div_1, button, text_1, button_1, text_3, button_2, text_5, button_3, text_8, div_2, div_3, button_4, text_10, ladel, select, option, text_11, select_updating = false, text_13, div_4, button_5, text_15, ladel_1, select_1, option_1, text_16, select_1_updating = false, text_19, hr, text_20, div_5, div_6, input, input_updating = false, input_placeholder_value, text_22, div_7, button_6, text_25, div_8, button_7, text_28, div_9, button_8, text_31, colorpicker_updating = {}, text_32, hr_1, text_33, text_35, div_10, text_37, div_11, text_39;
+	var div, div_1, button, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, text_10, div_2, div_3, button_5, text_12, ladel, select, option, text_13, select_updating = false, text_15, div_4, button_6, text_17, ladel_1, select_1, option_1, text_18, select_1_updating = false, text_21, hr, text_22, div_5, div_6, input, input_updating = false, input_placeholder_value, text_24, div_7, button_7, text_27, div_8, button_8, text_30, div_9, button_9, text_33, colorpicker_updating = {}, text_34, hr_1, text_35, text_37, div_10, text_39, div_11, text_41;
 
 	function click_handler(event) {
 		component.store.undo();
@@ -13891,10 +13925,15 @@ function create_main_fragment$9(component, state) {
 	}
 
 	function click_handler_3(event) {
-		component.removeAll();
+		var state = component.get();
+		component.set({textvisible: !state.textvisible});
 	}
 
 	function click_handler_4(event) {
+		component.removeAll();
+	}
+
+	function click_handler_5(event) {
 		component.cardsPosition('sortX');
 	}
 
@@ -13902,11 +13941,11 @@ function create_main_fragment$9(component, state) {
 
 	var each_blocks = [];
 
-	for (var i_5 = 0; i_5 < sort.length; i_5 += 1) {
-		each_blocks[i_5] = create_each_block$3(component, assign({}, state, {
+	for (var i_6 = 0; i_6 < sort.length; i_6 += 1) {
+		each_blocks[i_6] = create_each_block$3(component, assign({}, state, {
 			sort: sort,
-			key: sort[i_5],
-			key_index: i_5
+			key: sort[i_6],
+			key_index: i_6
 		}));
 	}
 
@@ -13920,7 +13959,7 @@ function create_main_fragment$9(component, state) {
 		component.cardsPosition('sortX', select.value);
 	}
 
-	function click_handler_5(event) {
+	function click_handler_6(event) {
 		component.cardsPosition('sortY');
 	}
 
@@ -13928,11 +13967,11 @@ function create_main_fragment$9(component, state) {
 
 	var each_1_blocks = [];
 
-	for (var i_5 = 0; i_5 < sort.length; i_5 += 1) {
-		each_1_blocks[i_5] = create_each_block_1$1(component, assign({}, state, {
+	for (var i_6 = 0; i_6 < sort.length; i_6 += 1) {
+		each_1_blocks[i_6] = create_each_block_1$1(component, assign({}, state, {
 			sort: sort,
-			key: sort[i_5],
-			key_index: i_5
+			key: sort[i_6],
+			key_index: i_6
 		}));
 	}
 
@@ -13954,17 +13993,17 @@ function create_main_fragment$9(component, state) {
 		input_updating = false;
 	}
 
-	function click_handler_6(event) {
+	function click_handler_7(event) {
 		var state = component.get();
 		component.addCard(state.current, true);
 	}
 
-	function click_handler_7(event) {
+	function click_handler_8(event) {
 		var state = component.get();
 		component.addCard(state.current);
 	}
 
-	function click_handler_8(event) {
+	function click_handler_9(event) {
 		var state = component.get();
 		component.setBgColor(state.current.color);
 	}
@@ -14008,11 +14047,11 @@ function create_main_fragment$9(component, state) {
 
 	var each_2_blocks = [];
 
-	for (var i_5 = 0; i_5 < $cards.length; i_5 += 1) {
-		each_2_blocks[i_5] = create_each_block_2(component, assign({}, state, {
+	for (var i_6 = 0; i_6 < $cards.length; i_6 += 1) {
+		each_2_blocks[i_6] = create_each_block_2(component, assign({}, state, {
 			$cards: $cards,
-			card: $cards[i_5],
-			index: i_5
+			card: $cards[i_6],
+			index: i_6
 		}));
 	}
 
@@ -14034,71 +14073,74 @@ function create_main_fragment$9(component, state) {
 			button_2.innerHTML = "<i class=\"fas fa-eye-dropper\"></i>";
 			text_5 = createText("\n    ");
 			button_3 = createElement("button");
-			button_3.innerHTML = "<i class=\"fas fa-trash\"></i>";
-			text_8 = createText("\n\n  \n  ");
+			button_3.innerHTML = "<i class=\"fas fa-font\"></i>";
+			text_7 = createText("\n    ");
+			button_4 = createElement("button");
+			button_4.innerHTML = "<i class=\"fas fa-trash\"></i>";
+			text_10 = createText("\n\n  \n  ");
 			div_2 = createElement("div");
 			div_3 = createElement("div");
-			button_4 = createElement("button");
-			button_4.textContent = "X";
-			text_10 = createText("\n    ");
+			button_5 = createElement("button");
+			button_5.textContent = "X";
+			text_12 = createText("\n    ");
 			ladel = createElement("ladel");
 			select = createElement("select");
 			option = createElement("option");
-			text_11 = createText("---");
+			text_13 = createText("---");
 
-			for (var i_5 = 0; i_5 < each_blocks.length; i_5 += 1) {
-				each_blocks[i_5].c();
+			for (var i_6 = 0; i_6 < each_blocks.length; i_6 += 1) {
+				each_blocks[i_6].c();
 			}
 
-			text_13 = createText("\n\n    ");
+			text_15 = createText("\n\n    ");
 			div_4 = createElement("div");
-			button_5 = createElement("button");
-			button_5.textContent = "Y";
-			text_15 = createText("\n    ");
+			button_6 = createElement("button");
+			button_6.textContent = "Y";
+			text_17 = createText("\n    ");
 			ladel_1 = createElement("ladel");
 			select_1 = createElement("select");
 			option_1 = createElement("option");
-			text_16 = createText("---");
+			text_18 = createText("---");
 
-			for (var i_5 = 0; i_5 < each_1_blocks.length; i_5 += 1) {
-				each_1_blocks[i_5].c();
+			for (var i_6 = 0; i_6 < each_1_blocks.length; i_6 += 1) {
+				each_1_blocks[i_6].c();
 			}
 
-			text_19 = createText("\n\n  ");
+			text_21 = createText("\n\n  ");
 			hr = createElement("hr");
-			text_20 = createText("\n\n  ");
+			text_22 = createText("\n\n  ");
 			div_5 = createElement("div");
 			div_6 = createElement("div");
 			input = createElement("input");
-			text_22 = createText("\n    ");
+			text_24 = createText("\n    ");
 			div_7 = createElement("div");
-			button_6 = createElement("button");
-			button_6.textContent = "➕";
-			text_25 = createText("\n    ");
-			div_8 = createElement("div");
 			button_7 = createElement("button");
 			button_7.textContent = "➕";
-			text_28 = createText("\n    ");
-			div_9 = createElement("div");
+			text_27 = createText("\n    ");
+			div_8 = createElement("div");
 			button_8 = createElement("button");
-			button_8.textContent = "BG";
-			text_31 = createText("\n\n  ");
+			button_8.textContent = "➕";
+			text_30 = createText("\n    ");
+			div_9 = createElement("div");
+			button_9 = createElement("button");
+			button_9.textContent = "BG";
+			text_33 = createText("\n\n  ");
 			colorpicker._fragment.c();
-			text_32 = createText("\n  ");
+			text_34 = createText("\n  ");
 			hr_1 = createElement("hr");
-			text_33 = createText("\n  ");
+			text_35 = createText("\n  ");
 			colorlists._fragment.c();
-			text_35 = createText("\n\n");
+			text_37 = createText("\n\n");
 			div_10 = createElement("div");
 
-			for (var i_5 = 0; i_5 < each_2_blocks.length; i_5 += 1) {
-				each_2_blocks[i_5].c();
+			for (var i_6 = 0; i_6 < each_2_blocks.length; i_6 += 1) {
+				each_2_blocks[i_6].c();
 			}
 
-			text_37 = createText("\n\n");
+			text_39 = createText("\n\n");
 			div_11 = createElement("div");
 			div_11.innerHTML = "<a href=\"https://github.com/techa/color-factory\"><i class=\"fab fa-github fa-fw\"></i></a>";
-			text_39 = createText("\n\n");
+			text_41 = createText("\n\n");
 			contextmenu._fragment.c();
 			this.h();
 		},
@@ -14111,10 +14153,12 @@ function create_main_fragment$9(component, state) {
 			addListener(button_1, "click", click_handler_1);
 			button_2.title = "Filter grayscale";
 			addListener(button_2, "click", click_handler_2);
-			button_3.title = "Delete";
+			button_3.title = "Card Text Visible";
 			addListener(button_3, "click", click_handler_3);
-			div_1.className = "tool-box";
+			button_4.title = "Delete";
 			addListener(button_4, "click", click_handler_4);
+			div_1.className = "tool-box";
+			addListener(button_5, "click", click_handler_5);
 			option.__value = "none";
 			option.value = option.__value;
 			addListener(select, "change", select_change_handler);
@@ -14122,7 +14166,7 @@ function create_main_fragment$9(component, state) {
 			addListener(select, "change", change_handler);
 			ladel.className = "select-wrapper";
 			setStyle(ladel, "flex", "1 1 auto");
-			addListener(button_5, "click", click_handler_5);
+			addListener(button_6, "click", click_handler_6);
 			option_1.__value = "none";
 			option_1.value = option_1.__value;
 			addListener(select_1, "change", select_1_change_handler);
@@ -14134,15 +14178,15 @@ function create_main_fragment$9(component, state) {
 			addListener(input, "input", input_input_handler);
 			input.placeholder = input_placeholder_value = state.current.color.nearColorName();
 			setStyle(input, "color", state.textColor);
-			button_6.title = "Add Card: text";
-			setStyle(button_6, "color", state.current.color);
-			addListener(button_6, "click", click_handler_6);
-			button_7.title = "Add Card: fill";
-			setStyle(button_7, "color", ( state.current.color.isDark()?'#fff':'#000' ));
-			setStyle(button_7, "background-color", state.current.color);
+			button_7.title = "Add Card: text";
+			setStyle(button_7, "color", state.current.color);
 			addListener(button_7, "click", click_handler_7);
-			button_8.title = "set Background Color";
+			button_8.title = "Add Card: fill";
+			setStyle(button_8, "color", ( state.current.color.isDark()?'#fff':'#000' ));
+			setStyle(button_8, "background-color", state.current.color);
 			addListener(button_8, "click", click_handler_8);
+			button_9.title = "set Background Color";
+			addListener(button_9, "click", click_handler_9);
 			div_5.className = "top-input-wrapper button-set border radius";
 			div.id = "controller";
 			setStyle(div, "color", state.textColor);
@@ -14163,40 +14207,42 @@ function create_main_fragment$9(component, state) {
 			appendNode(button_2, div_1);
 			appendNode(text_5, div_1);
 			appendNode(button_3, div_1);
-			appendNode(text_8, div);
+			appendNode(text_7, div_1);
+			appendNode(button_4, div_1);
+			appendNode(text_10, div);
 			appendNode(div_2, div);
 			appendNode(div_3, div_2);
-			appendNode(button_4, div_3);
-			appendNode(text_10, div_2);
+			appendNode(button_5, div_3);
+			appendNode(text_12, div_2);
 			appendNode(ladel, div_2);
 			appendNode(select, ladel);
 			appendNode(option, select);
-			appendNode(text_11, option);
+			appendNode(text_13, option);
 
-			for (var i_5 = 0; i_5 < each_blocks.length; i_5 += 1) {
-				each_blocks[i_5].m(select, null);
+			for (var i_6 = 0; i_6 < each_blocks.length; i_6 += 1) {
+				each_blocks[i_6].m(select, null);
 			}
 
 			selectOption(select, state.$sortX);
 
-			appendNode(text_13, div_2);
-			appendNode(div_4, div_2);
-			appendNode(button_5, div_4);
 			appendNode(text_15, div_2);
+			appendNode(div_4, div_2);
+			appendNode(button_6, div_4);
+			appendNode(text_17, div_2);
 			appendNode(ladel_1, div_2);
 			appendNode(select_1, ladel_1);
 			appendNode(option_1, select_1);
-			appendNode(text_16, option_1);
+			appendNode(text_18, option_1);
 
-			for (var i_5 = 0; i_5 < each_1_blocks.length; i_5 += 1) {
-				each_1_blocks[i_5].m(select_1, null);
+			for (var i_6 = 0; i_6 < each_1_blocks.length; i_6 += 1) {
+				each_1_blocks[i_6].m(select_1, null);
 			}
 
 			selectOption(select_1, state.$sortY);
 
-			appendNode(text_19, div);
+			appendNode(text_21, div);
 			appendNode(hr, div);
-			appendNode(text_20, div);
+			appendNode(text_22, div);
 			appendNode(div_5, div);
 			appendNode(div_6, div_5);
 			appendNode(input, div_6);
@@ -14204,32 +14250,32 @@ function create_main_fragment$9(component, state) {
 
 			input.value = state.current.name;
 
-			appendNode(text_22, div_5);
+			appendNode(text_24, div_5);
 			appendNode(div_7, div_5);
-			appendNode(button_6, div_7);
-			appendNode(text_25, div_5);
+			appendNode(button_7, div_7);
+			appendNode(text_27, div_5);
 			appendNode(div_8, div_5);
-			appendNode(button_7, div_8);
-			appendNode(text_28, div_5);
+			appendNode(button_8, div_8);
+			appendNode(text_30, div_5);
 			appendNode(div_9, div_5);
-			appendNode(button_8, div_9);
-			appendNode(text_31, div);
-			colorpicker._mount(div, null);
-			appendNode(text_32, div);
-			appendNode(hr_1, div);
+			appendNode(button_9, div_9);
 			appendNode(text_33, div);
+			colorpicker._mount(div, null);
+			appendNode(text_34, div);
+			appendNode(hr_1, div);
+			appendNode(text_35, div);
 			colorlists._mount(div, null);
-			insertNode(text_35, target, anchor);
+			insertNode(text_37, target, anchor);
 			insertNode(div_10, target, anchor);
 
-			for (var i_5 = 0; i_5 < each_2_blocks.length; i_5 += 1) {
-				each_2_blocks[i_5].m(div_10, null);
+			for (var i_6 = 0; i_6 < each_2_blocks.length; i_6 += 1) {
+				each_2_blocks[i_6].m(div_10, null);
 			}
 
 			component.refs.box = div_10;
-			insertNode(text_37, target, anchor);
-			insertNode(div_11, target, anchor);
 			insertNode(text_39, target, anchor);
+			insertNode(div_11, target, anchor);
+			insertNode(text_41, target, anchor);
 			contextmenu._mount(target, anchor);
 		},
 
@@ -14237,25 +14283,25 @@ function create_main_fragment$9(component, state) {
 			var sort = state.sort;
 
 			if (changed.sort) {
-				for (var i_5 = 0; i_5 < sort.length; i_5 += 1) {
+				for (var i_6 = 0; i_6 < sort.length; i_6 += 1) {
 					var each_context = assign({}, state, {
 						sort: sort,
-						key: sort[i_5],
-						key_index: i_5
+						key: sort[i_6],
+						key_index: i_6
 					});
 
-					if (each_blocks[i_5]) {
-						each_blocks[i_5].p(changed, each_context);
+					if (each_blocks[i_6]) {
+						each_blocks[i_6].p(changed, each_context);
 					} else {
-						each_blocks[i_5] = create_each_block$3(component, each_context);
-						each_blocks[i_5].c();
-						each_blocks[i_5].m(select, null);
+						each_blocks[i_6] = create_each_block$3(component, each_context);
+						each_blocks[i_6].c();
+						each_blocks[i_6].m(select, null);
 					}
 				}
 
-				for (; i_5 < each_blocks.length; i_5 += 1) {
-					each_blocks[i_5].u();
-					each_blocks[i_5].d();
+				for (; i_6 < each_blocks.length; i_6 += 1) {
+					each_blocks[i_6].u();
+					each_blocks[i_6].d();
 				}
 				each_blocks.length = sort.length;
 			}
@@ -14265,25 +14311,25 @@ function create_main_fragment$9(component, state) {
 			var sort = state.sort;
 
 			if (changed.sort) {
-				for (var i_5 = 0; i_5 < sort.length; i_5 += 1) {
+				for (var i_6 = 0; i_6 < sort.length; i_6 += 1) {
 					var each_1_context = assign({}, state, {
 						sort: sort,
-						key: sort[i_5],
-						key_index: i_5
+						key: sort[i_6],
+						key_index: i_6
 					});
 
-					if (each_1_blocks[i_5]) {
-						each_1_blocks[i_5].p(changed, each_1_context);
+					if (each_1_blocks[i_6]) {
+						each_1_blocks[i_6].p(changed, each_1_context);
 					} else {
-						each_1_blocks[i_5] = create_each_block_1$1(component, each_1_context);
-						each_1_blocks[i_5].c();
-						each_1_blocks[i_5].m(select_1, null);
+						each_1_blocks[i_6] = create_each_block_1$1(component, each_1_context);
+						each_1_blocks[i_6].c();
+						each_1_blocks[i_6].m(select_1, null);
 					}
 				}
 
-				for (; i_5 < each_1_blocks.length; i_5 += 1) {
-					each_1_blocks[i_5].u();
-					each_1_blocks[i_5].d();
+				for (; i_6 < each_1_blocks.length; i_6 += 1) {
+					each_1_blocks[i_6].u();
+					each_1_blocks[i_6].d();
 				}
 				each_1_blocks.length = sort.length;
 			}
@@ -14299,9 +14345,9 @@ function create_main_fragment$9(component, state) {
 			}
 
 			if (changed.current) {
-				setStyle(button_6, "color", state.current.color);
-				setStyle(button_7, "color", ( state.current.color.isDark()?'#fff':'#000' ));
-				setStyle(button_7, "background-color", state.current.color);
+				setStyle(button_7, "color", state.current.color);
+				setStyle(button_8, "color", ( state.current.color.isDark()?'#fff':'#000' ));
+				setStyle(button_8, "background-color", state.current.color);
 			}
 
 			var colorpicker_changes = {};
@@ -14319,26 +14365,26 @@ function create_main_fragment$9(component, state) {
 
 			var $cards = state.$cards;
 
-			if (changed.$cards || changed.grayscale) {
-				for (var i_5 = 0; i_5 < $cards.length; i_5 += 1) {
+			if (changed.$cards || changed.grayscale || changed.textvisible) {
+				for (var i_6 = 0; i_6 < $cards.length; i_6 += 1) {
 					var each_2_context = assign({}, state, {
 						$cards: $cards,
-						card: $cards[i_5],
-						index: i_5
+						card: $cards[i_6],
+						index: i_6
 					});
 
-					if (each_2_blocks[i_5]) {
-						each_2_blocks[i_5].p(changed, each_2_context);
+					if (each_2_blocks[i_6]) {
+						each_2_blocks[i_6].p(changed, each_2_context);
 					} else {
-						each_2_blocks[i_5] = create_each_block_2(component, each_2_context);
-						each_2_blocks[i_5].c();
-						each_2_blocks[i_5].m(div_10, null);
+						each_2_blocks[i_6] = create_each_block_2(component, each_2_context);
+						each_2_blocks[i_6].c();
+						each_2_blocks[i_6].m(div_10, null);
 					}
 				}
 
-				for (; i_5 < each_2_blocks.length; i_5 += 1) {
-					each_2_blocks[i_5].u();
-					each_2_blocks[i_5].d();
+				for (; i_6 < each_2_blocks.length; i_6 += 1) {
+					each_2_blocks[i_6].u();
+					each_2_blocks[i_6].d();
 				}
 				each_2_blocks.length = $cards.length;
 			}
@@ -14355,24 +14401,24 @@ function create_main_fragment$9(component, state) {
 		u: function unmount() {
 			detachNode(div);
 
-			for (var i_5 = 0; i_5 < each_blocks.length; i_5 += 1) {
-				each_blocks[i_5].u();
+			for (var i_6 = 0; i_6 < each_blocks.length; i_6 += 1) {
+				each_blocks[i_6].u();
 			}
 
-			for (var i_5 = 0; i_5 < each_1_blocks.length; i_5 += 1) {
-				each_1_blocks[i_5].u();
-			}
-
-			detachNode(text_35);
-			detachNode(div_10);
-
-			for (var i_5 = 0; i_5 < each_2_blocks.length; i_5 += 1) {
-				each_2_blocks[i_5].u();
+			for (var i_6 = 0; i_6 < each_1_blocks.length; i_6 += 1) {
+				each_1_blocks[i_6].u();
 			}
 
 			detachNode(text_37);
-			detachNode(div_11);
+			detachNode(div_10);
+
+			for (var i_6 = 0; i_6 < each_2_blocks.length; i_6 += 1) {
+				each_2_blocks[i_6].u();
+			}
+
 			detachNode(text_39);
+			detachNode(div_11);
+			detachNode(text_41);
 			contextmenu._unmount();
 		},
 
@@ -14382,12 +14428,13 @@ function create_main_fragment$9(component, state) {
 			removeListener(button_2, "click", click_handler_2);
 			removeListener(button_3, "click", click_handler_3);
 			removeListener(button_4, "click", click_handler_4);
+			removeListener(button_5, "click", click_handler_5);
 
 			destroyEach(each_blocks);
 
 			removeListener(select, "change", select_change_handler);
 			removeListener(select, "change", change_handler);
-			removeListener(button_5, "click", click_handler_5);
+			removeListener(button_6, "click", click_handler_6);
 
 			destroyEach(each_1_blocks);
 
@@ -14395,9 +14442,9 @@ function create_main_fragment$9(component, state) {
 			removeListener(select_1, "change", change_handler_1);
 			removeListener(input, "input", input_input_handler);
 			if (component.refs.name === input) component.refs.name = null;
-			removeListener(button_6, "click", click_handler_6);
 			removeListener(button_7, "click", click_handler_7);
 			removeListener(button_8, "click", click_handler_8);
+			removeListener(button_9, "click", click_handler_9);
 			colorpicker.destroy(false);
 			colorlists.destroy(false);
 
@@ -14409,7 +14456,7 @@ function create_main_fragment$9(component, state) {
 	};
 }
 
-// (25:8) {{#each sort as key}}
+// (28:8) {{#each sort as key}}
 function create_each_block$3(component, state) {
 	var key = state.key, key_index = state.key_index;
 	var option, text_value = key.name, text, option_value_value;
@@ -14453,7 +14500,7 @@ function create_each_block$3(component, state) {
 	};
 }
 
-// (35:8) {{#each sort as key}}
+// (38:8) {{#each sort as key}}
 function create_each_block_1$1(component, state) {
 	var key = state.key, key_index = state.key_index;
 	var option, text_value = key.name, text, option_value_value;
@@ -14497,7 +14544,7 @@ function create_each_block_1$1(component, state) {
 	};
 }
 
-// (69:2) {{#each $cards as card, index}}
+// (72:2) {{#each $cards as card, index}}
 function create_each_block_2(component, state) {
 	var card = state.card, index = state.index;
 
@@ -14506,7 +14553,8 @@ function create_each_block_2(component, state) {
 		data: {
 			card: card,
 			index: index,
-			grayscale: state.grayscale
+			grayscale: state.grayscale,
+			textvisible: state.textvisible
 		}
 	});
 
@@ -14526,6 +14574,7 @@ function create_each_block_2(component, state) {
 			if (changed.$cards) colorcard_changes.card = card;
 			colorcard_changes.index = index;
 			if (changed.grayscale) colorcard_changes.grayscale = state.grayscale;
+			if (changed.textvisible) colorcard_changes.textvisible = state.textvisible;
 			colorcard._set(colorcard_changes);
 		},
 
