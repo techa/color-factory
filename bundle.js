@@ -13841,6 +13841,7 @@ function oncreate$8() {
     switch (sort) {
       case null:
       case undefined:
+      case 'none':
       case 'random':
         return Math.random()
       case 'contrast':
