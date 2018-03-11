@@ -148,12 +148,9 @@
     -webkit-user-select: none;
     -moz-user-select: none;
   }
-  .card.selected {
+  .card.selected:not(.dragging) {
     outline: 1px dashed black;
     box-shadow: 0 0 0 1px white;
-  }
-  .card.active {
-    z-index: 100;
   }
   .cardtext {
     /*font-size: 14pt;*/
