@@ -2,8 +2,9 @@ import defaultpalette from '../constants/defaultpalette'
 import Histore from './svelte-store-ex.js'
 import Color from 'color'
 // storage.clear()
+
 const store = new Histore(defaultpalette, {
-  storage: 'test', // store3000
+  storageKey: 'palette',
   keymaps: [
     {
       key: 'ctrl+z',
@@ -32,22 +33,6 @@ const store = new Histore(defaultpalette, {
     console.log('Color, Color()', state)
   }
 })
-// store.observe('bgColor', (bgColor) => {
-//   store.set({bgColor: Color(bgColor)})
-// })
-// store.onchange((state, changed) => {
-//   for (const key of Object.keys(changed)) {
-//     const value = state[key]
-//     switch (key) {
-//       case 'bgColor':
-//         state[key] = Color(value)
-//         break
-//       default:
-//         break
-//     }
-//   }
-//   console.log('onchange')
-// })
 
 // Events
 store.on('cards.ADD_CARD', (card) => {
@@ -83,6 +68,7 @@ store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
     })
     return cards
   }})
+  store.memo()
 })
 
 // @params {array} indexs
@@ -90,6 +76,7 @@ store.on('cards.REMOVE_CARD', (indexs) => {
   store.set({cards: (cards) => {
     return cards.filter((card, i) => !~indexs.indexOf(i))
   }})
+  store.memo()
 })
 
 store.on('cards.CARD_FORWARD', (index) => {

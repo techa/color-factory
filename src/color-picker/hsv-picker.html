@@ -51,7 +51,6 @@
 
 <script>
   import Color from 'color'
-  import { on, off } from '../mouse.js'
 
   import Spectrum from './spectrum.html'
   import Slider from './slider.html'
@@ -86,55 +85,5 @@
         this.refs.alpha.draw(alphaColor(0), alphaColor(1))
       })
     },
-    methods: {
-      spectrumCrement (meth) {
-        const hsv = this.get('hsv')
-
-        hsv[meth[0]] += meth[1] ? 0.01 : -0.01
-        if (hsv[meth[0]] === 1) {
-          hsv[meth[0]] = '1.0'
-        }
-
-        this.set({ color: Color(hsv) })
-      },
-    },
-    helpers: {
-      btnPosition (size, i) {
-        const center = size / 2
-        const radius = (center - 20)
-        const btnsize = 20
-        const left = center + radius * Math.cos(i * 90 / 180 * Math.PI) - btnsize / 2
-        const top = center + radius * Math.sin(i * 90 / 180 * Math.PI) - btnsize / 2
-
-        return `left: ${left}px; top: ${top}px;`
-      },
-    },
-    events: {
-      press (node, callback) {
-        function onmousedown (event) {
-          callback(event)
-
-          let time = setTimeout(() => {
-            clearTimeout(time)
-            time = setInterval(() => callback(event), 150)
-          }, 300)
-
-          function onmouseup (e) {
-            clearInterval(time)
-            off(window, 'mouseup touchcancel touchend', onmousedown)
-          }
-
-          on(window, 'mouseup touchcancel touchend', onmouseup)
-        }
-
-        on(node, 'mousedown touchstart', onmousedown)
-
-        return {
-          teardown () {
-            off(node, 'mousedown touchstart', onmousedown)
-          }
-        }
-      }
-    }
   }
 </script>

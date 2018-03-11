@@ -1,14 +1,20 @@
 <div class="color-picker">
   <ColorInput bind:color :bgColor />
-  <div class="wrapper">
+  <div class="picker-body">
     <HsvPicker bind:color size={{size}} />
   </div>
-  <div class="set">
-    <button style="color:{{color}};" on:click="setBgColor()">
-      {{contrast}}
-    </button>
-    <Blender bind:color width={{size}}/>
-    <button on:click="alphaBlending()">a=1</button>
+  <div class="picker-footer">
+    <div class="button">
+      <button class="contrast {{bgColor.level(color)}}" style="color:{{color}};" on:click="setBgColor()">
+        {{contrast}}
+      </button>
+    </div>
+    <div class="blender-wrapper">
+      <Blender bind:color width={{size-76}}/>
+    </div>
+    <div class="button">
+      <button on:click="alphaBlending()">a=1</button>
+    </div>
   </div>
 </div>
 
@@ -18,21 +24,38 @@
     padding: 8px;
     text-align: center;
   }
-  .wrapper {
+  .picker-body {
     height: 100px;
     display: flex;
     flex-direction: column;
     padding: 6px 0;
   }
-  .set {
+  .picker-footer {
+    width: 100%;
+    height: 20px;
     display: flex;
     align-items: stretch;
+    flex-direction: row;
     justify-content: space-around;
     font-size: 0.8em;
   }
-  .set button {
+  .picker-footer > :nth-child(2) {
+    margin: 0 8px;
+    flex: 2 1 auto;
+  }
+  .picker-footer > :first-child,
+  .picker-footer > :last-child {
+    flex: 0 1 30px;
+  }
+  .picker-footer button {
     width: 30px;
     padding: 0;
+  }
+  .contrast.AA {
+    border-bottom: 1px solid;
+  }
+  .contrast.AAA {
+    border: 1px solid;
   }
   .alpha-check-bg {
     /* 市松模様 */
@@ -51,14 +74,12 @@
 
   import ColorInput from './color-input.html'
   import HsvPicker from './hsv-picker.html'
-  import Slider from './slider.html'
   import Blender from './blender.html'
 
   export default {
     components: {
       ColorInput,
       HsvPicker,
-      Slider,
       Blender,
     },
     data () {

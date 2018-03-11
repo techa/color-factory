@@ -1,10 +1,42 @@
 import Color from 'color'
 import store from './store/store.js'
+import xkcd from './constants/xkcd.json'
 Color.prototype.toJSON = function () {
   return this[this.model]().object()
 }
 
-Color.prototype.toString = function (model = this.model) {
+Color.prototype.nearColorName = function () {
+  const hsl = this.hsl().object()
+  let difference = 50
+  let name = ''
+  xkcd.forEach(([_name, _hsl]) => {
+    let diff = 0
+    // gray
+    if (hsl.s < 5) {
+      diff += Math.abs(hsl.s - _hsl.s)
+      if (diff < 5) {
+        diff += Math.abs(hsl.l - _hsl.l)
+        if (diff < difference) {
+          difference = diff
+          name = _name
+        }
+        return
+      }
+      diff = 0
+    }
+
+    for (const key in hsl) {
+      diff += Math.abs(hsl[key] - _hsl[key])
+    }
+    if (diff < difference) {
+      difference = diff
+      name = _name
+    }
+  })
+  return name
+}
+
+Color.prototype.toString = function (model) {
   // console.log('model', model)
   const color = this.alpha(Math.round(this.valpha * 100) / 100)
   switch (model) {
@@ -16,20 +48,21 @@ Color.prototype.toString = function (model = this.model) {
     case 'prgb':
     case '%':
       return color.percentString(0)
-    case 'cmyk':
-      const bgColor = store.get('bgColor')
-      const cmyk = bgColor.alphaBlending(color).cmyk().round().array()
-      return `cmyk(${cmyk.join(', ')})`
-    default:
-      if (!(model in color)) {
-        return this.string(0)
-      }
+    case 'hsv':
+    case 'xyz':
+    case 'lab':
       let str = model
       const arr = color[model]().round().array()
       if (color.valpha !== 1) {
         str += 'a'
       }
       return str + `(${arr.join(', ')})`
+    case 'cmyk':
+      const bgColor = store.get('bgColor')
+      const cmyk = bgColor.alphaBlending(color).cmyk().round().array()
+      return `cmyk(${cmyk.join(', ')})`
+    default:
+      return color.string(0)
   }
 }
 Color.prototype.alphaBlending = function (...colors) {

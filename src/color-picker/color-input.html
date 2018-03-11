@@ -1,9 +1,9 @@
 {{#if phone}}
   <input type="color">
 {{else}}
-  <div class="models">
+  <div class="models button-set">
     {{#each models as _model}}
-    <button style="{{modelChange(_model, model, bgColor)}}" on:click="set({model: _model})">{{_model.toUpperCase()}}</button>
+    <div><button style="{{modelStyler(_model, model, color, bgColor, textColor)}}" on:click="set({model: _model})">{{_model.toUpperCase()}}</button></div>
     {{/each}}
   </div>
   <div class="input-wrapper">
@@ -14,16 +14,18 @@
       on:keydown="keydown(event)"
       style="color: {{textColor}}; background-color: {{color.rgb()}};"
       :value
+      spellcheck=""
       placeholder="keypress: ↑↓">
   </div>
 {{/if}}
 
 <style>
   .models {
+    width: 100%;
     font-size: 0.8em;
   }
   .models button {
-    padding: 4px;
+    padding: 3px;
   }
   .input-wrapper {
     --size: 2em;
@@ -67,11 +69,10 @@
       textColor: (color, bgColor) => bgColor.alphaBlending(color).isDark() ? '#fff' : '#000',
     },
     helpers: {
-      modelChange (_model, model, bgColor) {
-        let color = bgColor.mostReadable('#ccc', '#333')
+      modelStyler (_model, model, color, bgColor, textColor) {
         return model === _model
-          ? `color: ${bgColor}; background-color: ${color};`
-          : `color: ${color}; background-color: transparent;`
+          ? `color: ${textColor}; background-color: ${color};`
+          : `color: ${bgColor.mostReadable('#ccc', '#333')}; background-color: transparent;`
       },
     },
     methods: {
@@ -84,6 +85,7 @@
       },
       input (event) {
         const value = event.target.value
+        if (!event.target.value) return
 
         let color
         try {

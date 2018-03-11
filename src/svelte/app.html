@@ -1,10 +1,63 @@
-<div id="colors" ref="colors" style="color: {{textColor}};">
-  <div class="top-input-wrapper">
+<div id="controller" style="color: {{textColor}};">
+  <div class="tool-box">
+    <button on:click="store.undo()" title="Undo: ctrl+z">
+      <i class="fas fa-undo"></i>
+      <!-- ↩️ -->
+    </button>
+    <button on:click="store.redo()" title="Redo: ctrl+shift+z">
+      <i class="fas fa-redo"></i>
+      <!-- ↪️ -->
+    </button>
+    <button on:click="set({grayscale: !grayscale})" title="Filter grayscale">
+      <i class="fas fa-eye-dropper"></i>
+    </button>
+    <button on:click="removeAll()" title="Delete">
+      <i class="fas fa-trash"></i>
+    </button>
+  </div>
+
+  <!-- カード整列 -->
+  <div class="button-set border radius">
+    <div><button on:click="cardsPosition('sortX')">X</button></div>
+    <ladel class="select-wrapper" style="flex: 1 1 auto;">
+      <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
+        <option value="none">---</option>
+        {{#each sort as key}}
+        <option value="{{key.value}}">{{key.name}}</option>
+        {{/each}}
+      </select>
+    </ladel>
+
+    <div><button on:click="cardsPosition('sortY')">Y</button></div>
+    <ladel class="select-wrapper" style="flex: 1 1 auto;">
+      <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
+        <option value="none">---</option>
+        {{#each sort as key}}
+        <option value="{{key.value}}">{{key.name}}</option>
+        {{/each}}
+      </select>
+    </ladel>
+  </div>
+
+  <hr>
+
+  <div class="top-input-wrapper button-set border radius">
     <div>
-      <input bind:value="current.name" placeholder="Name" style="color: {{textColor}};">
+      <input ref:name bind:value="current.name" placeholder="{{current.color.nearColorName()}}" style="color: {{textColor}};">
     </div>
-    <div><button on:click="addCard(current)">➕</button></div>
-    <div><button on:click="setBgColor(current.color)">BG</button></div>
+    <div>
+      <button
+        on:click="addCard(current, true)"
+        title="Add Card: text"
+        style="color: {{current.color}};">➕</button>
+    </div>
+    <div>
+      <button
+        on:click="addCard(current)"
+        title="Add Card: fill"
+        style="color:{{current.color.isDark()?'#fff':'#000'}};background-color: {{current.color}};">➕</button>
+    </div>
+    <div><button on:click="setBgColor(current.color)" title="set Background Color">BG</button></div>
   </div>
 
   <ColorPicker bind:color="current.color" bgColor="{{$bgColor}}" on:setBgColor="setBgColor(current.color)" />
@@ -18,35 +71,8 @@
   {{/each}}
 </div>
 
-<div class="controller" style="color: {{textColor}};">
-  <button on:click="store.undo()">
-    <i class="fas fa-undo"></i>
-    <!-- ↩️ -->
-  </button>
-  <button on:click="store.redo()">
-    <i class="fas fa-redo"></i>
-    <!-- ↪️ -->
-  </button>
-  <!-- カード整列 -->
-  <label>
-    X:
-    <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
-      <option value="none">---</option>
-      {{#each sort as key}}
-      <option value="{{key}}">{{key}}</option>
-      {{/each}}
-    </select>
-  </label>
-  <label>
-    Y:
-    <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
-      <option value="none">---</option>
-      {{#each sort as key}}
-      <option value="{{key}}">{{key}}</option>
-      {{/each}}
-    </select>
-  </label>
-  <button class="{{grayscale? 'grayscale': ''}}" on:click="set({grayscale: !grayscale})">gray</button>
+<div class="links" style="color: {{textColor}};">
+  <a href="https://github.com/techa/color-factory"><i class="fab fa-github fa-fw"></i></a>
 </div>
 
 <ContextMenu />
@@ -61,6 +87,23 @@
   import Color from 'color'
   import store from '../store/store.js'
   import {Selectable} from '../mouse'
+
+  const sort = [
+    {name: 'Hue', value: 'hue'},
+    {name: 'S(HSL)', value: 'saturationl'},
+    {name: 'L(HSL)', value: 'lightness'},
+    {name: 'S(HSV)', value: 'saturationv'},
+    {name: 'V(HSV)', value: 'value'},
+    {name: 'C(HCG)', value: 'chroma'},
+    {name: 'G(HCG)', value: 'gray'},
+    {name: 'W(HWB)', value: 'white'},
+    {name: 'B(HWB)', value: 'wblack'},
+    {name: 'C(CMYK)', value: 'cyan'},
+    {name: 'M(CMYK)', value: 'magenta'},
+    {name: 'Y(CMYK)', value: 'yellow'},
+    {name: 'B(CMYK)', value: 'black'},
+    {name: 'Contrast', value: 'contrast'},
+  ]
 
   export default {
     components: {
@@ -78,7 +121,7 @@
         },
         memo: null,
         selectingCard: null,
-        sort: ['hue', 'saturationl', 'lightness', 'saturationv', 'value', 'chroma', 'gray', 'contrast'],
+        sort,
         grayscale: false,
       }
     },
@@ -87,6 +130,48 @@
       bgColor: ($bgColor, grayscale) => grayscale ? Color($bgColor).grayscale() : Color($bgColor),
     },
     oncreate () {
+      this.refs.name.addEventListener('focus', function (e) {
+        if (!this.value) {
+          this.value = this.placeholder
+          this.selectionStart = 0
+          this.selectionEnd = this.placeholder.length
+        }
+      })
+      const box = this.refs.box
+      const cardSize = 120
+      const colorsWidth = 320
+      const byer = (sort, card, dirctionflg) => {
+        let by
+        switch (sort) {
+          case null:
+          case undefined:
+          case 'none':
+          case 'random':
+            return Math.random()
+          case 'contrast':
+            by = (this.store.get('bgColor')[sort](card.color) - 1) / 20
+            break
+          default:
+            const max = sort === 'hue' ? 360 : 100
+            by = card.color[sort]() / max
+            break
+        }
+        return dirctionflg ? by : 1 - by
+      }
+      // card position init
+      store.cardPosition = (card, x, y) => {
+        const rect = box.getBoundingClientRect()
+        // random positions
+        if (card.left == null || x != null) {
+          const maxW = rect.width - cardSize - colorsWidth
+          card.left = Math.round((maxW) * byer(x, card) + colorsWidth)
+        }
+        if (card.top == null || y != null) {
+          const maxH = rect.height - cardSize
+          card.top = Math.round((maxH) * byer(y, card))
+        }
+        return card
+      }
       // Selectable
       this.selectable = new Selectable(this.refs.box, {
         filter: '.card',
@@ -120,32 +205,21 @@
     },
 
     methods: {
-      addCard (current) {
-        this.store.fire('cards.ADD_CARD', Object.assign({}, current))
+      addCard (current, textMode) {
+        const {name, color} = current
+        if (!name) {
+          current.name = color.nearColorName()
+        }
+        this.store.fire('cards.ADD_CARD', Object.assign({textMode}, current))
+        this.set({current: { name: '', color }})
       },
       cardsPosition (sortXY, value) {
         if (sortXY && value) {
           this.store.set({[sortXY]: value})
         }
         const {cards, sortX, sortY} = this.store.get()
-        const caller = (sort) => {
-          if (!sort || sort === 'none') {
-            return null
-          }
-          return (card) => {
-            switch (sort) {
-              case 'random':
-                return Math.random()
-              case 'contrast':
-                return (this.store.get('bgColor')[sort](card.color) - 1) / 20
-              default:
-                const by = sort === 'hue' ? 360 : 100
-                return card.color[sort]() / by
-            }
-          }
-        }
         cards.forEach((card, i) => {
-          cards[i] = this.store.cardPosition(card, caller(sortX), caller(sortY))
+          cards[i] = this.store.cardPosition(card, sortX, sortY)
         })
         this.store.set({cards})
         this.store.memo()
@@ -155,17 +229,29 @@
         this.store.set({bgColor: bgColor.alphaBlending(color)})
         this.store.memo()
       },
+      removeAll () {
+        const selects = this.selectable.selects
+        if (selects.length) {
+          store.fire('cards.REMOVE_CARD', selects.map((select) => select.index))
+        } else {
+          this.store.set({cards: []})
+          this.store.memo()
+        }
+      },
     }
   }
 </script>
 
 <style>
-  #colors {
+  option {
+    color: #111;
+  }
+  #controller {
     width: 320px;
     height: 100vh;
     position: absolute;
     margin:0;
-    padding: 20px;
+    padding: 10px 20px;
     top:0;
     left:0;
   }
@@ -173,65 +259,29 @@
     width: 100%;
     height: 100%;
   }
+  .tool-box {
+    padding-bottom: 10px;
+  }
   .top-input-wrapper {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: stretch;
     width: 100%;
   }
   .top-input-wrapper > div {
     height: 2em;
-    border-width: 1px 1px 1px 0;
-    border-style: solid;
   }
   .top-input-wrapper > div > * {
     height: 100%;
     width: 100%;
   }
-  .top-input-wrapper > :first-child {
-    border-width: 1px;
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
+  .top-input-wrapper input {
     padding: 0 8px;
-    /* flex: 1 1 auto; */
   }
-  .top-input-wrapper > :last-child {
-    border-width: 1px;
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-  }
-  .controller {
+  .links {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 4px;
+    right: 4px;
     z-index: 5000;
   }
-  #form_add {
-    margin: 10px 0;
-    /*font-size: 16px;*/
-    display: flex;
-    flex-direction: row;}
-    #color_type {
-      text-align: center;
-      width: 42px;
-      height: 42px;
-      border-width: 1px 0 1px 1px;
-      border-style: solid;
-      border-top-left-radius: 4px;
-      border-bottom-left-radius: 4px;}
-    #color_hex {
-      flex: 1 1 auto; /* width: auto; */
-      height: 42px;
-      padding: 8px 5px;
-      border-width: 1px 0 1px 1px;
-      border-style: solid;}
-    #add_btn {
-      width: 42px;
-      height: 42px;
-      text-align: center;
-      border-width: 1px;
-      border-style: solid;
-      border-top-right-radius: 4px;
-      border-bottom-right-radius: 4px;}
+  .links a,.links a:visited,.links a:active  {
+    color: inherit;
+  }
 </style>
