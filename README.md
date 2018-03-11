@@ -27,6 +27,7 @@ Color Factory
     * [Material UI Colors](http://material.io/guidelines/style/color.html#color-color-palette)
     * [RAL](http://www.ral-farben.de/): Source: http://www.ralcolor.com/
     * [PANTONE®](http://www.pantone.com): Source https://github.com/frontendstacked/color-palettes-for-sass
+    * [crayola](https://www.w3schools.com/colors/colors_crayola.asp)
 * Save Storage
 
 ## Dependencies
@@ -36,4 +37,9 @@ Color Factory
 ## Inspiration
 * [mozilla/Color picker tool](https://developer.mozilla.org/ja/docs/Web/CSS/CSS_Colors/Color_picker_tool)
 
-
+## Todo
+- [ ] addCard: sorted position
+- [ ] rename Card.name
+- [ ] view: card parameter list edit
+- [ ] palette data save
+    - [ ] create palette list
