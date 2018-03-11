@@ -19,21 +19,21 @@
   <!-- カード整列 -->
   <div class="button-set border radius">
     <div><button on:click="cardsPosition('sortX')">X</button></div>
-    <ladel class="select-wrapper">
+    <ladel class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
         <option value="none">---</option>
         {{#each sort as key}}
-        <option value="{{key}}">{{key}}</option>
+        <option value="{{key.value}}">{{key.name}}</option>
         {{/each}}
       </select>
     </ladel>
 
-    <div><button>Y</button></div>
-    <ladel class="select-wrapper">
+    <div><button on:click="cardsPosition('sortY')">Y</button></div>
+    <ladel class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
         <option value="none">---</option>
         {{#each sort as key}}
-        <option value="{{key}}">{{key}}</option>
+        <option value="{{key.value}}">{{key.name}}</option>
         {{/each}}
       </select>
     </ladel>
@@ -88,6 +88,23 @@
   import store from '../store/store.js'
   import {Selectable} from '../mouse'
 
+  const sort = [
+    {name: 'Hue', value: 'hue'},
+    {name: 'S(HSL)', value: 'saturationl'},
+    {name: 'L(HSL)', value: 'lightness'},
+    {name: 'S(HSV)', value: 'saturationv'},
+    {name: 'V(HSV)', value: 'value'},
+    {name: 'C(HCG)', value: 'chroma'},
+    {name: 'G(HCG)', value: 'gray'},
+    {name: 'W(HWB)', value: 'white'},
+    {name: 'B(HWB)', value: 'wblack'},
+    {name: 'C(CMYK)', value: 'cyan'},
+    {name: 'M(CMYK)', value: 'magenta'},
+    {name: 'Y(CMYK)', value: 'yellow'},
+    {name: 'B(CMYK)', value: 'black'},
+    {name: 'Contrast', value: 'contrast'},
+  ]
+
   export default {
     components: {
       ColorPicker,
@@ -104,7 +121,7 @@
         },
         memo: null,
         selectingCard: null,
-        sort: ['hue', 'saturationl', 'lightness', 'saturationv', 'value', 'chroma', 'gray', 'contrast'],
+        sort,
         grayscale: false,
       }
     },
@@ -123,19 +140,35 @@
       const box = this.refs.box
       const cardSize = 120
       const colorsWidth = 320
+      const byer = (sort, card, dirctionflg) => {
+        let by
+        switch (sort) {
+          case null:
+          case undefined:
+          case 'none':
+          case 'random':
+            return Math.random()
+          case 'contrast':
+            by = (this.store.get('bgColor')[sort](card.color) - 1) / 20
+            break
+          default:
+            const max = sort === 'hue' ? 360 : 100
+            by = card.color[sort]() / max
+            break
+        }
+        return dirctionflg ? by : 1 - by
+      }
       // card position init
       store.cardPosition = (card, x, y) => {
         const rect = box.getBoundingClientRect()
         // random positions
         if (card.left == null || x != null) {
-          const byX = x == null ? Math.random() : x(card)
           const maxW = rect.width - cardSize - colorsWidth
-          card.left = Math.round((maxW) * byX + colorsWidth)
+          card.left = Math.round((maxW) * byer(x, card) + colorsWidth)
         }
         if (card.top == null || y != null) {
-          const byY = y == null ? Math.random() : y(card)
           const maxH = rect.height - cardSize
-          card.top = Math.round((maxH) * byY)
+          card.top = Math.round((maxH) * byer(y, card))
         }
         return card
       }
@@ -185,24 +218,8 @@
           this.store.set({[sortXY]: value})
         }
         const {cards, sortX, sortY} = this.store.get()
-        const caller = (sort) => {
-          if (!sort || sort === 'none') {
-            return null
-          }
-          return (card) => {
-            switch (sort) {
-              case 'random':
-                return Math.random()
-              case 'contrast':
-                return (this.store.get('bgColor')[sort](card.color) - 1) / 20
-              default:
-                const by = sort === 'hue' ? 360 : 100
-                return card.color[sort]() / by
-            }
-          }
-        }
         cards.forEach((card, i) => {
-          cards[i] = this.store.cardPosition(card, caller(sortX), caller(sortY))
+          cards[i] = this.store.cardPosition(card, sortX, sortY)
         })
         this.store.set({cards})
         this.store.memo()
