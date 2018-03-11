@@ -43,7 +43,7 @@
 
   <div class="top-input-wrapper button-set border radius">
     <div>
-      <input bind:value="current.name" placeholder="Name" style="color: {{textColor}};">
+      <input ref:name bind:value="current.name" placeholder="{{current.color.nearColorName()}}" style="color: {{textColor}};">
     </div>
     <div>
       <button
@@ -113,6 +113,13 @@
       bgColor: ($bgColor, grayscale) => grayscale ? Color($bgColor).grayscale() : Color($bgColor),
     },
     oncreate () {
+      this.refs.name.addEventListener('focus', function (e) {
+        if (!this.value) {
+          this.value = this.placeholder
+          this.selectionStart = 0
+          this.selectionEnd = this.placeholder.length
+        }
+      })
       const box = this.refs.box
       const cardSize = 120
       const colorsWidth = 320
