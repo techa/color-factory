@@ -11,8 +11,22 @@ Color.prototype.nearColorName = function () {
   let name = ''
   xkcd.forEach(([_name, _hsl]) => {
     let diff = 0
+    // gray
+    if (hsl.s < 5) {
+      diff += Math.abs(hsl.s - _hsl.s)
+      if (diff < 5) {
+        diff += Math.abs(hsl.l - _hsl.l)
+        if (diff < difference) {
+          difference = diff
+          name = _name
+        }
+        return
+      }
+      diff = 0
+    }
+
     for (const key in hsl) {
-      diff += Math.abs(hsl[key] - (_hsl[key] || Color(_hsl).hsl().object()[key]))
+      diff += Math.abs(hsl[key] - _hsl[key])
     }
     if (diff < difference) {
       difference = diff
