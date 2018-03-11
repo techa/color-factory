@@ -7,17 +7,15 @@
     <div>{{card.color.hsl()}}</div>
     <div>{{contrast}}</div>
   </div>
-  <div class="controller">
-    <span class="card-reverse" on:click="reverse()">
-      <i class="fas fa-sync fa-fw"></i>
-      <!-- 🔃 -->
-    </span>
-    <span class="card-delete" on:click="remove()">
-      <i class="fas fa-times fa-fw"></i>
-      <!-- ✖️ -->
-    </span>
-  </div>
-  <div ref:handle class="icon resize-handle"></div>
+  <span class="icon card-reverse" on:click="reverse()" style="{{textColor}}">
+    <i class="fas fa-sync fa-fw"></i>
+    <!-- 🔃 -->
+  </span>
+  <span class="icon card-delete" on:click="remove()" style="{{textColor}}">
+    <i class="fas fa-times fa-fw"></i>
+    <!-- ✖️ -->
+  </span>
+    <div ref:handle class="icon resize-handle"></div>
 </div>
 
 <script>
@@ -29,6 +27,13 @@
 
   export default {
     computed: {
+      textColor: (card, $bgColor, contrast) => {
+        const {color, textMode} = card
+        if (textMode) {
+          return `color: ${(contrast < 4.5) ? ($bgColor.isDark() ? '#fff' : '#000') : color};`
+        }
+        return `color: ${color.isDark() ? '#fff' : '#000'};`
+      },
       cardStyle: (card, grayscale) => {
         const {width, height, top, left, color, textMode} = card
         const w = width > 120 ? width + 'px' : 'auto'
@@ -39,7 +44,7 @@
           : `background-color: ${c2}; color: ${color.isDark() ? '#fff' : '#000'};`
         return colorstyle + `width:${w}; height:${h};top:${top}px;left:${left}px;`
       },
-      contrast: (card, $bgColor) => round(store.get('bgColor').contrast(card.color), 1),
+      contrast: (card, $bgColor) => round($bgColor.contrast(card.color), 1),
     },
 
 
@@ -173,22 +178,23 @@
     display: none;
     width: 20px;
     height: 20px;
+    margin: 5px;
   }
-  .card:hover .icon,
-  .card:hover .controller {
-    display: block;
+  .card-reverse {
+    top: 0;
+    left: 0;
   }
-  .controller {
-    position: absolute;
-    display: none;
-    height: 20px;
+  .card-delete {
     top: 0;
     right: 0;
-    margin: 5px;
+  }
+  .card:hover .icon {
+    display: block;
   }
   .resize-handle {
     bottom: 0;
     right: 0;
+    margin: 0;
     cursor: nwse-resize;
   }
 </style>
