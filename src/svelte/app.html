@@ -11,6 +11,9 @@
     <button on:click="set({grayscale: !grayscale})" title="Filter grayscale">
       <i class="fas fa-eye-dropper"></i>
     </button>
+    <button on:click="set({textvisible: !textvisible})" title="Card Text Visible">
+      <i class="fas fa-font"></i>
+    </button>
     <button on:click="removeAll()" title="Delete">
       <i class="fas fa-trash"></i>
     </button>
@@ -67,7 +70,7 @@
 
 <div ref:box id="box" style="background-color: {{bgColor}};">
   {{#each $cards as card, index}}
-    <ColorCard card={{card}} index={{index}} :grayscale />
+    <ColorCard card={{card}} index={{index}} :grayscale :textvisible />
   {{/each}}
 </div>
 
@@ -123,6 +126,7 @@
         selectingCard: null,
         sort,
         grayscale: false,
+        textvisible: true,
       }
     },
     computed: {
