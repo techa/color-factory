@@ -1,7 +1,7 @@
 <div ref:card
   class="card animated bounceIn"
   style="{{cardStyle}} z-index: {{card.zIndex}};">
-  <div class="cardtext {{textvisible? '': 'textvisible'}}">
+  <div class="cardtext {{(textvisible || card.textMode)? '': 'textvisible'}}">
     <h3 class="card_title">{{card.name}}</h3>
     <div>{{card.color.rgb()}}</div>
     <div>{{card.color.hsl()}}</div>
