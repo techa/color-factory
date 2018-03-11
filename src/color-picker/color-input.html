@@ -85,6 +85,7 @@
       },
       input (event) {
         const value = event.target.value
+        if (!event.target.value) return
 
         let color
         try {

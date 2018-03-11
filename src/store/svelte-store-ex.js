@@ -2,23 +2,6 @@ import { Store } from 'svelte/store.js'
 import { eventer } from '../utils.js'
 import KeyManager from './KeyManager.js'
 
-function changeCheck (state, changed, before) {
-  for (const key of Object.keys(changed)) {
-    switch (typeof state[key]) {
-      case 'object':
-        for (const [k, v] of Object.entries(state[key])) {
-          if (!before[key] || (before[key] && !Object.is(before[key][k], v))) {
-            return true
-          }
-        }
-        break
-      default:
-        if (!Object.is(before[key], state[key])) {
-          return true
-        }
-    }
-  }
-}
 
 export default class Histore extends Store {
   constructor (state, options) {
