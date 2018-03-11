@@ -2448,8 +2448,8 @@ var methods = {
 
 function add_css() {
 	var style = createElement("style");
-	style.id = 'svelte-ae1wvm-style';
-	style.textContent = ".svelte-ae1wvm.models,.svelte-ae1wvm .models{width:100%;font-size:0.8em}.svelte-ae1wvm.models button,.svelte-ae1wvm .models button{padding:3px}.svelte-ae1wvm.input-wrapper,.svelte-ae1wvm .input-wrapper{--size:2em;padding:0;position:relative;font:normal 1em \"Lucida Grande\", \"Lucida Sans Unicode\", \"Lucida Sans\", Geneva, Verdana, sans-serif;display:flex;flex-direction:column}.svelte-ae1wvm.color-text,.svelte-ae1wvm .color-text{height:var(--size);padding:0 4px;text-align:center}";
+	style.id = 'svelte-ojgwfd-style';
+	style.textContent = ".svelte-ojgwfd.models,.svelte-ojgwfd .models{width:100%;font-size:0.8em}.svelte-ojgwfd.models button,.svelte-ojgwfd .models button{padding:3px}.svelte-ojgwfd.input-wrapper,.svelte-ojgwfd .input-wrapper{--size:2em;padding:0;position:relative;font:normal 1em \"Lucida Grande\", \"Lucida Sans Unicode\", \"Lucida Sans\", Geneva, Verdana, sans-serif;display:flex;flex-direction:column}.svelte-ojgwfd.color-text,.svelte-ojgwfd .color-text{height:var(--size);padding:0 4px;text-align:center}";
 	appendNode(style, document.head);
 }
 
@@ -2564,7 +2564,7 @@ function create_if_block(component, state) {
 		},
 
 		h: function hydrate() {
-			input.className = "svelte-ae1wvm";
+			input.className = "svelte-ojgwfd";
 			input.type = "color";
 		},
 
@@ -2618,14 +2618,14 @@ function create_if_block_1(component, state) {
 				each_blocks[i].c();
 			}
 
-			text_1 = createText("\n  ");
+			text_1 = createText("\r\n  ");
 			div_1 = createElement("div");
 			input = createElement("input");
 			this.h();
 		},
 
 		h: function hydrate() {
-			div.className = "models button-set svelte-ae1wvm";
+			div.className = "models button-set svelte-ojgwfd";
 			input.className = "color-text";
 			setStyle(input, "color", state.textColor);
 			setStyle(input, "background-color", state.color.rgb());
@@ -2640,7 +2640,7 @@ function create_if_block_1(component, state) {
 
 			addListener(input, "wheel", wheel_handler);
 			addListener(input, "keydown", keydown_handler);
-			div_1.className = "input-wrapper svelte-ae1wvm";
+			div_1.className = "input-wrapper svelte-ojgwfd";
 		},
 
 		m: function mount(target, anchor) {
@@ -2728,7 +2728,7 @@ function Color_input(options) {
 	this._state = assign(data(), options.data);
 	this._recompute({ color: 1, model: 1, bgColor: 1 }, this._state);
 
-	if (!document.getElementById("svelte-ae1wvm-style")) add_css();
+	if (!document.getElementById("svelte-ojgwfd-style")) add_css();
 
 	this._fragment = create_main_fragment(this, this._state);
 
@@ -3443,8 +3443,8 @@ function oncreate() {
 }
 function add_css$1() {
 	var style = createElement("style");
-	style.id = 'svelte-7c3bcy-style';
-	style.textContent = ".svelte-7c3bcy.spectrum,.svelte-7c3bcy .spectrum{position:relative;cursor:crosshair;pointer-events:auto}";
+	style.id = 'svelte-100f93u-style';
+	style.textContent = ".svelte-100f93u.spectrum,.svelte-100f93u .spectrum{position:relative;cursor:crosshair;pointer-events:auto}";
 	appendNode(style, document.head);
 }
 
@@ -3455,7 +3455,7 @@ function create_main_fragment$1(component, state) {
 		c: function create() {
 			div = createElement("div");
 			canvas = createElement("canvas");
-			text = createText("\n  ");
+			text = createText("\r\n  ");
 			div_1 = createElement("div");
 			this.h();
 		},
@@ -3465,7 +3465,7 @@ function create_main_fragment$1(component, state) {
 			canvas.width = canvas_width_value = state.rect.width;
 			canvas.height = canvas_height_value = state.rect.height;
 			div_1.className = "color-handle";
-			div.className = "spectrum svelte-7c3bcy";
+			div.className = "spectrum svelte-100f93u";
 		},
 
 		m: function mount(target, anchor) {
@@ -3505,7 +3505,7 @@ function Spectrum(options) {
 	this.refs = {};
 	this._state = assign(data$1(), options.data);
 
-	if (!document.getElementById("svelte-7c3bcy-style")) add_css$1();
+	if (!document.getElementById("svelte-100f93u-style")) add_css$1();
 
 	var _oncreate = oncreate.bind(this);
 
@@ -3633,8 +3633,8 @@ function oncreate$1() {
 }
 function add_css$2() {
 	var style = createElement("style");
-	style.id = 'svelte-nb4zjo-style';
-	style.textContent = ".svelte-nb4zjo.slider,.svelte-nb4zjo .slider{position:relative}.svelte-nb4zjo.slider.vertical,.svelte-nb4zjo .slider.vertical{cursor:row-resize;height:100%}.svelte-nb4zjo.slider.horizontal,.svelte-nb4zjo .slider.horizontal{cursor:col-resize;width:100%}.svelte-nb4zjo.slider-canvas,.svelte-nb4zjo .slider-canvas{margin:0;padding:0}.svelte-nb4zjo.slider-handle,.svelte-nb4zjo .slider-handle{position:absolute;top:0;left:0;border:1px solid black;pointer-events:none}.svelte-nb4zjo.slider-handle.vertical,.svelte-nb4zjo .slider-handle.vertical{margin-top:-3px;width:100%;height:6px}.svelte-nb4zjo.slider-handle.horizontal,.svelte-nb4zjo .slider-handle.horizontal{margin-left:-3px;width:6px;height:100%}.svelte-nb4zjo.slider-handle::before,.svelte-nb4zjo .slider-handle::before{content:'';position:absolute;width:100%;height:100%;top:0;left:0;border:1px solid white}";
+	style.id = 'svelte-1qjgv7z-style';
+	style.textContent = ".svelte-1qjgv7z.slider,.svelte-1qjgv7z .slider{position:relative}.svelte-1qjgv7z.slider.vertical,.svelte-1qjgv7z .slider.vertical{cursor:row-resize;height:100%}.svelte-1qjgv7z.slider.horizontal,.svelte-1qjgv7z .slider.horizontal{cursor:col-resize;width:100%}.svelte-1qjgv7z.slider-canvas,.svelte-1qjgv7z .slider-canvas{margin:0;padding:0}.svelte-1qjgv7z.slider-handle,.svelte-1qjgv7z .slider-handle{position:absolute;top:0;left:0;border:1px solid black;pointer-events:none}.svelte-1qjgv7z.slider-handle.vertical,.svelte-1qjgv7z .slider-handle.vertical{margin-top:-3px;width:100%;height:6px}.svelte-1qjgv7z.slider-handle.horizontal,.svelte-1qjgv7z .slider-handle.horizontal{margin-left:-3px;width:6px;height:100%}.svelte-1qjgv7z.slider-handle::before,.svelte-1qjgv7z .slider-handle::before{content:'';position:absolute;width:100%;height:100%;top:0;left:0;border:1px solid white}";
 	appendNode(style, document.head);
 }
 
@@ -3645,7 +3645,7 @@ function create_main_fragment$2(component, state) {
 		c: function create() {
 			div = createElement("div");
 			canvas = createElement("canvas");
-			text = createText("\n  ");
+			text = createText("\r\n  ");
 			div_1 = createElement("div");
 			this.h();
 		},
@@ -3655,7 +3655,7 @@ function create_main_fragment$2(component, state) {
 			canvas.width = canvas_width_value = state.rect.width;
 			canvas.height = canvas_height_value = state.rect.height;
 			div_1.className = div_1_class_value = "slider-handle " + state.direction;
-			div.className = div_class_value = ("slider alpha-check-bg " + state.direction) + " svelte-nb4zjo";
+			div.className = div_class_value = ("slider alpha-check-bg " + state.direction) + " svelte-1qjgv7z";
 		},
 
 		m: function mount(target, anchor) {
@@ -3681,7 +3681,7 @@ function create_main_fragment$2(component, state) {
 				div_1.className = div_1_class_value;
 			}
 
-			if ((changed.direction) && div_class_value !== (div_class_value = ("slider alpha-check-bg " + state.direction) + " svelte-nb4zjo")) {
+			if ((changed.direction) && div_class_value !== (div_class_value = ("slider alpha-check-bg " + state.direction) + " svelte-1qjgv7z")) {
 				div.className = div_class_value;
 			}
 		},
@@ -3704,7 +3704,7 @@ function Slider(options) {
 	this._state = assign(data$2(), options.data);
 	this._recompute({ direction: 1, size: 1, strokeWidth: 1 }, this._state);
 
-	if (!document.getElementById("svelte-nb4zjo-style")) add_css$2();
+	if (!document.getElementById("svelte-1qjgv7z-style")) add_css$2();
 
 	var _oncreate = oncreate$1.bind(this);
 
@@ -3769,8 +3769,8 @@ function oncreate$2() {
 }
 function add_css$3() {
 	var style = createElement("style");
-	style.id = 'svelte-1furhek-style';
-	style.textContent = ".svelte-1furhek.hsv-picker,.svelte-1furhek .hsv-picker{position:relative;width:100%;height:100%;display:flex;align-items:stretch;justify-content:space-around}.svelte-1furhek.hsv-picker > :nth-child(2),.svelte-1furhek .hsv-picker > :nth-child(2){margin:0 8px;flex:2 1 auto}.svelte-1furhek.hsv-picker > :first-child,.svelte-1furhek .hsv-picker > :first-child,.svelte-1furhek.hsv-picker > :last-child,.svelte-1furhek .hsv-picker > :last-child{flex:0 1 30px}.svelte-1furhek.color-handle,.svelte-1furhek .color-handle{position:absolute;width:10px;height:10px;margin:-5px;top:0;left:0;border:1px solid black;border-radius:5px;text-align:left;pointer-events:none}.svelte-1furhek.color-handle::before,.svelte-1furhek .color-handle::before{content:'';position:absolute;width:8px;height:8px;top:0;left:0;border:1px solid white;border-radius:4px}";
+	style.id = 'svelte-16mwasd-style';
+	style.textContent = ".svelte-16mwasd.hsv-picker,.svelte-16mwasd .hsv-picker{position:relative;width:100%;height:100%;display:flex;align-items:stretch;justify-content:space-around}.svelte-16mwasd.hsv-picker > :nth-child(2),.svelte-16mwasd .hsv-picker > :nth-child(2){margin:0 8px;flex:2 1 auto}.svelte-16mwasd.hsv-picker > :first-child,.svelte-16mwasd .hsv-picker > :first-child,.svelte-16mwasd.hsv-picker > :last-child,.svelte-16mwasd .hsv-picker > :last-child{flex:0 1 30px}.svelte-16mwasd.color-handle,.svelte-16mwasd .color-handle{position:absolute;width:10px;height:10px;margin:-5px;top:0;left:0;border:1px solid black;border-radius:5px;text-align:left;pointer-events:none}.svelte-16mwasd.color-handle::before,.svelte-16mwasd .color-handle::before{content:'';position:absolute;width:8px;height:8px;top:0;left:0;border:1px solid white;border-radius:4px}";
 	appendNode(style, document.head);
 }
 
@@ -3819,15 +3819,15 @@ function create_main_fragment$3(component, state) {
 		c: function create() {
 			div = createElement("div");
 			slider._fragment.c();
-			text = createText("\n  ");
+			text = createText("\r\n  ");
 			spectrum._fragment.c();
-			text_1 = createText("\n  ");
+			text_1 = createText("\r\n  ");
 			slider_1._fragment.c();
 			this.h();
 		},
 
 		h: function hydrate() {
-			div.className = "hsv-picker svelte-1furhek";
+			div.className = "hsv-picker svelte-16mwasd";
 		},
 
 		m: function mount(target, anchor) {
@@ -3878,7 +3878,7 @@ function Hsv_picker(options) {
 	this._state = assign(data$3(), options.data);
 	this._recompute({ size: 1, strokeWidth: 1, color: 1 }, this._state);
 
-	if (!document.getElementById("svelte-1furhek-style")) add_css$3();
+	if (!document.getElementById("svelte-16mwasd-style")) add_css$3();
 
 	var _oncreate = oncreate$2.bind(this);
 
@@ -3991,8 +3991,8 @@ function oncreate$3() {
 }
 function add_css$4() {
 	var style = createElement("style");
-	style.id = 'svelte-5950l5-style';
-	style.textContent = ".svelte-5950l5.blender,.svelte-5950l5 .blender{height:100%;display:flex;align-items:stretch;flex-direction:row;justify-content:space-around}.svelte-5950l5.blender-slider,.svelte-5950l5 .blender-slider{position:relative;height:inherit;flex:2 1 auto;margin:0 2px;background-color:#fff;background-image:linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);background-size:8px 8px;background-position:0 0, 4px 4px;background-repeat:repeat}.svelte-5950l5.blender-canvas,.svelte-5950l5 .blender-canvas{vertical-align:baseline}.svelte-5950l5.blender-btn,.svelte-5950l5 .blender-btn{display:block;width:inherit;height:inherit;flex:0 1 20px;border:1px solid #888888}.svelte-5950l5.blender-handle,.svelte-5950l5 .blender-handle{position:absolute;margin-left:-.5px;width:1px;height:inherit;top:0;left:0;pointer-events:none}.svelte-5950l5.blender-handle.vertical,.svelte-5950l5 .blender-handle.vertical{margin-top:-.5px;width:inherit;height:1px}.svelte-5950l5.blender-handle.horizontal,.svelte-5950l5 .blender-handle.horizontal{margin-left:-.5px;width:1px;height:inherit}";
+	style.id = 'svelte-9a06ho-style';
+	style.textContent = ".svelte-9a06ho.blender,.svelte-9a06ho .blender{height:100%;display:flex;align-items:stretch;flex-direction:row;justify-content:space-around}.svelte-9a06ho.blender-slider,.svelte-9a06ho .blender-slider{position:relative;height:inherit;flex:2 1 auto;margin:0 2px;background-color:#fff;background-image:linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\r\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);background-size:8px 8px;background-position:0 0, 4px 4px;background-repeat:repeat}.svelte-9a06ho.blender-canvas,.svelte-9a06ho .blender-canvas{vertical-align:baseline}.svelte-9a06ho.blender-btn,.svelte-9a06ho .blender-btn{display:block;width:inherit;height:inherit;flex:0 1 20px;border:1px solid #888888}.svelte-9a06ho.blender-handle,.svelte-9a06ho .blender-handle{position:absolute;margin-left:-.5px;width:1px;height:inherit;top:0;left:0;pointer-events:none}.svelte-9a06ho.blender-handle.vertical,.svelte-9a06ho .blender-handle.vertical{margin-top:-.5px;width:inherit;height:1px}.svelte-9a06ho.blender-handle.horizontal,.svelte-9a06ho .blender-handle.horizontal{margin-left:-.5px;width:1px;height:inherit}";
 	appendNode(style, document.head);
 }
 
@@ -4013,12 +4013,12 @@ function create_main_fragment$4(component, state) {
 		c: function create() {
 			div = createElement("div");
 			dv = createElement("dv");
-			text = createText("\n  ");
+			text = createText("\r\n  ");
 			div_1 = createElement("div");
 			canvas = createElement("canvas");
-			text_1 = createText("\n    ");
+			text_1 = createText("\r\n    ");
 			div_2 = createElement("div");
-			text_3 = createText("\n  ");
+			text_3 = createText("\r\n  ");
 			dv_1 = createElement("dv");
 			this.h();
 		},
@@ -4033,7 +4033,7 @@ function create_main_fragment$4(component, state) {
 			div_1.className = "blender-slider";
 			dv_1.className = "blender-btn color2";
 			addListener(dv_1, "click", click_handler_1);
-			div.className = "blender svelte-5950l5";
+			div.className = "blender svelte-9a06ho";
 		},
 
 		m: function mount(target, anchor) {
@@ -4088,7 +4088,7 @@ function Blender(options) {
 	this.refs = {};
 	this._state = assign(data$4(), options.data);
 
-	if (!document.getElementById("svelte-5950l5-style")) add_css$4();
+	if (!document.getElementById("svelte-9a06ho-style")) add_css$4();
 
 	var _oncreate = oncreate$3.bind(this);
 
@@ -4148,8 +4148,8 @@ function oncreate$4(hh) {
 }
 function add_css$5() {
 	var style = createElement("style");
-	style.id = 'svelte-en6dq1-style';
-	style.textContent = ".svelte-en6dq1.color-picker,.svelte-en6dq1 .color-picker{position:relative;padding:8px;text-align:center}.svelte-en6dq1.picker-body,.svelte-en6dq1 .picker-body{height:100px;display:flex;flex-direction:column;padding:6px 0}.svelte-en6dq1.picker-footer,.svelte-en6dq1 .picker-footer{width:100%;height:20px;display:flex;align-items:stretch;flex-direction:row;justify-content:space-around;font-size:0.8em}.svelte-en6dq1.picker-footer > :nth-child(2),.svelte-en6dq1 .picker-footer > :nth-child(2){margin:0 8px;flex:2 1 auto}.svelte-en6dq1.picker-footer > :first-child,.svelte-en6dq1 .picker-footer > :first-child,.svelte-en6dq1.picker-footer > :last-child,.svelte-en6dq1 .picker-footer > :last-child{flex:0 1 30px}.svelte-en6dq1.picker-footer button,.svelte-en6dq1 .picker-footer button{width:30px;padding:0}.svelte-en6dq1.contrast.AA,.svelte-en6dq1 .contrast.AA{border-bottom:1px solid}.svelte-en6dq1.contrast.AAA,.svelte-en6dq1 .contrast.AAA{border:1px solid}.svelte-en6dq1.alpha-check-bg,.svelte-en6dq1 .alpha-check-bg{background-color:#fff;background-image:linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);background-size:8px 8px;background-position:0 0, 4px 4px;background-repeat:repeat}";
+	style.id = 'svelte-1nih27n-style';
+	style.textContent = ".svelte-1nih27n.color-picker,.svelte-1nih27n .color-picker{position:relative;padding:8px;text-align:center}.svelte-1nih27n.picker-body,.svelte-1nih27n .picker-body{height:100px;display:flex;flex-direction:column;padding:6px 0}.svelte-1nih27n.picker-footer,.svelte-1nih27n .picker-footer{width:100%;height:20px;display:flex;align-items:stretch;flex-direction:row;justify-content:space-around;font-size:0.8em}.svelte-1nih27n.picker-footer > :nth-child(2),.svelte-1nih27n .picker-footer > :nth-child(2){margin:0 8px;flex:2 1 auto}.svelte-1nih27n.picker-footer > :first-child,.svelte-1nih27n .picker-footer > :first-child,.svelte-1nih27n.picker-footer > :last-child,.svelte-1nih27n .picker-footer > :last-child{flex:0 1 30px}.svelte-1nih27n.picker-footer button,.svelte-1nih27n .picker-footer button{width:30px;padding:0}.svelte-1nih27n.contrast.AA,.svelte-1nih27n .contrast.AA{border-bottom:1px solid}.svelte-1nih27n.contrast.AAA,.svelte-1nih27n .contrast.AAA{border:1px solid}.svelte-1nih27n.alpha-check-bg,.svelte-1nih27n .alpha-check-bg{background-color:#fff;background-image:linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),\r\n                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);background-size:8px 8px;background-position:0 0, 4px 4px;background-repeat:repeat}";
 	appendNode(style, document.head);
 }
 
@@ -4234,18 +4234,18 @@ function create_main_fragment$5(component, state) {
 		c: function create() {
 			div = createElement("div");
 			colorinput._fragment.c();
-			text = createText("\n  ");
+			text = createText("\r\n  ");
 			div_1 = createElement("div");
 			hsvpicker._fragment.c();
-			text_2 = createText("\n  ");
+			text_2 = createText("\r\n  ");
 			div_2 = createElement("div");
 			div_3 = createElement("div");
 			button = createElement("button");
 			text_3 = createText(state.contrast);
-			text_6 = createText("\n    ");
+			text_6 = createText("\r\n    ");
 			div_4 = createElement("div");
 			blender._fragment.c();
-			text_8 = createText("\n    ");
+			text_8 = createText("\r\n    ");
 			div_5 = createElement("div");
 			button_1 = createElement("button");
 			button_1.textContent = "a=1";
@@ -4262,7 +4262,7 @@ function create_main_fragment$5(component, state) {
 			addListener(button_1, "click", click_handler_1);
 			div_5.className = "button";
 			div_2.className = "picker-footer";
-			div.className = "color-picker svelte-en6dq1";
+			div.className = "color-picker svelte-1nih27n";
 		},
 
 		m: function mount(target, anchor) {
@@ -4344,7 +4344,7 @@ function Color_picker(options) {
 	this._state = assign(data$5(), options.data);
 	this._recompute({ color: 1, bgColor: 1 }, this._state);
 
-	if (!document.getElementById("svelte-en6dq1-style")) add_css$5();
+	if (!document.getElementById("svelte-1nih27n-style")) add_css$5();
 
 	var _oncreate = oncreate$4.bind(this);
 
@@ -5042,8 +5042,8 @@ function oncreate$5() {
 }
 function add_css$6() {
 	var style = createElement("style");
-	style.id = 'svelte-1daz1ls-style';
-	style.textContent = ".svelte-1daz1ls.card,.svelte-1daz1ls .card{position:absolute;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:6px;min-width:120px;min-height:120px;user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none}.svelte-1daz1ls.card.selected:not(.dragging),.svelte-1daz1ls .card.selected:not(.dragging){outline:1px dashed black;box-shadow:0 0 0 1px white}.svelte-1daz1ls.cardtext,.svelte-1daz1ls .cardtext{padding:8px;width:100%;white-space:wrap}.svelte-1daz1ls.cardtext.textvisible,.svelte-1daz1ls .cardtext.textvisible{display:none}.svelte-1daz1ls.card_title,.svelte-1daz1ls .card_title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.svelte-1daz1ls.icon,.svelte-1daz1ls .icon{position:absolute;display:none;width:20px;height:20px}.svelte-1daz1ls.card:hover .icon,.svelte-1daz1ls .card:hover .icon,.svelte-1daz1ls.card:hover .controller,.svelte-1daz1ls .card:hover .controller{display:block}.svelte-1daz1ls.controller,.svelte-1daz1ls .controller{position:absolute;display:none;height:20px;top:0;right:0;margin:5px}.svelte-1daz1ls.resize-handle,.svelte-1daz1ls .resize-handle{bottom:0;right:0;cursor:nwse-resize}";
+	style.id = 'svelte-d2g29h-style';
+	style.textContent = ".svelte-d2g29h.card,.svelte-d2g29h .card{position:absolute;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:6px;min-width:120px;min-height:120px;user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none}.svelte-d2g29h.card.selected:not(.dragging),.svelte-d2g29h .card.selected:not(.dragging){outline:1px dashed black;box-shadow:0 0 0 1px white}.svelte-d2g29h.cardtext,.svelte-d2g29h .cardtext{padding:8px;width:100%;white-space:wrap}.svelte-d2g29h.cardtext.textvisible,.svelte-d2g29h .cardtext.textvisible{display:none}.svelte-d2g29h.card_title,.svelte-d2g29h .card_title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.svelte-d2g29h.icon,.svelte-d2g29h .icon{position:absolute;display:none;width:20px;height:20px}.svelte-d2g29h.card:hover .icon,.svelte-d2g29h .card:hover .icon,.svelte-d2g29h.card:hover .controller,.svelte-d2g29h .card:hover .controller{display:block}.svelte-d2g29h.controller,.svelte-d2g29h .controller{position:absolute;display:none;height:20px;top:0;right:0;margin:5px}.svelte-d2g29h.resize-handle,.svelte-d2g29h .resize-handle{bottom:0;right:0;cursor:nwse-resize}";
 	appendNode(style, document.head);
 }
 
@@ -5064,23 +5064,23 @@ function create_main_fragment$6(component, state) {
 			div_1 = createElement("div");
 			h3 = createElement("h3");
 			text = createText(text_value);
-			text_1 = createText("\n    ");
+			text_1 = createText("\r\n    ");
 			div_2 = createElement("div");
 			text_2 = createText(text_2_value);
-			text_3 = createText("\n    ");
+			text_3 = createText("\r\n    ");
 			div_3 = createElement("div");
 			text_4 = createText(text_4_value);
-			text_5 = createText("\n    ");
+			text_5 = createText("\r\n    ");
 			div_4 = createElement("div");
 			text_6 = createText(state.contrast);
-			text_8 = createText("\n  ");
+			text_8 = createText("\r\n  ");
 			div_5 = createElement("div");
 			span = createElement("span");
 			span.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>";
-			text_10 = createText("\n    ");
+			text_10 = createText("\r\n    ");
 			span_1 = createElement("span");
 			span_1.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>";
-			text_13 = createText("\n  ");
+			text_13 = createText("\r\n  ");
 			div_6 = createElement("div");
 			this.h();
 		},
@@ -5094,7 +5094,7 @@ function create_main_fragment$6(component, state) {
 			addListener(span_1, "click", click_handler_1);
 			div_5.className = "controller";
 			div_6.className = "icon resize-handle";
-			div.className = "card animated bounceIn svelte-1daz1ls";
+			div.className = "card animated bounceIn svelte-d2g29h";
 			div.style.cssText = div_style_value = "" + state.cardStyle + " z-index: " + state.card.zIndex + ";";
 		},
 
@@ -5171,7 +5171,7 @@ function Color_card(options) {
 
 	this._handlers.destroy = [removeFromStore];
 
-	if (!document.getElementById("svelte-1daz1ls-style")) add_css$6();
+	if (!document.getElementById("svelte-d2g29h-style")) add_css$6();
 
 	var _oncreate = oncreate$5.bind(this);
 
@@ -13050,8 +13050,8 @@ function pantone (list) {
 
 function add_css$7() {
 	var style = createElement("style");
-	style.id = 'svelte-1ltzzmx-style';
-	style.textContent = ".svelte-1ltzzmx#colorlists,.svelte-1ltzzmx #colorlists{width:280px;font-size:20px;margin:10px 0;display:block}.svelte-1ltzzmx#colorlists option,.svelte-1ltzzmx #colorlists option{background:#fff;color:#111}.svelte-1ltzzmx#colorlists option:hover,.svelte-1ltzzmx #colorlists option:hover{background:aquamarine}.svelte-1ltzzmx.tip,.svelte-1ltzzmx .tip{width:20px;height:20px;margin:0;padding:0;display:inline-block}.svelte-1ltzzmx.wrapper,.svelte-1ltzzmx .wrapper{position:relative;height:calc(100% - 420px);margin:0}.svelte-1ltzzmx.scrollbar-wrapper,.svelte-1ltzzmx .scrollbar-wrapper{position:relative;height:100%;overflow:hidden}.svelte-1ltzzmx.scrollbar-body,.svelte-1ltzzmx .scrollbar-body{width:calc(100% + 17px);height:100%;overflow-y:scroll}.svelte-1ltzzmx.scrollbar-content,.svelte-1ltzzmx .scrollbar-content{display:flex;flex-wrap:wrap}";
+	style.id = 'svelte-1a08n33-style';
+	style.textContent = ".svelte-1a08n33#colorlists,.svelte-1a08n33 #colorlists{width:280px;font-size:20px;margin:10px 0;display:block}.svelte-1a08n33#colorlists option,.svelte-1a08n33 #colorlists option{background:#fff;color:#111}.svelte-1a08n33#colorlists option:hover,.svelte-1a08n33 #colorlists option:hover{background:aquamarine}.svelte-1a08n33.tip,.svelte-1a08n33 .tip{width:20px;height:20px;margin:0;padding:0;display:inline-block}.svelte-1a08n33.wrapper,.svelte-1a08n33 .wrapper{position:relative;height:calc(100% - 420px);margin:0}.svelte-1a08n33.scrollbar-wrapper,.svelte-1a08n33 .scrollbar-wrapper{position:relative;height:100%;overflow:hidden}.svelte-1a08n33.scrollbar-body,.svelte-1a08n33 .scrollbar-body{width:calc(100% + 17px);height:100%;overflow-y:scroll}.svelte-1a08n33.scrollbar-content,.svelte-1a08n33 .scrollbar-content{display:flex;flex-wrap:wrap}";
 	appendNode(style, document.head);
 }
 
@@ -13096,7 +13096,7 @@ function create_main_fragment$7(component, state) {
 				each_blocks[i].c();
 			}
 
-			text_1 = createText("\n\n  ");
+			text_1 = createText("\r\n\r\n  ");
 			div_2 = createElement("div");
 			div_3 = createElement("div");
 			div_4 = createElement("div");
@@ -13114,7 +13114,7 @@ function create_main_fragment$7(component, state) {
 			div_4.className = "scrollbar-content";
 			div_3.className = "scrollbar-body";
 			div_2.className = "scrollbar-wrapper";
-			div.className = "wrapper svelte-1ltzzmx";
+			div.className = "wrapper svelte-1a08n33";
 		},
 
 		m: function mount(target, anchor) {
@@ -13303,7 +13303,7 @@ function Color_lists(options) {
 	this._state = assign(data$6(), options.data);
 	this._recompute({ colorlists: 1, colorlistsIndex: 1 }, this._state);
 
-	if (!document.getElementById("svelte-1ltzzmx-style")) add_css$7();
+	if (!document.getElementById("svelte-1a08n33-style")) add_css$7();
 
 	var _oncreate = oncreate$6.bind(this);
 
@@ -13411,8 +13411,8 @@ function oncreate$7() {
 }
 function add_css$8() {
 	var style = createElement("style");
-	style.id = 'svelte-lws3dv-style';
-	style.textContent = ".svelte-lws3dv#menu,.svelte-lws3dv #menu{position:absolute;font-size:12px;background:#fff;border:solid 1px silver;z-index:100}.svelte-lws3dv.menuitem,.svelte-lws3dv .menuitem{min-width:100px;padding:4px;margin:0}.svelte-lws3dv.menuitem:hover,.svelte-lws3dv .menuitem:hover,.svelte-lws3dv.menuitem:active,.svelte-lws3dv .menuitem:active{background:aquamarine}.svelte-lws3dv.menuitem .menuitem:hover,.svelte-lws3dv .menuitem .menuitem:hover{font-weight:bold}";
+	style.id = 'svelte-1sjmqm0-style';
+	style.textContent = ".svelte-1sjmqm0#menu,.svelte-1sjmqm0 #menu{position:absolute;font-size:12px;background:#fff;border:solid 1px silver;z-index:100}.svelte-1sjmqm0.menuitem,.svelte-1sjmqm0 .menuitem{min-width:100px;padding:4px;margin:0}.svelte-1sjmqm0.menuitem:hover,.svelte-1sjmqm0 .menuitem:hover,.svelte-1sjmqm0.menuitem:active,.svelte-1sjmqm0 .menuitem:active{background:aquamarine}.svelte-1sjmqm0.menuitem .menuitem:hover,.svelte-1sjmqm0 .menuitem .menuitem:hover{font-weight:bold}";
 	appendNode(style, document.head);
 }
 
@@ -13434,13 +13434,13 @@ function create_main_fragment$8(component, state) {
 		c: function create() {
 			div = createElement("div");
 			if (if_block) if_block.c();
-			text = createText("\n\n  ");
+			text = createText("\r\n\r\n  ");
 			if (if_block_2) if_block_2.c();
 			this.h();
 		},
 
 		h: function hydrate() {
-			div.className = "svelte-lws3dv";
+			div.className = "svelte-1sjmqm0";
 			div.id = "menu";
 		},
 
@@ -13545,13 +13545,13 @@ function create_if_block_1$1(component, state) {
 	return {
 		c: function create() {
 			p = createElement("p");
-			p.innerHTML = "<i class=\"fas fa-copy fa-fw\"></i>\n      DUPLICATE";
-			text_1 = createText("\n    ");
+			p.innerHTML = "<i class=\"fas fa-copy fa-fw\"></i>\r\n      DUPLICATE";
+			text_1 = createText("\r\n    ");
 			p_1 = createElement("p");
-			p_1.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>\n      REVERSE";
-			text_3 = createText("\n    ");
+			p_1.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>\r\n      REVERSE";
+			text_3 = createText("\r\n    ");
 			p_2 = createElement("p");
-			p_2.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\n      DELETE";
+			p_2.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\r\n      DELETE";
 			this.h();
 		},
 
@@ -13725,7 +13725,7 @@ function Context_menu(options) {
 	this.refs = {};
 	this._state = assign(data$7(), options.data);
 
-	if (!document.getElementById("svelte-lws3dv-style")) add_css$8();
+	if (!document.getElementById("svelte-1sjmqm0-style")) add_css$8();
 
 	var _oncreate = oncreate$7.bind(this);
 
@@ -13750,6 +13750,8 @@ assign(Context_menu.prototype, methods$6, proto);
 /* src\svelte\app.html generated by Svelte v1.57.1 */
 
 const sort = [
+  {name: '---', value: 'none'},
+  {name: 'Random', value: 'random'},
   {name: 'Hue', value: 'hue'},
   {name: 'S(HSL)', value: 'saturationl'},
   {name: 'L(HSL)', value: 'lightness'},
@@ -13800,9 +13802,9 @@ var methods$7 = {
     if (sortXY && value) {
       this.store.set({[sortXY]: value});
     }
-    const {cards, sortX, sortY} = this.store.get();
+    const {cards} = this.store.get();
     cards.forEach((card, i) => {
-      cards[i] = this.store.cardPosition(card, sortX, sortY);
+      cards[i] = this.store.cardPosition(card);
     });
     this.store.set({cards});
     this.store.memo();
@@ -13839,7 +13841,6 @@ function oncreate$8() {
     switch (sort) {
       case null:
       case undefined:
-      case 'none':
       case 'random':
         return Math.random()
       case 'contrast':
@@ -13853,16 +13854,17 @@ function oncreate$8() {
     return dirctionflg ? by : 1 - by
   };
   // card position init
-  store.cardPosition = (card, x, y) => {
+  store.cardPosition = (card) => {
     const rect = box.getBoundingClientRect();
+    const {sortX, sortY} = this.store.get();
     // random positions
-    if (card.left == null || x != null) {
+    if (card.left == null || sortX !== 'none') {
       const maxW = rect.width - cardSize - colorsWidth;
-      card.left = Math.round((maxW) * byer(x, card) + colorsWidth);
+      card.left = Math.round((maxW) * byer(sortX, card) + colorsWidth);
     }
-    if (card.top == null || y != null) {
+    if (card.top == null || sortY !== 'none') {
       const maxH = rect.height - cardSize;
-      card.top = Math.round((maxH) * byer(y, card));
+      card.top = Math.round((maxH) * byer(sortY, card));
     }
     return card
   };
@@ -13909,7 +13911,7 @@ function add_css$9() {
 }
 
 function create_main_fragment$9(component, state) {
-	var div, div_1, button, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, text_10, div_2, div_3, button_5, text_12, ladel, select, option, text_13, select_updating = false, text_15, div_4, button_6, text_17, ladel_1, select_1, option_1, text_18, select_1_updating = false, text_21, hr, text_22, div_5, div_6, input, input_updating = false, input_placeholder_value, text_24, div_7, button_7, text_27, div_8, button_8, text_30, div_9, button_9, text_33, colorpicker_updating = {}, text_34, hr_1, text_35, text_37, div_10, text_39, div_11, text_41;
+	var div, div_1, button, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, text_10, div_2, div_3, button_5, text_12, ladel, select, select_updating = false, text_14, div_4, button_6, text_16, ladel_1, select_1, select_1_updating = false, text_19, hr, text_20, div_5, div_6, input, input_updating = false, input_placeholder_value, text_22, div_7, button_7, text_25, div_8, button_8, text_28, div_9, button_9, text_31, colorpicker_updating = {}, text_32, hr_1, text_33, text_35, div_10, text_37, div_11, text_39;
 
 	function click_handler(event) {
 		component.store.undo();
@@ -14085,62 +14087,58 @@ function create_main_fragment$9(component, state) {
 			text_12 = createText("\n    ");
 			ladel = createElement("ladel");
 			select = createElement("select");
-			option = createElement("option");
-			text_13 = createText("---");
 
 			for (var i_6 = 0; i_6 < each_blocks.length; i_6 += 1) {
 				each_blocks[i_6].c();
 			}
 
-			text_15 = createText("\n\n    ");
+			text_14 = createText("\n\n    ");
 			div_4 = createElement("div");
 			button_6 = createElement("button");
 			button_6.textContent = "Y";
-			text_17 = createText("\n    ");
+			text_16 = createText("\n    ");
 			ladel_1 = createElement("ladel");
 			select_1 = createElement("select");
-			option_1 = createElement("option");
-			text_18 = createText("---");
 
 			for (var i_6 = 0; i_6 < each_1_blocks.length; i_6 += 1) {
 				each_1_blocks[i_6].c();
 			}
 
-			text_21 = createText("\n\n  ");
+			text_19 = createText("\n\n  ");
 			hr = createElement("hr");
-			text_22 = createText("\n\n  ");
+			text_20 = createText("\n\n  ");
 			div_5 = createElement("div");
 			div_6 = createElement("div");
 			input = createElement("input");
-			text_24 = createText("\n    ");
+			text_22 = createText("\n    ");
 			div_7 = createElement("div");
 			button_7 = createElement("button");
 			button_7.textContent = "➕";
-			text_27 = createText("\n    ");
+			text_25 = createText("\n    ");
 			div_8 = createElement("div");
 			button_8 = createElement("button");
 			button_8.textContent = "➕";
-			text_30 = createText("\n    ");
+			text_28 = createText("\n    ");
 			div_9 = createElement("div");
 			button_9 = createElement("button");
 			button_9.textContent = "BG";
-			text_33 = createText("\n\n  ");
+			text_31 = createText("\n\n  ");
 			colorpicker._fragment.c();
-			text_34 = createText("\n  ");
+			text_32 = createText("\n  ");
 			hr_1 = createElement("hr");
-			text_35 = createText("\n  ");
+			text_33 = createText("\n  ");
 			colorlists._fragment.c();
-			text_37 = createText("\n\n");
+			text_35 = createText("\n\n");
 			div_10 = createElement("div");
 
 			for (var i_6 = 0; i_6 < each_2_blocks.length; i_6 += 1) {
 				each_2_blocks[i_6].c();
 			}
 
-			text_39 = createText("\n\n");
+			text_37 = createText("\n\n");
 			div_11 = createElement("div");
 			div_11.innerHTML = "<a href=\"https://github.com/techa/color-factory\"><i class=\"fab fa-github fa-fw\"></i></a>";
-			text_41 = createText("\n\n");
+			text_39 = createText("\n\n");
 			contextmenu._fragment.c();
 			this.h();
 		},
@@ -14159,16 +14157,12 @@ function create_main_fragment$9(component, state) {
 			addListener(button_4, "click", click_handler_4);
 			div_1.className = "tool-box";
 			addListener(button_5, "click", click_handler_5);
-			option.__value = "none";
-			option.value = option.__value;
 			addListener(select, "change", select_change_handler);
 			if (!('$sortX' in state)) component.root._beforecreate.push(select_change_handler);
 			addListener(select, "change", change_handler);
 			ladel.className = "select-wrapper";
 			setStyle(ladel, "flex", "1 1 auto");
 			addListener(button_6, "click", click_handler_6);
-			option_1.__value = "none";
-			option_1.value = option_1.__value;
 			addListener(select_1, "change", select_1_change_handler);
 			if (!('$sortY' in state)) component.root._beforecreate.push(select_1_change_handler);
 			addListener(select_1, "change", change_handler_1);
@@ -14216,8 +14210,6 @@ function create_main_fragment$9(component, state) {
 			appendNode(text_12, div_2);
 			appendNode(ladel, div_2);
 			appendNode(select, ladel);
-			appendNode(option, select);
-			appendNode(text_13, option);
 
 			for (var i_6 = 0; i_6 < each_blocks.length; i_6 += 1) {
 				each_blocks[i_6].m(select, null);
@@ -14225,14 +14217,12 @@ function create_main_fragment$9(component, state) {
 
 			selectOption(select, state.$sortX);
 
-			appendNode(text_15, div_2);
+			appendNode(text_14, div_2);
 			appendNode(div_4, div_2);
 			appendNode(button_6, div_4);
-			appendNode(text_17, div_2);
+			appendNode(text_16, div_2);
 			appendNode(ladel_1, div_2);
 			appendNode(select_1, ladel_1);
-			appendNode(option_1, select_1);
-			appendNode(text_18, option_1);
 
 			for (var i_6 = 0; i_6 < each_1_blocks.length; i_6 += 1) {
 				each_1_blocks[i_6].m(select_1, null);
@@ -14240,9 +14230,9 @@ function create_main_fragment$9(component, state) {
 
 			selectOption(select_1, state.$sortY);
 
-			appendNode(text_21, div);
+			appendNode(text_19, div);
 			appendNode(hr, div);
-			appendNode(text_22, div);
+			appendNode(text_20, div);
 			appendNode(div_5, div);
 			appendNode(div_6, div_5);
 			appendNode(input, div_6);
@@ -14250,22 +14240,22 @@ function create_main_fragment$9(component, state) {
 
 			input.value = state.current.name;
 
-			appendNode(text_24, div_5);
+			appendNode(text_22, div_5);
 			appendNode(div_7, div_5);
 			appendNode(button_7, div_7);
-			appendNode(text_27, div_5);
+			appendNode(text_25, div_5);
 			appendNode(div_8, div_5);
 			appendNode(button_8, div_8);
-			appendNode(text_30, div_5);
+			appendNode(text_28, div_5);
 			appendNode(div_9, div_5);
 			appendNode(button_9, div_9);
-			appendNode(text_33, div);
+			appendNode(text_31, div);
 			colorpicker._mount(div, null);
-			appendNode(text_34, div);
+			appendNode(text_32, div);
 			appendNode(hr_1, div);
-			appendNode(text_35, div);
+			appendNode(text_33, div);
 			colorlists._mount(div, null);
-			insertNode(text_37, target, anchor);
+			insertNode(text_35, target, anchor);
 			insertNode(div_10, target, anchor);
 
 			for (var i_6 = 0; i_6 < each_2_blocks.length; i_6 += 1) {
@@ -14273,9 +14263,9 @@ function create_main_fragment$9(component, state) {
 			}
 
 			component.refs.box = div_10;
-			insertNode(text_39, target, anchor);
+			insertNode(text_37, target, anchor);
 			insertNode(div_11, target, anchor);
-			insertNode(text_41, target, anchor);
+			insertNode(text_39, target, anchor);
 			contextmenu._mount(target, anchor);
 		},
 
@@ -14409,16 +14399,16 @@ function create_main_fragment$9(component, state) {
 				each_1_blocks[i_6].u();
 			}
 
-			detachNode(text_37);
+			detachNode(text_35);
 			detachNode(div_10);
 
 			for (var i_6 = 0; i_6 < each_2_blocks.length; i_6 += 1) {
 				each_2_blocks[i_6].u();
 			}
 
-			detachNode(text_39);
+			detachNode(text_37);
 			detachNode(div_11);
-			detachNode(text_41);
+			detachNode(text_39);
 			contextmenu._unmount();
 		},
 
@@ -14456,7 +14446,7 @@ function create_main_fragment$9(component, state) {
 	};
 }
 
-// (28:8) {{#each sort as key}}
+// (27:8) {{#each sort as key}}
 function create_each_block$3(component, state) {
 	var key = state.key, key_index = state.key_index;
 	var option, text_value = key.name, text, option_value_value;
@@ -14500,7 +14490,7 @@ function create_each_block$3(component, state) {
 	};
 }
 
-// (38:8) {{#each sort as key}}
+// (36:8) {{#each sort as key}}
 function create_each_block_1$1(component, state) {
 	var key = state.key, key_index = state.key_index;
 	var option, text_value = key.name, text, option_value_value;
@@ -14544,7 +14534,7 @@ function create_each_block_1$1(component, state) {
 	};
 }
 
-// (72:2) {{#each $cards as card, index}}
+// (70:2) {{#each $cards as card, index}}
 function create_each_block_2(component, state) {
 	var card = state.card, index = state.index;
 
