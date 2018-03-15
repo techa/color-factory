@@ -392,7 +392,7 @@ function touchCheck (rectA, rectB, direction, side) {
   // rectA       a1----------------------------------------a2
   // rectB             b1-----------------------------b2
   return (b1 <= a2 && a2 <= b2) || (b1 <= a1 && a1 <= b2) || (a1 <= b1 && b2 <= a2)
-  }
+}
 export function touchHit (rectA, rectB) {
   if (
     touchCheck(rectA, rectB, 'left', 'width') &&
@@ -570,6 +570,11 @@ export class Selectable extends MousePosition {
     const {position, helper} = this
     // array init
     if (!e.shiftKey) this.reset()
+    else {
+      for (const child of this.children) {
+        child.shiftSelected = child.isSelected
+      }
+    }
     // helper追加
     el.appendChild(helper)
     helper.style.left = position.startX + 'px'
@@ -589,12 +594,8 @@ export class Selectable extends MousePosition {
     // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
     this.children.forEach(({rect}, i) => {
       const hit = hitChecker(helperRect, rect, opts.tolerance)
-      if (hit) {
-        if (e.shiftKey) {
-          this.toggle(i)
-        } else {
-          this.toggle(i, hit)
-        }
+      if (!this.children[i].shiftSelected) {
+        this.toggle(i, hit)
       }
     })
     // マウスが動いた場所にhelper要素を動かす
