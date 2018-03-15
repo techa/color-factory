@@ -2,11 +2,11 @@ import Color from 'color'
 import store from './store/store.js'
 import xkcd from './constants/xkcd.json'
 Color.prototype.toJSON = function () {
-  return this[this.model]().object()
+  return this[this.model]().round(2).object()
 }
 
 Color.prototype.nearColorName = function () {
-  const hsl = this.hsl().object()
+  const hsl = this.hsl().alpha(1).object()
   let difference = 50
   let name = ''
   xkcd.forEach(([_name, _hsl]) => {
