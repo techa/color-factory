@@ -180,7 +180,6 @@
       // Selectable
       this.selectable = new Selectable(this.refs.box, {
         filter: '.card',
-        tolerance: 'fit',
         start: (e, position) => {
           this.store.fire('menu_close')
         },
