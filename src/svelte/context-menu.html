@@ -49,10 +49,19 @@
       }
 
       store.on('menu_open', (e, card, mode) => {
+        menu.style.display = 'block'
+        let x = e.clientX
+        let y = e.clientY
+        const rect = menu.getBoundingClientRect()
+        if (window.innerWidth < rect.width + x) {
+          x -= rect.width
+        }
+        if (window.innerHeight < rect.height + y) {
+          y -= rect.height
+        }
         styler(menu, {
-          left: e.clientX,
-          top: e.clientY,
-          display: 'block'
+          left: x,
+          top: y,
         })
 
         // 'tip' or 'card'
