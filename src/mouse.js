@@ -363,33 +363,40 @@ export function hitChecker (rect1, rect2, tolerance) {
   return tolerance === 'fit' ? fitHit(rect1, rect2) : touchHit(rect1, rect2)
 }
 
-export function fitHit (rect1, rect2) {
-  const [x, y, w, h] = ['left', 'top', 'width', 'height']
-  // rect1 x1-----------------------------------------------x1+w1
-  // rect2          x2---------------x2+w2
+function fitCheck (rectA, rectB, direction, side) {
+  const a1 = rectA[direction]
+  const a2 = a1 + rectA[side]
+  const b1 = rectB[direction]
+  const b2 = b1 + rectB[side]
+  // rectA a1----------------------------------------a2
+  // rectB          b1---------------b2
+  return a1 <= b1 && b2 <= a2
+}
+export function fitHit (rectA, rectB) {
   if (
-    rect1[x] <= rect2[x] && rect2[x] + rect2[w] <= rect1[x] + rect1[w] &&
-    rect1[y] <= rect2[y] && rect2[y] + rect2[h] <= rect1[y] + rect1[h]
+    fitCheck(rectA, rectB, 'left', 'width') &&
+    fitCheck(rectA, rectB, 'top', 'height')
   ) {
     return true
   }
   return false
 }
-export function touchHit (rect1, rect2) {
-  const [x, y, w, h] = ['left', 'top', 'width', 'height']
-  // rect1                x1---------------------------x1+w1
-  // rect2 x2---------------------------------x2+w2
-  if (
-    rect2[x] <= rect1[x] && rect1[x] <= rect2[x] + rect2[w] &&
-    rect2[y] <= rect1[y] && rect1[y] <= rect2[y] + rect2[h]
-  ) {
-    return true
+
+function touchCheck (rectA, rectB, direction, side) {
+  const a1 = rectA[direction]
+  const a2 = a1 + rectA[side]
+  const b1 = rectB[direction]
+  const b2 = b1 + rectB[side]
+  // rectA                (a1)---a2      a1-----(a2)
+  // rectA (a1)------------------a2      a1----------------------(a2)
+  // rectA       a1----------------------------------------a2
+  // rectB             b1-----------------------------b2
+  return (b1 <= a2 && a2 <= b2) || (b1 <= a1 && a1 <= b2) || (a1 <= b1 && b2 <= a2)
   }
-  // rect1 x1---------------------------------x1+w1
-  // rect2               x2----------------------------------------x2+w2
+export function touchHit (rectA, rectB) {
   if (
-    rect1[x] <= rect2[x] && rect2[x] <= rect1[x] + rect1[w] &&
-    rect1[y] <= rect2[y] && rect2[y] <= rect1[y] + rect1[h]
+    touchCheck(rectA, rectB, 'left', 'width') &&
+    touchCheck(rectA, rectB, 'top', 'height')
   ) {
     return true
   }
