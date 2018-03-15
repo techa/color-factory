@@ -41,6 +41,6 @@ Color Factory
 ## Todo
 - [x] addCard: sorted position
 - [ ] rename Card.name
-- [ ] view: card parameter list edit
+- [x] view: card parameter list edit
 - [ ] palette data save
     - [ ] create palette list

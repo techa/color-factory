@@ -68,7 +68,7 @@
 
 <div ref:box id="box" style="background-color: {{bgColor}};">
   {{#each $cards as card, index}}
-    <ColorCard card={{card}} index={{index}} :grayscale :textvisible />
+    <ColorCard card={{card}} index={{index}} :grayscale :textvisible :cardViewModels />
   {{/each}}
 </div>
 
@@ -76,7 +76,7 @@
   <a href="https://github.com/techa/color-factory"><i class="fab fa-github fa-fw"></i></a>
 </div>
 
-<ContextMenu />
+<ContextMenu :cardViewModels on:viewModelChenge="viewModelChenge(event)" />
 
 <script>
   import ColorPicker from '../color-picker/color-picker.html'
@@ -127,6 +127,16 @@
         sort,
         grayscale: false,
         textvisible: true,
+        cardViewModels: {
+          hex: true,
+          rgb: false,
+          hsl: true,
+          hsv: false,
+          hcg: false,
+          hwb: false,
+          cmyk: false,
+          contrast: true,
+        },
       }
     },
     computed: {
@@ -242,6 +252,11 @@
           this.store.set({cards: []})
           this.store.memo()
         }
+      },
+      viewModelChenge (event) {
+        const cardViewModels = this.get('cardViewModels')
+        Object.assign(cardViewModels, {[event[0]]: !event[1]})
+        this.set({cardViewModels})
       },
     }
   }

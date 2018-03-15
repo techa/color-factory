@@ -10,19 +10,36 @@
       <i class="fas fa-sync fa-fw"></i>
       REVERSE
     </p>
-    <p class="menuitem" on:click="remove()">
+    <p class="menuitem" on:click="remove()" onm>
       <i class="fas fa-times fa-fw"></i>
       DELETE
     </p>
-  {{/if}}
-
-  {{#if activeCard}}
-  {{#each copys as model}}
-    <p class="menuitem" on:click="copyColor(model)">
-      COPY: {{activeCard.color[model]()}}
+    <hr>
+    <p class="menuitem" on:mouseover="submenuVisible(this)">
+      <i class="fas fa-eye fa-fw"></i>
+      VIEW
+      <span>▶</span>
     </p>
-  {{/each}}
   {{/if}}
+  <hr>
+  {{#if activeCard}}
+    {{#each copys as model}}
+      <p class="menuitem" on:click="copyColor(model)">
+        COPY: {{activeCard.color[model]()}}
+      </p>
+    {{/each}}
+  {{/if}}
+</div>
+
+<div ref:submenu class="submenu">
+  {{#each modelsEntries as key_value}}
+  <p class="menuitem">
+    <label>
+      <input type="checkbox" checked="{{key_value[1]}}" on:change="fire('viewModelChenge', key_value)">
+      {{key_value[0].toUpperCase()}}
+    </label>
+  </p>
+  {{/each}}
 </div>
 
 <script>
@@ -38,9 +55,12 @@
         sizes: [120, 240, 360],
       }
     },
+    computed: {
+      modelsEntries: (cardViewModels) => Object.entries(cardViewModels),
+    },
     oncreate () {
       console.log('menu-render')
-      const menu = this.refs.menu
+      const {menu, submenu} = this.refs
 
       const menuHide = (e) => {
         if (this.get('mode')) {
@@ -75,12 +95,22 @@
 
       store.on('menu_close', (e) => {
         menu.style.display = 'none'
+        submenu.style.display = 'none'
         this.set({mode: false})
         window.removeEventListener('blur', menuHide)
         document.removeEventListener('click', menuHide)
       })
     },
     methods: {
+      submenuVisible (el) {
+        const {submenu} = this.refs
+        submenu.style.display = 'block'
+        const rect = el.getBoundingClientRect()
+        styler(submenu, {
+          left: rect.left + rect.width,
+          top: rect.top,
+        })
+      },
       add () {
         store.fire('cards.ADD_CARD', this.get('activeCard'))
       },
@@ -118,7 +148,7 @@
 </script>
 
 <style>
-  #menu {
+  #menu, .submenu {
     position: absolute;
     font-size:12px;
     background: #fff;
@@ -135,5 +165,10 @@
   }
   .menuitem .menuitem:hover {
     font-weight: bold;
+  }
+  .menuitem label {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
 </style>

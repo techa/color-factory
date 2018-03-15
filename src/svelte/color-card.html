@@ -3,9 +3,15 @@
   style="{{cardStyle}} z-index: {{card.zIndex}};">
   <div class="cardtext {{(textvisible || card.textMode)? '': 'textvisible'}}">
     <h3 class="card_title">{{card.name}}</h3>
-    <div>{{card.color.rgb()}}</div>
-    <div>{{card.color.hsl()}}</div>
-    <div>{{contrast}}</div>
+    {{#each modelsEntries as [key, value]}}
+      {{#if value}}
+        {{#if key === 'contrast'}}
+        <div>{{contrast}}</div>
+        {{else}}
+        <div>{{card.color.toString(key)}}</div>
+        {{/if}}
+      {{/if}}
+    {{/each}}
   </div>
   <span class="icon card-reverse" on:click="reverse()" style="{{textColor}}">
     <i class="fas fa-sync fa-fw"></i>
@@ -45,6 +51,8 @@
         return colorstyle + `width:${w}; height:${h};top:${top}px;left:${left}px;`
       },
       contrast: (card, $bgColor) => round($bgColor.contrast(card.color), 1),
+
+      modelsEntries: (cardViewModels) => Object.entries(cardViewModels),
     },
 
 
