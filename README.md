@@ -44,3 +44,5 @@ Color Factory
 - [x] view: card parameter list edit
 - [ ] palette data save
     - [ ] create palette list
+- [ ] random Color in picker
+- [ ] sorted position Hue Circle
