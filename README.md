@@ -10,6 +10,11 @@ Color Factory
     * sortable: hue, saturationl, lightness, saturationv, value, chroma, gray, contrast
     * filter: grayscale
     * undo/redo
+    * Right click on Card!
+        * Duplicate
+        * Reverse: fill/text
+        * Delete
+        * View
 * Color tools
     * input model(format): Hex, RGB, HSL, HSV, XYZ, LAB, CMYK
     * HSV Color picker
@@ -44,5 +49,5 @@ Color Factory
 - [x] view: card parameter list edit
 - [ ] palette data save
     - [ ] create palette list
-- [ ] random Color in picker
+- [x] random Color in picker
 - [ ] sorted position Hue Circle

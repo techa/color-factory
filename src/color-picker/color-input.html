@@ -16,6 +16,10 @@
       :value
       spellcheck=""
       placeholder="keypress: ↑↓">
+    <button class="random-color"
+      title="Random Color"
+      on:click="randomColor()"
+      style="color: {{color.hex()}}; background-color: {{textColor}};">?</button>
   </div>
 {{/if}}
 
@@ -40,6 +44,21 @@
       height: var(--size);
       padding: 0 4px;
       text-align: center;}
+    .random-color {
+      position: absolute;
+      display: none;
+      height: 1em;
+      width: 1em;
+      border-radius: 0.5em;
+      margin: 0.5em;
+      text-align: center;
+      padding: 0;
+      font-size-adjust: 0.5em;
+      line-height: 0.5em;
+    }
+    .input-wrapper:hover .random-color {
+      display: block;
+    }
 </style>
 
 <script>
@@ -76,6 +95,9 @@
       },
     },
     methods: {
+      randomColor () {
+        this.set({color: Color.random()})
+      },
       keydown (event) {
         const value = event.target.value
         const color = Color(value)
