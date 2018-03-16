@@ -73,7 +73,7 @@ export default class Histore extends Store {
     const newstateJSON = JSON.stringify(newstate)
     const {oldstate, undostock, redostock, memo} = this._history
     const storageKey = this.storageKey
-    if (newstateJSON !== oldstate) {
+    if (newstateJSON !== oldstate || changed == null) {
       console.log('change', newstateJSON !== oldstate)
       switch (memo) {
         case 'undo':

@@ -45,7 +45,7 @@ export default class KeyManager {
 
     this.options.element.addEventListener('keydown', keydownHandler((e) => {
       const inputTags = /^(INPUT|TEXTAREA)$/.test(e.target.tagName)
-      if (inputTags) {
+      if (inputTags || e.target.contentEditable === 'true' || e.target.parentNode.contentEditable === 'true') {
         // brackets
         return `fd${inputTags}`
       }

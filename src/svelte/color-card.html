@@ -2,7 +2,7 @@
   class="card animated bounceIn"
   style="{{cardStyle}} z-index: {{card.zIndex}};">
   <div class="cardtext {{(textvisible || card.textMode)? '': 'textvisible'}}">
-    <h3 class="card_title">{{card.name}}</h3>
+    <h3 ref:title class="card_title" contenteditable="{{edit}}">{{card.name}}</h3>
     {{#each modelsEntries as [key, value]}}
       {{#if value}}
         {{#if key === 'contrast'}}
@@ -32,6 +32,11 @@
   const colorsWidth = 320
 
   export default {
+    data () {
+      return {
+        edit: false,
+      }
+    },
     computed: {
       textColor: (card, $bgColor, contrast) => {
         const {color, textMode} = card
@@ -125,10 +130,7 @@
         // デフォルトイベントをキャンセル
         // これを書くことでコンテキストメニューが表示されなくなります
         e.preventDefault()
-        store.fire('menu_open', e, {
-          name: card.name,
-          color: card.color,
-        }, 'card')
+        store.fire('menu_open', e, this, 'card')
       }, false)
     },
     methods: {
@@ -176,10 +178,15 @@
   }
   .card_title {
     /*font-size: 18pt;*/
+    text-align: center;
+    font-size: 12px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     /*font-weight: bold;*/
+  }
+  .card_title[contenteditable="true"] {
+    border-bottom: 1px solid;
   }
   .icon {
     position: absolute;
