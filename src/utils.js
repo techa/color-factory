@@ -1,6 +1,5 @@
 export function round (num, digit) {
-  digit = Math.pow(10, digit)
-  return Math.round(num * digit) / digit
+  return Number(num.toFixed(digit))
 }
 
 export function kebabCase (str) {
