@@ -54,6 +54,10 @@ function removeListener(node, event, handler) {
 	node.removeEventListener(event, handler, false);
 }
 
+function setAttribute(node, attribute, value) {
+	node.setAttribute(attribute, value);
+}
+
 function setStyle(node, key, value) {
 	node.style.setProperty(key, value);
 }
@@ -2197,8 +2201,7 @@ function zeroArray(arr, length) {
 var color = Color;
 
 function round (num, digit) {
-  digit = Math.pow(10, digit);
-  return Math.round(num * digit) / digit
+  return Number(num.toFixed(digit))
 }
 
 const numStylekey = ['width', 'height', 'top', 'left'];
@@ -2340,6 +2343,9 @@ function modelStyler(_model, model, color$$1, bgColor, textColor) {
     : `color: ${bgColor.mostReadable('#ccc', '#333')}; background-color: transparent;`
 }
 var methods = {
+  randomColor () {
+    this.set({color: color.random()});
+  },
   keydown (event) {
     const value = event.target.value;
     const color$$1 = color(value);
@@ -2448,8 +2454,8 @@ var methods = {
 
 function add_css() {
 	var style = createElement("style");
-	style.id = 'svelte-ojgwfd-style';
-	style.textContent = ".svelte-ojgwfd.models,.svelte-ojgwfd .models{width:100%;font-size:0.8em}.svelte-ojgwfd.models button,.svelte-ojgwfd .models button{padding:3px}.svelte-ojgwfd.input-wrapper,.svelte-ojgwfd .input-wrapper{--size:2em;padding:0;position:relative;font:normal 1em \"Lucida Grande\", \"Lucida Sans Unicode\", \"Lucida Sans\", Geneva, Verdana, sans-serif;display:flex;flex-direction:column}.svelte-ojgwfd.color-text,.svelte-ojgwfd .color-text{height:var(--size);padding:0 4px;text-align:center}";
+	style.id = 'svelte-10nxteg-style';
+	style.textContent = ".svelte-10nxteg.models,.svelte-10nxteg .models{width:100%;font-size:0.8em}.svelte-10nxteg.models button,.svelte-10nxteg .models button{padding:3px}.svelte-10nxteg.input-wrapper,.svelte-10nxteg .input-wrapper{--size:2em;padding:0;position:relative;font:normal 1em \"Lucida Grande\", \"Lucida Sans Unicode\", \"Lucida Sans\", Geneva, Verdana, sans-serif;display:flex;flex-direction:column}.svelte-10nxteg.color-text,.svelte-10nxteg .color-text{height:var(--size);padding:0 4px;text-align:center}.svelte-10nxteg.random-color,.svelte-10nxteg .random-color{position:absolute;display:none;height:1em;width:1em;border-radius:0.5em;margin:0.5em;text-align:center;padding:0;font-size-adjust:0.5em;line-height:0.5em}.svelte-10nxteg.input-wrapper:hover .random-color,.svelte-10nxteg .input-wrapper:hover .random-color{display:block}";
 	appendNode(style, document.head);
 }
 
@@ -2564,7 +2570,7 @@ function create_if_block(component, state) {
 		},
 
 		h: function hydrate() {
-			input.className = "svelte-ojgwfd";
+			input.className = "svelte-10nxteg";
 			input.type = "color";
 		},
 
@@ -2584,7 +2590,7 @@ function create_if_block(component, state) {
 
 // (3:0) {{else}}
 function create_if_block_1(component, state) {
-	var div, text_1, div_1, input, updown_handler;
+	var div, text_1, div_1, input, updown_handler, text_2, button;
 
 	var models = state.models;
 
@@ -2610,6 +2616,10 @@ function create_if_block_1(component, state) {
 		component.keydown(event);
 	}
 
+	function click_handler_1(event) {
+		component.randomColor();
+	}
+
 	return {
 		c: function create() {
 			div = createElement("div");
@@ -2618,14 +2628,17 @@ function create_if_block_1(component, state) {
 				each_blocks[i].c();
 			}
 
-			text_1 = createText("\r\n  ");
+			text_1 = createText("\n  ");
 			div_1 = createElement("div");
 			input = createElement("input");
+			text_2 = createText("\n    ");
+			button = createElement("button");
+			button.textContent = "!";
 			this.h();
 		},
 
 		h: function hydrate() {
-			div.className = "models button-set svelte-ojgwfd";
+			div.className = "models button-set svelte-10nxteg";
 			input.className = "color-text";
 			setStyle(input, "color", state.textColor);
 			setStyle(input, "background-color", state.color.rgb());
@@ -2640,7 +2653,12 @@ function create_if_block_1(component, state) {
 
 			addListener(input, "wheel", wheel_handler);
 			addListener(input, "keydown", keydown_handler);
-			div_1.className = "input-wrapper svelte-ojgwfd";
+			button.className = "random-color";
+			button.title = "Random Color";
+			setStyle(button, "color", state.color.hex());
+			setStyle(button, "background-color", state.textColor);
+			addListener(button, "click", click_handler_1);
+			div_1.className = "input-wrapper svelte-10nxteg";
 		},
 
 		m: function mount(target, anchor) {
@@ -2653,6 +2671,8 @@ function create_if_block_1(component, state) {
 			insertNode(text_1, target, anchor);
 			insertNode(div_1, target, anchor);
 			appendNode(input, div_1);
+			appendNode(text_2, div_1);
+			appendNode(button, div_1);
 		},
 
 		p: function update(changed, state) {
@@ -2693,6 +2713,14 @@ function create_if_block_1(component, state) {
 			if (changed.value) {
 				input.value = state.value;
 			}
+
+			if (changed.color) {
+				setStyle(button, "color", state.color.hex());
+			}
+
+			if (changed.textColor) {
+				setStyle(button, "background-color", state.textColor);
+			}
 		},
 
 		u: function unmount() {
@@ -2713,6 +2741,7 @@ function create_if_block_1(component, state) {
 			updown_handler.teardown();
 			removeListener(input, "wheel", wheel_handler);
 			removeListener(input, "keydown", keydown_handler);
+			removeListener(button, "click", click_handler_1);
 		}
 	};
 }
@@ -2728,7 +2757,7 @@ function Color_input(options) {
 	this._state = assign(data(), options.data);
 	this._recompute({ color: 1, model: 1, bgColor: 1 }, this._state);
 
-	if (!document.getElementById("svelte-ojgwfd-style")) add_css();
+	if (!document.getElementById("svelte-10nxteg-style")) add_css();
 
 	this._fragment = create_main_fragment(this, this._state);
 
@@ -3115,33 +3144,40 @@ function hitChecker (rect1, rect2, tolerance) {
   return tolerance === 'fit' ? fitHit(rect1, rect2) : touchHit(rect1, rect2)
 }
 
-function fitHit (rect1, rect2) {
-  const [x, y, w, h] = ['left', 'top', 'width', 'height'];
-  // rect1 x1-----------------------------------------------x1+w1
-  // rect2          x2---------------x2+w2
+function fitCheck (rectA, rectB, direction, side) {
+  const a1 = rectA[direction];
+  const a2 = a1 + rectA[side];
+  const b1 = rectB[direction];
+  const b2 = b1 + rectB[side];
+  // rectA a1----------------------------------------a2
+  // rectB          b1---------------b2
+  return a1 <= b1 && b2 <= a2
+}
+function fitHit (rectA, rectB) {
   if (
-    rect1[x] <= rect2[x] && rect2[x] + rect2[w] <= rect1[x] + rect1[w] &&
-    rect1[y] <= rect2[y] && rect2[y] + rect2[h] <= rect1[y] + rect1[h]
+    fitCheck(rectA, rectB, 'left', 'width') &&
+    fitCheck(rectA, rectB, 'top', 'height')
   ) {
     return true
   }
   return false
 }
-function touchHit (rect1, rect2) {
-  const [x, y, w, h] = ['left', 'top', 'width', 'height'];
-  // rect1                x1---------------------------x1+w1
-  // rect2 x2---------------------------------x2+w2
+
+function touchCheck (rectA, rectB, direction, side) {
+  const a1 = rectA[direction];
+  const a2 = a1 + rectA[side];
+  const b1 = rectB[direction];
+  const b2 = b1 + rectB[side];
+  // rectA                (a1)---a2      a1-----(a2)
+  // rectA (a1)------------------a2      a1----------------------(a2)
+  // rectA       a1----------------------------------------a2
+  // rectB             b1-----------------------------b2
+  return (b1 <= a2 && a2 <= b2) || (b1 <= a1 && a1 <= b2) || (a1 <= b1 && b2 <= a2)
+}
+function touchHit (rectA, rectB) {
   if (
-    rect2[x] <= rect1[x] && rect1[x] <= rect2[x] + rect2[w] &&
-    rect2[y] <= rect1[y] && rect1[y] <= rect2[y] + rect2[h]
-  ) {
-    return true
-  }
-  // rect1 x1---------------------------------x1+w1
-  // rect2               x2----------------------------------------x2+w2
-  if (
-    rect1[x] <= rect2[x] && rect2[x] <= rect1[x] + rect1[w] &&
-    rect1[y] <= rect2[y] && rect2[y] <= rect1[y] + rect1[h]
+    touchCheck(rectA, rectB, 'left', 'width') &&
+    touchCheck(rectA, rectB, 'top', 'height')
   ) {
     return true
   }
@@ -3315,6 +3351,11 @@ class Selectable extends MousePosition {
     const {position, helper} = this;
     // array init
     if (!e.shiftKey) this.reset();
+    else {
+      for (const child of this.children) {
+        child.shiftSelected = child.isSelected;
+      }
+    }
     // helper追加
     el.appendChild(helper);
     helper.style.left = position.startX + 'px';
@@ -3334,12 +3375,8 @@ class Selectable extends MousePosition {
     // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
     this.children.forEach(({rect}, i) => {
       const hit = hitChecker(helperRect, rect, opts.tolerance);
-      if (hit) {
-        if (e.shiftKey) {
-          this.toggle(i);
-        } else {
-          this.toggle(i, hit);
-        }
+      if (!this.children[i].shiftSelected) {
+        this.toggle(i, hit);
       }
     });
     // マウスが動いた場所にhelper要素を動かす
@@ -4645,7 +4682,7 @@ class KeyManager {
 
     this.options.element.addEventListener('keydown', keydownHandler((e) => {
       const inputTags = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
-      if (inputTags) {
+      if (inputTags || e.target.contentEditable === 'true' || e.target.parentNode.contentEditable === 'true') {
         // brackets
         return `fd${inputTags}`
       }
@@ -4784,7 +4821,7 @@ class Histore extends Store {
     const newstateJSON = JSON.stringify(newstate);
     const {oldstate, undostock, redostock, memo} = this._history;
     const storageKey = this.storageKey;
-    if (newstateJSON !== oldstate) {
+    if (newstateJSON !== oldstate || changed == null) {
       console.log('change', newstateJSON !== oldstate);
       switch (memo) {
         case 'undo':
@@ -4941,6 +4978,18 @@ store.on('cards.CARD_FORWARD', (index) => {
 
 const colorsWidth = 320;
 
+function contrast$1(card, $bgColor) {
+	return round($bgColor.contrast(card.color), 1);
+}
+
+function textColor$3(card, $bgColor, contrast) {
+  const {color, textMode} = card;
+  if (textMode) {
+    return `color: ${(contrast < 4.5) ? ($bgColor.isDark() ? '#fff' : '#000') : color};`
+  }
+  return `color: ${color.isDark() ? '#fff' : '#000'};`
+}
+
 function cardStyle(card, grayscale) {
   const {width, height, top, left, color, textMode} = card;
   const w = width > 120 ? width + 'px' : 'auto';
@@ -4952,10 +5001,15 @@ function cardStyle(card, grayscale) {
   return colorstyle + `width:${w}; height:${h};top:${top}px;left:${left}px;`
 }
 
-function contrast$1(card, $bgColor) {
-	return round(store.get('bgColor').contrast(card.color), 1);
+function modelsEntries(cardViewModels) {
+	return Object.entries(cardViewModels);
 }
 
+function data$6() {
+  return {
+    edit: false,
+  }
+}
 var methods$5 = {
   reverse () {
     store.fire('cards.TOGGLE_TEXTMODE', [this.get('card').index]);
@@ -5034,21 +5088,32 @@ function oncreate$5() {
     // デフォルトイベントをキャンセル
     // これを書くことでコンテキストメニューが表示されなくなります
     e.preventDefault();
-    store.fire('menu_open', e, {
-      name: card.name,
-      color: card.color,
-    }, 'card');
+    store.fire('menu_open', e, this, 'card');
   }, false);
 }
 function add_css$6() {
 	var style = createElement("style");
-	style.id = 'svelte-d2g29h-style';
-	style.textContent = ".svelte-d2g29h.card,.svelte-d2g29h .card{position:absolute;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:6px;min-width:120px;min-height:120px;user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none}.svelte-d2g29h.card.selected:not(.dragging),.svelte-d2g29h .card.selected:not(.dragging){outline:1px dashed black;box-shadow:0 0 0 1px white}.svelte-d2g29h.cardtext,.svelte-d2g29h .cardtext{padding:8px;width:100%;white-space:wrap}.svelte-d2g29h.cardtext.textvisible,.svelte-d2g29h .cardtext.textvisible{display:none}.svelte-d2g29h.card_title,.svelte-d2g29h .card_title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.svelte-d2g29h.icon,.svelte-d2g29h .icon{position:absolute;display:none;width:20px;height:20px}.svelte-d2g29h.card:hover .icon,.svelte-d2g29h .card:hover .icon,.svelte-d2g29h.card:hover .controller,.svelte-d2g29h .card:hover .controller{display:block}.svelte-d2g29h.controller,.svelte-d2g29h .controller{position:absolute;display:none;height:20px;top:0;right:0;margin:5px}.svelte-d2g29h.resize-handle,.svelte-d2g29h .resize-handle{bottom:0;right:0;cursor:nwse-resize}";
+	style.id = 'svelte-pjl41q-style';
+	style.textContent = ".svelte-pjl41q.card,.svelte-pjl41q .card{position:absolute;text-align:center;font-size:12px;display:flex;align-items:center;justify-content:center;border-radius:6px;min-width:120px;min-height:120px;user-select:none;-ms-user-select:none;-webkit-user-select:none;-moz-user-select:none}.svelte-pjl41q.card.selected:not(.dragging),.svelte-pjl41q .card.selected:not(.dragging){outline:1px dashed black;box-shadow:0 0 0 1px white}.svelte-pjl41q.cardtext,.svelte-pjl41q .cardtext{padding:8px;width:100%;white-space:wrap}.svelte-pjl41q.cardtext.textvisible,.svelte-pjl41q .cardtext.textvisible{display:none}.svelte-pjl41q.card_title,.svelte-pjl41q .card_title{text-align:center;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.svelte-pjl41q.card_title[contenteditable=\"true\"],.svelte-pjl41q .card_title[contenteditable=\"true\"]{border-bottom:1px solid}.svelte-pjl41q.icon,.svelte-pjl41q .icon{position:absolute;display:none;width:20px;height:20px;margin:5px}.svelte-pjl41q.card-reverse,.svelte-pjl41q .card-reverse{top:0;left:0}.svelte-pjl41q.card-delete,.svelte-pjl41q .card-delete{top:0;right:0}.svelte-pjl41q.card:hover .icon,.svelte-pjl41q .card:hover .icon{display:block}.svelte-pjl41q.resize-handle,.svelte-pjl41q .resize-handle{bottom:0;right:0;margin:0;cursor:nwse-resize}";
 	appendNode(style, document.head);
 }
 
 function create_main_fragment$6(component, state) {
-	var div, div_1, h3, text_value = state.card.name, text, text_1, div_2, text_2_value = state.card.color.rgb(), text_2, text_3, div_3, text_4_value = state.card.color.hsl(), text_4, text_5, div_4, text_6, div_1_class_value, text_8, div_5, span, text_10, span_1, text_13, div_6, div_style_value;
+	var div, div_1, h3, text_value = state.card.name, text, text_1, div_1_class_value, text_3, span, text_5, span_1, text_7, div_2, div_style_value;
+
+	var modelsEntries = state.modelsEntries;
+
+	var each_blocks = [];
+
+	for (var i_2 = 0; i_2 < modelsEntries.length; i_2 += 1) {
+		each_blocks[i_2] = create_each_block$1(component, assign({}, state, {
+			modelsEntries: modelsEntries,
+			key_value: modelsEntries[i_2],
+			key_value_index: i_2,
+			key: modelsEntries[i_2][0],
+			value: modelsEntries[i_2][1]
+		}));
+	}
 
 	function click_handler(event) {
 		component.reverse();
@@ -5064,37 +5129,35 @@ function create_main_fragment$6(component, state) {
 			div_1 = createElement("div");
 			h3 = createElement("h3");
 			text = createText(text_value);
-			text_1 = createText("\r\n    ");
-			div_2 = createElement("div");
-			text_2 = createText(text_2_value);
-			text_3 = createText("\r\n    ");
-			div_3 = createElement("div");
-			text_4 = createText(text_4_value);
-			text_5 = createText("\r\n    ");
-			div_4 = createElement("div");
-			text_6 = createText(state.contrast);
-			text_8 = createText("\r\n  ");
-			div_5 = createElement("div");
+			text_1 = createText("\n    ");
+
+			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
+				each_blocks[i_2].c();
+			}
+
+			text_3 = createText("\n  ");
 			span = createElement("span");
 			span.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>";
-			text_10 = createText("\r\n    ");
+			text_5 = createText("\n  ");
 			span_1 = createElement("span");
 			span_1.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>";
-			text_13 = createText("\r\n  ");
-			div_6 = createElement("div");
+			text_7 = createText("\n    ");
+			div_2 = createElement("div");
 			this.h();
 		},
 
 		h: function hydrate() {
 			h3.className = "card_title";
-			div_1.className = div_1_class_value = "cardtext " + (state.textvisible? '': 'textvisible');
-			span.className = "card-reverse";
+			h3.contentEditable = state.edit;
+			div_1.className = div_1_class_value = "cardtext " + ((state.textvisible || state.card.textMode)? '': 'textvisible');
+			span.className = "icon card-reverse";
+			span.style.cssText = state.textColor;
 			addListener(span, "click", click_handler);
-			span_1.className = "card-delete";
+			span_1.className = "icon card-delete";
+			span_1.style.cssText = state.textColor;
 			addListener(span_1, "click", click_handler_1);
-			div_5.className = "controller";
-			div_6.className = "icon resize-handle";
-			div.className = "card animated bounceIn svelte-d2g29h";
+			div_2.className = "icon resize-handle";
+			div.className = "card animated bounceIn svelte-pjl41q";
 			div.style.cssText = div_style_value = "" + state.cardStyle + " z-index: " + state.card.zIndex + ";";
 		},
 
@@ -5103,23 +5166,20 @@ function create_main_fragment$6(component, state) {
 			appendNode(div_1, div);
 			appendNode(h3, div_1);
 			appendNode(text, h3);
+			component.refs.title = h3;
 			appendNode(text_1, div_1);
-			appendNode(div_2, div_1);
-			appendNode(text_2, div_2);
-			appendNode(text_3, div_1);
-			appendNode(div_3, div_1);
-			appendNode(text_4, div_3);
-			appendNode(text_5, div_1);
-			appendNode(div_4, div_1);
-			appendNode(text_6, div_4);
-			appendNode(text_8, div);
-			appendNode(div_5, div);
-			appendNode(span, div_5);
-			appendNode(text_10, div_5);
-			appendNode(span_1, div_5);
-			appendNode(text_13, div);
-			appendNode(div_6, div);
-			component.refs.handle = div_6;
+
+			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
+				each_blocks[i_2].m(div_1, null);
+			}
+
+			appendNode(text_3, div);
+			appendNode(span, div);
+			appendNode(text_5, div);
+			appendNode(span_1, div);
+			appendNode(text_7, div);
+			appendNode(div_2, div);
+			component.refs.handle = div_2;
 			component.refs.card = div;
 		},
 
@@ -5128,20 +5188,45 @@ function create_main_fragment$6(component, state) {
 				text.data = text_value;
 			}
 
-			if ((changed.card) && text_2_value !== (text_2_value = state.card.color.rgb())) {
-				text_2.data = text_2_value;
+			if (changed.edit) {
+				h3.contentEditable = state.edit;
 			}
 
-			if ((changed.card) && text_4_value !== (text_4_value = state.card.color.hsl())) {
-				text_4.data = text_4_value;
+			var modelsEntries = state.modelsEntries;
+
+			if (changed.modelsEntries || changed.contrast || changed.card) {
+				for (var i_2 = 0; i_2 < modelsEntries.length; i_2 += 1) {
+					var each_context = assign({}, state, {
+						modelsEntries: modelsEntries,
+						key_value: modelsEntries[i_2],
+						key_value_index: i_2,
+						key: modelsEntries[i_2][0],
+						value: modelsEntries[i_2][1]
+					});
+
+					if (each_blocks[i_2]) {
+						each_blocks[i_2].p(changed, each_context);
+					} else {
+						each_blocks[i_2] = create_each_block$1(component, each_context);
+						each_blocks[i_2].c();
+						each_blocks[i_2].m(div_1, null);
+					}
+				}
+
+				for (; i_2 < each_blocks.length; i_2 += 1) {
+					each_blocks[i_2].u();
+					each_blocks[i_2].d();
+				}
+				each_blocks.length = modelsEntries.length;
 			}
 
-			if (changed.contrast) {
-				text_6.data = state.contrast;
-			}
-
-			if ((changed.textvisible) && div_1_class_value !== (div_1_class_value = "cardtext " + (state.textvisible? '': 'textvisible'))) {
+			if ((changed.textvisible || changed.card) && div_1_class_value !== (div_1_class_value = "cardtext " + ((state.textvisible || state.card.textMode)? '': 'textvisible'))) {
 				div_1.className = div_1_class_value;
+			}
+
+			if (changed.textColor) {
+				span.style.cssText = state.textColor;
+				span_1.style.cssText = state.textColor;
 			}
 
 			if ((changed.cardStyle || changed.card) && div_style_value !== (div_style_value = "" + state.cardStyle + " z-index: " + state.card.zIndex + ";")) {
@@ -5151,13 +5236,189 @@ function create_main_fragment$6(component, state) {
 
 		u: function unmount() {
 			detachNode(div);
+
+			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
+				each_blocks[i_2].u();
+			}
 		},
 
 		d: function destroy$$1() {
+			if (component.refs.title === h3) component.refs.title = null;
+
+			destroyEach(each_blocks);
+
 			removeListener(span, "click", click_handler);
 			removeListener(span_1, "click", click_handler_1);
-			if (component.refs.handle === div_6) component.refs.handle = null;
+			if (component.refs.handle === div_2) component.refs.handle = null;
 			if (component.refs.card === div) component.refs.card = null;
+		}
+	};
+}
+
+// (6:4) {{#each modelsEntries as [key, value]}}
+function create_each_block$1(component, state) {
+	var key_value = state.key_value, key = state.key, value = state.value, key_value_index = state.key_value_index;
+	var if_block_anchor;
+
+	var if_block = (value) && create_if_block$1(component, state);
+
+	return {
+		c: function create() {
+			if (if_block) if_block.c();
+			if_block_anchor = createComment();
+		},
+
+		m: function mount(target, anchor) {
+			if (if_block) if_block.m(target, anchor);
+			insertNode(if_block_anchor, target, anchor);
+		},
+
+		p: function update(changed, state) {
+			key_value = state.key_value;
+			key = state.key;
+			value = state.value;
+			key_value_index = state.key_value_index;
+			if (value) {
+				if (if_block) {
+					if_block.p(changed, state);
+				} else {
+					if_block = create_if_block$1(component, state);
+					if_block.c();
+					if_block.m(if_block_anchor.parentNode, if_block_anchor);
+				}
+			} else if (if_block) {
+				if_block.u();
+				if_block.d();
+				if_block = null;
+			}
+		},
+
+		u: function unmount() {
+			if (if_block) if_block.u();
+			detachNode(if_block_anchor);
+		},
+
+		d: function destroy$$1() {
+			if (if_block) if_block.d();
+		}
+	};
+}
+
+// (8:8) {{#if key === 'contrast'}}
+function create_if_block_1$1(component, state) {
+	var key_value = state.key_value, key = state.key, value = state.value, key_value_index = state.key_value_index;
+	var div, text;
+
+	return {
+		c: function create() {
+			div = createElement("div");
+			text = createText(state.contrast);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			appendNode(text, div);
+		},
+
+		p: function update(changed, state) {
+			key_value = state.key_value;
+			key = state.key;
+			value = state.value;
+			key_value_index = state.key_value_index;
+			if (changed.contrast) {
+				text.data = state.contrast;
+			}
+		},
+
+		u: function unmount() {
+			detachNode(div);
+		},
+
+		d: noop
+	};
+}
+
+// (10:8) {{else}}
+function create_if_block_2(component, state) {
+	var key_value = state.key_value, key = state.key, value = state.value, key_value_index = state.key_value_index;
+	var div, text_value = state.card.color.toString(key), text;
+
+	return {
+		c: function create() {
+			div = createElement("div");
+			text = createText(text_value);
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(div, target, anchor);
+			appendNode(text, div);
+		},
+
+		p: function update(changed, state) {
+			key_value = state.key_value;
+			key = state.key;
+			value = state.value;
+			key_value_index = state.key_value_index;
+			if ((changed.card || changed.modelsEntries) && text_value !== (text_value = state.card.color.toString(key))) {
+				text.data = text_value;
+			}
+		},
+
+		u: function unmount() {
+			detachNode(div);
+		},
+
+		d: noop
+	};
+}
+
+// (7:6) {{#if value}}
+function create_if_block$1(component, state) {
+	var key_value = state.key_value, key = state.key, value = state.value, key_value_index = state.key_value_index;
+	var if_block_anchor;
+
+	function select_block_type(state) {
+		if (key === 'contrast') return create_if_block_1$1;
+		return create_if_block_2;
+	}
+
+	var current_block_type = select_block_type(state);
+	var if_block = current_block_type(component, state);
+
+	return {
+		c: function create() {
+			if_block.c();
+			if_block_anchor = createComment();
+		},
+
+		m: function mount(target, anchor) {
+			if_block.m(target, anchor);
+			insertNode(if_block_anchor, target, anchor);
+		},
+
+		p: function update(changed, state) {
+			key_value = state.key_value;
+			key = state.key;
+			value = state.value;
+			key_value_index = state.key_value_index;
+			if (current_block_type === (current_block_type = select_block_type(state)) && if_block) {
+				if_block.p(changed, state);
+			} else {
+				if_block.u();
+				if_block.d();
+				if_block = current_block_type(component, state);
+				if_block.c();
+				if_block.m(if_block_anchor.parentNode, if_block_anchor);
+			}
+		},
+
+		u: function unmount() {
+			if_block.u();
+			detachNode(if_block_anchor);
+		},
+
+		d: function destroy$$1() {
+			if_block.d();
 		}
 	};
 }
@@ -5165,13 +5426,13 @@ function create_main_fragment$6(component, state) {
 function Color_card(options) {
 	init(this, options);
 	this.refs = {};
-	this._state = assign(this.store._init(["bgColor"]), options.data);
+	this._state = assign(this.store._init(["bgColor"]), data$6(), options.data);
 	this.store._add(this, ["bgColor"]);
-	this._recompute({ card: 1, grayscale: 1, $bgColor: 1 }, this._state);
+	this._recompute({ card: 1, $bgColor: 1, contrast: 1, grayscale: 1, cardViewModels: 1 }, this._state);
 
 	this._handlers.destroy = [removeFromStore];
 
-	if (!document.getElementById("svelte-d2g29h-style")) add_css$6();
+	if (!document.getElementById("svelte-pjl41q-style")) add_css$6();
 
 	var _oncreate = oncreate$5.bind(this);
 
@@ -5194,12 +5455,20 @@ function Color_card(options) {
 assign(Color_card.prototype, methods$5, proto);
 
 Color_card.prototype._recompute = function _recompute(changed, state) {
+	if (changed.card || changed.$bgColor) {
+		if (this._differs(state.contrast, (state.contrast = contrast$1(state.card, state.$bgColor)))) changed.contrast = true;
+	}
+
+	if (changed.card || changed.$bgColor || changed.contrast) {
+		if (this._differs(state.textColor, (state.textColor = textColor$3(state.card, state.$bgColor, state.contrast)))) changed.textColor = true;
+	}
+
 	if (changed.card || changed.grayscale) {
 		if (this._differs(state.cardStyle, (state.cardStyle = cardStyle(state.card, state.grayscale)))) changed.cardStyle = true;
 	}
 
-	if (changed.card || changed.$bgColor) {
-		if (this._differs(state.contrast, (state.contrast = contrast$1(state.card, state.$bgColor)))) changed.contrast = true;
+	if (changed.cardViewModels) {
+		if (this._differs(state.modelsEntries, (state.modelsEntries = modelsEntries(state.cardViewModels)))) changed.modelsEntries = true;
 	}
 };
 
@@ -12975,7 +13244,7 @@ function list_1(colorlists, colorlistsIndex) {
 	return colorlists[colorlistsIndex].list;
 }
 
-function data$6() {
+function data$7() {
   return {
     colorlists: [
       { name: 'Web Color',
@@ -13063,7 +13332,7 @@ function create_main_fragment$7(component, state) {
 	var each_blocks = [];
 
 	for (var i = 0; i < colorlists.length; i += 1) {
-		each_blocks[i] = create_each_block$1(component, assign({}, state, {
+		each_blocks[i] = create_each_block$2(component, assign({}, state, {
 			colorlists: colorlists,
 			data: colorlists[i],
 			index: i
@@ -13152,7 +13421,7 @@ function create_main_fragment$7(component, state) {
 					if (each_blocks[i]) {
 						each_blocks[i].p(changed, each_context);
 					} else {
-						each_blocks[i] = create_each_block$1(component, each_context);
+						each_blocks[i] = create_each_block$2(component, each_context);
 						each_blocks[i].c();
 						each_blocks[i].m(select, null);
 					}
@@ -13217,7 +13486,7 @@ function create_main_fragment$7(component, state) {
 }
 
 // (4:6) {{#each colorlists as data, index}}
-function create_each_block$1(component, state) {
+function create_each_block$2(component, state) {
 	var data_1 = state.data, index = state.index;
 	var option, text_value = data_1.name, text;
 
@@ -13300,7 +13569,7 @@ function create_each_block_1(component, state) {
 function Color_lists(options) {
 	init(this, options);
 	this.refs = {};
-	this._state = assign(data$6(), options.data);
+	this._state = assign(data$7(), options.data);
 	this._recompute({ colorlists: 1, colorlistsIndex: 1 }, this._state);
 
 	if (!document.getElementById("svelte-1a08n33-style")) add_css$7();
@@ -13333,7 +13602,11 @@ Color_lists.prototype._recompute = function _recompute(changed, state) {
 
 /* src\svelte\context-menu.html generated by Svelte v1.57.1 */
 
-function data$7() {
+function modelsEntries$1(cardViewModels) {
+	return Object.entries(cardViewModels);
+}
+
+function data$8() {
   return {
     mode: false,
     activeCard: null,
@@ -13342,8 +13615,70 @@ function data$7() {
   }
 }
 var methods$6 = {
+  submenuVisible (el) {
+    const {submenu} = this.refs;
+    submenu.style.display = 'block';
+    const rect = el.getBoundingClientRect();
+    styler(submenu, {
+      left: rect.left + rect.width,
+      top: rect.top,
+    });
+  },
   add () {
     store.fire('cards.ADD_CARD', this.get('activeCard'));
+  },
+  edit () {
+    this.cardComponent.set({
+      edit: true,
+    });
+    const title = this.cardComponent.refs.title;
+    const selection = window.getSelection();
+    const range = document.createRange();
+    const name = title.textContent;
+    // range.setStart(title, 0)
+    // range.setEnd(title, title.childNodes.length)
+    range.selectNodeContents(title);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    const editOff = (e, cb) => {
+      if (title.textContent && title.textContent !== name) {
+        store.fire('cards.EDIT_CARD', this.cardComponent.get('index'), {
+          name: title.textContent,
+        });
+        store.memo();
+      } else {
+        title.textContent = name;
+      }
+      this.cardComponent.set({
+        edit: false,
+      });
+
+      // 選択解除
+      range.setStart(title, 0);
+      range.setEnd(title, 0);
+      selection.addRange(range);
+
+      document.removeEventListener('selectionchange', cb);
+      document.removeEventListener('click', cb);
+      window.removeEventListener('blur', editOff);
+    };
+    const selectionchange = (e) => {
+      const selection = window.getSelection();
+      if (selection.focusNode.parentNode === title || selection.focusNode === title) {
+        return
+      }
+      editOff(e, selectionchange);
+    };
+    const click = (e) => {
+      if (e.target === title || e.target.classList.contains('menuitem')) {
+        return
+      }
+      editOff(e, click);
+    };
+    document.addEventListener('selectionchange', selectionchange);
+    document.addEventListener('click', click);
+    window.addEventListener('blur', editOff);
   },
   duplicate () {
     const selects = this.root.selectable.selects;
@@ -13378,7 +13713,7 @@ var methods$6 = {
 
 function oncreate$7() {
   console.log('menu-render');
-  const menu = this.refs.menu;
+  const {menu, submenu} = this.refs;
 
   const menuHide = (e) => {
     if (this.get('mode')) {
@@ -13386,16 +13721,26 @@ function oncreate$7() {
     }
   };
 
-  store.on('menu_open', (e, card, mode) => {
+  store.on('menu_open', (e, cardComponent, mode) => {
+    menu.style.display = 'block';
+    let x = e.clientX;
+    let y = e.clientY;
+    const rect = menu.getBoundingClientRect();
+    if (window.innerWidth < rect.width + x) {
+      x -= rect.width;
+    }
+    if (window.innerHeight < rect.height + y) {
+      y -= rect.height;
+    }
     styler(menu, {
-      left: e.clientX,
-      top: e.clientY,
-      display: 'block'
+      left: x,
+      top: y,
     });
 
     // 'tip' or 'card'
-    console.log('card', card);
-    this.set({mode, activeCard: card});
+    const activeCard = mode === 'card' ? cardComponent.get('card') : cardComponent;
+    this.set({mode, activeCard});
+    this.cardComponent = cardComponent;
 
 
     window.addEventListener('blur', menuHide);
@@ -13404,6 +13749,7 @@ function oncreate$7() {
 
   store.on('menu_close', (e) => {
     menu.style.display = 'none';
+    submenu.style.display = 'none';
     this.set({mode: false});
     window.removeEventListener('blur', menuHide);
     document.removeEventListener('click', menuHide);
@@ -13411,45 +13757,76 @@ function oncreate$7() {
 }
 function add_css$8() {
 	var style = createElement("style");
-	style.id = 'svelte-1sjmqm0-style';
-	style.textContent = ".svelte-1sjmqm0#menu,.svelte-1sjmqm0 #menu{position:absolute;font-size:12px;background:#fff;border:solid 1px silver;z-index:100}.svelte-1sjmqm0.menuitem,.svelte-1sjmqm0 .menuitem{min-width:100px;padding:4px;margin:0}.svelte-1sjmqm0.menuitem:hover,.svelte-1sjmqm0 .menuitem:hover,.svelte-1sjmqm0.menuitem:active,.svelte-1sjmqm0 .menuitem:active{background:aquamarine}.svelte-1sjmqm0.menuitem .menuitem:hover,.svelte-1sjmqm0 .menuitem .menuitem:hover{font-weight:bold}";
+	style.id = 'svelte-rtzaol-style';
+	style.textContent = ".svelte-rtzaol#menu,.svelte-rtzaol #menu,.svelte-rtzaol.submenu,.svelte-rtzaol .submenu{position:absolute;font-size:12px;background:#fff;border:solid 1px silver;z-index:100}.svelte-rtzaol.menuitem,.svelte-rtzaol .menuitem{min-width:100px;padding:4px;margin:0}.svelte-rtzaol.menuitem:hover,.svelte-rtzaol .menuitem:hover,.svelte-rtzaol.menuitem:active,.svelte-rtzaol .menuitem:active{background:aquamarine}.svelte-rtzaol.menuitem .menuitem:hover,.svelte-rtzaol .menuitem .menuitem:hover{font-weight:bold}.svelte-rtzaol.menuitem label,.svelte-rtzaol .menuitem label{display:block;width:100%;height:100%}";
 	appendNode(style, document.head);
 }
 
 function create_main_fragment$8(component, state) {
-	var div, text;
+	var div, text, hr, text_1, text_3, div_1;
 
 	function select_block_type(state) {
-		if (state.mode == 'tip') return create_if_block$1;
-		if (state.mode == 'card') return create_if_block_1$1;
+		if (state.mode == 'tip') return create_if_block$2;
+		if (state.mode == 'card') return create_if_block_1$2;
 		return null;
 	}
 
 	var current_block_type = select_block_type(state);
 	var if_block = current_block_type && current_block_type(component, state);
 
-	var if_block_2 = (state.activeCard) && create_if_block_2(component, state);
+	var if_block_2 = (state.activeCard) && create_if_block_2$1(component, state);
+
+	var modelsEntries = state.modelsEntries;
+
+	var each_blocks = [];
+
+	for (var i = 0; i < modelsEntries.length; i += 1) {
+		each_blocks[i] = create_each_block_1$1(component, assign({}, state, {
+			modelsEntries: modelsEntries,
+			key_value: modelsEntries[i],
+			key_value_index: i
+		}));
+	}
 
 	return {
 		c: function create() {
 			div = createElement("div");
 			if (if_block) if_block.c();
-			text = createText("\r\n\r\n  ");
+			text = createText("\n  ");
+			hr = createElement("hr");
+			text_1 = createText("\n  ");
 			if (if_block_2) if_block_2.c();
+			text_3 = createText("\n\n");
+			div_1 = createElement("div");
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].c();
+			}
 			this.h();
 		},
 
 		h: function hydrate() {
-			div.className = "svelte-1sjmqm0";
+			div.className = "svelte-rtzaol";
 			div.id = "menu";
+			div_1.className = "submenu svelte-rtzaol";
 		},
 
 		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			if (if_block) if_block.m(div, null);
 			appendNode(text, div);
+			appendNode(hr, div);
+			appendNode(text_1, div);
 			if (if_block_2) if_block_2.m(div, null);
 			component.refs.menu = div;
+			insertNode(text_3, target, anchor);
+			insertNode(div_1, target, anchor);
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].m(div_1, null);
+			}
+
+			component.refs.submenu = div_1;
 		},
 
 		p: function update(changed, state) {
@@ -13467,7 +13844,7 @@ function create_main_fragment$8(component, state) {
 				if (if_block_2) {
 					if_block_2.p(changed, state);
 				} else {
-					if_block_2 = create_if_block_2(component, state);
+					if_block_2 = create_if_block_2$1(component, state);
 					if_block_2.c();
 					if_block_2.m(div, null);
 				}
@@ -13476,24 +13853,60 @@ function create_main_fragment$8(component, state) {
 				if_block_2.d();
 				if_block_2 = null;
 			}
+
+			var modelsEntries = state.modelsEntries;
+
+			if (changed.modelsEntries) {
+				for (var i = 0; i < modelsEntries.length; i += 1) {
+					var each_context = assign({}, state, {
+						modelsEntries: modelsEntries,
+						key_value: modelsEntries[i],
+						key_value_index: i
+					});
+
+					if (each_blocks[i]) {
+						each_blocks[i].p(changed, each_context);
+					} else {
+						each_blocks[i] = create_each_block_1$1(component, each_context);
+						each_blocks[i].c();
+						each_blocks[i].m(div_1, null);
+					}
+				}
+
+				for (; i < each_blocks.length; i += 1) {
+					each_blocks[i].u();
+					each_blocks[i].d();
+				}
+				each_blocks.length = modelsEntries.length;
+			}
 		},
 
 		u: function unmount() {
 			detachNode(div);
 			if (if_block) if_block.u();
 			if (if_block_2) if_block_2.u();
+			detachNode(text_3);
+			detachNode(div_1);
+
+			for (var i = 0; i < each_blocks.length; i += 1) {
+				each_blocks[i].u();
+			}
 		},
 
 		d: function destroy$$1() {
 			if (if_block) if_block.d();
 			if (if_block_2) if_block_2.d();
 			if (component.refs.menu === div) component.refs.menu = null;
+
+			destroyEach(each_blocks);
+
+			if (component.refs.submenu === div_1) component.refs.submenu = null;
 		}
 	};
 }
 
 // (2:2) {{#if mode == 'tip'}}
-function create_if_block$1(component, state) {
+function create_if_block$2(component, state) {
 	var p;
 
 	function click_handler(event) {
@@ -13527,31 +13940,47 @@ function create_if_block$1(component, state) {
 }
 
 // (4:27) 
-function create_if_block_1$1(component, state) {
-	var p, text_1, p_1, text_3, p_2;
+function create_if_block_1$2(component, state) {
+	var p, text_1, p_1, text_3, p_2, text_5, p_3, text_7, hr, text_8, p_4;
 
 	function click_handler(event) {
-		component.duplicate();
+		component.edit();
 	}
 
 	function click_handler_1(event) {
-		component.reverse();
+		component.duplicate();
 	}
 
 	function click_handler_2(event) {
+		component.reverse();
+	}
+
+	function click_handler_3(event) {
 		component.remove();
+	}
+
+	function mouseover_handler(event) {
+		component.submenuVisible(p_4);
 	}
 
 	return {
 		c: function create() {
 			p = createElement("p");
-			p.innerHTML = "<i class=\"fas fa-copy fa-fw\"></i>\r\n      DUPLICATE";
-			text_1 = createText("\r\n    ");
+			p.innerHTML = "<i class=\"fas fa-edit fa-fw\"></i>\n      EDIT";
+			text_1 = createText("\n    ");
 			p_1 = createElement("p");
-			p_1.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>\r\n      REVERSE";
-			text_3 = createText("\r\n    ");
+			p_1.innerHTML = "<i class=\"fas fa-copy fa-fw\"></i>\n      DUPLICATE";
+			text_3 = createText("\n    ");
 			p_2 = createElement("p");
-			p_2.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\r\n      DELETE";
+			p_2.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>\n      REVERSE";
+			text_5 = createText("\n    ");
+			p_3 = createElement("p");
+			p_3.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\n      DELETE";
+			text_7 = createText("\n    ");
+			hr = createElement("hr");
+			text_8 = createText("\n    ");
+			p_4 = createElement("p");
+			p_4.innerHTML = "<i class=\"fas fa-eye fa-fw\"></i>\n      VIEW\n      <span>▶</span>";
 			this.h();
 		},
 
@@ -13562,6 +13991,11 @@ function create_if_block_1$1(component, state) {
 			addListener(p_1, "click", click_handler_1);
 			p_2.className = "menuitem";
 			addListener(p_2, "click", click_handler_2);
+			p_3.className = "menuitem";
+			setAttribute(p_3, "onm", true);
+			addListener(p_3, "click", click_handler_3);
+			p_4.className = "menuitem";
+			addListener(p_4, "mouseover", mouseover_handler);
 		},
 
 		m: function mount(target, anchor) {
@@ -13570,6 +14004,12 @@ function create_if_block_1$1(component, state) {
 			insertNode(p_1, target, anchor);
 			insertNode(text_3, target, anchor);
 			insertNode(p_2, target, anchor);
+			insertNode(text_5, target, anchor);
+			insertNode(p_3, target, anchor);
+			insertNode(text_7, target, anchor);
+			insertNode(hr, target, anchor);
+			insertNode(text_8, target, anchor);
+			insertNode(p_4, target, anchor);
 		},
 
 		u: function unmount() {
@@ -13578,18 +14018,26 @@ function create_if_block_1$1(component, state) {
 			detachNode(p_1);
 			detachNode(text_3);
 			detachNode(p_2);
+			detachNode(text_5);
+			detachNode(p_3);
+			detachNode(text_7);
+			detachNode(hr);
+			detachNode(text_8);
+			detachNode(p_4);
 		},
 
 		d: function destroy$$1() {
 			removeListener(p, "click", click_handler);
 			removeListener(p_1, "click", click_handler_1);
 			removeListener(p_2, "click", click_handler_2);
+			removeListener(p_3, "click", click_handler_3);
+			removeListener(p_4, "mouseover", mouseover_handler);
 		}
 	};
 }
 
-// (20:2) {{#each copys as model}}
-function create_each_block$2(component, state) {
+// (30:4) {{#each copys as model}}
+function create_each_block$3(component, state) {
 	var model = state.model, model_index = state.model_index;
 	var p, text, text_1_value = state.activeCard.color[model](), text_1;
 
@@ -13639,8 +14087,8 @@ function create_each_block$2(component, state) {
 	};
 }
 
-// (19:2) {{#if activeCard}}
-function create_if_block_2(component, state) {
+// (29:2) {{#if activeCard}}
+function create_if_block_2$1(component, state) {
 	var each_anchor;
 
 	var copys = state.copys;
@@ -13648,7 +14096,7 @@ function create_if_block_2(component, state) {
 	var each_blocks = [];
 
 	for (var i = 0; i < copys.length; i += 1) {
-		each_blocks[i] = create_each_block$2(component, assign({}, state, {
+		each_blocks[i] = create_each_block$3(component, assign({}, state, {
 			copys: copys,
 			model: copys[i],
 			model_index: i
@@ -13686,7 +14134,7 @@ function create_if_block_2(component, state) {
 					if (each_blocks[i]) {
 						each_blocks[i].p(changed, each_context);
 					} else {
-						each_blocks[i] = create_each_block$2(component, each_context);
+						each_blocks[i] = create_each_block$3(component, each_context);
 						each_blocks[i].c();
 						each_blocks[i].m(each_anchor.parentNode, each_anchor);
 					}
@@ -13714,18 +14162,87 @@ function create_if_block_2(component, state) {
 	};
 }
 
+// (39:2) {{#each modelsEntries as key_value}}
+function create_each_block_1$1(component, state) {
+	var key_value = state.key_value, key_value_index = state.key_value_index;
+	var p, label, input, input_checked_value, text, text_1_value = key_value[0].toUpperCase(), text_1;
+
+	return {
+		c: function create() {
+			p = createElement("p");
+			label = createElement("label");
+			input = createElement("input");
+			text = createText("\n      ");
+			text_1 = createText(text_1_value);
+			this.h();
+		},
+
+		h: function hydrate() {
+			input.type = "checkbox";
+			input.checked = input_checked_value = key_value[1];
+			addListener(input, "change", change_handler);
+
+			input._svelte = {
+				component: component,
+				modelsEntries: state.modelsEntries,
+				key_value_index: state.key_value_index
+			};
+
+			p.className = "menuitem";
+		},
+
+		m: function mount(target, anchor) {
+			insertNode(p, target, anchor);
+			appendNode(label, p);
+			appendNode(input, label);
+			appendNode(text, label);
+			appendNode(text_1, label);
+		},
+
+		p: function update(changed, state) {
+			key_value = state.key_value;
+			key_value_index = state.key_value_index;
+			if ((changed.modelsEntries) && input_checked_value !== (input_checked_value = key_value[1])) {
+				input.checked = input_checked_value;
+			}
+
+			input._svelte.modelsEntries = state.modelsEntries;
+			input._svelte.key_value_index = state.key_value_index;
+
+			if ((changed.modelsEntries) && text_1_value !== (text_1_value = key_value[0].toUpperCase())) {
+				text_1.data = text_1_value;
+			}
+		},
+
+		u: function unmount() {
+			detachNode(p);
+		},
+
+		d: function destroy$$1() {
+			removeListener(input, "change", change_handler);
+		}
+	};
+}
+
 function click_handler$1(event) {
 	var component = this._svelte.component;
 	var copys = this._svelte.copys, model_index = this._svelte.model_index, model = copys[model_index];
 	component.copyColor(model);
 }
 
+function change_handler(event) {
+	var component = this._svelte.component;
+	var modelsEntries = this._svelte.modelsEntries, key_value_index = this._svelte.key_value_index, key_value = modelsEntries[key_value_index];
+	component.fire('viewModelChenge', key_value);
+}
+
 function Context_menu(options) {
 	init(this, options);
 	this.refs = {};
-	this._state = assign(data$7(), options.data);
+	this._state = assign(data$8(), options.data);
+	this._recompute({ cardViewModels: 1 }, this._state);
 
-	if (!document.getElementById("svelte-1sjmqm0-style")) add_css$8();
+	if (!document.getElementById("svelte-rtzaol-style")) add_css$8();
 
 	var _oncreate = oncreate$7.bind(this);
 
@@ -13746,6 +14263,12 @@ function Context_menu(options) {
 }
 
 assign(Context_menu.prototype, methods$6, proto);
+
+Context_menu.prototype._recompute = function _recompute(changed, state) {
+	if (changed.cardViewModels) {
+		if (this._differs(state.modelsEntries, (state.modelsEntries = modelsEntries$1(state.cardViewModels)))) changed.modelsEntries = true;
+	}
+};
 
 /* src\svelte\app.html generated by Svelte v1.57.1 */
 
@@ -13768,7 +14291,7 @@ const sort = [
   {name: 'Contrast', value: 'contrast'},
 ];
 
-function textColor$3($bgColor) {
+function textColor$4($bgColor) {
 	return color($bgColor).isDark() ? '#fff' : '#000';
 }
 
@@ -13776,7 +14299,7 @@ function bgColor($bgColor, grayscale) {
 	return grayscale ? color($bgColor).grayscale() : color($bgColor);
 }
 
-function data$8() {
+function data$9() {
   return {
     current: {
       name: '',
@@ -13787,6 +14310,16 @@ function data$8() {
     sort,
     grayscale: false,
     textvisible: true,
+    cardViewModels: {
+      hex: true,
+      rgb: false,
+      hsl: true,
+      hsv: false,
+      hcg: false,
+      hwb: false,
+      cmyk: false,
+      contrast: true,
+    },
   }
 }
 var methods$7 = {
@@ -13811,8 +14344,9 @@ var methods$7 = {
   },
   setBgColor (color$$1) {
     const bgColor = this.store.get('bgColor');
-    this.store.set({bgColor: bgColor.alphaBlending(color$$1)});
-    this.store.memo();
+    const coloraplha1 = bgColor.alphaBlending(color$$1);
+    this.store.set({bgColor: coloraplha1});
+    this.addCard({name: 'background', color: coloraplha1});
   },
   removeAll () {
     const selects = this.selectable.selects;
@@ -13822,6 +14356,11 @@ var methods$7 = {
       this.store.set({cards: []});
       this.store.memo();
     }
+  },
+  viewModelChenge (event) {
+    const cardViewModels = this.get('cardViewModels');
+    Object.assign(cardViewModels, {[event[0]]: !event[1]});
+    this.set({cardViewModels});
   },
 };
 
@@ -13872,7 +14411,6 @@ function oncreate$8() {
   // Selectable
   this.selectable = new Selectable(this.refs.box, {
     filter: '.card',
-    tolerance: 'fit',
     start: (e, position) => {
       this.store.fire('menu_close');
     },
@@ -13945,7 +14483,7 @@ function create_main_fragment$9(component, state) {
 	var each_blocks = [];
 
 	for (var i_6 = 0; i_6 < sort.length; i_6 += 1) {
-		each_blocks[i_6] = create_each_block$3(component, assign({}, state, {
+		each_blocks[i_6] = create_each_block$4(component, assign({}, state, {
 			sort: sort,
 			key: sort[i_6],
 			key_index: i_6
@@ -13971,7 +14509,7 @@ function create_main_fragment$9(component, state) {
 	var each_1_blocks = [];
 
 	for (var i_6 = 0; i_6 < sort.length; i_6 += 1) {
-		each_1_blocks[i_6] = create_each_block_1$1(component, assign({}, state, {
+		each_1_blocks[i_6] = create_each_block_1$2(component, assign({}, state, {
 			sort: sort,
 			key: sort[i_6],
 			key_index: i_6
@@ -14059,7 +14597,12 @@ function create_main_fragment$9(component, state) {
 	}
 
 	var contextmenu = new Context_menu({
-		root: component.root
+		root: component.root,
+		data: { cardViewModels: state.cardViewModels }
+	});
+
+	contextmenu.on("viewModelChenge", function(event) {
+		component.viewModelChenge(event);
 	});
 
 	return {
@@ -14284,7 +14827,7 @@ function create_main_fragment$9(component, state) {
 					if (each_blocks[i_6]) {
 						each_blocks[i_6].p(changed, each_context);
 					} else {
-						each_blocks[i_6] = create_each_block$3(component, each_context);
+						each_blocks[i_6] = create_each_block$4(component, each_context);
 						each_blocks[i_6].c();
 						each_blocks[i_6].m(select, null);
 					}
@@ -14312,7 +14855,7 @@ function create_main_fragment$9(component, state) {
 					if (each_1_blocks[i_6]) {
 						each_1_blocks[i_6].p(changed, each_1_context);
 					} else {
-						each_1_blocks[i_6] = create_each_block_1$1(component, each_1_context);
+						each_1_blocks[i_6] = create_each_block_1$2(component, each_1_context);
 						each_1_blocks[i_6].c();
 						each_1_blocks[i_6].m(select_1, null);
 					}
@@ -14356,7 +14899,7 @@ function create_main_fragment$9(component, state) {
 
 			var $cards = state.$cards;
 
-			if (changed.$cards || changed.grayscale || changed.textvisible) {
+			if (changed.$cards || changed.grayscale || changed.textvisible || changed.cardViewModels) {
 				for (var i_6 = 0; i_6 < $cards.length; i_6 += 1) {
 					var each_2_context = assign({}, state, {
 						$cards: $cards,
@@ -14387,6 +14930,10 @@ function create_main_fragment$9(component, state) {
 			if (changed.textColor) {
 				setStyle(div_11, "color", state.textColor);
 			}
+
+			var contextmenu_changes = {};
+			if (changed.cardViewModels) contextmenu_changes.cardViewModels = state.cardViewModels;
+			contextmenu._set(contextmenu_changes);
 		},
 
 		u: function unmount() {
@@ -14448,7 +14995,7 @@ function create_main_fragment$9(component, state) {
 }
 
 // (27:8) {{#each sort as key}}
-function create_each_block$3(component, state) {
+function create_each_block$4(component, state) {
 	var key = state.key, key_index = state.key_index;
 	var option, text_value = key.name, text, option_value_value;
 
@@ -14492,7 +15039,7 @@ function create_each_block$3(component, state) {
 }
 
 // (36:8) {{#each sort as key}}
-function create_each_block_1$1(component, state) {
+function create_each_block_1$2(component, state) {
 	var key = state.key, key_index = state.key_index;
 	var option, text_value = key.name, text, option_value_value;
 
@@ -14545,7 +15092,8 @@ function create_each_block_2(component, state) {
 			card: card,
 			index: index,
 			grayscale: state.grayscale,
-			textvisible: state.textvisible
+			textvisible: state.textvisible,
+			cardViewModels: state.cardViewModels
 		}
 	});
 
@@ -14566,6 +15114,7 @@ function create_each_block_2(component, state) {
 			colorcard_changes.index = index;
 			if (changed.grayscale) colorcard_changes.grayscale = state.grayscale;
 			if (changed.textvisible) colorcard_changes.textvisible = state.textvisible;
+			if (changed.cardViewModels) colorcard_changes.cardViewModels = state.cardViewModels;
 			colorcard._set(colorcard_changes);
 		},
 
@@ -14583,7 +15132,7 @@ function App(options) {
 	init(this, options);
 	this.store = store_1();
 	this.refs = {};
-	this._state = assign(this.store._init(["bgColor","sortX","sortY","cards"]), data$8(), options.data);
+	this._state = assign(this.store._init(["bgColor","sortX","sortY","cards"]), data$9(), options.data);
 	this.store._add(this, ["bgColor","sortX","sortY","cards"]);
 	this._recompute({ $bgColor: 1, grayscale: 1 }, this._state);
 
@@ -14619,7 +15168,7 @@ assign(App.prototype, methods$7, proto);
 
 App.prototype._recompute = function _recompute(changed, state) {
 	if (changed.$bgColor) {
-		if (this._differs(state.textColor, (state.textColor = textColor$3(state.$bgColor)))) changed.textColor = true;
+		if (this._differs(state.textColor, (state.textColor = textColor$4(state.$bgColor)))) changed.textColor = true;
 	}
 
 	if (changed.$bgColor || changed.grayscale) {
@@ -14630,11 +15179,11 @@ App.prototype._recompute = function _recompute(changed, state) {
 var xkcd = [["acidgreen",{"h":87,"s":99,"l":52}],["adobe",{"h":18,"s":47,"l":51}],["algae",{"h":134,"s":35,"l":50}],["algaegreen",{"h":149,"s":71,"l":45}],["almostblack",{"h":180,"s":30,"l":4}],["amber",{"h":42,"s":99,"l":51}],["amethyst",{"h":277,"s":43,"l":56}],["apple",{"h":99,"s":58,"l":52}],["applegreen",{"h":91,"s":69,"l":48}],["apricot",{"h":28,"s":100,"l":71}],["aqua",{"h":171,"s":85,"l":50}],["aquablue",{"h":184,"s":98,"l":46}],["aquagreen",{"h":157,"s":85,"l":48}],["aquamarine",{"h":165,"s":80,"l":55}],["armygreen",{"h":75,"s":62,"l":23}],["asparagus",{"h":97,"s":34,"l":50}],["aubergine",{"h":310,"s":79,"l":13}],["auburn",{"h":18,"s":99,"l":30}],["avocado",{"h":76,"s":55,"l":45}],["avocadogreen",{"h":75,"s":67,"l":40}],["azul",{"h":221,"s":84,"l":52}],["azure",{"h":203,"s":95,"l":49}],["babyblue",{"h":211,"s":98,"l":82}],["babygreen",{"h":129,"s":100,"l":77}],["babypink",{"h":341,"s":100,"l":86}],["babypoo",{"h":50,"s":95,"l":34}],["babypoop",{"h":51,"s":100,"l":29}],["babypoopgreen",{"h":64,"s":94,"l":31}],["babypukegreen",{"h":64,"s":94,"l":40}],["babypurple",{"h":271,"s":85,"l":79}],["babyshitbrown",{"h":49,"s":86,"l":36}],["babyshitgreen",{"h":67,"s":74,"l":34}],["banana",{"h":60,"s":100,"l":75}],["bananayellow",{"h":61,"s":99,"l":65}],["barbiepink",{"h":329,"s":99,"l":64}],["barfgreen",{"h":68,"s":98,"l":34}],["barney",{"h":295,"s":73,"l":42}],["barneypurple",{"h":303,"s":95,"l":32}],["battleshipgrey",{"h":201,"s":11,"l":47}],["beige",{"h":49,"s":56,"l":78}],["berry",{"h":334,"s":82,"l":33}],["bile",{"h":64,"s":94,"l":39}],["black",{"h":0,"s":0,"l":0}],["bland",{"h":48,"s":18,"l":62}],["blood",{"h":359,"s":100,"l":23}],["bloodorange",{"h":17,"s":99,"l":50}],["bloodred",{"h":359,"s":100,"l":30}],["blue",{"h":223,"s":97,"l":44}],["blueberry",{"h":244,"s":40,"l":42}],["blueblue",{"h":228,"s":71,"l":46}],["bluegreen",{"h":174,"s":82,"l":33}],["bluegrey",{"h":200,"s":23,"l":61}],["bluepurple",{"h":262,"s":95,"l":48}],["blueviolet",{"h":263,"s":95,"l":47}],["bluewithahintofpurple",{"h":250,"s":55,"l":51}],["blueygreen",{"h":155,"s":61,"l":43}],["blueygrey",{"h":205,"s":20,"l":61}],["blueypurple",{"h":255,"s":54,"l":52}],["bluish",{"h":208,"s":64,"l":45}],["bluishgreen",{"h":160,"s":82,"l":36}],["bluishgrey",{"h":201,"s":14,"l":52}],["bluishpurple",{"h":258,"s":78,"l":57}],["blurple",{"h":251,"s":59,"l":51}],["blush",{"h":10,"s":79,"l":75}],["blushpink",{"h":355,"s":98,"l":75}],["booger",{"h":73,"s":50,"l":47}],["boogergreen",{"h":70,"s":97,"l":36}],["bordeaux",{"h":339,"s":100,"l":24}],["boringgreen",{"h":122,"s":34,"l":55}],["bottlegreen",{"h":121,"s":90,"l":15}],["brick",{"h":9,"s":64,"l":38}],["brickorange",{"h":21,"s":91,"l":40}],["brickred",{"h":8,"s":97,"l":28}],["brightaqua",{"h":176,"s":95,"l":51}],["brightblue",{"h":216,"s":99,"l":50}],["brightcyan",{"h":180,"s":99,"l":63}],["brightgreen",{"h":121,"s":100,"l":50}],["brightlavender",{"h":279,"s":100,"l":69}],["brightlightblue",{"h":182,"s":98,"l":57}],["brightlightgreen",{"h":131,"s":99,"l":59}],["brightlilac",{"h":281,"s":95,"l":68}],["brightlime",{"h":89,"s":98,"l":51}],["brightlimegreen",{"h":97,"s":99,"l":51}],["brightmagenta",{"h":306,"s":100,"l":52}],["brightolive",{"h":70,"s":96,"l":37}],["brightorange",{"h":21,"s":100,"l":50}],["brightpink",{"h":318,"s":99,"l":50}],["brightpurple",{"h":285,"s":98,"l":50}],["brightred",{"h":357,"s":100,"l":50}],["brightseagreen",{"h":159,"s":100,"l":51}],["brightskyblue",{"h":192,"s":99,"l":50}],["brightteal",{"h":168,"s":99,"l":49}],["brightturquoise",{"h":179,"s":99,"l":53}],["brightviolet",{"h":280,"s":98,"l":52}],["brightyellow",{"h":60,"s":100,"l":50}],["brightyellowgreen",{"h":83,"s":100,"l":50}],["britishracinggreen",{"h":127,"s":87,"l":15}],["bronze",{"h":43,"s":100,"l":33}],["brown",{"h":33,"s":100,"l":20}],["browngreen",{"h":57,"s":74,"l":25}],["browngrey",{"h":45,"s":15,"l":48}],["brownish",{"h":19,"s":28,"l":48}],["brownishgreen",{"h":62,"s":85,"l":23}],["brownishgrey",{"h":37,"s":17,"l":45}],["brownishorange",{"h":30,"s":71,"l":47}],["brownishpink",{"h":4,"s":37,"l":62}],["brownishpurple",{"h":346,"s":28,"l":36}],["brownishred",{"h":9,"s":64,"l":38}],["brownishyellow",{"h":52,"s":97,"l":40}],["brownorange",{"h":34,"s":98,"l":37}],["brownred",{"h":16,"s":93,"l":30}],["brownyellow",{"h":51,"s":95,"l":36}],["brownygreen",{"h":58,"s":83,"l":24}],["brownyorange",{"h":32,"s":98,"l":40}],["bruise",{"h":313,"s":33,"l":37}],["bubblegum",{"h":330,"s":100,"l":71}],["bubblegumpink",{"h":332,"s":100,"l":71}],["buff",{"h":55,"s":98,"l":81}],["burgundy",{"h":338,"s":100,"l":19}],["burntorange",{"h":24,"s":99,"l":38}],["burntred",{"h":12,"s":94,"l":32}],["burntsiena",{"h":26,"s":97,"l":36}],["burntsienna",{"h":23,"s":84,"l":37}],["burntumber",{"h":23,"s":84,"l":34}],["burntyellow",{"h":48,"s":92,"l":44}],["burple",{"h":258,"s":76,"l":54}],["butter",{"h":60,"s":100,"l":75}],["butterscotch",{"h":35,"s":98,"l":64}],["butteryellow",{"h":59,"s":100,"l":73}],["cadetblue",{"h":208,"s":32,"l":45}],["camel",{"h":39,"s":49,"l":56}],["camo",{"h":75,"s":29,"l":43}],["camogreen",{"h":78,"s":46,"l":27}],["camouflagegreen",{"h":77,"s":67,"l":23}],["canary",{"h":61,"s":100,"l":69}],["canaryyellow",{"h":60,"s":100,"l":63}],["candypink",{"h":308,"s":100,"l":69}],["caramel",{"h":37,"s":90,"l":36}],["carmine",{"h":352,"s":97,"l":31}],["carnation",{"h":350,"s":97,"l":73}],["carnationpink",{"h":341,"s":100,"l":75}],["carolinablue",{"h":216,"s":98,"l":77}],["celadon",{"h":114,"s":95,"l":85}],["celery",{"h":95,"s":96,"l":79}],["cement",{"h":54,"s":10,"l":61}],["cerise",{"h":335,"s":90,"l":46}],["cerulean",{"h":202,"s":96,"l":42}],["ceruleanblue",{"h":213,"s":96,"l":48}],["charcoal",{"h":165,"s":4,"l":21}],["charcoalgrey",{"h":190,"s":5,"l":25}],["chartreuse",{"h":74,"s":94,"l":51}],["cherry",{"h":345,"s":98,"l":41}],["cherryred",{"h":350,"s":98,"l":49}],["chestnut",{"h":20,"s":97,"l":23}],["chocolate",{"h":26,"s":94,"l":12}],["chocolatebrown",{"h":23,"s":100,"l":13}],["cinnamon",{"h":26,"s":93,"l":35}],["claret",{"h":346,"s":100,"l":20}],["clay",{"h":15,"s":41,"l":51}],["claybrown",{"h":27,"s":49,"l":47}],["clearblue",{"h":216,"s":98,"l":57}],["cobalt",{"h":218,"s":65,"l":34}],["cobaltblue",{"h":237,"s":96,"l":33}],["cocoa",{"h":25,"s":34,"l":39}],["coffee",{"h":35,"s":37,"l":47}],["coolblue",{"h":208,"s":44,"l":50}],["coolgreen",{"h":142,"s":57,"l":46}],["coolgrey",{"h":191,"s":9,"l":62}],["copper",{"h":26,"s":66,"l":43}],["coral",{"h":3,"s":97,"l":65}],["coralpink",{"h":359,"s":100,"l":69}],["cornflower",{"h":234,"s":90,"l":69}],["cornflowerblue",{"h":226,"s":63,"l":58}],["cranberry",{"h":338,"s":100,"l":31}],["cream",{"h":60,"s":100,"l":88}],["creme",{"h":60,"s":100,"l":86}],["crimson",{"h":354,"s":100,"l":27}],["custard",{"h":59,"s":100,"l":74}],["cyan",{"h":180,"s":100,"l":50}],["dandelion",{"h":52,"s":99,"l":51}],["dark",{"h":215,"s":29,"l":15}],["darkaqua",{"h":181,"s":91,"l":22}],["darkaquamarine",{"h":179,"s":98,"l":23}],["darkbeige",{"h":40,"s":31,"l":53}],["darkblue",{"h":238,"s":94,"l":20}],["darkbluegreen",{"h":173,"s":100,"l":16}],["darkbluegrey",{"h":203,"s":43,"l":21}],["darkbrown",{"h":31,"s":93,"l":11}],["darkcoral",{"h":2,"s":57,"l":56}],["darkcream",{"h":53,"s":100,"l":80}],["darkcyan",{"h":181,"s":86,"l":29}],["darkforestgreen",{"h":125,"s":100,"l":9}],["darkfuchsia",{"h":327,"s":91,"l":32}],["darkgold",{"h":48,"s":84,"l":39}],["darkgrassgreen",{"h":95,"s":94,"l":26}],["darkgreen",{"h":122,"s":87,"l":15}],["darkgreenblue",{"h":169,"s":52,"l":25}],["darkgrey",{"h":180,"s":1,"l":21}],["darkgreyblue",{"h":205,"s":38,"l":26}],["darkhotpink",{"h":332,"s":99,"l":43}],["darkindigo",{"h":258,"s":81,"l":18}],["darkishblue",{"h":210,"s":98,"l":26}],["darkishgreen",{"h":131,"s":51,"l":32}],["darkishpink",{"h":338,"s":67,"l":56}],["darkishpurple",{"h":301,"s":65,"l":28}],["darkishred",{"h":358,"s":97,"l":34}],["darkkhaki",{"h":50,"s":29,"l":47}],["darklavender",{"h":277,"s":19,"l":50}],["darklilac",{"h":290,"s":24,"l":54}],["darklime",{"h":77,"s":99,"l":36}],["darklimegreen",{"h":80,"s":99,"l":37}],["darkmagenta",{"h":326,"s":100,"l":29}],["darkmaroon",{"h":352,"s":100,"l":12}],["darkmauve",{"h":338,"s":28,"l":41}],["darkmint",{"h":141,"s":49,"l":52}],["darkmintgreen",{"h":151,"s":71,"l":44}],["darkmustard",{"h":49,"s":94,"l":34}],["darknavy",{"h":235,"s":100,"l":10}],["darknavyblue",{"h":237,"s":100,"l":9}],["darkolive",{"h":67,"s":94,"l":13}],["darkolivegreen",{"h":74,"s":93,"l":16}],["darkorange",{"h":24,"s":98,"l":39}],["darkpastelgreen",{"h":121,"s":35,"l":51}],["darkpeach",{"h":15,"s":66,"l":62}],["darkperiwinkle",{"h":244,"s":55,"l":60}],["darkpink",{"h":342,"s":57,"l":53}],["darkplum",{"h":318,"s":97,"l":13}],["darkpurple",{"h":290,"s":82,"l":13}],["darkred",{"h":0,"s":100,"l":26}],["darkrose",{"h":348,"s":43,"l":50}],["darkroyalblue",{"h":238,"s":96,"l":22}],["darksage",{"h":116,"s":21,"l":43}],["darksalmon",{"h":4,"s":52,"l":55}],["darksand",{"h":41,"s":31,"l":50}],["darkseafoam",{"h":156,"s":71,"l":42}],["darkseafoamgreen",{"h":150,"s":48,"l":46}],["darkseagreen",{"h":159,"s":78,"l":30}],["darkskyblue",{"h":212,"s":75,"l":58}],["darkslateblue",{"h":204,"s":49,"l":25}],["darktan",{"h":37,"s":41,"l":49}],["darktaupe",{"h":32,"s":24,"l":40}],["darkteal",{"h":181,"s":97,"l":15}],["darkturquoise",{"h":179,"s":92,"l":19}],["darkviolet",{"h":289,"s":97,"l":13}],["darkyellow",{"h":51,"s":91,"l":44}],["darkyellowgreen",{"h":72,"s":97,"l":28}],["deepaqua",{"h":184,"s":88,"l":26}],["deepblue",{"h":241,"s":97,"l":23}],["deepbrown",{"h":2,"s":100,"l":13}],["deepgreen",{"h":129,"s":96,"l":18}],["deeplavender",{"h":272,"s":38,"l":54}],["deeplilac",{"h":270,"s":37,"l":59}],["deepmagenta",{"h":326,"s":98,"l":32}],["deeporange",{"h":21,"s":99,"l":43}],["deeppink",{"h":331,"s":99,"l":40}],["deeppurple",{"h":291,"s":97,"l":13}],["deepred",{"h":1,"s":100,"l":30}],["deeprose",{"h":345,"s":53,"l":53}],["deepseablue",{"h":201,"s":98,"l":26}],["deepskyblue",{"h":213,"s":94,"l":51}],["deepteal",{"h":183,"s":100,"l":18}],["deepturquoise",{"h":181,"s":98,"l":23}],["deepviolet",{"h":301,"s":85,"l":15}],["denim",{"h":210,"s":41,"l":39}],["denimblue",{"h":218,"s":42,"l":40}],["desert",{"h":43,"s":51,"l":59}],["diarrhea",{"h":49,"s":96,"l":32}],["dirt",{"h":36,"s":33,"l":41}],["dirtbrown",{"h":36,"s":39,"l":37}],["dirtyblue",{"h":197,"s":43,"l":43}],["dirtygreen",{"h":78,"s":48,"l":33}],["dirtyorange",{"h":35,"s":94,"l":40}],["dirtypink",{"h":356,"s":43,"l":64}],["dirtypurple",{"h":320,"s":22,"l":37}],["dirtyyellow",{"h":58,"s":91,"l":42}],["dodgerblue",{"h":219,"s":97,"l":62}],["drab",{"h":61,"s":32,"l":39}],["drabgreen",{"h":89,"s":30,"l":45}],["driedblood",{"h":0,"s":97,"l":15}],["duckeggblue",{"h":173,"s":88,"l":87}],["dullblue",{"h":208,"s":36,"l":45}],["dullbrown",{"h":35,"s":29,"l":41}],["dullgreen",{"h":104,"s":28,"l":52}],["dullorange",{"h":29,"s":67,"l":54}],["dullpink",{"h":343,"s":48,"l":68}],["dullpurple",{"h":308,"s":19,"l":43}],["dullred",{"h":0,"s":50,"l":49}],["dullteal",{"h":166,"s":25,"l":50}],["dullyellow",{"h":53,"s":81,"l":65}],["dusk",{"h":233,"s":25,"l":41}],["duskblue",{"h":214,"s":58,"l":35}],["duskyblue",{"h":221,"s":35,"l":43}],["duskypink",{"h":348,"s":45,"l":64}],["duskypurple",{"h":318,"s":20,"l":45}],["duskyrose",{"h":352,"s":37,"l":57}],["dust",{"h":38,"s":31,"l":56}],["dustyblue",{"h":208,"s":34,"l":52}],["dustygreen",{"h":117,"s":24,"l":56}],["dustylavender",{"h":306,"s":19,"l":60}],["dustyorange",{"h":24,"s":86,"l":58}],["dustypink",{"h":352,"s":47,"l":69}],["dustypurple",{"h":293,"s":17,"l":45}],["dustyred",{"h":357,"s":45,"l":50}],["dustyrose",{"h":355,"s":38,"l":60}],["dustyteal",{"h":170,"s":31,"l":43}],["earth",{"h":23,"s":45,"l":44}],["eastergreen",{"h":113,"s":97,"l":74}],["easterpurple",{"h":274,"s":99,"l":72}],["ecru",{"h":61,"s":100,"l":90}],["eggplant",{"h":304,"s":75,"l":13}],["eggplantpurple",{"h":302,"s":86,"l":14}],["eggshell",{"h":57,"s":100,"l":88}],["eggshellblue",{"h":172,"s":100,"l":88}],["electricblue",{"h":222,"s":100,"l":51}],["electricgreen",{"h":115,"s":98,"l":52}],["electriclime",{"h":81,"s":100,"l":51}],["electricpink",{"h":327,"s":100,"l":51}],["electricpurple",{"h":277,"s":100,"l":57}],["emerald",{"h":147,"s":99,"l":32}],["emeraldgreen",{"h":132,"s":97,"l":28}],["evergreen",{"h":154,"s":87,"l":15}],["fadedblue",{"h":213,"s":39,"l":56}],["fadedgreen",{"h":113,"s":29,"l":58}],["fadedorange",{"h":26,"s":84,"l":62}],["fadedpink",{"h":346,"s":50,"l":74}],["fadedpurple",{"h":289,"s":17,"l":52}],["fadedred",{"h":358,"s":61,"l":56}],["fadedyellow",{"h":60,"s":100,"l":75}],["fawn",{"h":37,"s":47,"l":65}],["fern",{"h":107,"s":36,"l":49}],["ferngreen",{"h":107,"s":35,"l":41}],["fireenginered",{"h":0,"s":100,"l":50}],["flatblue",{"h":209,"s":47,"l":45}],["flatgreen",{"h":99,"s":35,"l":46}],["fluorescentgreen",{"h":120,"s":100,"l":52}],["flurogreen",{"h":118,"s":100,"l":50}],["foamgreen",{"h":134,"s":96,"l":78}],["forest",{"h":118,"s":81,"l":18}],["forestgreen",{"h":126,"s":84,"l":15}],["forrestgreen",{"h":105,"s":84,"l":15}],["frenchblue",{"h":217,"s":44,"l":47}],["freshgreen",{"h":109,"s":64,"l":58}],["froggreen",{"h":93,"s":92,"l":38}],["fuchsia",{"h":305,"s":90,"l":49}],["gold",{"h":49,"s":90,"l":45}],["golden",{"h":47,"s":98,"l":49}],["goldenbrown",{"h":41,"s":99,"l":35}],["goldenrod",{"h":45,"s":95,"l":50}],["goldenyellow",{"h":46,"s":99,"l":54}],["grape",{"h":312,"s":35,"l":31}],["grapefruit",{"h":1,"s":98,"l":66}],["grapepurple",{"h":310,"s":65,"l":22}],["grass",{"h":98,"s":59,"l":43}],["grassgreen",{"h":98,"s":87,"l":33}],["grassygreen",{"h":96,"s":96,"l":31}],["green",{"h":122,"s":79,"l":39}],["greenapple",{"h":100,"s":75,"l":49}],["greenblue",{"h":164,"s":99,"l":38}],["greenbrown",{"h":56,"s":93,"l":17}],["greengrey",{"h":106,"s":14,"l":50}],["greenish",{"h":144,"s":44,"l":45}],["greenishbeige",{"h":65,"s":49,"l":65}],["greenishblue",{"h":178,"s":85,"l":29}],["greenishbrown",{"h":54,"s":71,"l":24}],["greenishcyan",{"h":160,"s":99,"l":58}],["greenishgrey",{"h":104,"s":17,"l":62}],["greenishtan",{"h":71,"s":44,"l":64}],["greenishteal",{"h":155,"s":59,"l":47}],["greenishturquoise",{"h":162,"s":100,"l":49}],["greenishyellow",{"h":71,"s":98,"l":50}],["greenteal",{"h":158,"s":88,"l":38}],["greenyblue",{"h":164,"s":46,"l":48}],["greenybrown",{"h":55,"s":89,"l":22}],["greenyellow",{"h":68,"s":93,"l":42}],["greenygrey",{"h":114,"s":17,"l":55}],["greenyyellow",{"h":73,"s":94,"l":50}],["grey",{"h":105,"s":2,"l":58}],["greyblue",{"h":204,"s":17,"l":47}],["greybrown",{"h":40,"s":21,"l":41}],["greygreen",{"h":105,"s":16,"l":56}],["greyish",{"h":47,"s":10,"l":62}],["greyishblue",{"h":207,"s":25,"l":49}],["greyishbrown",{"h":38,"s":21,"l":39}],["greyishgreen",{"h":113,"s":19,"l":57}],["greyishpink",{"h":353,"s":35,"l":67}],["greyishpurple",{"h":283,"s":13,"l":51}],["greyishteal",{"h":162,"s":19,"l":53}],["greypink",{"h":347,"s":30,"l":66}],["greypurple",{"h":281,"s":12,"l":49}],["greyteal",{"h":163,"s":24,"l":49}],["grossgreen",{"h":71,"s":79,"l":42}],["gunmetal",{"h":195,"s":11,"l":36}],["hazel",{"h":48,"s":71,"l":33}],["heather",{"h":288,"s":19,"l":60}],["heliotrope",{"h":290,"s":89,"l":64}],["highlightergreen",{"h":115,"s":98,"l":51}],["hospitalgreen",{"h":132,"s":59,"l":75}],["hotgreen",{"h":121,"s":100,"l":57}],["hotmagenta",{"h":311,"s":97,"l":49}],["hotpink",{"h":327,"s":100,"l":50}],["hotpurple",{"h":290,"s":100,"l":48}],["huntergreen",{"h":117,"s":78,"l":14}],["ice",{"h":173,"s":100,"l":92}],["iceblue",{"h":179,"s":100,"l":92}],["ickygreen",{"h":73,"s":67,"l":41}],["indianred",{"h":5,"s":94,"l":27}],["indigo",{"h":265,"s":97,"l":26}],["indigoblue",{"h":253,"s":76,"l":39}],["iris",{"h":246,"s":48,"l":56}],["irishgreen",{"h":136,"s":99,"l":29}],["ivory",{"h":60,"s":100,"l":90}],["jade",{"h":158,"s":69,"l":39}],["jadegreen",{"h":149,"s":61,"l":43}],["junglegreen",{"h":150,"s":94,"l":26}],["kelleygreen",{"h":142,"s":100,"l":29}],["kellygreen",{"h":136,"s":98,"l":34}],["kermitgreen",{"h":89,"s":100,"l":35}],["keylime",{"h":94,"s":100,"l":72}],["khaki",{"h":57,"s":30,"l":53}],["khakigreen",{"h":76,"s":40,"l":37}],["kiwi",{"h":89,"s":84,"l":60}],["kiwigreen",{"h":91,"s":76,"l":57}],["lavender",{"h":270,"s":71,"l":78}],["lavenderblue",{"h":242,"s":89,"l":75}],["lavenderpink",{"h":304,"s":56,"l":69}],["lawngreen",{"h":94,"s":90,"l":34}],["leaf",{"h":89,"s":53,"l":44}],["leafgreen",{"h":88,"s":95,"l":34}],["leafygreen",{"h":109,"s":51,"l":47}],["leather",{"h":32,"s":54,"l":44}],["lemon",{"h":61,"s":100,"l":66}],["lemongreen",{"h":78,"s":98,"l":49}],["lemonlime",{"h":78,"s":99,"l":58}],["lemonyellow",{"h":61,"s":100,"l":61}],["lichen",{"h":100,"s":29,"l":60}],["lightaqua",{"h":161,"s":100,"l":77}],["lightaquamarine",{"h":155,"s":97,"l":74}],["lightbeige",{"h":59,"s":100,"l":86}],["lightblue",{"h":202,"s":87,"l":72}],["lightbluegreen",{"h":145,"s":94,"l":74}],["lightbluegrey",{"h":215,"s":43,"l":80}],["lightbluishgreen",{"h":142,"s":97,"l":73}],["lightbrightgreen",{"h":123,"s":99,"l":66}],["lightbrown",{"h":32,"s":37,"l":50}],["lightburgundy",{"h":345,"s":44,"l":46}],["lightcyan",{"h":178,"s":100,"l":84}],["lighteggplant",{"h":304,"s":33,"l":40}],["lightergreen",{"h":113,"s":97,"l":69}],["lighterpurple",{"h":269,"s":88,"l":65}],["lightforestgreen",{"h":124,"s":29,"l":44}],["lightgold",{"h":48,"s":98,"l":68}],["lightgrassgreen",{"h":98,"s":90,"l":68}],["lightgreen",{"h":122,"s":100,"l":73}],["lightgreenblue",{"h":147,"s":97,"l":66}],["lightgreenishblue",{"h":153,"s":90,"l":68}],["lightgrey",{"h":100,"s":8,"l":85}],["lightgreyblue",{"h":206,"s":39,"l":72}],["lightgreygreen",{"h":99,"s":52,"l":76}],["lightindigo",{"h":250,"s":55,"l":58}],["lightishblue",{"h":221,"s":98,"l":62}],["lightishgreen",{"h":120,"s":68,"l":63}],["lightishpurple",{"h":274,"s":75,"l":61}],["lightishred",{"h":352,"s":99,"l":59}],["lightkhaki",{"h":69,"s":75,"l":79}],["lightlavendar",{"h":285,"s":97,"l":87}],["lightlavender",{"h":267,"s":97,"l":88}],["lightlightblue",{"h":175,"s":100,"l":90}],["lightlightgreen",{"h":102,"s":100,"l":85}],["lightlilac",{"h":280,"s":100,"l":89}],["lightlime",{"h":93,"s":97,"l":71}],["lightlimegreen",{"h":87,"s":100,"l":70}],["lightmagenta",{"h":301,"s":94,"l":68}],["lightmaroon",{"h":350,"s":38,"l":46}],["lightmauve",{"h":341,"s":28,"l":67}],["lightmint",{"h":124,"s":100,"l":86}],["lightmintgreen",{"h":128,"s":91,"l":82}],["lightmossgreen",{"h":85,"s":43,"l":62}],["lightmustard",{"h":46,"s":90,"l":67}],["lightnavy",{"h":208,"s":73,"l":30}],["lightnavyblue",{"h":211,"s":49,"l":36}],["lightneongreen",{"h":122,"s":98,"l":65}],["lightolive",{"h":73,"s":40,"l":58}],["lightolivegreen",{"h":76,"s":43,"l":55}],["lightorange",{"h":32,"s":98,"l":64}],["lightpastelgreen",{"h":111,"s":91,"l":82}],["lightpeach",{"h":30,"s":100,"l":85}],["lightpeagreen",{"h":88,"s":98,"l":75}],["lightperiwinkle",{"h":235,"s":91,"l":87}],["lightpink",{"h":342,"s":100,"l":91}],["lightplum",{"h":322,"s":29,"l":48}],["lightpurple",{"h":274,"s":88,"l":72}],["lightred",{"h":358,"s":100,"l":64}],["lightrose",{"h":354,"s":100,"l":89}],["lightroyalblue",{"h":243,"s":99,"l":59}],["lightsage",{"h":105,"s":63,"l":80}],["lightsalmon",{"h":12,"s":98,"l":79}],["lightseafoam",{"h":140,"s":98,"l":81}],["lightseafoamgreen",{"h":130,"s":100,"l":83}],["lightseagreen",{"h":135,"s":84,"l":78}],["lightskyblue",{"h":183,"s":100,"l":89}],["lighttan",{"h":50,"s":91,"l":83}],["lightteal",{"h":155,"s":61,"l":73}],["lightturquoise",{"h":160,"s":84,"l":73}],["lighturple",{"h":270,"s":88,"l":70}],["lightviolet",{"h":268,"s":92,"l":85}],["lightyellow",{"h":60,"s":100,"l":74}],["lightyellowgreen",{"h":83,"s":97,"l":75}],["lightyellowishgreen",{"h":91,"s":100,"l":77}],["lilac",{"h":269,"s":96,"l":81}],["liliac",{"h":269,"s":97,"l":77}],["lime",{"h":85,"s":100,"l":60}],["limegreen",{"h":88,"s":99,"l":51}],["limeyellow",{"h":72,"s":99,"l":55}],["lipstick",{"h":343,"s":81,"l":46}],["lipstickred",{"h":346,"s":98,"l":38}],["macaroniandcheese",{"h":41,"s":85,"l":57}],["magenta",{"h":323,"s":100,"l":38}],["mahogany",{"h":1,"s":100,"l":15}],["maize",{"h":47,"s":88,"l":64}],["mango",{"h":35,"s":100,"l":58}],["manilla",{"h":58,"s":100,"l":76}],["marigold",{"h":45,"s":98,"l":51}],["marine",{"h":213,"s":92,"l":20}],["marineblue",{"h":209,"s":98,"l":21}],["maroon",{"h":340,"s":100,"l":20}],["mauve",{"h":344,"s":27,"l":56}],["mediumblue",{"h":212,"s":62,"l":45}],["mediumbrown",{"h":35,"s":75,"l":28}],["mediumgreen",{"h":128,"s":50,"l":45}],["mediumgrey",{"h":100,"s":1,"l":49}],["mediumpink",{"h":338,"s":86,"l":67}],["mediumpurple",{"h":297,"s":41,"l":45}],["melon",{"h":12,"s":100,"l":67}],["merlot",{"h":330,"s":100,"l":23}],["metallicblue",{"h":206,"s":29,"l":43}],["midblue",{"h":211,"s":64,"l":43}],["midgreen",{"h":114,"s":40,"l":47}],["midnight",{"h":243,"s":96,"l":9}],["midnightblue",{"h":242,"s":100,"l":10}],["midnightpurple",{"h":283,"s":96,"l":11}],["militarygreen",{"h":81,"s":33,"l":36}],["milkchocolate",{"h":30,"s":62,"l":31}],["mint",{"h":131,"s":98,"l":81}],["mintgreen",{"h":129,"s":100,"l":78}],["mintygreen",{"h":149,"s":94,"l":51}],["mocha",{"h":29,"s":32,"l":47}],["moss",{"h":92,"s":27,"l":47}],["mossgreen",{"h":87,"s":43,"l":38}],["mossygreen",{"h":84,"s":56,"l":35}],["mud",{"h":46,"s":73,"l":26}],["mudbrown",{"h":41,"s":73,"l":22}],["muddybrown",{"h":45,"s":92,"l":28}],["muddygreen",{"h":74,"s":40,"l":33}],["muddyyellow",{"h":54,"s":95,"l":38}],["mudgreen",{"h":64,"s":96,"l":20}],["mulberry",{"h":330,"s":87,"l":31}],["murkygreen",{"h":68,"s":79,"l":27}],["mushroom",{"h":26,"s":27,"l":63}],["mustard",{"h":52,"s":99,"l":41}],["mustardbrown",{"h":44,"s":95,"l":35}],["mustardgreen",{"h":64,"s":96,"l":36}],["mustardyellow",{"h":54,"s":91,"l":43}],["mutedblue",{"h":208,"s":46,"l":43}],["mutedgreen",{"h":110,"s":32,"l":47}],["mutedpink",{"h":344,"s":50,"l":64}],["mutedpurple",{"h":290,"s":19,"l":44}],["nastygreen",{"h":94,"s":48,"l":47}],["navy",{"h":220,"s":97,"l":12}],["navyblue",{"h":225,"s":100,"l":14}],["navygreen",{"h":85,"s":78,"l":18}],["neonblue",{"h":189,"s":100,"l":51}],["neongreen",{"h":120,"s":100,"l":52}],["neonpink",{"h":324,"s":99,"l":50}],["neonpurple",{"h":283,"s":99,"l":54}],["neonred",{"h":348,"s":100,"l":51}],["neonyellow",{"h":71,"s":100,"l":51}],["niceblue",{"h":200,"s":83,"l":38}],["nightblue",{"h":241,"s":92,"l":15}],["ocean",{"h":190,"s":99,"l":29}],["oceanblue",{"h":197,"s":96,"l":31}],["oceangreen",{"h":155,"s":43,"l":42}],["ocher",{"h":48,"s":88,"l":40}],["ochre",{"h":45,"s":95,"l":38}],["ocre",{"h":47,"s":96,"l":40}],["offblue",{"h":209,"s":35,"l":51}],["offgreen",{"h":102,"s":33,"l":48}],["offwhite",{"h":60,"s":100,"l":95}],["offyellow",{"h":61,"s":88,"l":60}],["oldpink",{"h":350,"s":41,"l":63}],["oldrose",{"h":352,"s":40,"l":64}],["olive",{"h":64,"s":79,"l":26}],["olivebrown",{"h":50,"s":94,"l":20}],["olivedrab",{"h":66,"s":40,"l":33}],["olivegreen",{"h":70,"s":94,"l":25}],["oliveyellow",{"h":56,"s":91,"l":40}],["orange",{"h":27,"s":95,"l":50}],["orangebrown",{"h":32,"s":100,"l":37}],["orangeish",{"h":23,"s":98,"l":64}],["orangepink",{"h":10,"s":100,"l":66}],["orangered",{"h":13,"s":99,"l":53}],["orangeybrown",{"h":32,"s":98,"l":35}],["orangeyellow",{"h":41,"s":100,"l":50}],["orangeyred",{"h":8,"s":96,"l":56}],["orangeyyellow",{"h":42,"s":98,"l":54}],["orangish",{"h":19,"s":97,"l":64}],["orangishbrown",{"h":32,"s":97,"l":35}],["orangishred",{"h":12,"s":96,"l":49}],["orchid",{"h":303,"s":43,"l":62}],["pale",{"h":52,"s":100,"l":91}],["paleaqua",{"h":163,"s":100,"l":86}],["paleblue",{"h":180,"s":96,"l":91}],["palebrown",{"h":31,"s":30,"l":56}],["palecyan",{"h":176,"s":100,"l":86}],["palegold",{"h":47,"s":97,"l":71}],["palegreen",{"h":105,"s":95,"l":85}],["palegrey",{"h":240,"s":33,"l":99}],["palelavender",{"h":280,"s":96,"l":90}],["palelightgreen",{"h":105,"s":94,"l":79}],["palelilac",{"h":269,"s":100,"l":90}],["palelime",{"h":87,"s":97,"l":72}],["palelimegreen",{"h":90,"s":100,"l":70}],["palemagenta",{"h":323,"s":58,"l":62}],["palemauve",{"h":303,"s":96,"l":91}],["paleolive",{"h":75,"s":42,"l":65}],["paleolivegreen",{"h":83,"s":49,"l":65}],["paleorange",{"h":29,"s":100,"l":67}],["palepeach",{"h":41,"s":100,"l":84}],["palepink",{"h":344,"s":100,"l":91}],["palepurple",{"h":274,"s":44,"l":70}],["palered",{"h":3,"s":65,"l":58}],["palerose",{"h":356,"s":94,"l":87}],["palesalmon",{"h":14,"s":100,"l":80}],["paleskyblue",{"h":187,"s":97,"l":87}],["paleteal",{"h":159,"s":41,"l":65}],["paleturquoise",{"h":153,"s":91,"l":82}],["paleviolet",{"h":265,"s":88,"l":83}],["paleyellow",{"h":60,"s":100,"l":76}],["parchment",{"h":58,"s":98,"l":84}],["pastelblue",{"h":221,"s":98,"l":82}],["pastelgreen",{"h":108,"s":100,"l":81}],["pastelorange",{"h":24,"s":100,"l":65}],["pastelpink",{"h":343,"s":100,"l":86}],["pastelpurple",{"h":267,"s":100,"l":81}],["pastelred",{"h":1,"s":65,"l":60}],["pastelyellow",{"h":60,"s":100,"l":72}],["pea",{"h":70,"s":71,"l":44}],["peach",{"h":24,"s":100,"l":74}],["peachypink",{"h":8,"s":100,"l":77}],["peacockblue",{"h":199,"s":99,"l":29}],["peagreen",{"h":71,"s":81,"l":37}],["pear",{"h":78,"s":92,"l":67}],["peasoup",{"h":63,"s":99,"l":30}],["peasoupgreen",{"h":68,"s":76,"l":37}],["periwinkle",{"h":246,"s":98,"l":75}],["periwinkleblue",{"h":234,"s":93,"l":77}],["perrywinkle",{"h":242,"s":65,"l":73}],["petrol",{"h":186,"s":100,"l":21}],["pigpink",{"h":344,"s":65,"l":73}],["pine",{"h":131,"s":37,"l":27}],["pinegreen",{"h":139,"s":76,"l":16}],["pink",{"h":330,"s":100,"l":75}],["pinkish",{"h":349,"s":55,"l":62}],["pinkishbrown",{"h":13,"s":34,"l":54}],["pinkishgrey",{"h":6,"s":22,"l":72}],["pinkishorange",{"h":13,"s":100,"l":65}],["pinkishpurple",{"h":300,"s":64,"l":56}],["pinkishred",{"h":345,"s":91,"l":50}],["pinkishtan",{"h":17,"s":53,"l":68}],["pinkpurple",{"h":302,"s":87,"l":53}],["pinkred",{"h":342,"s":96,"l":49}],["pinky",{"h":342,"s":95,"l":76}],["pinkypurple",{"h":305,"s":54,"l":54}],["pinkyred",{"h":351,"s":97,"l":57}],["pissyellow",{"h":58,"s":80,"l":48}],["pistachio",{"h":91,"s":92,"l":76}],["plum",{"h":319,"s":71,"l":20}],["plumpurple",{"h":298,"s":88,"l":17}],["poisongreen",{"h":109,"s":98,"l":54}],["poo",{"h":48,"s":96,"l":29}],["poobrown",{"h":42,"s":99,"l":27}],["poop",{"h":44,"s":100,"l":25}],["poopbrown",{"h":44,"s":98,"l":24}],["poopgreen",{"h":66,"s":100,"l":24}],["powderblue",{"h":214,"s":93,"l":84}],["powderpink",{"h":337,"s":100,"l":85}],["primaryblue",{"h":241,"s":97,"l":50}],["prussianblue",{"h":205,"s":100,"l":23}],["puce",{"h":32,"s":34,"l":48}],["puke",{"h":60,"s":98,"l":33}],["pukebrown",{"h":48,"s":92,"l":30}],["pukegreen",{"h":67,"s":92,"l":35}],["pukeyellow",{"h":59,"s":87,"l":41}],["pumpkin",{"h":32,"s":99,"l":44}],["pumpkinorange",{"h":29,"s":97,"l":51}],["pureblue",{"h":240,"s":98,"l":45}],["purple",{"h":286,"s":68,"l":36}],["purpleblue",{"h":261,"s":73,"l":47}],["purplebrown",{"h":353,"s":28,"l":32}],["purplegrey",{"h":303,"s":9,"l":48}],["purpleish",{"h":310,"s":28,"l":47}],["purpleishblue",{"h":251,"s":85,"l":59}],["purpleishpink",{"h":310,"s":69,"l":59}],["purplepink",{"h":298,"s":74,"l":51}],["purplered",{"h":332,"s":99,"l":30}],["purpley",{"h":261,"s":72,"l":62}],["purpleyblue",{"h":254,"s":79,"l":55}],["purpleygrey",{"h":300,"s":9,"l":54}],["purpleypink",{"h":306,"s":56,"l":51}],["purplish",{"h":308,"s":26,"l":46}],["purplishblue",{"h":258,"s":95,"l":55}],["purplishbrown",{"h":353,"s":24,"l":34}],["purplishgrey",{"h":287,"s":10,"l":45}],["purplishpink",{"h":317,"s":54,"l":59}],["purplishred",{"h":335,"s":94,"l":35}],["purply",{"h":286,"s":48,"l":47}],["purplyblue",{"h":262,"s":86,"l":52}],["purplypink",{"h":305,"s":80,"l":70}],["putty",{"h":42,"s":29,"l":64}],["racinggreen",{"h":119,"s":100,"l":14}],["radioactivegreen",{"h":116,"s":96,"l":55}],["raspberry",{"h":335,"s":99,"l":35}],["rawsienna",{"h":38,"s":100,"l":30}],["rawumber",{"h":32,"s":90,"l":35}],["reallylightblue",{"h":180,"s":100,"l":92}],["red",{"h":0,"s":100,"l":45}],["redbrown",{"h":12,"s":73,"l":32}],["reddish",{"h":1,"s":53,"l":51}],["reddishbrown",{"h":17,"s":85,"l":27}],["reddishgrey",{"h":7,"s":17,"l":52}],["reddishorange",{"h":12,"s":94,"l":54}],["reddishpink",{"h":349,"s":99,"l":58}],["reddishpurple",{"h":328,"s":88,"l":30}],["reddybrown",{"h":6,"s":91,"l":23}],["redorange",{"h":13,"s":98,"l":51}],["redpink",{"h":348,"s":95,"l":57}],["redpurple",{"h":329,"s":90,"l":27}],["redviolet",{"h":321,"s":99,"l":31}],["redwine",{"h":338,"s":100,"l":27}],["richblue",{"h":234,"s":98,"l":49}],["richpurple",{"h":314,"s":100,"l":22}],["robineggblue",{"h":187,"s":98,"l":77}],["robinsegg",{"h":187,"s":97,"l":71}],["robinseggblue",{"h":186,"s":89,"l":79}],["rosa",{"h":345,"s":98,"l":76}],["rose",{"h":350,"s":53,"l":60}],["rosepink",{"h":350,"s":88,"l":75}],["rosered",{"h":341,"s":99,"l":37}],["rosypink",{"h":344,"s":89,"l":69}],["rouge",{"h":345,"s":81,"l":37}],["royal",{"h":235,"s":85,"l":31}],["royalblue",{"h":240,"s":95,"l":34}],["royalpurple",{"h":281,"s":100,"l":22}],["ruby",{"h":339,"s":99,"l":40}],["russet",{"h":20,"s":94,"l":33}],["rust",{"h":19,"s":90,"l":35}],["rustbrown",{"h":20,"s":96,"l":28}],["rustorange",{"h":25,"s":92,"l":40}],["rustred",{"h":13,"s":95,"l":34}],["rustyorange",{"h":24,"s":92,"l":42}],["rustyred",{"h":13,"s":86,"l":37}],["saffron",{"h":41,"s":99,"l":52}],["sage",{"h":100,"s":27,"l":57}],["sagegreen",{"h":104,"s":28,"l":59}],["salmon",{"h":5,"s":100,"l":71}],["salmonpink",{"h":0,"s":98,"l":74}],["sand",{"h":47,"s":65,"l":67}],["sandbrown",{"h":39,"s":51,"l":59}],["sandstone",{"h":41,"s":44,"l":62}],["sandy",{"h":48,"s":81,"l":71}],["sandybrown",{"h":42,"s":46,"l":57}],["sandyellow",{"h":49,"s":96,"l":69}],["sandyyellow",{"h":53,"s":97,"l":72}],["sapgreen",{"h":84,"s":74,"l":31}],["sapphire",{"h":230,"s":68,"l":40}],["scarlet",{"h":352,"s":99,"l":37}],["sea",{"h":175,"s":44,"l":42}],["seablue",{"h":194,"s":95,"l":30}],["seafoam",{"h":142,"s":91,"l":74}],["seafoamblue",{"h":162,"s":49,"l":65}],["seafoamgreen",{"h":143,"s":91,"l":73}],["seagreen",{"h":148,"s":97,"l":66}],["seaweed",{"h":152,"s":79,"l":46}],["seaweedgreen",{"h":147,"s":53,"l":44}],["sepia",{"h":28,"s":56,"l":38}],["shamrock",{"h":145,"s":99,"l":35}],["shamrockgreen",{"h":144,"s":98,"l":38}],["shit",{"h":45,"s":100,"l":25}],["shitbrown",{"h":42,"s":94,"l":25}],["shitgreen",{"h":65,"s":100,"l":25}],["shockingpink",{"h":322,"s":99,"l":50}],["sickgreen",{"h":72,"s":62,"l":45}],["sicklygreen",{"h":72,"s":73,"l":40}],["sicklyyellow",{"h":66,"s":78,"l":53}],["sienna",{"h":24,"s":70,"l":39}],["silver",{"h":150,"s":4,"l":78}],["sky",{"h":205,"s":95,"l":75}],["skyblue",{"h":209,"s":97,"l":73}],["slate",{"h":204,"s":17,"l":38}],["slateblue",{"h":208,"s":25,"l":48}],["slategreen",{"h":132,"s":17,"l":47}],["slategrey",{"h":204,"s":10,"l":39}],["slimegreen",{"h":75,"s":96,"l":41}],["snot",{"h":65,"s":87,"l":39}],["snotgreen",{"h":71,"s":100,"l":38}],["softblue",{"h":224,"s":76,"l":65}],["softgreen",{"h":125,"s":40,"l":60}],["softpink",{"h":348,"s":95,"l":84}],["softpurple",{"h":287,"s":32,"l":57}],["spearmint",{"h":144,"s":94,"l":55}],["springgreen",{"h":95,"s":92,"l":71}],["spruce",{"h":152,"s":81,"l":21}],["squash",{"h":41,"s":89,"l":52}],["steel",{"h":208,"s":14,"l":52}],["steelblue",{"h":207,"s":26,"l":48}],["steelgrey",{"h":198,"s":11,"l":49}],["stone",{"h":47,"s":19,"l":60}],["stormyblue",{"h":206,"s":32,"l":46}],["straw",{"h":57,"s":96,"l":73}],["strawberry",{"h":353,"s":96,"l":57}],["strongblue",{"h":241,"s":95,"l":50}],["strongpink",{"h":329,"s":100,"l":51}],["sunflower",{"h":45,"s":100,"l":54}],["sunfloweryellow",{"h":51,"s":100,"l":51}],["sunnyyellow",{"h":58,"s":100,"l":55}],["sunshineyellow",{"h":59,"s":100,"l":61}],["sunyellow",{"h":51,"s":100,"l":57}],["swamp",{"h":81,"s":39,"l":37}],["swampgreen",{"h":68,"s":100,"l":26}],["tan",{"h":41,"s":52,"l":63}],["tanbrown",{"h":32,"s":38,"l":48}],["tangerine",{"h":34,"s":100,"l":52}],["tangreen",{"h":76,"s":38,"l":59}],["taupe",{"h":35,"s":29,"l":62}],["tea",{"h":140,"s":29,"l":53}],["teagreen",{"h":102,"s":86,"l":81}],["teal",{"h":175,"s":97,"l":29}],["tealblue",{"h":189,"s":99,"l":31}],["tealgreen",{"h":155,"s":63,"l":39}],["tealish",{"h":172,"s":68,"l":44}],["tealishgreen",{"h":150,"s":90,"l":45}],["terracota",{"h":16,"s":57,"l":53}],["terracotta",{"h":17,"s":57,"l":51}],["tiffanyblue",{"h":168,"s":82,"l":72}],["tomato",{"h":8,"s":86,"l":54}],["tomatored",{"h":11,"s":99,"l":46}],["topaz",{"h":176,"s":82,"l":40}],["toupe",{"h":38,"s":40,"l":64}],["toxicgreen",{"h":102,"s":73,"l":52}],["treegreen",{"h":110,"s":67,"l":30}],["trueblue",{"h":236,"s":99,"l":40}],["truegreen",{"h":118,"s":95,"l":30}],["turquoise",{"h":173,"s":94,"l":39}],["turquoiseblue",{"h":186,"s":94,"l":40}],["turquoisegreen",{"h":153,"s":97,"l":49}],["turtlegreen",{"h":98,"s":43,"l":52}],["twilight",{"h":237,"s":28,"l":43}],["twilightblue",{"h":209,"s":85,"l":26}],["uglyblue",{"h":204,"s":48,"l":37}],["uglybrown",{"h":54,"s":95,"l":25}],["uglygreen",{"h":72,"s":96,"l":30}],["uglypink",{"h":350,"s":47,"l":63}],["uglypurple",{"h":302,"s":43,"l":45}],["uglyyellow",{"h":56,"s":99,"l":41}],["ultramarine",{"h":251,"s":100,"l":35}],["ultramarineblue",{"h":245,"s":96,"l":44}],["umber",{"h":34,"s":100,"l":35}],["velvet",{"h":320,"s":87,"l":25}],["vermillion",{"h":10,"s":91,"l":50}],["verydarkblue",{"h":239,"s":100,"l":10}],["verydarkbrown",{"h":4,"s":100,"l":6}],["verydarkgreen",{"h":116,"s":88,"l":10}],["verydarkpurple",{"h":288,"s":96,"l":10}],["verylightblue",{"h":180,"s":100,"l":92}],["verylightbrown",{"h":38,"s":48,"l":67}],["verylightgreen",{"h":102,"s":100,"l":87}],["verylightpink",{"h":9,"s":100,"l":97}],["verylightpurple",{"h":292,"s":88,"l":90}],["verypaleblue",{"h":179,"s":100,"l":92}],["verypalegreen",{"h":102,"s":94,"l":86}],["vibrantblue",{"h":227,"s":98,"l":49}],["vibrantgreen",{"h":119,"s":93,"l":45}],["vibrantpurple",{"h":287,"s":97,"l":44}],["violet",{"h":278,"s":89,"l":49}],["violetblue",{"h":262,"s":91,"l":41}],["violetpink",{"h":300,"s":96,"l":68}],["violetred",{"h":329,"s":100,"l":32}],["viridian",{"h":158,"s":66,"l":34}],["vividblue",{"h":234,"s":100,"l":54}],["vividgreen",{"h":112,"s":87,"l":50}],["vividpurple",{"h":277,"s":100,"l":49}],["vomit",{"h":61,"s":77,"l":36}],["vomitgreen",{"h":69,"s":96,"l":32}],["vomityellow",{"h":58,"s":89,"l":41}],["warmblue",{"h":235,"s":67,"l":58}],["warmbrown",{"h":31,"s":97,"l":30}],["warmgrey",{"h":19,"s":8,"l":55}],["warmpink",{"h":344,"s":95,"l":66}],["warmpurple",{"h":303,"s":53,"l":38}],["washedoutgreen",{"h":103,"s":80,"l":81}],["waterblue",{"h":202,"s":87,"l":43}],["watermelon",{"h":354,"s":98,"l":63}],["weirdgreen",{"h":144,"s":77,"l":56}],["wheat",{"h":46,"s":94,"l":74}],["white",{"h":0,"s":0,"l":100}],["windowsblue",{"h":211,"s":55,"l":48}],["wine",{"h":331,"s":98,"l":25}],["winered",{"h":344,"s":95,"l":25}],["wintergreen",{"h":148,"s":95,"l":55}],["wisteria",{"h":277,"s":36,"l":63}],["yellow",{"h":60,"s":100,"l":54}],["yellowbrown",{"h":49,"s":100,"l":36}],["yellowgreen",{"h":76,"s":95,"l":52}],["yellowish",{"h":55,"s":94,"l":69}],["yellowishbrown",{"h":47,"s":99,"l":31}],["yellowishgreen",{"h":74,"s":82,"l":48}],["yellowishorange",{"h":39,"s":100,"l":53}],["yellowishtan",{"h":60,"s":95,"l":75}],["yellowochre",{"h":46,"s":94,"l":41}],["yelloworange",{"h":42,"s":99,"l":50}],["yellowtan",{"h":48,"s":100,"l":72}],["yellowybrown",{"h":47,"s":87,"l":36}],["yellowygreen",{"h":75,"s":88,"l":55}]];
 
 color.prototype.toJSON = function () {
-  return this[this.model]().object()
+  return this[this.model]().round(2).object()
 };
 
 color.prototype.nearColorName = function () {
-  const hsl = this.hsl().object();
+  const hsl = this.hsl().alpha(1).object();
   let difference = 50;
   let name = '';
   xkcd.forEach(([_name, _hsl]) => {
