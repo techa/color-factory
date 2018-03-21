@@ -50,4 +50,4 @@ Color Factory
 - [ ] palette data save
     - [ ] create palette list
 - [x] random Color in picker
-- [ ] sorted position Hue Circle
+- [x] sorted position Hue Circle

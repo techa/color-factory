@@ -93,6 +93,7 @@
     {name: '---', value: 'none'},
     {name: 'Random', value: 'random'},
     {name: 'Hue', value: 'hue'},
+    {name: 'Hue(∠)', value: 'deg'},
     {name: 'S(HSL)', value: 'saturationl'},
     {name: 'L(HSL)', value: 'lightness'},
     {name: 'S(HSV)', value: 'saturationv'},
@@ -162,6 +163,8 @@
           case 'none':
           case 'random':
             return Math.random()
+          case 'deg':
+            return (card.color.hue() - 90) * Math.PI / 180
           case 'contrast':
             by = (this.store.get('bgColor')[sort](card.color) - 1) / 20
             break
@@ -176,14 +179,24 @@
       store.cardPosition = (card) => {
         const rect = box.getBoundingClientRect()
         const {sortX, sortY} = this.store.get()
-        // random positions
-        if (card.left == null || sortX !== 'none') {
-          const maxW = rect.width - cardSize - colorsWidth
-          card.left = Math.round((maxW) * byer(sortX, card) + colorsWidth)
-        }
-        if (card.top == null || sortY !== 'none') {
-          const maxH = rect.height - cardSize
-          card.top = Math.round((maxH) * byer(sortY, card))
+        const maxW = rect.width - cardSize - colorsWidth
+        const maxH = rect.height - cardSize
+
+        if (sortX === 'deg' || sortY === 'deg') {
+          // Circle
+          const deg = sortX === 'deg' ? byer(sortX, card) : byer(sortY, card)
+          const radius = sortY === 'deg' ? byer(sortX, card, true) : byer(sortY, card, true)
+          const maxR = Math.min(maxW, maxH) / 2
+          console.log('deg', card.color.hsl(),  deg)
+          card.left = maxR * Math.cos(deg) * radius + maxR + colorsWidth
+          card.top = maxR * Math.sin(deg) * radius + maxR + cardSize / 2
+        } else {
+          if (card.left == null || sortX !== 'none') {
+            card.left = Math.round((maxW) * byer(sortX, card) + colorsWidth)
+          }
+          if (card.top == null || sortY !== 'none') {
+            card.top = Math.round((maxH) * byer(sortY, card))
+          }
         }
         return card
       }
