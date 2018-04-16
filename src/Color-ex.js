@@ -77,10 +77,10 @@ Color.prototype.contrast = function (txtColor) {
     bgColor = this.valpha === 1 ? this : txtColor.alphaBlending(this)
     txtColor = txtColor.valpha === 1 ? txtColor : this.alphaBlending(txtColor)
   }
-  let lum1 = bgColor.luminosity()
-  let lum2 = txtColor.luminosity()
+  const lum1 = bgColor.luminosity()
+  const lum2 = txtColor.luminosity()
 
-  if (lum1 > lum2) [lum1, lum2] = [lum2, lum1]
+  if (lum1 > lum2) return (lum1 + 0.05) / (lum2 + 0.05)
   return (lum2 + 0.05) / (lum1 + 0.05)
 }
 
@@ -88,9 +88,9 @@ Color.prototype.mostReadable = function (...colors) {
   let mostlum = 0
   let mostread
   for (const color of colors) {
-    const cntrast = this.contrast(Color(color))
-    if (mostlum < cntrast) {
-      mostlum = cntrast
+    const contrast = this.contrast(Color(color))
+    if (mostlum < contrast) {
+      mostlum = contrast
       mostread = color
     }
   }
