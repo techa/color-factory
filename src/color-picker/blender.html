@@ -69,16 +69,6 @@
         color2: '#fff',
       }
     },
-    onstate ({ changed, current }) {
-      if (changed.color1) {
-        this.refs.color1.style.backgroundColor = current.color1.toString()
-        this.draw()
-      }
-      if (changed.color2) {
-        this.refs.color2.style.backgroundColor = current.color2.toString()
-        this.draw()
-      }
-    },
     oncreate () {
       const rect = {
         width: this.refs.blender.clientWidth,
@@ -95,7 +85,16 @@
           this.set({ color: this.getColor(position) })
         },
       })
-      this.draw()
+    },
+    onupdate ({ changed, current }) {
+      if (changed.color1) {
+        this.refs.color1.style.backgroundColor = current.color1.toString()
+        this.draw()
+      }
+      if (changed.color2) {
+        this.refs.color2.style.backgroundColor = current.color2.toString()
+        this.draw()
+      }
     },
     methods: {
       getColor (position) {
