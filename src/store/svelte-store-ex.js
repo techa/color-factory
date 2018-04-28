@@ -5,7 +5,7 @@ import KeyManager from './KeyManager.js'
 
 export default class Histore extends Store {
   constructor (state, options) {
-    const {storageKey, init} = options
+    const {storageKey, storageKeys, init} = options
     if (storageKey) {
       const data = window.localStorage.getItem(storageKey)
       state = JSON.parse(data) || state
@@ -18,7 +18,10 @@ export default class Histore extends Store {
     this.options = options
 
     this.storageKey = storageKey
-    this._storageKeys = [this.storageKey]
+    this.storageKeys = storageKeys || storageKey + '-list'
+    const data = window.localStorage.getItem(this.storageKeys)
+    this._storageKeys = JSON.parse(data) || [this.storageKey]
+
     this._history = {
       oldstate: JSON.stringify(state),
       undostock: [],
@@ -70,6 +73,7 @@ export default class Histore extends Store {
     this._storageKeys.push(storageKey)
     this.storageKey = storageKey
     this._history.memo = true
+    window.localStorage.setItem(this.storageKeys, JSON.stringify(this._storageKeys))
     this._save(this.get())
   }
   _save (newstate, changed) {
