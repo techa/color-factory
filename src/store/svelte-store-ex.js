@@ -51,6 +51,9 @@ export default class Histore extends Store {
     this._history.memo = true
     this._save(this.get())
   }
+  dataList () {
+    return this._storageKeys
+  }
   load (storageKey) {
     const data = window.localStorage.getItem(storageKey)
     const state = JSON.parse(data)

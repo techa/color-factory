@@ -1,5 +1,8 @@
 <div id="controller" style="color: {{textColor}};">
   <div class="tool-box">
+    <button on:click="set({ showModal: true })" title="Save">
+      <i class="fas fa-hdd"></i>
+    </button>
     <button on:click="store.undo()" title="Undo: ctrl+z">
       <i class="fas fa-undo"></i>
       <!-- ↩️ -->
@@ -78,12 +81,18 @@
 
 <ContextMenu :cardViewModels on:viewModelChenge="viewModelChenge(event)" />
 
+{{#if showModal}}
+<SaveModal on:close='set({ showModal: false })'></SaveModal>
+{{/if}}
+
 <script>
   import ColorPicker from '../color-picker/color-picker.html'
 
   import ColorCard from './color-card.html'
   import ColorLists from './color-lists.html'
   import ContextMenu from './context-menu.html'
+
+  import SaveModal from './save-modal.html'
 
   import Color from 'color'
   import store from '../store/store.js'
@@ -114,7 +123,8 @@
       ColorPicker,
       ColorCard,
       ColorLists,
-      ContextMenu
+      ContextMenu,
+      SaveModal,
     },
     store: () => store,
     data () {
