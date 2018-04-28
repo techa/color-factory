@@ -2,6 +2,8 @@ import { Store } from 'svelte/store.js'
 import KeyManager from './KeyManager.js'
 
 
+const EVENTS = constructor._events = {}
+
 export default class Histore extends Store {
   constructor (state, options) {
     const {storageKey, storageKeys, init} = options
@@ -30,6 +32,25 @@ export default class Histore extends Store {
     this.on('state', this._save.bind(this))
 
     this.methodToEventHandler('undo', 'redo')
+  }
+  on (eventName, handler) {
+    if (eventName === 'state' || eventName === 'update') {
+      super.on(eventName, handler)
+    } else {
+      (EVENTS[eventName] = EVENTS[eventName] || []).push(handler)
+    }
+    return this
+  }
+  fire (eventName, ...args) {
+    console.log('fire', eventName)
+    if (eventName === 'state' || eventName === 'update') {
+      super.fire(eventName, ...args)
+    } else if (EVENTS[eventName]) {
+      EVENTS[eventName].forEach((handler) => handler(...args))
+    } else {
+      console.error(`fire: ${eventName} is undefind`)
+    }
+    return this
   }
   methodToEventHandler (...eventnames) {
     for (const eventname of eventnames) {
