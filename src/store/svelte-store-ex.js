@@ -1,5 +1,4 @@
 import { Store } from 'svelte/store.js'
-import { eventer } from '../utils.js'
 import KeyManager from './KeyManager.js'
 
 
@@ -13,7 +12,6 @@ export default class Histore extends Store {
 
     if (init) init(state)
     super(state, options)
-    eventer(this)
     this._keyManager = new KeyManager(this, options)
     this.options = options
 
@@ -29,11 +27,9 @@ export default class Histore extends Store {
       memo: false,
     }
 
-    this.onchange(this._save.bind(this))
+    this.on('state', this._save.bind(this))
 
     this.methodToEventHandler('undo', 'redo')
-    // this.on('undo', this.undo.bind(this))
-    // this.on('redo', this.redo.bind(this))
   }
   methodToEventHandler (...eventnames) {
     for (const eventname of eventnames) {
@@ -45,7 +41,7 @@ export default class Histore extends Store {
   set (newState) {
     for (const key in newState) {
       if (typeof newState[key] === 'function') {
-        newState[key] = newState[key](this.get(key))
+        newState[key] = newState[key](this.get()[key])
       }
     }
     super.set(newState)

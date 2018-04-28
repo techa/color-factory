@@ -1,12 +1,12 @@
 <Modal on:close="fire('close')">
   <h2 slot='header'>Save & Load</h2>
-  {{#each list as item}}
+  {#each list as item}
   <p>
     title
     palette
     <button>Load</button>
   </p>
-  {{/each}}
+  {/each}
   <p>
     <input bind:value>
     palette

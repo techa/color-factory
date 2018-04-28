@@ -1,10 +1,10 @@
-{{#if phone}}
+{#if phone}
   <input type="color">
-{{else}}
+{:else}
   <div class="models button-set">
-    {{#each models as _model}}
-    <div><button style="{{modelStyler(_model, model, color, bgColor, textColor)}}" on:click="set({model: _model})">{{_model.toUpperCase()}}</button></div>
-    {{/each}}
+    {#each models as _model}
+    <div><button style="{modelStyler(_model, model, color, bgColor, textColor)}" on:click="set({model: _model})">{_model.toUpperCase()}</button></div>
+    {/each}
   </div>
   <div class="input-wrapper">
     <input class="color-text"
@@ -12,16 +12,16 @@
       on:updown="updown(event)"
       on:wheel="updown(event)"
       on:keydown="keydown(event)"
-      style="color: {{textColor}}; background-color: {{color.rgb()}};"
-      :value
+      style="color: {textColor}; background-color: {color.rgb()};"
+      {value}
       spellcheck=""
       placeholder="keypress: ↑↓">
     <button class="random-color"
       title="Random Color"
       on:click="randomColor()"
-      style="color: {{color.hex()}}; background-color: {{textColor}};">!</button>
+      style="color: {color.hex()}; background-color: {textColor};">!</button>
   </div>
-{{/if}}
+{/if}
 
 <style>
   .models {
@@ -84,8 +84,8 @@
       }
     },
     computed: {
-      value: (color, model) => color.toString(model),
-      textColor: (color, bgColor) => bgColor.alphaBlending(color).isDark() ? '#fff' : '#000',
+      value: ({ color, model }) => color.toString(model),
+      textColor: ({ color, bgColor }) => bgColor.alphaBlending(color).isDark() ? '#fff' : '#000',
     },
     helpers: {
       modelStyler (_model, model, color, bgColor, textColor) {
@@ -129,7 +129,7 @@
           return
         }
 
-        const model = this.get('model')
+        const {model, models} = this.get()
         let color
         try {
           color = Color(value)
@@ -153,7 +153,6 @@
         const index = caretIndex(event, color)
 
         if (index === -1) {
-          const models = this.get('models')
           const arrow = event.type === 'keydown'
             ? (event.key === 'ArrowUp' ? 1 : -1)
             : event.deltaY < 0 ? 1 : -1

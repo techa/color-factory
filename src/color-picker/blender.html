@@ -1,10 +1,10 @@
 <div class="blender">
-  <dv ref:color1 on:click="setColor1(color)" class="blender-btn color1"></dv>
+  <dv ref:color1 on:click="set({color1: color})" class="blender-btn color1"></dv>
   <div ref:blender class="blender-slider">
-    <canvas ref:canvas class="blender-canvas" width={{rect.width}} height={{rect.height}}></canvas>
-    <div ref:handle class="blender-handle {{direction}}"></div>
+    <canvas ref:canvas class="blender-canvas" width={rect.width} height={rect.height}></canvas>
+    <div ref:handle class="blender-handle {direction}"></div>
   </div>
-  <dv ref:color2 on:click="setColor2(color)" class="blender-btn color2"></dv>
+  <dv ref:color2 on:click="set({color2: color})" class="blender-btn color2"></dv>
 </div>
 
 <style>
@@ -69,6 +69,16 @@
         color2: '#fff',
       }
     },
+    onstate ({ changed, current }) {
+      if (changed.color1) {
+        this.refs.color1.style.backgroundColor = current.color1.toString()
+        this.draw()
+      }
+      if (changed.color2) {
+        this.refs.color2.style.backgroundColor = current.color2.toString()
+        this.draw()
+      }
+    },
     oncreate () {
       const rect = {
         width: this.refs.blender.clientWidth,
@@ -85,25 +95,11 @@
           this.set({ color: this.getColor(position) })
         },
       })
-
-      this.observe('color1', (color1) => {
-        this.refs.color1.style.backgroundColor = color1.toString()
-        this.draw()
-      })
-      this.observe('color2', (color2) => {
-        this.refs.color2.style.backgroundColor = color2.toString()
-        this.draw()
-      })
+      this.draw()
     },
     methods: {
-      setColor1 (color1) {
-        this.set({color1})
-      },
-      setColor2 (color2) {
-        this.set({color2})
-      },
       getColor (position) {
-        const {width} = this.get('rect')
+        const {width} = this.get().rect
         const x = Math.max(0, Math.min(position.x, width - 40.5))
         const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data
         const color = Color({r, g, b})
@@ -113,17 +109,18 @@
         return color
       },
       draw () {
+        const {direction, color1, color2} = this.get()
         const canvas = this.refs.canvas
         const cxt = canvas.getContext('2d')
         const [w, h] = [canvas.width, canvas.height]
         cxt.clearRect(0, 0, w, h)
 
-        const grd = this.get('direction') === 'vertical'
+        const grd = direction === 'vertical'
           ? cxt.createLinearGradient(0, 0, 0, h)
           : cxt.createLinearGradient(0, 0, w, 0)
 
-        grd.addColorStop(0.02, Color(this.get('color1')).rgb().string())
-        grd.addColorStop(0.98, Color(this.get('color2')).rgb().string())
+        grd.addColorStop(0.02, Color(color1).rgb().string())
+        grd.addColorStop(0.98, Color(color2).rgb().string())
 
         cxt.fillStyle = grd
         cxt.fillRect(0, 0, w, h)

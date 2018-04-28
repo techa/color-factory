@@ -1,6 +1,6 @@
-<div ref:box class="slider alpha-check-bg {{direction}}">
-  <canvas ref:slider class="slider-canvas" width={{rect.width}} height={{rect.height}}></canvas>
-  <div ref:sliderHandle class="slider-handle {{direction}}"></div>
+<div ref:box class="slider alpha-check-bg {direction}">
+  <canvas ref:slider class="slider-canvas" width={rect.width} height={rect.height}></canvas>
+  <div ref:sliderHandle class="slider-handle {direction}"></div>
 </div>
 
 <style>
@@ -65,8 +65,13 @@
       }
     },
     computed: {
-      width: (direction, size, strokeWidth) => direction === 'vertical' ? strokeWidth : size,
-      height: (direction, size, strokeWidth) => direction === 'vertical' ? size : strokeWidth,
+      width: ({ direction, size, strokeWidth }) => direction === 'vertical' ? strokeWidth : size,
+      height: ({ direction, size, strokeWidth }) => direction === 'vertical' ? size : strokeWidth,
+    },
+    onstate ({ changed, current }) {
+      if (changed.value) {
+        this.setPosition(current.value)
+      }
     },
     oncreate () {
       const rect = {
@@ -86,10 +91,6 @@
 
       this.draw('hue')
 
-      this.observe('value', (value) => {
-        this.fire('change')
-        this.setPosition(value)
-      })
       // picker
       new MousePosition(this.refs.slider, { // eslint-disable-line no-new
         // handle: this.refs.sliderHandle,
@@ -106,7 +107,7 @@
         const {max, min, direction} = this.get()
         const side = direction === 'vertical' ? 'percentTop' : 'percentLeft'
         let per = position[side] / 100
-        if (this.get('reverse')) {
+        if (this.get().reverse) {
           per = 1 - per
         }
         this.set({
@@ -117,21 +118,21 @@
         const {size, max, min, direction} = this.get()
         const side = direction === 'vertical' ? 'top' : 'left'
         let per = value / (max - min)
-        if (this.get('reverse')) {
+        if (this.get().reverse) {
           per = 1 - per
         }
         this.refs.sliderHandle.style[side] = per * (size - 6) + 3 + 'px'
       },
       draw (beginColor, endColor) {
         const cxt = this.refs.slider.getContext('2d')
-        const size = this.get('size')
+        const {size, direction, reverse} = this.get()
         cxt.clearRect(0, 0, size, size)
 
-        const grd = this.get('direction') === 'vertical'
+        const grd = direction === 'vertical'
           ? cxt.createLinearGradient(0, 0, 0, size)
           : cxt.createLinearGradient(0, 0, size, 0)
 
-        const [begin, end] = this.get('reverse') ? [1, 0] : [0, 1]
+        const [begin, end] = reverse ? [1, 0] : [0, 1]
 
         if (beginColor === 'hue') {
           // hue gradient bar

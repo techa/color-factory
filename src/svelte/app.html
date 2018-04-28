@@ -1,13 +1,13 @@
-<div id="controller" style="color: {{textColor}};">
+<div id="controller" style="color: {textColor};">
   <div class="tool-box">
     <button on:click="set({ showModal: true })" title="Save">
       <i class="fas fa-hdd"></i>
     </button>
-    <button on:click="store.undo()" title="Undo: ctrl+z">
+    <button on:click="$undo()" title="Undo: ctrl+z">
       <i class="fas fa-undo"></i>
       <!-- ↩️ -->
     </button>
-    <button on:click="store.redo()" title="Redo: ctrl+shift+z">
+    <button on:click="$redo()" title="Redo: ctrl+shift+z">
       <i class="fas fa-redo"></i>
       <!-- ↪️ -->
     </button>
@@ -27,18 +27,18 @@
     <div><button on:click="cardsPosition('sortX')">X</button></div>
     <ladel class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
-        {{#each sort as key}}
-        <option value="{{key.value}}">{{key.name}}</option>
-        {{/each}}
+        {#each sort as key}
+        <option value="{key.value}">{key.name}</option>
+        {/each}
       </select>
     </ladel>
 
     <div><button on:click="cardsPosition('sortY')">Y</button></div>
     <ladel class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
-        {{#each sort as key}}
-        <option value="{{key.value}}">{{key.name}}</option>
-        {{/each}}
+        {#each sort as key}
+        <option value="{key.value}">{key.name}</option>
+        {/each}
       </select>
     </ladel>
   </div>
@@ -47,43 +47,43 @@
 
   <div class="top-input-wrapper button-set border radius">
     <div>
-      <input ref:name bind:value="current.name" placeholder="{{current.color.nearColorName()}}" style="color: {{textColor}};">
+      <input ref:name bind:value="current.name" placeholder="{current.color.nearColorName()}" style="color: {textColor};">
     </div>
     <div>
       <button
         on:click="addCard(current, true)"
         title="Add Card: text"
-        style="color: {{current.color}};">➕</button>
+        style="color: {current.color};">➕</button>
     </div>
     <div>
       <button
         on:click="addCard(current)"
         title="Add Card: fill"
-        style="color:{{current.color.isDark()?'#fff':'#000'}};background-color: {{current.color}};">➕</button>
+        style="color:{current.color.isDark()?'#fff':'#000'};background-color: {current.color};">➕</button>
     </div>
     <div><button on:click="setBgColor(current.color)" title="set Background Color">BG</button></div>
   </div>
 
-  <ColorPicker bind:color="current.color" bgColor="{{$bgColor}}" on:setBgColor="setBgColor(current.color)" />
+  <ColorPicker bind:color="current.color" bgColor="{$bgColor}" on:setBgColor="setBgColor(current.color)" />
   <hr>
   <ColorLists on:colorpick="set({current: event.current})" />
 </div>
 
-<div ref:box id="box" style="background-color: {{bgColor}};">
-  {{#each $cards as card, index}}
-    <ColorCard card={{card}} index={{index}} :grayscale :textvisible :cardViewModels />
-  {{/each}}
+<div ref:box id="box" style="background-color: {bgColor};">
+  {#each $cards as card, index}
+    <ColorCard card={card} index={index} {grayscale} {textvisible} {cardViewModels} />
+  {/each}
 </div>
 
-<div class="links" style="color: {{textColor}};">
+<div class="links" style="color: {textColor};">
   <a href="https://github.com/techa/color-factory"><i class="fab fa-github fa-fw"></i></a>
 </div>
 
-<ContextMenu :cardViewModels on:viewModelChenge="viewModelChenge(event)" />
+<ContextMenu {cardViewModels} on:viewModelChenge="viewModelChenge(event)" />
 
-{{#if showModal}}
+{#if showModal}
 <SaveModal on:close='set({ showModal: false })'></SaveModal>
-{{/if}}
+{/if}
 
 <script>
   import ColorPicker from '../color-picker/color-picker.html'
@@ -151,8 +151,8 @@
       }
     },
     computed: {
-      textColor: $bgColor => Color($bgColor).isDark() ? '#fff' : '#000',
-      bgColor: ($bgColor, grayscale) => grayscale ? Color($bgColor).grayscale() : Color($bgColor),
+      textColor: ({ $bgColor }) => Color($bgColor).isDark() ? '#fff' : '#000',
+      bgColor: ({ $bgColor, grayscale }) => grayscale ? Color($bgColor).grayscale() : Color($bgColor),
     },
     oncreate () {
       this.refs.name.addEventListener('focus', function (e) {
@@ -176,7 +176,7 @@
           case 'deg':
             return (card.color.hue() - 90) * Math.PI / 180
           case 'contrast':
-            by = (this.store.get('bgColor')[sort](card.color) - 1) / 20
+            by = (this.store.get().bgColor[sort](card.color) - 1) / 20
             break
           default:
             const max = sort === 'hue' ? 360 : 100
@@ -218,11 +218,10 @@
         },
         selected: (e) => {
           const selects = this.selectable.selects
-          const memo = this.get('memo')
+          const {memo, current} = this.get()
 
           if (selects.length === 1) {
-            const {name, color} = store.get('cards')[selects[0].index]
-            const current = this.get('current')
+            const {name, color} = store.get().cards[selects[0].index]
             this.set({current: { name, color }})
             if (!memo) {
               this.set({ memo: current })
@@ -262,7 +261,7 @@
         this.store.memo()
       },
       setBgColor (color) {
-        const bgColor = this.store.get('bgColor')
+        const {bgColor} = this.store.get()
         const coloraplha1 = bgColor.alphaBlending(color)
         this.store.set({bgColor: coloraplha1})
         this.addCard({name: 'background', color: coloraplha1})
@@ -277,7 +276,7 @@
         }
       },
       viewModelChenge (event) {
-        const cardViewModels = this.get('cardViewModels')
+        const {cardViewModels} = this.get()
         Object.assign(cardViewModels, {[event[0]]: !event[1]})
         this.set({cardViewModels})
       },

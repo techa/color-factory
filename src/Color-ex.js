@@ -58,7 +58,7 @@ Color.prototype.toString = function (model) {
       }
       return str + `(${arr.join(', ')})`
     case 'cmyk':
-      const bgColor = store.get('bgColor')
+      const {bgColor} = store.get()
       const cmyk = bgColor.alphaBlending(color).cmyk().round().array()
       return `cmyk(${cmyk.join(', ')})`
     default:

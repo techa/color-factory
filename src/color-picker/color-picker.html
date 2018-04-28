@@ -1,16 +1,16 @@
 <div class="color-picker">
-  <ColorInput bind:color :bgColor />
+  <ColorInput bind:color {bgColor} />
   <div class="picker-body">
-    <HsvPicker bind:color size={{size}} />
+    <HsvPicker bind:color size={size} />
   </div>
   <div class="picker-footer">
     <div class="button">
-      <button class="contrast {{bgColor.level(color)}}" style="color:{{color}};" on:click="setBgColor()">
-        {{contrast}}
+      <button class="contrast {bgColor.level(color)}" style="color:{color};" on:click="setBgColor()">
+        {contrast}
       </button>
     </div>
     <div class="blender-wrapper">
-      <Blender bind:color width={{size-76}}/>
+      <Blender bind:color width={size-76}/>
     </div>
     <div class="button">
       <button on:click="alphaBlending()">a=1</button>
@@ -91,13 +91,13 @@
       }
     },
     computed: {
-      textColor: (color) =>  Color(color).isDark() ? '#fff' : '#000',
-      contrast: (color, bgColor) => round(Color(bgColor).contrast(color), 1),
+      textColor: ({ color }) =>  Color(color).isDark() ? '#fff' : '#000',
+      contrast: ({ color, bgColor }) => round(Color(bgColor).contrast(color), 1),
     },
-    oncreate (hh) {
-      this.observe('color', (color) => {
-        this.set({color: Color(color)})
-      })
+    onstate ({ changed, current }) {
+      if (changed.color) {
+        this.set({color: Color(current.color)})
+      }
     },
     methods: {
       alphaBlending () {
@@ -106,7 +106,7 @@
           color: bgColor.alphaBlending(color),
         })
       },
-      setBgColor (color = this.get('color')) {
+      setBgColor ({color} = this.get()) {
         this.set({bgColor: color})
         this.fire('setBgColor', color)
       },

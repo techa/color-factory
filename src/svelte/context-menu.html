@@ -1,7 +1,7 @@
 <div ref:menu id="menu">
-  {{#if mode == 'tip'}}
+  {#if mode == 'tip'}
     <p class="menuitem" on:click="add()">ADD CARD</p>
-  {{elseif mode == 'card'}}
+  {:elseif mode == 'card'}
     <p class="menuitem" on:click="edit()">
       <i class="fas fa-edit fa-fw"></i>
       EDIT
@@ -24,26 +24,26 @@
       VIEW
       <span>▶</span>
     </p>
-  {{/if}}
+  {/if}
   <hr>
-  {{#if activeCard}}
-    {{#each copys as model}}
+  {#if activeCard}
+    {#each copys as model}
       <p class="menuitem" on:click="copyColor(model)">
-        COPY: {{activeCard.color[model]()}}
+        COPY: {activeCard.color[model]()}
       </p>
-    {{/each}}
-  {{/if}}
+    {/each}
+  {/if}
 </div>
 
 <div ref:submenu class="submenu">
-  {{#each modelsEntries as key_value}}
+  {#each modelsEntries as key_value}
   <p class="menuitem">
     <label>
-      <input type="checkbox" checked="{{key_value[1]}}" on:change="fire('viewModelChenge', key_value)">
-      {{key_value[0].toUpperCase()}}
+      <input type="checkbox" checked="{key_value[1]}" on:change="fire('viewModelChenge', key_value)">
+      {key_value[0].toUpperCase()}
     </label>
   </p>
-  {{/each}}
+  {/each}
 </div>
 
 <script>
@@ -60,14 +60,15 @@
       }
     },
     computed: {
-      modelsEntries: (cardViewModels) => Object.entries(cardViewModels),
+      modelsEntries: ({ cardViewModels }) => Object.entries(cardViewModels),
     },
     oncreate () {
       console.log('menu-render')
       const {menu, submenu} = this.refs
+      const {mode} = this.get()
 
       const menuHide = (e) => {
-        if (this.get('mode')) {
+        if (mode) {
           store.fire('menu_close')
         }
       }
@@ -89,7 +90,7 @@
         })
 
         // 'tip' or 'card'
-        const activeCard = mode === 'card' ? cardComponent.get('card') : cardComponent
+        const activeCard = mode === 'card' ? cardComponent.get().card : cardComponent
         this.set({mode, activeCard})
         this.cardComponent = cardComponent
 
@@ -117,7 +118,7 @@
         })
       },
       add () {
-        store.fire('cards.ADD_CARD', this.get('activeCard'))
+        store.fire('cards.ADD_CARD', this.get().activeCard)
       },
       edit () {
         this.cardComponent.set({
@@ -135,7 +136,7 @@
 
         const editOff = (e, cb) => {
           if (title.textContent && title.textContent !== name) {
-            store.fire('cards.EDIT_CARD', this.cardComponent.get('index'), {
+            store.fire('cards.EDIT_CARD', this.cardComponent.get().index, {
               name: title.textContent,
             })
             store.memo()
@@ -179,7 +180,7 @@
           store.fire('cards.DUPLICATE_CARD', selects.map((select) => select.index))
         }
         // // reselect
-        // const cards = store.get('cards')
+        // const {cards} = store.get()
         // this.root.selectable.reset()
         // for (let i = cards.length - 1; i >= cards.length - howmany; i--) {
         //   this.root.selectable.select(i)
@@ -199,7 +200,7 @@
       },
 
       copyColor (model) {
-        copyTextToClipboard(this.get('activeCard').color[model]())
+        copyTextToClipboard(this.get().activeCard.color[model]())
       },
     }
   }

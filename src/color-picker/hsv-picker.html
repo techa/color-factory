@@ -1,7 +1,7 @@
 <div class="hsv-picker">
-  <Slider ref:hue value="{{color.hue()}}" max="359"/>
+  <Slider ref:hue value="{color.hue()}" max="359"/>
   <Spectrum ref:spectrum bind:color />
-  <Slider ref:alpha value="{{color.alpha() * 100}}" />
+  <Slider ref:alpha value="{color.alpha() * 100}" />
 </div>
 
 <style>
@@ -68,21 +68,28 @@
       }
     },
     computed: {
-      spectrumSize: (size, strokeWidth) => ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2,
-      hsv: (color) => color.hsv(),
-      textColor: (color) => color.isDark() ? '#fff' : '#000',
+      spectrumSize: ({ size, strokeWidth }) => ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2,
+      hsv: ({ color }) => color.hsv(),
+      textColor: ({ color }) => color.isDark() ? '#fff' : '#000',
+    },
+    onstate ({ changed, current }) {
+      if (changed.color) {
+        const alphaColor = (alpha) => current.color.hsv().alpha(alpha).string()
+        this.refs.alpha.draw(alphaColor(0), alphaColor(1))
+      }
     },
     oncreate () {
-      this.refs.hue.observe('value', (hue) => {
-        this.set({color: this.get('color').hue(hue)})
+      this.refs.hue.on('state', ({ changed, current, previous }) => {
+        if (changed.value) {
+          const {color} = this.get()
+          this.set({color: color.hue(current.value)})
+        }
       })
-      this.refs.alpha.observe('value', (value) => {
-        const color = this.get('color')
-        this.set({color: color.alpha(value / 100)})
-      })
-      this.observe('color', (color) => {
-        const alphaColor = (alpha) => color.hsv().alpha(alpha).string()
-        this.refs.alpha.draw(alphaColor(0), alphaColor(1))
+      this.refs.alpha.on('state', ({ changed, current, previous }) => {
+        if (changed.value) {
+          const {color} = this.get()
+          this.set({color: color.alpha(current.value / 100)})
+        }
       })
     },
   }
