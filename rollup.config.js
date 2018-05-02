@@ -32,7 +32,12 @@ export default {
     replace({
       'process.env.NODE_ENV': JSON.stringify(env)
     }),
-    svelte({store: true}),
+    svelte({
+      css: css => {
+        css.write('dist/bundle.css')
+      },
+      store: true,
+    }),
     (env === 'production' && babel()),
     (env === 'production' && uglify({
       compress: {
