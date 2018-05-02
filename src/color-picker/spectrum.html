@@ -1,5 +1,5 @@
 <div ref:box class="spectrum">
-  <canvas ref:canvas class="spectrum-canvas" width={rect.width} height={rect.height}></canvas>
+  <canvas ref:canvas class="spectrum-canvas" {...rect} ></canvas>
   <div ref:handle class="color-handle"></div>
 </div>
 
@@ -17,7 +17,7 @@
   export default {
     data () {
       return {
-        rect: {width: 0, height: 0, left: 0, top: 0},
+        rect: {width: 0, height: 0},
         color: 'red',
         hsv: {h: 0, s: 1, v: 1}
       }
