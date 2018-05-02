@@ -91,6 +91,11 @@
         },
       })
     },
+    onupdate ({ changed, current }) {
+      if (changed.value) {
+        this.setPosition(current.value)
+      }
+    },
     methods: {
       setValue (position) {
         const {max, min, direction} = this.get()

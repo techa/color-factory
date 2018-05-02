@@ -19,14 +19,6 @@
       return {
         rect: {width: 0, height: 0},
         color: 'red',
-        hsv: {h: 0, s: 1, v: 1}
-      }
-    },
-    onstate ({ changed, current }) {
-      // update oncolorchange
-      if (changed.color) {
-        this.draw(current.color.hue())
-        this.setPosition()
       }
     },
     oncreate () {
@@ -47,6 +39,13 @@
           this.setColor(position)
         },
       })
+    },
+    onupdate ({ changed, current }) {
+      // update oncolorchange
+      if (changed.color) {
+        this.draw(current.color.hue())
+        this.setPosition()
+      }
     },
     methods: {
       resize () {
