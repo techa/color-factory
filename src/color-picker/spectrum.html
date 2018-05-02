@@ -9,6 +9,28 @@
     cursor: crosshair;
     pointer-events: auto;
   }
+  .color-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px;
+    top: 0;
+    left: 0;
+    border: 1px solid black;
+    border-radius: 5px;
+    text-align: left;
+    pointer-events: none;
+  }
+  .color-handle::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    top: 0;
+    left: 0;
+    border: 1px solid white;
+    border-radius: 4px;
+  }
 </style>
 
 <script>
