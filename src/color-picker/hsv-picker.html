@@ -62,8 +62,6 @@
     },
     data () {
       return {
-        size: 150,
-        strokeWidth: 10,
         color: Color('#000'),
       }
     },
@@ -71,12 +69,6 @@
       spectrumSize: ({ size, strokeWidth }) => ((size - strokeWidth * 2) / 1.4 | 0) - strokeWidth / 2,
       hsv: ({ color }) => color.hsv(),
       textColor: ({ color }) => color.isDark() ? '#fff' : '#000',
-    },
-    onstate ({ changed, current }) {
-      if (changed.color) {
-        const alphaColor = (alpha) => current.color.hsv().alpha(alpha).string()
-        this.refs.alpha.draw(alphaColor(0), alphaColor(1))
-      }
     },
     oncreate () {
       this.refs.hue.on('state', ({ changed, current, previous }) => {
@@ -91,6 +83,12 @@
           this.set({color: color.alpha(current.value / 100)})
         }
       })
+    },
+    onupdate ({ changed, current }) {
+      if (changed.color) {
+        const alphaColor = (alpha) => current.color.hsv().alpha(alpha).string()
+        this.refs.alpha.draw(alphaColor(0), alphaColor(1))
+      }
     },
   }
 </script>

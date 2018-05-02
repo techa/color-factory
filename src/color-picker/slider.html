@@ -1,5 +1,5 @@
 <div ref:box class="slider alpha-check-bg {direction}">
-  <canvas ref:slider class="slider-canvas" width={rect.width} height={rect.height}></canvas>
+  <canvas ref:slider class="slider-canvas" {...rect} ></canvas>
   <div ref:sliderHandle class="slider-handle {direction}"></div>
 </div>
 
@@ -54,7 +54,7 @@
     data () {
       return {
         size: 0,
-        rect: {width: 0, height: 0, left: 0, top: 0},
+        rect: {width: 0, height: 0},
         strokeWidth: 20,
         direction: 'vertical',
         value: 50,

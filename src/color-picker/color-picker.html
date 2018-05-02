@@ -1,7 +1,7 @@
 <div class="color-picker">
   <ColorInput bind:color {bgColor} />
   <div class="picker-body">
-    <HsvPicker bind:color size={size} />
+    <HsvPicker bind:color />
   </div>
   <div class="picker-footer">
     <div class="button">
@@ -10,7 +10,7 @@
       </button>
     </div>
     <div class="blender-wrapper">
-      <Blender bind:color width={size-76}/>
+      <Blender bind:color/>
     </div>
     <div class="button">
       <button on:click="alphaBlending()">a=1</button>
@@ -84,7 +84,6 @@
     },
     data () {
       return {
-        size: 200,
         color: '',
         current: '',
         bgColor: '',

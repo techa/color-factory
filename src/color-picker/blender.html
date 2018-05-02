@@ -1,7 +1,7 @@
 <div class="blender">
   <dv ref:color1 on:click="set({color1: color})" class="blender-btn color1"></dv>
   <div ref:blender class="blender-slider">
-    <canvas ref:canvas class="blender-canvas" width={rect.width} height={rect.height}></canvas>
+    <canvas ref:canvas class="blender-canvas" {...rect} ></canvas>
     <div ref:handle class="blender-handle {direction}"></div>
   </div>
   <dv ref:color2 on:click="set({color2: color})" class="blender-btn color2"></dv>
@@ -64,7 +64,7 @@
   export default {
     data () {
       return {
-        rect: {width: 0, height: 0, left: 0, top: 0},
+        rect: {width: 0, height: 0},
         color1: '#000',
         color2: '#fff',
       }
