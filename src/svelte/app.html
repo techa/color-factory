@@ -17,9 +17,24 @@
     <button on:click="$set({textvisible: !$textvisible}, true)" title="Card Text Visible">
       <i class="fas fa-font"></i>
     </button>
+    <button on:click="set({showSubmenu: !showSubmenu})" title="Card Color Models Visible">
+      <i class="fas fa-eye"></i>
+    </button>
     <button on:click="removeAll()" title="Delete">
       <i class="fas fa-trash"></i>
     </button>
+    {#if showSubmenu}
+    <div ref:submenu class="submenu" on:mouseleave="set({showSubmenu: false})">
+      {#each Object.entries($cardViewModels) as key_value}
+      <p class="menuitem">
+        <label>
+          <input type="checkbox" checked="{key_value[1]}" on:click="viewModelChenge(key_value)">
+          {key_value[0].toUpperCase()}
+        </label>
+      </p>
+      {/each}
+    </div>
+    {/if}
   </div>
 
   <!-- カード整列 -->
@@ -126,7 +141,6 @@
       ContextMenu,
       SaveModal,
     },
-    store: () => store,
     data () {
       return {
         current: {
@@ -263,6 +277,11 @@
           this.store.memo()
         }
       },
+      viewModelChenge (event) {
+        const {cardViewModels} = this.store.get()
+        cardViewModels[event[0]] = !event[1]
+        this.store.set({cardViewModels}, true)
+      },
     }
   }
 </script>
@@ -285,6 +304,7 @@
     height: 100%;
   }
   .tool-box {
+    position: relative;
     padding-bottom: 10px;
   }
   .top-input-wrapper {
@@ -308,5 +328,28 @@
   }
   .links a,.links a:visited,.links a:active  {
     color: inherit;
+  }
+  ref:submenu {
+    position: absolute;
+    width: 100%;
+    font-size:12px;
+    background: #fff;
+    color: black;
+    border: solid 1px silver;
+    z-index: 100;
+  }
+  .menuitem {
+    min-width: 100px;
+    padding: 4px;
+    margin: 0;
+  }
+  .menuitem:hover,
+  .menuitem:active {
+    background: aquamarine;
+  }
+  .menuitem label {
+    display: block;
+    width: 100%;
+    height: 100%;
   }
 </style>

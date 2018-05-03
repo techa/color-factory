@@ -19,11 +19,11 @@
       DELETE
     </p>
     <hr>
-    <p class="menuitem" on:mouseover="submenuVisible(this)">
+    <!-- <p class="menuitem" on:mouseover="submenuVisible(this)">
       <i class="fas fa-eye fa-fw"></i>
       VIEW
       <span>▶</span>
-    </p>
+    </p> -->
   {/if}
   <hr>
   {#if activeCard}
@@ -35,7 +35,7 @@
   {/if}
 </div>
 
-<div ref:submenu class="submenu">
+<!-- <div ref:submenu class="submenu">
   {#each modelsEntries as key_value}
   <p class="menuitem">
     <label>
@@ -44,7 +44,7 @@
     </label>
   </p>
   {/each}
-</div>
+</div> -->
 
 <script>
   import store from '../store/store.js'
@@ -101,22 +101,22 @@
 
       store.on('menu_close', (e) => {
         menu.style.display = 'none'
-        submenu.style.display = 'none'
+        // submenu.style.display = 'none'
         this.set({mode: false})
         window.removeEventListener('blur', menuHide)
         document.removeEventListener('click', menuHide)
       })
     },
     methods: {
-      submenuVisible (el) {
-        const {submenu} = this.refs
-        submenu.style.display = 'block'
-        const rect = el.getBoundingClientRect()
-        styler(submenu, {
-          left: rect.left + rect.width,
-          top: rect.top,
-        })
-      },
+      // submenuVisible (el) {
+      //   const {submenu} = this.refs
+      //   submenu.style.display = 'block'
+      //   const rect = el.getBoundingClientRect()
+      //   styler(submenu, {
+      //     left: rect.left + rect.width,
+      //     top: rect.top,
+      //   })
+      // },
       add () {
         store.fire('cards.ADD_CARD', this.get().activeCard)
       },
