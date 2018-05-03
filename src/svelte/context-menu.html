@@ -39,7 +39,7 @@
   {#each modelsEntries as key_value}
   <p class="menuitem">
     <label>
-      <input type="checkbox" checked="{key_value[1]}" on:change="fire('viewModelChenge', key_value)">
+      <input type="checkbox" checked="{key_value[1]}" on:click="viewModelChenge(key_value)">
       {key_value[0].toUpperCase()}
     </label>
   </p>
@@ -60,7 +60,7 @@
       }
     },
     computed: {
-      modelsEntries: ({ cardViewModels }) => Object.entries(cardViewModels),
+      modelsEntries: ({ $cardViewModels }) => Object.entries($cardViewModels),
     },
     oncreate () {
       console.log('menu-render')
@@ -201,6 +201,11 @@
 
       copyColor (model) {
         copyTextToClipboard(this.get().activeCard.color[model]())
+      },
+      viewModelChenge (event) {
+        const {cardViewModels} = this.store.get()
+        cardViewModels[event[0]] = !event[1]
+        this.store.set({cardViewModels}, true)
       },
     }
   }

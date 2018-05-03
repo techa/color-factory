@@ -11,10 +11,10 @@
       <i class="fas fa-redo"></i>
       <!-- ↪️ -->
     </button>
-    <button on:click="set({grayscale: !grayscale})" title="Filter grayscale">
+    <button on:click="$set({grayscale: !$grayscale}, true)" title="Filter grayscale">
       <i class="fas fa-eye-dropper"></i>
     </button>
-    <button on:click="set({textvisible: !textvisible})" title="Card Text Visible">
+    <button on:click="$set({textvisible: !$textvisible}, true)" title="Card Text Visible">
       <i class="fas fa-font"></i>
     </button>
     <button on:click="removeAll()" title="Delete">
@@ -71,7 +71,7 @@
 
 <div ref:box id="box" style="background-color: {bgColor};">
   {#each $cards as card, index}
-    <ColorCard card={card} index={index} {grayscale} {textvisible} {cardViewModels} />
+    <ColorCard {card} {index} />
   {/each}
 </div>
 
@@ -79,7 +79,7 @@
   <a href="https://github.com/techa/color-factory"><i class="fab fa-github fa-fw"></i></a>
 </div>
 
-<ContextMenu {cardViewModels} on:viewModelChenge="viewModelChenge(event)" />
+<ContextMenu />
 
 {#if showModal}
 <SaveModal on:close='set({ showModal: false })'></SaveModal>
@@ -136,23 +136,11 @@
         memo: null,
         selectingCard: null,
         sort,
-        grayscale: false,
-        textvisible: true,
-        cardViewModels: {
-          hex: true,
-          rgb: false,
-          hsl: true,
-          hsv: false,
-          hcg: false,
-          hwb: false,
-          cmyk: false,
-          contrast: true,
-        },
       }
     },
     computed: {
       textColor: ({ $bgColor }) => Color($bgColor).isDark() ? '#fff' : '#000',
-      bgColor: ({ $bgColor, grayscale }) => grayscale ? Color($bgColor).grayscale() : Color($bgColor),
+      bgColor: ({ $bgColor, $grayscale }) => $grayscale ? Color($bgColor).grayscale() : Color($bgColor),
     },
     oncreate () {
       this.refs.name.addEventListener('focus', function (e) {
@@ -274,11 +262,6 @@
           this.store.set({cards: []})
           this.store.memo()
         }
-      },
-      viewModelChenge (event) {
-        const {cardViewModels} = this.get()
-        Object.assign(cardViewModels, {[event[0]]: !event[1]})
-        this.set({cardViewModels})
       },
     }
   }

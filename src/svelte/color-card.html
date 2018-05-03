@@ -1,7 +1,7 @@
 <div ref:card
   class="card animated bounceIn"
   style="{cardStyle} z-index: {card.zIndex};">
-  <div class="cardtext {(textvisible || card.textMode)? '': 'textvisible'}">
+  <div class="cardtext {($textvisible || card.textMode)? '': 'textvisible'}">
     <h3 ref:title class="card_title" contenteditable="{edit}">{card.name}</h3>
     {#each modelsEntries as [key, value]}
       {#if value}
@@ -45,11 +45,11 @@
         }
         return `color: ${color.isDark() ? '#fff' : '#000'};`
       },
-      cardStyle: ({ card, grayscale }) => {
+      cardStyle: ({ card, $grayscale }) => {
         const {width, height, top, left, color, textMode} = card
         const w = width > 120 ? width + 'px' : 'auto'
         const h = height > 120 ? height + 'px' : 'auto'
-        const c2 = grayscale ? color.grayscale() : color
+        const c2 = $grayscale ? color.grayscale() : color
         const colorstyle = textMode
           ? `background-color: transparent; color: ${c2};`
           : `background-color: ${c2}; color: ${color.isDark() ? '#fff' : '#000'};`
@@ -57,7 +57,7 @@
       },
       contrast: ({ card, $bgColor }) => round($bgColor.contrast(card.color), 1),
 
-      modelsEntries: ({ cardViewModels }) => Object.entries(cardViewModels),
+      modelsEntries: ({ $cardViewModels }) => Object.entries($cardViewModels),
     },
 
 

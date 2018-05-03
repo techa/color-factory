@@ -2,37 +2,52 @@ import defaultpalette from '../constants/defaultpalette'
 import Histore from './svelte-store-ex.js'
 import Color from 'color'
 // storage.clear()
-
-const store = new Histore(defaultpalette, {
-  storageKey: 'palette',
-  keymaps: [
-    {
-      key: 'ctrl+z',
-      action: 'undo',
+const store = new Histore(
+  Object.assign({
+    grayscale: false,
+    textvisible: true,
+    cardViewModels: {
+      hex: true,
+      rgb: false,
+      hsl: true,
+      hsv: false,
+      hcg: false,
+      hwb: false,
+      cmyk: false,
+      contrast: true,
     },
-    {
-      key: 'ctrl+shift+z',
-      action: 'redo',
-    },
-    {
-      key: 'ctrl+a',
-      action: 'selectAll',
-    },
-  ],
-  // immutable: true,
-  init (state) {
-    if (state.cards) {
-      for (let i = 0; i < state.cards.length; i++) {
-        const card = state.cards[i]
-        card.color = Color(card.color)
-        card.index = i
-        card.zIndex = card.zIndex == null ? i : card.zIndex
+  }, defaultpalette),
+  {
+    storageKey: 'palette',
+    keymaps: [
+      {
+        key: 'ctrl+z',
+        action: 'undo',
+      },
+      {
+        key: 'ctrl+shift+z',
+        action: 'redo',
+      },
+      {
+        key: 'ctrl+a',
+        action: 'selectAll',
+      },
+    ],
+    // immutable: true,
+    init (state) {
+      if (state.cards) {
+        for (let i = 0; i < state.cards.length; i++) {
+          const card = state.cards[i]
+          card.color = Color(card.color)
+          card.index = i
+          card.zIndex = card.zIndex == null ? i : card.zIndex
+        }
       }
+      state.bgColor = Color(state.bgColor)
+      console.log('Color, Color()', state)
     }
-    state.bgColor = Color(state.bgColor)
-    console.log('Color, Color()', state)
   }
-})
+)
 
 // Events
 store.on('cards.ADD_CARD', (card) => {
