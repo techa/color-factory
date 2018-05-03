@@ -96,9 +96,24 @@ store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
 })
 
 // @params {array} indexs
+/**
+ * [5,2,1,4,7][3,6]
+ * [4,2,1,3,5]
+ *
+ * [5,2,1,4,7,12][3,6,8,9,10,11]
+ * [4,2,1,3,5,6]
+ */
 store.on('cards.REMOVE_CARD', (indexs) => {
   store.set({cards: (cards) => {
-    return cards.filter((card, i) => !~indexs.indexOf(i))
+    const zIndexs = indexs.map((i) => cards[i].zIndex)
+    return cards.reduce((newcards, card, i) => {
+      if (!~indexs.indexOf(i)) {
+        card.index = newcards.length
+        card.zIndex -= zIndexs.reduce((num, zIndex) => num + (card.zIndex > zIndex), 0)
+        newcards.push(card)
+      }
+      return newcards
+    }, [])
   }})
   store.memo()
 })
