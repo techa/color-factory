@@ -1,21 +1,101 @@
 <Modal on:close="fire('close')">
-  <h2 slot='header'>Save & Load</h2>
-  {#each list as item}
-  <p>
-    title
-    palette
-    <button>Load</button>
-  </p>
+  <h2 slot='header'>Save &amp; Load</h2>
+
+  <div class="button-set">
+    <div class="name">
+      <input bind:value placeholder="Palette Name"
+        on:focus="set({showSubmenu: true})"
+        on:blur="blur(event)" >
+      {#if showSubmenu && !value}
+      <div class="submenu">
+        {#each list as {paletteName}}
+        <p class="menuitem">
+          {paletteName}
+        </p>
+        {/each}
+      </div>
+      {/if}
+    </div>
+    <div class="palette button-set">
+      {#each nowpalette as color}
+        <div class="tip" style="background-color: {color};"></div>
+      {/each}
+    </div>
+    <div class="color-num">
+      {nowpalette.length}
+    </div>
+    <div class="btns">
+      <button on:click="save(value)">
+        <i class="fa fa-plus-square"></i>
+      </button>
+    </div>
+  </div>
+
+  <hr>
+
+  {#each list as {paletteName, palette} }
+  <div class="listitem button-set {paletteName == value ? 'active':''}">
+    <div class="name" on:click="$load(paletteName)">
+      {paletteName}
+    </div>
+    <div class="palette button-set">
+      {#each palette as color}
+        <div class="tip" style="background-color: {color};"></div>
+      {/each}
+    </div>
+    <div class="color-num">
+      {palette.length}
+    </div>
+    <div class="btns">
+      <button on:click="remove(paletteName)">
+        <i class="fa fa-minus-square"></i>
+      </button>
+    </div>
+  </div>
   {/each}
-  <p>
-    <input bind:value>
-    palette
-    <button>Save</button>
-  </p>
+
 </Modal>
+
+<style>
+  .name {
+    position: relative;
+    width: 200px;
+    flex: 3 0 200px;
+  }
+  .name input {
+    border-color: black;
+    border-style: solid;
+    border-width: 0 0 1px 0;
+  }
+  .listitem.active {
+    background: aquamarine;
+  }
+  .listitem:hover {
+    background: aqua;
+  }
+  .palette {
+    position: relative;
+  }
+  .tip {
+    margin: 2px 0;
+    flex: 1;
+  }
+  .color-num {
+    width: 48px;
+    text-align: right;
+  }
+</style>
 
 <script>
   import Modal from './modal.html'
+  import Color from 'color'
+  import defaultpalette from '../constants/newwebcolor'
+
+  const saveKeys = Object.keys(defaultpalette)
+
+  function colorlist (cards) {
+    return cards.map((card) => Color(card.color))
+  }
 
   export default {
     components: {
@@ -23,8 +103,52 @@
     },
     data () {
       return {
-        list: []
+        list: [],
+        value: '',
       }
     },
+    computed: {
+      nowpalette: ({ $cards }) => colorlist($cards),
+    },
+    oncreate () {
+      this.set({
+        list: this.getList(),
+      })
+    },
+    methods: {
+      getList () {
+        return this.store.dataList().map(({ paletteName, cards }) => {
+          return {
+            paletteName,
+            palette: colorlist(cards),
+          }
+        })
+      },
+      remove (paletteName) {
+        this.store.remove(paletteName)
+        const {list} = this.get()
+        list.splice(list.findIndex((item) => item.paletteName === paletteName), 1)
+        this.set({list})
+      },
+      save (value) {
+        if (!value) {
+          return
+        }
+        this.store.set({paletteName: value})
+        this.store.save(value, saveKeys)
+        this.set({
+          value: '',
+          list: this.getList()
+        })
+      },
+      blur (e) {
+        const el = e.explicitOriginalTarget
+        if (el.classList && el.classList.contains('menuitem')) {
+          this.set({value: el.textContent, showSubmenu: false})
+        } else {
+          this.set({showSubmenu: false})
+        }
+      },
+    }
   }
 </script>

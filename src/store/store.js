@@ -1,4 +1,4 @@
-import defaultpalette from '../constants/defaultpalette'
+import defaultpalette from '../constants/newwebcolor'
 import Histore from './svelte-store-ex.js'
 import Color from 'color'
 // storage.clear()

@@ -1,6 +1,14 @@
 import { Store } from 'svelte/store.js'
 import KeyManager from './KeyManager.js'
 
+/* eslint no-extend-native: 0 */
+// https://github.com/DavidBruant/Map-Set.prototype.toJSON
+Map.prototype.toJSON = function toJSON () {
+  return [...Map.prototype.entries.call(this)]
+}
+Set.prototype.toJSON = function toJSON () {
+  return [...Set.prototype.values.call(this)]
+}
 
 const EVENTS = constructor._events = {}
 
@@ -20,7 +28,7 @@ export default class Histore extends Store {
     this.storageKey = storageKey
     this.storageKeys = storageKeys || storageKey + '-list'
     const data = window.localStorage.getItem(this.storageKeys)
-    this._storageKeys = JSON.parse(data) || [this.storageKey]
+    this._storageKeys = new Set(JSON.parse(data) || [])
 
     this._history = {
       oldstate: JSON.stringify(state),
@@ -29,7 +37,7 @@ export default class Histore extends Store {
       memo: false,
     }
 
-    this.on('state', this._save.bind(this))
+    this.on('update', this._memo.bind(this))
 
     this.methodToEventHandler('undo', 'redo')
   }
@@ -70,36 +78,50 @@ export default class Histore extends Store {
   }
   memo () {
     this._history.memo = true
-    this._save(this.get())
+    this._memo({
+      current: this.get(),
+    })
   }
   dataList () {
-    return this._storageKeys
+    const list = []
+    this._storageKeys.forEach((storageKey) => {
+      const data = window.localStorage.getItem(storageKey)
+      if (!data) return
+      list.push(JSON.parse(data))
+    })
+    return list
   }
   load (storageKey) {
     const data = window.localStorage.getItem(storageKey)
-    const state = JSON.parse(data)
-    this.storageKey = storageKey
-    this._history = {
-      oldstate: JSON.stringify(state),
-      undostock: [],
-      redostock: [],
-      memo: false,
-    }
-    this.set(state)
+    if (!data) return
+    const loadstate = JSON.parse(data)
+
+    this.set(this._parse(loadstate), true)
   }
-  save (storageKey) {
-    this._storageKeys.push(storageKey)
-    this.storageKey = storageKey
-    this._history.memo = true
+  remove (storageKey) {
+    window.localStorage.removeItem(storageKey)
+    this._storageKeys.delete(storageKey)
     window.localStorage.setItem(this.storageKeys, JSON.stringify(this._storageKeys))
-    this._save(this.get())
   }
-  _save (newstate, changed) {
-    const newstateJSON = JSON.stringify(newstate)
+  save (storageKey, keys) {
+    if (!this._storageKeys.has(storageKey)) {
+      this._storageKeys.add(storageKey)
+      window.localStorage.setItem(this.storageKeys, JSON.stringify(this._storageKeys))
+    }
+
+    keys = Array.isArray(keys) ? keys : Object.keys(keys)
+    const state = this.get()
+    window.localStorage.setItem(storageKey, JSON.stringify(keys.reduce((obj, key) => {
+      obj[key] = state[key]
+      return obj
+    }, {})))
+  }
+  _memo ({ changed, current, previous }) {
+    const newstateJSON = JSON.stringify(current)
     const {oldstate, undostock, redostock, memo} = this._history
     const storageKey = this.storageKey
-    if (newstateJSON !== oldstate || changed == null) {
-      console.log('change', newstateJSON !== oldstate)
+    console.log('changed', newstateJSON !== oldstate)
+    if (newstateJSON !== oldstate) {
       switch (memo) {
         case 'undo':
           redostock.push(oldstate)

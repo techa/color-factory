@@ -47,7 +47,7 @@ Color Factory
 - [x] addCard: sorted position
 - [x] rename Card.name
 - [x] view: card parameter list edit
-- [ ] palette data save
-    - [ ] create palette list
+- [x] palette data save
+    - [x] create palette list
 - [x] random Color in picker
 - [x] sorted position Hue Circle
