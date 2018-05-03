@@ -1,7 +1,7 @@
 import defaultpalette from '../constants/newwebcolor'
 import Histore from './svelte-store-ex.js'
 import Color from 'color'
-// storage.clear()
+
 const store = new Histore(
   Object.assign({
     grayscale: false,
@@ -18,7 +18,7 @@ const store = new Histore(
     },
   }, defaultpalette),
   {
-    storageKey: 'palette',
+    storageKey: '$color-factory',
     keymaps: [
       {
         key: 'ctrl+z',

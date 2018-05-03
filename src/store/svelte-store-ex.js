@@ -17,6 +17,9 @@ export default class Histore extends Store {
     const {storageKey, storageKeys, init} = options
     if (storageKey) {
       const data = window.localStorage.getItem(storageKey)
+      if (!data) {
+        window.localStorage.clear()
+      }
       state = JSON.parse(data) || state
     }
 
