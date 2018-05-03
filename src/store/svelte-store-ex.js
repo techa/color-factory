@@ -59,12 +59,13 @@ export default class Histore extends Store {
       }
     }
   }
-  set (newState) {
+  set (newState, memo) {
     for (const key in newState) {
       if (typeof newState[key] === 'function') {
         newState[key] = newState[key](this.get()[key])
       }
     }
+    this._history.memo = !!memo
     super.set(newState)
   }
   memo () {
