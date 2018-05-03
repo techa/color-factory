@@ -4616,7 +4616,7 @@ const EVENTS = constructor._events = {};
 
 class Histore extends Store {
   constructor (state, options) {
-    const {storageKey, storageKeys, init} = options;
+    const {storageKey, storageListKey, init} = options;
     if (storageKey) {
       const data = window.localStorage.getItem(storageKey);
       if (!data) {
@@ -4631,9 +4631,9 @@ class Histore extends Store {
     this.options = options;
 
     this.storageKey = storageKey;
-    this.storageKeys = storageKeys || storageKey + '-list';
-    const data = window.localStorage.getItem(this.storageKeys);
-    this._storageKeys = new Set(JSON.parse(data) || []);
+    this.storageListKey = storageListKey || storageKey + '-list';
+    const data = window.localStorage.getItem(this.storageListKey);
+    this._storageSet = new Set(JSON.parse(data) || []);
 
     this._history = {
       oldstate: JSON.stringify(state),
@@ -4689,7 +4689,7 @@ class Histore extends Store {
   }
   dataList () {
     const list = [];
-    this._storageKeys.forEach((storageKey) => {
+    this._storageSet.forEach((storageKey) => {
       const data = window.localStorage.getItem(storageKey);
       if (!data) return
       list.push(JSON.parse(data));
@@ -4705,13 +4705,13 @@ class Histore extends Store {
   }
   remove (storageKey) {
     window.localStorage.removeItem(storageKey);
-    this._storageKeys.delete(storageKey);
-    window.localStorage.setItem(this.storageKeys, JSON.stringify(this._storageKeys));
+    this._storageSet.delete(storageKey);
+    window.localStorage.setItem(this.storageListKey, JSON.stringify(this._storageSet));
   }
   save (storageKey, keys) {
-    if (!this._storageKeys.has(storageKey)) {
-      this._storageKeys.add(storageKey);
-      window.localStorage.setItem(this.storageKeys, JSON.stringify(this._storageKeys));
+    if (!this._storageSet.has(storageKey)) {
+      this._storageSet.add(storageKey);
+      window.localStorage.setItem(this.storageListKey, JSON.stringify(this._storageSet));
     }
 
     keys = Array.isArray(keys) ? keys : Object.keys(keys);
@@ -4871,9 +4871,24 @@ store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
 });
 
 // @params {array} indexs
+/**
+ * [5,2,1,4,7][3,6]
+ * [4,2,1,3,5]
+ *
+ * [5,2,1,4,7,12][3,6,8,9,10,11]
+ * [4,2,1,3,5,6]
+ */
 store.on('cards.REMOVE_CARD', (indexs) => {
   store.set({cards: (cards) => {
-    return cards.filter((card, i) => !~indexs.indexOf(i))
+    const zIndexs = indexs.map((i) => cards[i].zIndex);
+    return cards.reduce((newcards, card, i) => {
+      if (!~indexs.indexOf(i)) {
+        card.index = newcards.length;
+        card.zIndex -= zIndexs.reduce((num, zIndex) => num + (card.zIndex > zIndex), 0);
+        newcards.push(card);
+      }
+      return newcards
+    }, [])
   }});
   store.memo();
 });
@@ -14079,6 +14094,10 @@ var methods$7 = {
       }
     })
   },
+  load (paletteName) {
+    this.store.load(paletteName);
+    this.root.cardsPosition();
+  },
   remove (paletteName) {
     this.store.remove(paletteName);
     const {list} = this.get();
@@ -14161,48 +14180,48 @@ function create_main_fragment$10(component, ctx) {
 
 	return {
 		c() {
-			text = createText("\r\n  ");
+			text = createText("\n  ");
 			h2 = createElement("h2");
 			text_1 = createText("Save & Load");
-			text_2 = createText("\r\n\r\n  ");
+			text_2 = createText("\n\n  ");
 			div = createElement("div");
 			div_1 = createElement("div");
 			input = createElement("input");
-			text_3 = createText("\r\n      ");
+			text_3 = createText("\n      ");
 			if (if_block) if_block.c();
-			text_5 = createText("\r\n    ");
+			text_5 = createText("\n    ");
 			div_2 = createElement("div");
 
 			for (var i_1 = 0; i_1 < each_blocks.length; i_1 += 1) {
 				each_blocks[i_1].c();
 			}
 
-			text_7 = createText("\r\n    ");
+			text_7 = createText("\n    ");
 			div_3 = createElement("div");
 			text_8 = createText(text_8_value);
-			text_10 = createText("\r\n    ");
+			text_10 = createText("\n    ");
 			div_4 = createElement("div");
 			button = createElement("button");
 			button.innerHTML = "<i class=\"fa fa-plus-square\"></i>";
-			text_14 = createText("\r\n\r\n  ");
+			text_14 = createText("\n\n  ");
 			hr = createElement("hr");
-			text_15 = createText("\r\n\r\n  ");
+			text_15 = createText("\n\n  ");
 
 			for (var i_1 = 0; i_1 < each_1_blocks.length; i_1 += 1) {
 				each_1_blocks[i_1].c();
 			}
 
-			text_16 = createText("\r\n\r\n");
+			text_16 = createText("\n\n");
 			modal._fragment.c();
 			setAttribute(h2, "slot", "header");
 			addListener(input, "input", input_input_handler);
 			addListener(input, "focus", focus_handler);
 			addListener(input, "blur", blur_handler);
 			input.placeholder = "Palette Name";
-			input.className = "svelte-1x3eg8t";
-			div_1.className = "name svelte-1x3eg8t";
-			div_2.className = "palette button-set svelte-1x3eg8t";
-			div_3.className = "color-num svelte-1x3eg8t";
+			input.className = "svelte-1yx9eop";
+			div_1.className = "name svelte-1yx9eop";
+			div_2.className = "palette button-set svelte-1yx9eop";
+			div_3.className = "color-num svelte-1yx9eop";
 			addListener(button, "click", click_handler);
 			div_4.className = "btns";
 			div.className = "button-set";
@@ -14449,7 +14468,7 @@ function create_each_block_1$1(component, ctx) {
 	return {
 		c() {
 			div = createElement("div");
-			div.className = "tip svelte-1x3eg8t";
+			div.className = "tip svelte-1yx9eop";
 			setStyle(div, "background-color", ctx.color);
 		},
 
@@ -14488,32 +14507,32 @@ function create_each_block_2(component, ctx) {
 			div = createElement("div");
 			div_1 = createElement("div");
 			text = createText(text_value);
-			text_2 = createText("\r\n    ");
+			text_2 = createText("\n    ");
 			div_2 = createElement("div");
 
 			for (var i_1 = 0; i_1 < each_blocks.length; i_1 += 1) {
 				each_blocks[i_1].c();
 			}
 
-			text_4 = createText("\r\n    ");
+			text_4 = createText("\n    ");
 			div_3 = createElement("div");
 			text_5 = createText(text_5_value);
-			text_7 = createText("\r\n    ");
+			text_7 = createText("\n    ");
 			div_4 = createElement("div");
 			button = createElement("button");
 			button.innerHTML = "<i class=\"fa fa-minus-square\"></i>";
 			div_1._svelte = { component, ctx };
 
 			addListener(div_1, "click", click_handler$2);
-			div_1.className = "name svelte-1x3eg8t";
-			div_2.className = "palette button-set svelte-1x3eg8t";
-			div_3.className = "color-num svelte-1x3eg8t";
+			div_1.className = "name svelte-1yx9eop";
+			div_2.className = "palette button-set svelte-1yx9eop";
+			div_3.className = "color-num svelte-1yx9eop";
 
 			button._svelte = { component, ctx };
 
 			addListener(button, "click", click_handler_1);
 			div_4.className = "btns";
-			div.className = div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1x3eg8t";
+			div.className = div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1yx9eop";
 		},
 
 		m(target, anchor) {
@@ -14569,7 +14588,7 @@ function create_each_block_2(component, ctx) {
 			}
 
 			button._svelte.ctx = ctx;
-			if ((changed.list || changed.value) && div_class_value !== (div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1x3eg8t")) {
+			if ((changed.list || changed.value) && div_class_value !== (div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1yx9eop")) {
 				div.className = div_class_value;
 			}
 		},
@@ -14599,7 +14618,7 @@ function create_each_block_3(component, ctx) {
 	return {
 		c() {
 			div = createElement("div");
-			div.className = "tip svelte-1x3eg8t";
+			div.className = "tip svelte-1yx9eop";
 			setStyle(div, "background-color", ctx.color);
 		},
 
@@ -14649,7 +14668,7 @@ function get_each_1_context$1(ctx, list, i) {
 function click_handler$2(event) {
 	const { component, ctx } = this._svelte;
 
-	component.store.load(ctx.paletteName);
+	component.load(ctx.paletteName);
 }
 
 function get_each_context_2(ctx, list, i) {
@@ -14835,8 +14854,8 @@ function oncreate$8() {
       const radius = sortY === 'deg' ? byer(sortX, card, true) : byer(sortY, card, true);
       const maxR = Math.min(maxW, maxH) / 2;
       console.log('deg', card.color.hsl(),  deg);
-      card.left = maxR * Math.cos(deg) * radius + maxR + colorsWidth;
-      card.top = maxR * Math.sin(deg) * radius + maxR + cardSize / 2;
+      card.left = Math.round(maxR * Math.cos(deg) * radius + maxR + colorsWidth);
+      card.top = Math.round(maxR * Math.sin(deg) * radius + maxR + cardSize / 2);
     } else {
       if (card.left == null || sortX !== 'none') {
         card.left = Math.round((maxW) * byer(sortX, card) + colorsWidth);
@@ -15027,32 +15046,32 @@ function create_main_fragment$11(component, ctx) {
 			div_1 = createElement("div");
 			button = createElement("button");
 			button.innerHTML = "<i class=\"fas fa-hdd\"></i>";
-			text_1 = createText("\r\n    ");
+			text_1 = createText("\n    ");
 			button_1 = createElement("button");
 			button_1.innerHTML = "<i class=\"fas fa-undo\"></i>";
-			text_3 = createText("\r\n    ");
+			text_3 = createText("\n    ");
 			button_2 = createElement("button");
 			button_2.innerHTML = "<i class=\"fas fa-redo\"></i>";
-			text_5 = createText("\r\n    ");
+			text_5 = createText("\n    ");
 			button_3 = createElement("button");
 			button_3.innerHTML = "<i class=\"fas fa-eye-dropper\"></i>";
-			text_7 = createText("\r\n    ");
+			text_7 = createText("\n    ");
 			button_4 = createElement("button");
 			button_4.innerHTML = "<i class=\"fas fa-font\"></i>";
-			text_9 = createText("\r\n    ");
+			text_9 = createText("\n    ");
 			button_5 = createElement("button");
 			button_5.innerHTML = "<i class=\"fas fa-eye\"></i>";
-			text_11 = createText("\r\n    ");
+			text_11 = createText("\n    ");
 			button_6 = createElement("button");
 			button_6.innerHTML = "<i class=\"fas fa-trash\"></i>";
-			text_13 = createText("\r\n    ");
+			text_13 = createText("\n    ");
 			if (if_block) if_block.c();
-			text_15 = createText("\r\n\r\n  \r\n  ");
+			text_15 = createText("\n\n  \n  ");
 			div_2 = createElement("div");
 			div_3 = createElement("div");
 			button_7 = createElement("button");
 			button_7.textContent = "X";
-			text_17 = createText("\r\n    ");
+			text_17 = createText("\n    ");
 			ladel = createElement("ladel");
 			select = createElement("select");
 
@@ -15060,11 +15079,11 @@ function create_main_fragment$11(component, ctx) {
 				each_blocks[i_8].c();
 			}
 
-			text_19 = createText("\r\n\r\n    ");
+			text_19 = createText("\n\n    ");
 			div_4 = createElement("div");
 			button_8 = createElement("button");
 			button_8.textContent = "Y";
-			text_21 = createText("\r\n    ");
+			text_21 = createText("\n    ");
 			ladel_1 = createElement("ladel");
 			select_1 = createElement("select");
 
@@ -15072,43 +15091,43 @@ function create_main_fragment$11(component, ctx) {
 				each_1_blocks[i_8].c();
 			}
 
-			text_24 = createText("\r\n\r\n  ");
+			text_24 = createText("\n\n  ");
 			hr = createElement("hr");
-			text_25 = createText("\r\n\r\n  ");
+			text_25 = createText("\n\n  ");
 			div_5 = createElement("div");
 			div_6 = createElement("div");
 			input = createElement("input");
-			text_27 = createText("\r\n    ");
+			text_27 = createText("\n    ");
 			div_7 = createElement("div");
 			button_9 = createElement("button");
 			button_9.textContent = "➕";
-			text_30 = createText("\r\n    ");
+			text_30 = createText("\n    ");
 			div_8 = createElement("div");
 			button_10 = createElement("button");
 			button_10.textContent = "➕";
-			text_33 = createText("\r\n    ");
+			text_33 = createText("\n    ");
 			div_9 = createElement("div");
 			button_11 = createElement("button");
 			button_11.textContent = "BG";
-			text_36 = createText("\r\n\r\n  ");
+			text_36 = createText("\n\n  ");
 			colorpicker._fragment.c();
-			text_37 = createText("\r\n  ");
+			text_37 = createText("\n  ");
 			hr_1 = createElement("hr");
-			text_38 = createText("\r\n  ");
+			text_38 = createText("\n  ");
 			colorlists._fragment.c();
-			text_40 = createText("\r\n\r\n");
+			text_40 = createText("\n\n");
 			div_10 = createElement("div");
 
 			for (var i_8 = 0; i_8 < each_2_blocks.length; i_8 += 1) {
 				each_2_blocks[i_8].c();
 			}
 
-			text_42 = createText("\r\n\r\n");
+			text_42 = createText("\n\n");
 			div_11 = createElement("div");
-			div_11.innerHTML = "<a href=\"https://github.com/techa/color-factory\" class=\"svelte-581fwv\"><i class=\"fab fa-github fa-fw\"></i></a>";
-			text_44 = createText("\r\n\r\n");
+			div_11.innerHTML = "<a href=\"https://github.com/techa/color-factory\" class=\"svelte-1i9cctu\"><i class=\"fab fa-github fa-fw\"></i></a>";
+			text_44 = createText("\n\n");
 			contextmenu._fragment.c();
-			text_45 = createText("\r\n\r\n");
+			text_45 = createText("\n\n");
 			if (if_block_1) if_block_1.c();
 			if_block_1_anchor = createComment();
 			addListener(button, "click", click_handler);
@@ -15125,7 +15144,7 @@ function create_main_fragment$11(component, ctx) {
 			button_5.title = "Card Color Models Visible";
 			addListener(button_6, "click", click_handler_6);
 			button_6.title = "Delete";
-			div_1.className = "tool-box svelte-581fwv";
+			div_1.className = "tool-box svelte-1i9cctu";
 			addListener(button_7, "click", click_handler_7);
 			addListener(select, "change", select_change_handler);
 			if (!('$sortX' in ctx)) component.root._beforecreate.push(select_change_handler);
@@ -15138,37 +15157,37 @@ function create_main_fragment$11(component, ctx) {
 			addListener(select_1, "change", change_handler_1);
 			ladel_1.className = "select-wrapper";
 			setStyle(ladel_1, "flex", "1 1 auto");
-			div_2.className = "button-set border radius svelte-581fwv";
-			hr.className = "svelte-581fwv";
+			div_2.className = "button-set border radius svelte-1i9cctu";
+			hr.className = "svelte-1i9cctu";
 			addListener(input, "input", input_input_handler);
 			input.placeholder = input_placeholder_value = ctx.current.color.nearColorName();
 			setStyle(input, "color", ctx.textColor);
-			input.className = "svelte-581fwv";
-			div_6.className = "svelte-581fwv";
+			input.className = "svelte-1i9cctu";
+			div_6.className = "svelte-1i9cctu";
 			addListener(button_9, "click", click_handler_9);
 			button_9.title = "Add Card: text";
 			setStyle(button_9, "color", ctx.current.color);
-			button_9.className = "svelte-581fwv";
-			div_7.className = "svelte-581fwv";
+			button_9.className = "svelte-1i9cctu";
+			div_7.className = "svelte-1i9cctu";
 			addListener(button_10, "click", click_handler_10);
 			button_10.title = "Add Card: fill";
 			setStyle(button_10, "color", (ctx.current.color.isDark()?'#fff':'#000'));
 			setStyle(button_10, "background-color", ctx.current.color);
-			button_10.className = "svelte-581fwv";
-			div_8.className = "svelte-581fwv";
+			button_10.className = "svelte-1i9cctu";
+			div_8.className = "svelte-1i9cctu";
 			addListener(button_11, "click", click_handler_11);
 			button_11.title = "set Background Color";
-			button_11.className = "svelte-581fwv";
-			div_9.className = "svelte-581fwv";
-			div_5.className = "top-input-wrapper button-set border radius svelte-581fwv";
-			hr_1.className = "svelte-581fwv";
+			button_11.className = "svelte-1i9cctu";
+			div_9.className = "svelte-1i9cctu";
+			div_5.className = "top-input-wrapper button-set border radius svelte-1i9cctu";
+			hr_1.className = "svelte-1i9cctu";
 			div.id = "controller";
 			setStyle(div, "color", ctx.textColor);
-			div.className = "svelte-581fwv";
+			div.className = "svelte-1i9cctu";
 			div_10.id = "box";
 			setStyle(div_10, "background-color", ctx.bgColor);
-			div_10.className = "svelte-581fwv";
-			div_11.className = "links svelte-581fwv";
+			div_10.className = "svelte-1i9cctu";
+			div_11.className = "links svelte-1i9cctu";
 			setStyle(div_11, "color", ctx.textColor);
 		},
 
@@ -15468,7 +15487,7 @@ function create_each_block$5(component, ctx) {
 			p = createElement("p");
 			label = createElement("label");
 			input = createElement("input");
-			text = createText("\r\n          ");
+			text = createText("\n          ");
 			text_1 = createText(text_1_value);
 			input._svelte = { component, ctx };
 
@@ -15592,7 +15611,7 @@ function create_each_block_1$2(component, ctx) {
 			text = createText(text_value);
 			option.__value = option_value_value = ctx.key.value;
 			option.value = option.__value;
-			option.className = "svelte-581fwv";
+			option.className = "svelte-1i9cctu";
 		},
 
 		m(target, anchor) {
@@ -15630,7 +15649,7 @@ function create_each_block_2$1(component, ctx) {
 			text = createText(text_value);
 			option.__value = option_value_value = ctx.key.value;
 			option.value = option.__value;
-			option.className = "svelte-581fwv";
+			option.className = "svelte-1i9cctu";
 		},
 
 		m(target, anchor) {
@@ -15937,7 +15956,11 @@ function alphaBlending (...colors) {
 }
 
 /* eslint  no-new: 0 */
-store.save(defaultpalette.paletteName, defaultpalette);
+
+// Load defaultpalette
+if (!window.localStorage.getItem(defaultpalette.paletteName)) {
+  store.save(defaultpalette.paletteName, defaultpalette);
+}
 
 new App({
   target: document.querySelector('#root'),
