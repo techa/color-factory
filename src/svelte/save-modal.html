@@ -35,7 +35,7 @@
 
   {#each list as {paletteName, palette} }
   <div class="listitem button-set {paletteName == value ? 'active':''}">
-    <div class="name" on:click="$load(paletteName)">
+    <div class="name" on:click="load(paletteName)">
       {paletteName}
     </div>
     <div class="palette button-set">
@@ -123,6 +123,10 @@
             palette: colorlist(cards),
           }
         })
+      },
+      load (paletteName) {
+        this.store.load(paletteName)
+        this.root.cardsPosition()
       },
       remove (paletteName) {
         this.store.remove(paletteName)
