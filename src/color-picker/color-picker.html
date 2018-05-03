@@ -4,7 +4,7 @@
     <HsvPicker bind:color />
   </div>
   <div class="picker-footer">
-    <div class="button">
+    <div class="button" title="Click: set BG-color. Display: Readable Score(1~21).">
       <button class="contrast {bgColor.level(color)}" style="color:{color};" on:click="setBgColor()">
         {contrast}
       </button>
@@ -12,7 +12,7 @@
     <div class="blender-wrapper">
       <Blender bind:color/>
     </div>
-    <div class="button">
+    <div class="button" title="Alpha Blending by BG-color">
       <button on:click="alphaBlending()">a=1</button>
     </div>
   </div>
