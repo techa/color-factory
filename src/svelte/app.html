@@ -200,8 +200,8 @@
           const radius = sortY === 'deg' ? byer(sortX, card, true) : byer(sortY, card, true)
           const maxR = Math.min(maxW, maxH) / 2
           console.log('deg', card.color.hsl(),  deg)
-          card.left = maxR * Math.cos(deg) * radius + maxR + colorsWidth
-          card.top = maxR * Math.sin(deg) * radius + maxR + cardSize / 2
+          card.left = Math.round(maxR * Math.cos(deg) * radius + maxR + colorsWidth)
+          card.top = Math.round(maxR * Math.sin(deg) * radius + maxR + cardSize / 2)
         } else {
           if (card.left == null || sortX !== 'none') {
             card.left = Math.round((maxW) * byer(sortX, card) + colorsWidth)
