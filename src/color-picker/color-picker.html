@@ -85,12 +85,10 @@
     data () {
       return {
         color: '',
-        current: '',
         bgColor: '',
       }
     },
     computed: {
-      textColor: ({ color }) =>  Color(color).isDark() ? '#fff' : '#000',
       contrast: ({ color, bgColor }) => round(Color(bgColor).contrast(color), 1),
     },
     onstate ({ changed, current }) {
