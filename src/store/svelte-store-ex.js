@@ -14,7 +14,7 @@ const EVENTS = constructor._events = {}
 
 export default class Histore extends Store {
   constructor (state, options) {
-    const {storageKey, storageKeys, init} = options
+    const {storageKey, storageListKey, init} = options
     if (storageKey) {
       const data = window.localStorage.getItem(storageKey)
       if (!data) {
@@ -29,9 +29,9 @@ export default class Histore extends Store {
     this.options = options
 
     this.storageKey = storageKey
-    this.storageKeys = storageKeys || storageKey + '-list'
-    const data = window.localStorage.getItem(this.storageKeys)
-    this._storageKeys = new Set(JSON.parse(data) || [])
+    this.storageListKey = storageListKey || storageKey + '-list'
+    const data = window.localStorage.getItem(this.storageListKey)
+    this._storageSet = new Set(JSON.parse(data) || [])
 
     this._history = {
       oldstate: JSON.stringify(state),
@@ -87,7 +87,7 @@ export default class Histore extends Store {
   }
   dataList () {
     const list = []
-    this._storageKeys.forEach((storageKey) => {
+    this._storageSet.forEach((storageKey) => {
       const data = window.localStorage.getItem(storageKey)
       if (!data) return
       list.push(JSON.parse(data))
@@ -103,13 +103,13 @@ export default class Histore extends Store {
   }
   remove (storageKey) {
     window.localStorage.removeItem(storageKey)
-    this._storageKeys.delete(storageKey)
-    window.localStorage.setItem(this.storageKeys, JSON.stringify(this._storageKeys))
+    this._storageSet.delete(storageKey)
+    window.localStorage.setItem(this.storageListKey, JSON.stringify(this._storageSet))
   }
   save (storageKey, keys) {
-    if (!this._storageKeys.has(storageKey)) {
-      this._storageKeys.add(storageKey)
-      window.localStorage.setItem(this.storageKeys, JSON.stringify(this._storageKeys))
+    if (!this._storageSet.has(storageKey)) {
+      this._storageSet.add(storageKey)
+      window.localStorage.setItem(this.storageListKey, JSON.stringify(this._storageSet))
     }
 
     keys = Array.isArray(keys) ? keys : Object.keys(keys)
