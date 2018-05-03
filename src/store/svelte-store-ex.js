@@ -76,7 +76,7 @@ export default class Histore extends Store {
         newState[key] = newState[key](this.get()[key])
       }
     }
-    this._history.memo = !!memo
+    this._history.memo = memo
     super.set(newState)
   }
   memo () {
@@ -162,15 +162,13 @@ export default class Histore extends Store {
   undo () {
     const history = this._history
     if (history.undostock.length) {
-      this._history.memo = 'undo'
-      this.set(this._parse(history.undostock.pop()))
+      this.set(this._parse(history.undostock.pop()), 'undo')
     }
   }
   redo () {
     const history = this._history
     if (history.redostock.length) {
-      this._history.memo = 'redo'
-      this.set(this._parse(history.redostock.pop()))
+      this.set(this._parse(history.redostock.pop()), 'redo')
     }
   }
 }
