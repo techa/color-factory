@@ -1,4 +1,4 @@
-<div ref:menu id="menu">
+<div ref:menu class="context-menu">
   {#if mode == 'tip'}
     <p class="menuitem" on:click="add()">ADD CARD</p>
   {:elseif mode == 'card'}
@@ -65,12 +65,9 @@
     oncreate () {
       console.log('menu-render')
       const {menu, submenu} = this.refs
-      const {mode} = this.get()
 
       const menuHide = (e) => {
-        if (mode) {
-          store.fire('menu_close')
-        }
+        store.fire('menu_close')
       }
 
       store.on('menu_open', (e, cardComponent, mode) => {
@@ -211,20 +208,3 @@
   }
 </script>
 
-<style>
-  #menu, .submenu {
-    position: absolute;
-    font-size:12px;
-    background: #fff;
-    border: solid 1px silver;
-    z-index: 100;
-  }
-  .menuitem {
-    min-width: 100px;
-    padding: 4px;
-    margin: 0;
-  }
-  .menuitem:hover, .menuitem:active {
-    background: aquamarine;
-  }
-</style>
