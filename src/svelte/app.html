@@ -82,16 +82,18 @@
   <ColorPicker bind:color="current.color" bgColor="{$bgColor}" on:setBgColor="setBgColor(current.color)" />
   <hr>
   <ColorLists on:colorpick="set({current: event.current})" />
+
+
+  <div class="links" style="color: {textColor};">
+    2018 &copy;techa
+    <a href="https://github.com/techa/color-factory"><i class="fab fa-github fa-fw"></i></a>
+  </div>
 </div>
 
 <div ref:box id="box" style="background-color: {bgColor};">
   {#each $cards as card, index}
     <ColorCard {card} {index} />
   {/each}
-</div>
-
-<div class="links" style="color: {textColor};">
-  <a href="https://github.com/techa/color-factory"><i class="fab fa-github fa-fw"></i></a>
 </div>
 
 <ContextMenu />
@@ -297,6 +299,12 @@
     padding: 10px 20px;
     top:0;
     left:0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* align items in Main Axis */
+    align-items: stretch; /* align items in Cross Axis */
+    align-content: stretch; /* Extra space in Cross Axis */
   }
   #box {
     width: 100%;
@@ -319,11 +327,13 @@
   .top-input-wrapper input {
     padding: 0 8px;
   }
+  hr {
+    width: 100%;
+  }
   .links {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    z-index: 5000;
+    width: 100%;
+    font-size: .8em;
+    text-align: center;
   }
   .links a,.links a:visited,.links a:active  {
     color: inherit;

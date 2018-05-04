@@ -1,19 +1,17 @@
-<div class="wrapper">
-  <div class="select-wrapper">
-    <select id="colorlists" on:change="set({colorlistsIndex: +this.value})">
-      {#each colorlists as data, index}
-        <option value={index}>{data.name}</option>
-      {/each}
-    </select>
-  </div>
+<div id="colorlists" class="select-wrapper">
+  <select on:change="set({colorlistsIndex: +this.value})">
+    {#each colorlists as data, index}
+      <option value={index}>{data.name}</option>
+    {/each}
+  </select>
+</div>
 
-  <div class="scrollbar-wrapper">
-    <div class="scrollbar-body">
-      <div ref:colortips class="scrollbar-content">
-        {#each list as {name, color} }
-          <div class="tip" title="{name+' : '+color}" style="background-color: {color};"></div>
-        {/each}
-      </div>
+<div class="colortips scrollbar-wrapper" style="flex: 1;">
+  <div class="scrollbar-body">
+    <div ref:colortips class="scrollbar-content">
+      {#each list as {name, color} }
+        <div class="tip" title="{name+' : '+color}" style="background-color: {color};"></div>
+      {/each}
     </div>
   </div>
 </div>
@@ -120,12 +118,14 @@
     }))
   }
 </script>
+
 <style>
   #colorlists {
     width: 280px;
     font-size: 20px;
-    margin: 10px 0;
-    display: block;
+  }
+  #colorlists select {
+    width: 280px;
   }
   #colorlists option {
     background: #fff;
@@ -134,17 +134,15 @@
   #colorlists option:hover {
     background: aquamarine;
   }
+  .colortips {
+    margin: 8px 0;
+  }
   .tip{
     width: 20px;
     height: 20px;
     margin:0;
     padding:0;
     display:inline-block;
-  }
-  .wrapper {
-    position: relative;
-    height: calc(100% - 420px);
-    margin: 0;
   }
   .scrollbar-wrapper {
     position: relative;
