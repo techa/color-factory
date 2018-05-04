@@ -4,7 +4,7 @@ Color Factory
 
 ## Features
 * Color cards
-    * auto color name: Source: [XKCD Color Names](https://www.w3schools.com/colors/colors_xkcd.asp)
+    * auto color name: Source: [XKCD Color Names](https://xkcd.com/color/rgb/)
     * fill/text
     * movable
     * sortable: hue, saturationl, lightness, saturationv, value, chroma, gray, contrast
