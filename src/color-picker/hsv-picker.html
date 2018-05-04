@@ -1,6 +1,6 @@
 <div class="hsv-picker">
   <Slider ref:hue value="{color.hue()}" max="359"/>
-  <Spectrum ref:spectrum bind:color />
+  <Spectrum bind:color model="hsv" />
   <Slider ref:alpha value="{color.alpha() * 100}" />
 </div>
 
@@ -13,7 +13,7 @@
     align-items: stretch;
     justify-content: space-around;
   }
-  
+
   .hsv-picker > :nth-child(2) {
     margin: 0 8px;
     flex: 2 1 auto;
