@@ -35,7 +35,7 @@
     "rollup-plugin-replace": "^2.0.0",
     "rollup-plugin-svelte": "^4.1.0",
     "rollup-plugin-uglify": "^3.0.0",
-    "svelte": "^2.4.2"
+    "svelte": "^2.4.4"
   },
   "dependencies": {
     "color": "^3.0.0"

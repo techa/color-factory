@@ -1,5 +1,5 @@
 <div ref:spectrum class="spectrum {model}" style="background-color: {color};">
-  <div ref:handle class="color-handle" style="left:{left}px;top:{top}px;"></div>
+  <div ref:handle class="color-handle"></div>
 </div>
 
 <style>
@@ -93,10 +93,8 @@
         const {color, model} = this.get()
         const {width, height} = this.refs.spectrum.getBoundingClientRect()
         const arr = color[model]().array()
-        this.set({
-          left: width * arr[1] / 100,
-          top: height - (height * arr[2] / 100),
-        })
+        this.refs.handle.style.left = width * arr[1] / 100 + 'px'
+        this.refs.handle.style.top = height - (height * arr[2] / 100) + 'px'
       },
     }
   }
