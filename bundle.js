@@ -14815,8 +14815,24 @@ function oncreate$8() {
   });
   this.cardsPosition();
 }
+<<<<<<< HEAD
 function create_main_fragment$11(component, ctx) {
 	var div, div_1, button, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, text_9, button_5, text_11, button_6, text_13, text_15, div_2, div_3, button_7, text_17, ladel, select, select_updating = false, text_19, div_4, button_8, text_21, ladel_1, select_1, select_1_updating = false, text_24, hr, text_25, div_5, div_6, input, input_updating = false, input_placeholder_value, text_27, div_7, button_9, text_30, div_8, button_10, text_33, div_9, button_11, text_36, colorpicker_updating = {}, text_37, hr_1, text_38, text_39, div_10, text_43, div_11, text_45, text_46, if_block_1_anchor;
+=======
+function store_1() {
+	return store;
+}
+
+function add_css$9() {
+	var style = createElement("style");
+	style.id = 'svelte-14v2gby-style';
+	style.textContent = "option.svelte-14v2gby,.svelte-14v2gby option{color:#111}.svelte-14v2gby#controller,.svelte-14v2gby #controller{width:320px;height:100vh;position:absolute;margin:0;padding:10px 20px;top:0;left:0}.svelte-14v2gby#box,.svelte-14v2gby #box{width:100%;height:100%}.svelte-14v2gby.tool-box,.svelte-14v2gby .tool-box{padding-bottom:10px}.svelte-14v2gby.top-input-wrapper,.svelte-14v2gby .top-input-wrapper{width:100%}.svelte-14v2gby.top-input-wrapper > div,.svelte-14v2gby .top-input-wrapper > div{height:2em}.svelte-14v2gby.top-input-wrapper > div > *,.svelte-14v2gby .top-input-wrapper > div > *{height:100%;width:100%}.svelte-14v2gby.top-input-wrapper input,.svelte-14v2gby .top-input-wrapper input{padding:0 8px}.svelte-14v2gby.links,.svelte-14v2gby .links{position:absolute;top:4px;right:4px;z-index:5000}.svelte-14v2gby.links a,.svelte-14v2gby .links a,.svelte-14v2gby.links a:visited,.svelte-14v2gby .links a:visited,.svelte-14v2gby.links a:active,.svelte-14v2gby .links a:active{color:inherit}";
+	appendNode(style, document.head);
+}
+
+function create_main_fragment$9(component, state) {
+	var div, div_1, button, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, text_10, div_2, div_3, button_5, text_12, ladel, select, select_updating = false, text_14, div_4, button_6, text_16, ladel_1, select_1, select_1_updating = false, text_19, hr, text_20, div_5, div_6, input, input_updating = false, input_placeholder_value, text_22, div_7, button_7, text_25, div_8, button_8, text_28, div_9, button_9, text_31, colorpicker_updating = {}, text_32, hr_1, text_33, text_35, div_10, text_37, div_11, text_39;
+>>>>>>> gh-pages
 
 	function click_handler(event) {
 		component.set({ showModal: true });
@@ -14965,6 +14981,7 @@ function create_main_fragment$11(component, ctx) {
 			div = createElement("div");
 			div_1 = createElement("div");
 			button = createElement("button");
+<<<<<<< HEAD
 			button.innerHTML = "<i class=\"fas fa-hdd\"></i>";
 			text_1 = createText("\n    ");
 			button_1 = createElement("button");
@@ -14992,6 +15009,27 @@ function create_main_fragment$11(component, ctx) {
 			button_7 = createElement("button");
 			button_7.textContent = "X";
 			text_17 = createText("\n    ");
+=======
+			button.innerHTML = "<i class=\"fas fa-undo\"></i>";
+			text_1 = createText("\r\n    ");
+			button_1 = createElement("button");
+			button_1.innerHTML = "<i class=\"fas fa-redo\"></i>";
+			text_3 = createText("\r\n    ");
+			button_2 = createElement("button");
+			button_2.innerHTML = "<i class=\"fas fa-eye-dropper\"></i>";
+			text_5 = createText("\r\n    ");
+			button_3 = createElement("button");
+			button_3.innerHTML = "<i class=\"fas fa-font\"></i>";
+			text_7 = createText("\r\n    ");
+			button_4 = createElement("button");
+			button_4.innerHTML = "<i class=\"fas fa-trash\"></i>";
+			text_10 = createText("\r\n\r\n  \r\n  ");
+			div_2 = createElement("div");
+			div_3 = createElement("div");
+			button_5 = createElement("button");
+			button_5.textContent = "X";
+			text_12 = createText("\r\n    ");
+>>>>>>> gh-pages
 			ladel = createElement("ladel");
 			select = createElement("select");
 
@@ -14999,11 +15037,19 @@ function create_main_fragment$11(component, ctx) {
 				each_blocks[i_8].c();
 			}
 
+<<<<<<< HEAD
 			text_19 = createText("\n\n    ");
 			div_4 = createElement("div");
 			button_8 = createElement("button");
 			button_8.textContent = "Y";
 			text_21 = createText("\n    ");
+=======
+			text_14 = createText("\r\n\r\n    ");
+			div_4 = createElement("div");
+			button_6 = createElement("button");
+			button_6.textContent = "Y";
+			text_16 = createText("\r\n    ");
+>>>>>>> gh-pages
 			ladel_1 = createElement("ladel");
 			select_1 = createElement("select");
 
@@ -15011,6 +15057,7 @@ function create_main_fragment$11(component, ctx) {
 				each_1_blocks[i_8].c();
 			}
 
+<<<<<<< HEAD
 			text_24 = createText("\n\n  ");
 			hr = createElement("hr");
 			text_25 = createText("\n\n  ");
@@ -15036,6 +15083,33 @@ function create_main_fragment$11(component, ctx) {
 			text_38 = createText("\n  ");
 			colorlists._fragment.c();
 			text_39 = createText("\n\n\n  ");
+=======
+			text_19 = createText("\r\n\r\n  ");
+			hr = createElement("hr");
+			text_20 = createText("\r\n\r\n  ");
+			div_5 = createElement("div");
+			div_6 = createElement("div");
+			input = createElement("input");
+			text_22 = createText("\r\n    ");
+			div_7 = createElement("div");
+			button_7 = createElement("button");
+			button_7.textContent = "➕";
+			text_25 = createText("\r\n    ");
+			div_8 = createElement("div");
+			button_8 = createElement("button");
+			button_8.textContent = "➕";
+			text_28 = createText("\r\n    ");
+			div_9 = createElement("div");
+			button_9 = createElement("button");
+			button_9.textContent = "BG";
+			text_31 = createText("\r\n\r\n  ");
+			colorpicker._fragment.c();
+			text_32 = createText("\r\n  ");
+			hr_1 = createElement("hr");
+			text_33 = createText("\r\n  ");
+			colorlists._fragment.c();
+			text_35 = createText("\r\n\r\n");
+>>>>>>> gh-pages
 			div_10 = createElement("div");
 			div_10.innerHTML = "2018 ©techa\n    <a href=\"https://github.com/techa/color-factory\" class=\"svelte-ahjp35\"><i class=\"fab fa-github fa-fw\"></i></a>";
 			text_43 = createText("\n\n");
@@ -15045,11 +15119,25 @@ function create_main_fragment$11(component, ctx) {
 				each_2_blocks[i_8].c();
 			}
 
+<<<<<<< HEAD
 			text_45 = createText("\n\n");
 			contextmenu._fragment.c();
 			text_46 = createText("\n\n");
 			if (if_block_1) if_block_1.c();
 			if_block_1_anchor = createComment();
+=======
+			text_37 = createText("\r\n\r\n");
+			div_11 = createElement("div");
+			div_11.innerHTML = "<a href=\"https://github.com/techa/color-factory\"><i class=\"fab fa-github fa-fw\"></i></a>";
+			text_39 = createText("\r\n\r\n");
+			contextmenu._fragment.c();
+			this.h();
+		},
+
+		h: function hydrate() {
+			div.className = "svelte-14v2gby";
+			button.title = "Undo: ctrl+z";
+>>>>>>> gh-pages
 			addListener(button, "click", click_handler);
 			button.title = "Save & Load";
 			addListener(button_1, "click", click_handler_1);
@@ -15104,11 +15192,20 @@ function create_main_fragment$11(component, ctx) {
 			div_10.className = "links svelte-ahjp35";
 			setStyle(div_10, "color", ctx.textColor);
 			div.id = "controller";
+<<<<<<< HEAD
 			setStyle(div, "color", ctx.textColor);
 			div.className = "svelte-ahjp35";
 			div_11.id = "box";
 			setStyle(div_11, "background-color", ctx.bgColor);
 			div_11.className = "svelte-ahjp35";
+=======
+			setStyle(div, "color", state.textColor);
+			div_10.className = "svelte-14v2gby";
+			div_10.id = "box";
+			setStyle(div_10, "background-color", state.bgColor);
+			div_11.className = "links svelte-14v2gby";
+			setStyle(div_11, "color", state.textColor);
+>>>>>>> gh-pages
 		},
 
 		m(target, anchor) {
@@ -15709,6 +15806,13 @@ function App(options) {
 
 	this._handlers.destroy = [removeFromStore];
 
+<<<<<<< HEAD
+=======
+	if (!document.getElementById("svelte-14v2gby-style")) add_css$9();
+
+	var _oncreate = oncreate$8.bind(this);
+
+>>>>>>> gh-pages
 	if (!options.root) {
 		this._oncreate = [];
 		this._beforecreate = [];
