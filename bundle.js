@@ -3410,7 +3410,7 @@ function create_main_fragment$1(component, ctx) {
 			div_1 = createElement("div");
 			div_1.className = "color-handle svelte-1b9ntd4";
 			div.className = div_class_value = "spectrum " + ctx.model + " svelte-1b9ntd4";
-			setStyle(div, "background-color", ctx.color);
+			setStyle(div, "background-color", "hsl(" + ctx.color.hue() + ",100%,50%)");
 		},
 
 		m(target, anchor) {
@@ -3426,7 +3426,7 @@ function create_main_fragment$1(component, ctx) {
 			}
 
 			if (changed.color) {
-				setStyle(div, "background-color", ctx.color);
+				setStyle(div, "background-color", "hsl(" + ctx.color.hue() + ",100%,50%)");
 			}
 		},
 
@@ -3568,7 +3568,7 @@ function create_main_fragment$2(component, ctx) {
 	var div, canvas, text, div_1, div_1_class_value, div_class_value;
 
 	var canvas_levels = [
-		{ class: "slider-canvas svelte-nb4zjo" },
+		{ class: "slider-canvas svelte-1qjgv7z" },
 		ctx.rect
 	];
 
@@ -3581,11 +3581,11 @@ function create_main_fragment$2(component, ctx) {
 		c() {
 			div = createElement("div");
 			canvas = createElement("canvas");
-			text = createText("\n  ");
+			text = createText("\r\n  ");
 			div_1 = createElement("div");
 			setAttributes(canvas, canvas_data);
-			div_1.className = div_1_class_value = "slider-handle " + ctx.direction + " svelte-nb4zjo";
-			div.className = div_class_value = "slider alpha-check-bg " + ctx.direction + " svelte-nb4zjo";
+			div_1.className = div_1_class_value = "slider-handle " + ctx.direction + " svelte-1qjgv7z";
+			div.className = div_class_value = "slider alpha-check-bg " + ctx.direction + " svelte-1qjgv7z";
 		},
 
 		m(target, anchor) {
@@ -3600,15 +3600,15 @@ function create_main_fragment$2(component, ctx) {
 
 		p(changed, ctx) {
 			setAttributes(canvas, getSpreadUpdate(canvas_levels, [
-				{ class: "slider-canvas svelte-nb4zjo" },
+				{ class: "slider-canvas svelte-1qjgv7z" },
 				changed.rect && ctx.rect
 			]));
 
-			if ((changed.direction) && div_1_class_value !== (div_1_class_value = "slider-handle " + ctx.direction + " svelte-nb4zjo")) {
+			if ((changed.direction) && div_1_class_value !== (div_1_class_value = "slider-handle " + ctx.direction + " svelte-1qjgv7z")) {
 				div_1.className = div_1_class_value;
 			}
 
-			if ((changed.direction) && div_class_value !== (div_class_value = "slider alpha-check-bg " + ctx.direction + " svelte-nb4zjo")) {
+			if ((changed.direction) && div_class_value !== (div_class_value = "slider alpha-check-bg " + ctx.direction + " svelte-1qjgv7z")) {
 				div.className = div_class_value;
 			}
 		},
@@ -3695,7 +3695,7 @@ function create_main_fragment$3(component, ctx) {
 
 	component.refs.hue = slider;
 
-	var spectrum_initial_data = {};
+	var spectrum_initial_data = { model: "hsv" };
 	if ('color' in ctx) {
 		spectrum_initial_data.color = ctx.color ;
 		spectrum_updating.color = true;
@@ -3717,8 +3717,6 @@ function create_main_fragment$3(component, ctx) {
 		spectrum._bind({ color: 1 }, spectrum.get());
 	});
 
-	component.refs.spectrum = spectrum;
-
 	var slider_1_initial_data = { value: ctx.color.alpha() * 100 };
 	var slider_1 = new Slider({
 		root: component.root,
@@ -3731,11 +3729,11 @@ function create_main_fragment$3(component, ctx) {
 		c() {
 			div = createElement("div");
 			slider._fragment.c();
-			text = createText("\r\n  ");
+			text = createText("\n  ");
 			spectrum._fragment.c();
-			text_1 = createText("\r\n  ");
+			text_1 = createText("\n  ");
 			slider_1._fragment.c();
-			div.className = "hsv-picker svelte-oaavhw";
+			div.className = "hsv-picker svelte-1uj57gw";
 		},
 
 		m(target, anchor) {
@@ -3774,7 +3772,6 @@ function create_main_fragment$3(component, ctx) {
 			slider.destroy(false);
 			if (component.refs.hue === slider) component.refs.hue = null;
 			spectrum.destroy(false);
-			if (component.refs.spectrum === spectrum) component.refs.spectrum = null;
 			slider_1.destroy(false);
 			if (component.refs.alpha === slider_1) component.refs.alpha = null;
 		}
@@ -3897,7 +3894,7 @@ function create_main_fragment$4(component, ctx) {
 	}
 
 	var canvas_levels = [
-		{ class: "blender-canvas svelte-5950l5" },
+		{ class: "blender-canvas svelte-9a06ho" },
 		ctx.rect
 	];
 
@@ -3914,21 +3911,21 @@ function create_main_fragment$4(component, ctx) {
 		c() {
 			div = createElement("div");
 			dv = createElement("dv");
-			text = createText("\n  ");
+			text = createText("\r\n  ");
 			div_1 = createElement("div");
 			canvas = createElement("canvas");
-			text_1 = createText("\n    ");
+			text_1 = createText("\r\n    ");
 			div_2 = createElement("div");
-			text_3 = createText("\n  ");
+			text_3 = createText("\r\n  ");
 			dv_1 = createElement("dv");
 			addListener(dv, "click", click_handler);
-			dv.className = "blender-btn color1 svelte-5950l5";
+			dv.className = "blender-btn color1 svelte-9a06ho";
 			setAttributes(canvas, canvas_data);
-			div_2.className = div_2_class_value = "blender-handle " + ctx.direction + " svelte-5950l5";
-			div_1.className = "blender-slider svelte-5950l5";
+			div_2.className = div_2_class_value = "blender-handle " + ctx.direction + " svelte-9a06ho";
+			div_1.className = "blender-slider svelte-9a06ho";
 			addListener(dv_1, "click", click_handler_1);
-			dv_1.className = "blender-btn color2 svelte-5950l5";
-			div.className = "blender svelte-5950l5";
+			dv_1.className = "blender-btn color2 svelte-9a06ho";
+			div.className = "blender svelte-9a06ho";
 		},
 
 		m(target, anchor) {
@@ -3951,11 +3948,11 @@ function create_main_fragment$4(component, ctx) {
 		p(changed, _ctx) {
 			ctx = _ctx;
 			setAttributes(canvas, getSpreadUpdate(canvas_levels, [
-				{ class: "blender-canvas svelte-5950l5" },
+				{ class: "blender-canvas svelte-9a06ho" },
 				changed.rect && ctx.rect
 			]));
 
-			if ((changed.direction) && div_2_class_value !== (div_2_class_value = "blender-handle " + ctx.direction + " svelte-5950l5")) {
+			if ((changed.direction) && div_2_class_value !== (div_2_class_value = "blender-handle " + ctx.direction + " svelte-9a06ho")) {
 				div_2.className = div_2_class_value;
 			}
 		},
@@ -5005,31 +5002,31 @@ function create_main_fragment$6(component, ctx) {
 			div_1 = createElement("div");
 			h3 = createElement("h3");
 			text = createText(text_value);
-			text_1 = createText("\n    ");
+			text_1 = createText("\r\n    ");
 
 			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
 				each_blocks[i_2].c();
 			}
 
-			text_3 = createText("\n  ");
+			text_3 = createText("\r\n  ");
 			span = createElement("span");
 			span.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>";
-			text_5 = createText("\n  ");
+			text_5 = createText("\r\n  ");
 			span_1 = createElement("span");
 			span_1.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>";
-			text_7 = createText("\n  ");
+			text_7 = createText("\r\n  ");
 			div_2 = createElement("div");
-			h3.className = "card_title svelte-pjl41q";
+			h3.className = "card_title svelte-mv8r9f";
 			h3.contentEditable = ctx.edit;
-			div_1.className = div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-pjl41q";
+			div_1.className = div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-mv8r9f";
 			addListener(span, "click", click_handler);
-			span.className = "icon card-reverse svelte-pjl41q";
+			span.className = "icon card-reverse svelte-mv8r9f";
 			span.style.cssText = ctx.textColor;
 			addListener(span_1, "click", click_handler_1);
-			span_1.className = "icon card-delete svelte-pjl41q";
+			span_1.className = "icon card-delete svelte-mv8r9f";
 			span_1.style.cssText = ctx.textColor;
-			div_2.className = "icon resize-handle svelte-pjl41q";
-			div.className = "card animated bounceIn svelte-pjl41q";
+			div_2.className = "icon resize-handle svelte-mv8r9f";
+			div.className = "card animated bounceIn svelte-mv8r9f";
 			div.style.cssText = div_style_value = "" + ctx.cardStyle + " z-index: " + ctx.card.zIndex + ";";
 		},
 
@@ -5086,7 +5083,7 @@ function create_main_fragment$6(component, ctx) {
 				each_blocks.length = each_value.length;
 			}
 
-			if ((changed.$textvisible || changed.card) && div_1_class_value !== (div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-pjl41q")) {
+			if ((changed.$textvisible || changed.card) && div_1_class_value !== (div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-mv8r9f")) {
 				div_1.className = div_1_class_value;
 			}
 
@@ -13169,7 +13166,7 @@ function create_main_fragment$7(component, ctx) {
 				each_blocks[i].c();
 			}
 
-			text_1 = createText("\n\n");
+			text_1 = createText("\r\n\r\n");
 			div_1 = createElement("div");
 			div_2 = createElement("div");
 			div_3 = createElement("div");
@@ -13178,12 +13175,12 @@ function create_main_fragment$7(component, ctx) {
 				each_1_blocks[i].c();
 			}
 			addListener(select, "change", change_handler);
-			select.className = "svelte-nyzeoa";
+			select.className = "svelte-z7pkpf";
 			div.id = "colorlists";
-			div.className = "select-wrapper svelte-nyzeoa";
-			div_3.className = "scrollbar-content svelte-nyzeoa";
-			div_2.className = "scrollbar-body svelte-nyzeoa";
-			div_1.className = "colortips scrollbar-wrapper svelte-nyzeoa";
+			div.className = "select-wrapper svelte-z7pkpf";
+			div_3.className = "scrollbar-content svelte-z7pkpf";
+			div_2.className = "scrollbar-body svelte-z7pkpf";
+			div_1.className = "colortips scrollbar-wrapper svelte-z7pkpf";
 			setStyle(div_1, "flex", "1");
 		},
 
@@ -13290,7 +13287,7 @@ function create_each_block$2(component, ctx) {
 			text = createText(text_value);
 			option.__value = ctx.index;
 			option.value = option.__value;
-			option.className = "svelte-nyzeoa";
+			option.className = "svelte-z7pkpf";
 		},
 
 		m(target, anchor) {
@@ -13319,7 +13316,7 @@ function create_each_block_1(component, ctx) {
 	return {
 		c() {
 			div = createElement("div");
-			div.className = "tip svelte-nyzeoa";
+			div.className = "tip svelte-z7pkpf";
 			div.title = div_title_value = ctx.name+' : '+ctx.color;
 			setStyle(div, "background-color", ctx.color);
 		},
@@ -13572,9 +13569,9 @@ function create_main_fragment$8(component, ctx) {
 		c() {
 			div = createElement("div");
 			if (if_block) if_block.c();
-			text = createText("\n  ");
+			text = createText("\r\n  ");
 			hr = createElement("hr");
-			text_1 = createText("\n  ");
+			text_1 = createText("\r\n  ");
 			if (if_block_2) if_block_2.c();
 			div.className = "context-menu";
 		},
@@ -13682,17 +13679,17 @@ function create_if_block_1$2(component, ctx) {
 	return {
 		c() {
 			p = createElement("p");
-			p.innerHTML = "<i class=\"fas fa-edit fa-fw\"></i>\n      EDIT";
-			text_1 = createText("\n    ");
+			p.innerHTML = "<i class=\"fas fa-edit fa-fw\"></i>\r\n      EDIT";
+			text_1 = createText("\r\n    ");
 			p_1 = createElement("p");
-			p_1.innerHTML = "<i class=\"fas fa-copy fa-fw\"></i>\n      DUPLICATE";
-			text_3 = createText("\n    ");
+			p_1.innerHTML = "<i class=\"fas fa-copy fa-fw\"></i>\r\n      DUPLICATE";
+			text_3 = createText("\r\n    ");
 			p_2 = createElement("p");
-			p_2.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>\n      REVERSE";
-			text_5 = createText("\n    ");
+			p_2.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>\r\n      REVERSE";
+			text_5 = createText("\r\n    ");
 			p_3 = createElement("p");
-			p_3.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\n      DELETE";
-			text_7 = createText("\n    ");
+			p_3.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\r\n      DELETE";
+			text_7 = createText("\r\n    ");
 			hr = createElement("hr");
 			addListener(p, "click", click_handler);
 			p.className = "menuitem";
@@ -13910,19 +13907,19 @@ function create_main_fragment$9(component, ctx) {
 	return {
 		c() {
 			div = createElement("div");
-			text = createText("\n\n");
+			text = createText("\r\n\r\n");
 			div_1 = createElement("div");
-			text_1 = createText("\n  ");
+			text_1 = createText("\r\n  ");
 			button = createElement("button");
 			button.textContent = "✖️";
-			text_3 = createText("\n  ");
+			text_3 = createText("\r\n  ");
 			hr = createElement("hr");
-			text_4 = createText("\n  ");
+			text_4 = createText("\r\n  ");
 			addListener(div, "click", click_handler);
-			div.className = "modal-background svelte-1lt3c3m";
+			div.className = "modal-background svelte-1tnlq1e";
 			addListener(button, "click", click_handler_1);
-			button.className = "close-btn svelte-1lt3c3m";
-			div_1.className = "modal svelte-1lt3c3m";
+			button.className = "close-btn svelte-1tnlq1e";
+			div_1.className = "modal svelte-1tnlq1e";
 		},
 
 		m(target, anchor) {
@@ -14101,48 +14098,48 @@ function create_main_fragment$10(component, ctx) {
 
 	return {
 		c() {
-			text = createText("\n  ");
+			text = createText("\r\n  ");
 			h2 = createElement("h2");
 			text_1 = createText("Save & Load");
-			text_2 = createText("\n\n  ");
+			text_2 = createText("\r\n\r\n  ");
 			div = createElement("div");
 			div_1 = createElement("div");
 			input = createElement("input");
-			text_3 = createText("\n      ");
+			text_3 = createText("\r\n      ");
 			if (if_block) if_block.c();
-			text_5 = createText("\n    ");
+			text_5 = createText("\r\n    ");
 			div_2 = createElement("div");
 
 			for (var i_1 = 0; i_1 < each_blocks.length; i_1 += 1) {
 				each_blocks[i_1].c();
 			}
 
-			text_7 = createText("\n    ");
+			text_7 = createText("\r\n    ");
 			div_3 = createElement("div");
 			text_8 = createText(text_8_value);
-			text_10 = createText("\n    ");
+			text_10 = createText("\r\n    ");
 			div_4 = createElement("div");
 			button = createElement("button");
 			button.innerHTML = "<i class=\"fa fa-plus-square\"></i>";
-			text_14 = createText("\n\n  ");
+			text_14 = createText("\r\n\r\n  ");
 			hr = createElement("hr");
-			text_15 = createText("\n\n  ");
+			text_15 = createText("\r\n\r\n  ");
 
 			for (var i_1 = 0; i_1 < each_1_blocks.length; i_1 += 1) {
 				each_1_blocks[i_1].c();
 			}
 
-			text_16 = createText("\n\n");
+			text_16 = createText("\r\n\r\n");
 			modal._fragment.c();
 			setAttribute(h2, "slot", "header");
 			addListener(input, "input", input_input_handler);
 			addListener(input, "focus", focus_handler);
 			addListener(input, "blur", blur_handler);
 			input.placeholder = "Palette Name";
-			input.className = "svelte-1yx9eop";
-			div_1.className = "name svelte-1yx9eop";
-			div_2.className = "palette button-set svelte-1yx9eop";
-			div_3.className = "color-num svelte-1yx9eop";
+			input.className = "svelte-1x3eg8t";
+			div_1.className = "name svelte-1x3eg8t";
+			div_2.className = "palette button-set svelte-1x3eg8t";
+			div_3.className = "color-num svelte-1x3eg8t";
 			addListener(button, "click", click_handler);
 			div_4.className = "btns";
 			div.className = "button-set";
@@ -14389,7 +14386,7 @@ function create_each_block_1$1(component, ctx) {
 	return {
 		c() {
 			div = createElement("div");
-			div.className = "tip svelte-1yx9eop";
+			div.className = "tip svelte-1x3eg8t";
 			setStyle(div, "background-color", ctx.color);
 		},
 
@@ -14428,32 +14425,32 @@ function create_each_block_2(component, ctx) {
 			div = createElement("div");
 			div_1 = createElement("div");
 			text = createText(text_value);
-			text_2 = createText("\n    ");
+			text_2 = createText("\r\n    ");
 			div_2 = createElement("div");
 
 			for (var i_1 = 0; i_1 < each_blocks.length; i_1 += 1) {
 				each_blocks[i_1].c();
 			}
 
-			text_4 = createText("\n    ");
+			text_4 = createText("\r\n    ");
 			div_3 = createElement("div");
 			text_5 = createText(text_5_value);
-			text_7 = createText("\n    ");
+			text_7 = createText("\r\n    ");
 			div_4 = createElement("div");
 			button = createElement("button");
 			button.innerHTML = "<i class=\"fa fa-minus-square\"></i>";
 			div_1._svelte = { component, ctx };
 
 			addListener(div_1, "click", click_handler$2);
-			div_1.className = "name svelte-1yx9eop";
-			div_2.className = "palette button-set svelte-1yx9eop";
-			div_3.className = "color-num svelte-1yx9eop";
+			div_1.className = "name svelte-1x3eg8t";
+			div_2.className = "palette button-set svelte-1x3eg8t";
+			div_3.className = "color-num svelte-1x3eg8t";
 
 			button._svelte = { component, ctx };
 
 			addListener(button, "click", click_handler_1);
 			div_4.className = "btns";
-			div.className = div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1yx9eop";
+			div.className = div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1x3eg8t";
 		},
 
 		m(target, anchor) {
@@ -14509,7 +14506,7 @@ function create_each_block_2(component, ctx) {
 			}
 
 			button._svelte.ctx = ctx;
-			if ((changed.list || changed.value) && div_class_value !== (div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1yx9eop")) {
+			if ((changed.list || changed.value) && div_class_value !== (div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1x3eg8t")) {
 				div.className = div_class_value;
 			}
 		},
@@ -14539,7 +14536,7 @@ function create_each_block_3(component, ctx) {
 	return {
 		c() {
 			div = createElement("div");
-			div.className = "tip svelte-1yx9eop";
+			div.className = "tip svelte-1x3eg8t";
 			setStyle(div, "background-color", ctx.color);
 		},
 
@@ -14815,24 +14812,8 @@ function oncreate$8() {
   });
   this.cardsPosition();
 }
-<<<<<<< HEAD
 function create_main_fragment$11(component, ctx) {
 	var div, div_1, button, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, text_9, button_5, text_11, button_6, text_13, text_15, div_2, div_3, button_7, text_17, ladel, select, select_updating = false, text_19, div_4, button_8, text_21, ladel_1, select_1, select_1_updating = false, text_24, hr, text_25, div_5, div_6, input, input_updating = false, input_placeholder_value, text_27, div_7, button_9, text_30, div_8, button_10, text_33, div_9, button_11, text_36, colorpicker_updating = {}, text_37, hr_1, text_38, text_39, div_10, text_43, div_11, text_45, text_46, if_block_1_anchor;
-=======
-function store_1() {
-	return store;
-}
-
-function add_css$9() {
-	var style = createElement("style");
-	style.id = 'svelte-14v2gby-style';
-	style.textContent = "option.svelte-14v2gby,.svelte-14v2gby option{color:#111}.svelte-14v2gby#controller,.svelte-14v2gby #controller{width:320px;height:100vh;position:absolute;margin:0;padding:10px 20px;top:0;left:0}.svelte-14v2gby#box,.svelte-14v2gby #box{width:100%;height:100%}.svelte-14v2gby.tool-box,.svelte-14v2gby .tool-box{padding-bottom:10px}.svelte-14v2gby.top-input-wrapper,.svelte-14v2gby .top-input-wrapper{width:100%}.svelte-14v2gby.top-input-wrapper > div,.svelte-14v2gby .top-input-wrapper > div{height:2em}.svelte-14v2gby.top-input-wrapper > div > *,.svelte-14v2gby .top-input-wrapper > div > *{height:100%;width:100%}.svelte-14v2gby.top-input-wrapper input,.svelte-14v2gby .top-input-wrapper input{padding:0 8px}.svelte-14v2gby.links,.svelte-14v2gby .links{position:absolute;top:4px;right:4px;z-index:5000}.svelte-14v2gby.links a,.svelte-14v2gby .links a,.svelte-14v2gby.links a:visited,.svelte-14v2gby .links a:visited,.svelte-14v2gby.links a:active,.svelte-14v2gby .links a:active{color:inherit}";
-	appendNode(style, document.head);
-}
-
-function create_main_fragment$9(component, state) {
-	var div, div_1, button, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, text_10, div_2, div_3, button_5, text_12, ladel, select, select_updating = false, text_14, div_4, button_6, text_16, ladel_1, select_1, select_1_updating = false, text_19, hr, text_20, div_5, div_6, input, input_updating = false, input_placeholder_value, text_22, div_7, button_7, text_25, div_8, button_8, text_28, div_9, button_9, text_31, colorpicker_updating = {}, text_32, hr_1, text_33, text_35, div_10, text_37, div_11, text_39;
->>>>>>> gh-pages
 
 	function click_handler(event) {
 		component.set({ showModal: true });
@@ -14981,55 +14962,33 @@ function create_main_fragment$9(component, state) {
 			div = createElement("div");
 			div_1 = createElement("div");
 			button = createElement("button");
-<<<<<<< HEAD
 			button.innerHTML = "<i class=\"fas fa-hdd\"></i>";
-			text_1 = createText("\n    ");
+			text_1 = createText("\r\n    ");
 			button_1 = createElement("button");
 			button_1.innerHTML = "<i class=\"fas fa-undo\"></i>";
-			text_3 = createText("\n    ");
+			text_3 = createText("\r\n    ");
 			button_2 = createElement("button");
 			button_2.innerHTML = "<i class=\"fas fa-redo\"></i>";
-			text_5 = createText("\n    ");
+			text_5 = createText("\r\n    ");
 			button_3 = createElement("button");
 			button_3.innerHTML = "<i class=\"fas fa-eye-dropper\"></i>";
-			text_7 = createText("\n    ");
+			text_7 = createText("\r\n    ");
 			button_4 = createElement("button");
 			button_4.innerHTML = "<i class=\"fas fa-font\"></i>";
-			text_9 = createText("\n    ");
+			text_9 = createText("\r\n    ");
 			button_5 = createElement("button");
 			button_5.innerHTML = "<i class=\"fas fa-eye\"></i>";
-			text_11 = createText("\n    ");
+			text_11 = createText("\r\n    ");
 			button_6 = createElement("button");
 			button_6.innerHTML = "<i class=\"fas fa-trash\"></i>";
-			text_13 = createText("\n    ");
+			text_13 = createText("\r\n    ");
 			if (if_block) if_block.c();
-			text_15 = createText("\n\n  \n  ");
+			text_15 = createText("\r\n\r\n  \r\n  ");
 			div_2 = createElement("div");
 			div_3 = createElement("div");
 			button_7 = createElement("button");
 			button_7.textContent = "X";
-			text_17 = createText("\n    ");
-=======
-			button.innerHTML = "<i class=\"fas fa-undo\"></i>";
-			text_1 = createText("\r\n    ");
-			button_1 = createElement("button");
-			button_1.innerHTML = "<i class=\"fas fa-redo\"></i>";
-			text_3 = createText("\r\n    ");
-			button_2 = createElement("button");
-			button_2.innerHTML = "<i class=\"fas fa-eye-dropper\"></i>";
-			text_5 = createText("\r\n    ");
-			button_3 = createElement("button");
-			button_3.innerHTML = "<i class=\"fas fa-font\"></i>";
-			text_7 = createText("\r\n    ");
-			button_4 = createElement("button");
-			button_4.innerHTML = "<i class=\"fas fa-trash\"></i>";
-			text_10 = createText("\r\n\r\n  \r\n  ");
-			div_2 = createElement("div");
-			div_3 = createElement("div");
-			button_5 = createElement("button");
-			button_5.textContent = "X";
-			text_12 = createText("\r\n    ");
->>>>>>> gh-pages
+			text_17 = createText("\r\n    ");
 			ladel = createElement("ladel");
 			select = createElement("select");
 
@@ -15037,19 +14996,11 @@ function create_main_fragment$9(component, state) {
 				each_blocks[i_8].c();
 			}
 
-<<<<<<< HEAD
-			text_19 = createText("\n\n    ");
+			text_19 = createText("\r\n\r\n    ");
 			div_4 = createElement("div");
 			button_8 = createElement("button");
 			button_8.textContent = "Y";
-			text_21 = createText("\n    ");
-=======
-			text_14 = createText("\r\n\r\n    ");
-			div_4 = createElement("div");
-			button_6 = createElement("button");
-			button_6.textContent = "Y";
-			text_16 = createText("\r\n    ");
->>>>>>> gh-pages
+			text_21 = createText("\r\n    ");
 			ladel_1 = createElement("ladel");
 			select_1 = createElement("select");
 
@@ -15057,87 +15008,45 @@ function create_main_fragment$9(component, state) {
 				each_1_blocks[i_8].c();
 			}
 
-<<<<<<< HEAD
-			text_24 = createText("\n\n  ");
+			text_24 = createText("\r\n\r\n  ");
 			hr = createElement("hr");
-			text_25 = createText("\n\n  ");
+			text_25 = createText("\r\n\r\n  ");
 			div_5 = createElement("div");
 			div_6 = createElement("div");
 			input = createElement("input");
-			text_27 = createText("\n    ");
+			text_27 = createText("\r\n    ");
 			div_7 = createElement("div");
 			button_9 = createElement("button");
 			button_9.textContent = "➕";
-			text_30 = createText("\n    ");
+			text_30 = createText("\r\n    ");
 			div_8 = createElement("div");
 			button_10 = createElement("button");
 			button_10.textContent = "➕";
-			text_33 = createText("\n    ");
+			text_33 = createText("\r\n    ");
 			div_9 = createElement("div");
 			button_11 = createElement("button");
 			button_11.textContent = "BG";
-			text_36 = createText("\n\n  ");
+			text_36 = createText("\r\n\r\n  ");
 			colorpicker._fragment.c();
-			text_37 = createText("\n  ");
+			text_37 = createText("\r\n  ");
 			hr_1 = createElement("hr");
-			text_38 = createText("\n  ");
+			text_38 = createText("\r\n  ");
 			colorlists._fragment.c();
-			text_39 = createText("\n\n\n  ");
-=======
-			text_19 = createText("\r\n\r\n  ");
-			hr = createElement("hr");
-			text_20 = createText("\r\n\r\n  ");
-			div_5 = createElement("div");
-			div_6 = createElement("div");
-			input = createElement("input");
-			text_22 = createText("\r\n    ");
-			div_7 = createElement("div");
-			button_7 = createElement("button");
-			button_7.textContent = "➕";
-			text_25 = createText("\r\n    ");
-			div_8 = createElement("div");
-			button_8 = createElement("button");
-			button_8.textContent = "➕";
-			text_28 = createText("\r\n    ");
-			div_9 = createElement("div");
-			button_9 = createElement("button");
-			button_9.textContent = "BG";
-			text_31 = createText("\r\n\r\n  ");
-			colorpicker._fragment.c();
-			text_32 = createText("\r\n  ");
-			hr_1 = createElement("hr");
-			text_33 = createText("\r\n  ");
-			colorlists._fragment.c();
-			text_35 = createText("\r\n\r\n");
->>>>>>> gh-pages
+			text_39 = createText("\r\n\r\n\r\n  ");
 			div_10 = createElement("div");
-			div_10.innerHTML = "2018 ©techa\n    <a href=\"https://github.com/techa/color-factory\" class=\"svelte-ahjp35\"><i class=\"fab fa-github fa-fw\"></i></a>";
-			text_43 = createText("\n\n");
+			div_10.innerHTML = "2018 ©techa\r\n    <a href=\"https://github.com/techa/color-factory\" class=\"svelte-1afgjyw\"><i class=\"fab fa-github fa-fw\"></i></a>";
+			text_43 = createText("\r\n\r\n");
 			div_11 = createElement("div");
 
 			for (var i_8 = 0; i_8 < each_2_blocks.length; i_8 += 1) {
 				each_2_blocks[i_8].c();
 			}
 
-<<<<<<< HEAD
-			text_45 = createText("\n\n");
+			text_45 = createText("\r\n\r\n");
 			contextmenu._fragment.c();
-			text_46 = createText("\n\n");
+			text_46 = createText("\r\n\r\n");
 			if (if_block_1) if_block_1.c();
 			if_block_1_anchor = createComment();
-=======
-			text_37 = createText("\r\n\r\n");
-			div_11 = createElement("div");
-			div_11.innerHTML = "<a href=\"https://github.com/techa/color-factory\"><i class=\"fab fa-github fa-fw\"></i></a>";
-			text_39 = createText("\r\n\r\n");
-			contextmenu._fragment.c();
-			this.h();
-		},
-
-		h: function hydrate() {
-			div.className = "svelte-14v2gby";
-			button.title = "Undo: ctrl+z";
->>>>>>> gh-pages
 			addListener(button, "click", click_handler);
 			button.title = "Save & Load";
 			addListener(button_1, "click", click_handler_1);
@@ -15152,7 +15061,7 @@ function create_main_fragment$9(component, state) {
 			button_5.title = "Card Color Models Visible";
 			addListener(button_6, "click", click_handler_6);
 			button_6.title = "Delete";
-			div_1.className = "tool-box svelte-ahjp35";
+			div_1.className = "tool-box svelte-1afgjyw";
 			addListener(button_7, "click", click_handler_7);
 			addListener(select, "change", select_change_handler);
 			if (!('$sortX' in ctx)) component.root._beforecreate.push(select_change_handler);
@@ -15165,47 +15074,38 @@ function create_main_fragment$9(component, state) {
 			addListener(select_1, "change", change_handler_1);
 			ladel_1.className = "select-wrapper";
 			setStyle(ladel_1, "flex", "1 1 auto");
-			div_2.className = "button-set border radius svelte-ahjp35";
-			hr.className = "svelte-ahjp35";
+			div_2.className = "button-set border radius svelte-1afgjyw";
+			hr.className = "svelte-1afgjyw";
 			addListener(input, "input", input_input_handler);
 			input.placeholder = input_placeholder_value = ctx.current.color.nearColorName();
 			setStyle(input, "color", ctx.textColor);
-			input.className = "svelte-ahjp35";
-			div_6.className = "svelte-ahjp35";
+			input.className = "svelte-1afgjyw";
+			div_6.className = "svelte-1afgjyw";
 			addListener(button_9, "click", click_handler_9);
 			button_9.title = "Add Card: text";
 			setStyle(button_9, "color", ctx.current.color);
-			button_9.className = "svelte-ahjp35";
-			div_7.className = "svelte-ahjp35";
+			button_9.className = "svelte-1afgjyw";
+			div_7.className = "svelte-1afgjyw";
 			addListener(button_10, "click", click_handler_10);
 			button_10.title = "Add Card: fill";
 			setStyle(button_10, "color", (ctx.current.color.isDark()?'#fff':'#000'));
 			setStyle(button_10, "background-color", ctx.current.color);
-			button_10.className = "svelte-ahjp35";
-			div_8.className = "svelte-ahjp35";
+			button_10.className = "svelte-1afgjyw";
+			div_8.className = "svelte-1afgjyw";
 			addListener(button_11, "click", click_handler_11);
 			button_11.title = "set Background Color";
-			button_11.className = "svelte-ahjp35";
-			div_9.className = "svelte-ahjp35";
-			div_5.className = "top-input-wrapper button-set border radius svelte-ahjp35";
-			hr_1.className = "svelte-ahjp35";
-			div_10.className = "links svelte-ahjp35";
+			button_11.className = "svelte-1afgjyw";
+			div_9.className = "svelte-1afgjyw";
+			div_5.className = "top-input-wrapper button-set border radius svelte-1afgjyw";
+			hr_1.className = "svelte-1afgjyw";
+			div_10.className = "links svelte-1afgjyw";
 			setStyle(div_10, "color", ctx.textColor);
 			div.id = "controller";
-<<<<<<< HEAD
 			setStyle(div, "color", ctx.textColor);
-			div.className = "svelte-ahjp35";
+			div.className = "svelte-1afgjyw";
 			div_11.id = "box";
 			setStyle(div_11, "background-color", ctx.bgColor);
-			div_11.className = "svelte-ahjp35";
-=======
-			setStyle(div, "color", state.textColor);
-			div_10.className = "svelte-14v2gby";
-			div_10.id = "box";
-			setStyle(div_10, "background-color", state.bgColor);
-			div_11.className = "links svelte-14v2gby";
-			setStyle(div_11, "color", state.textColor);
->>>>>>> gh-pages
+			div_11.className = "svelte-1afgjyw";
 		},
 
 		m(target, anchor) {
@@ -15499,7 +15399,7 @@ function create_each_block$5(component, ctx) {
 			p = createElement("p");
 			label = createElement("label");
 			input = createElement("input");
-			text = createText("\n          ");
+			text = createText("\r\n          ");
 			text_1 = createText(text_1_value);
 			input._svelte = { component, ctx };
 
@@ -15623,7 +15523,7 @@ function create_each_block_1$2(component, ctx) {
 			text = createText(text_value);
 			option.__value = option_value_value = ctx.value;
 			option.value = option.__value;
-			option.className = "svelte-ahjp35";
+			option.className = "svelte-1afgjyw";
 		},
 
 		m(target, anchor) {
@@ -15661,7 +15561,7 @@ function create_each_block_2$1(component, ctx) {
 			text = createText(text_value);
 			option.__value = option_value_value = ctx.value;
 			option.value = option.__value;
-			option.className = "svelte-ahjp35";
+			option.className = "svelte-1afgjyw";
 		},
 
 		m(target, anchor) {
@@ -15806,13 +15706,6 @@ function App(options) {
 
 	this._handlers.destroy = [removeFromStore];
 
-<<<<<<< HEAD
-=======
-	if (!document.getElementById("svelte-14v2gby-style")) add_css$9();
-
-	var _oncreate = oncreate$8.bind(this);
-
->>>>>>> gh-pages
 	if (!options.root) {
 		this._oncreate = [];
 		this._beforecreate = [];
