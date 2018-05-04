@@ -25,11 +25,11 @@
     </button>
     {#if showSubmenu}
     <div class="submenu" on:mouseleave="set({showSubmenu: false})">
-      {#each Object.entries($cardViewModels) as key_value}
+      {#each Object.entries($cardViewModels) as [model, bool]}
       <p class="menuitem">
         <label>
-          <input type="checkbox" checked="{key_value[1]}" on:click="viewModelChenge(key_value)">
-          {key_value[0].toUpperCase()}
+          <input type="checkbox" checked="{bool}" on:click="viewModelChenge(model, bool)">
+          {model.toUpperCase()}
         </label>
       </p>
       {/each}
@@ -42,8 +42,8 @@
     <div><button on:click="cardsPosition('sortX')">X</button></div>
     <ladel class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
-        {#each sort as key}
-        <option value="{key.value}">{key.name}</option>
+        {#each sort as {name, value}}
+          <option {value}>{name}</option>
         {/each}
       </select>
     </ladel>
@@ -51,8 +51,8 @@
     <div><button on:click="cardsPosition('sortY')">Y</button></div>
     <ladel class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
-        {#each sort as key}
-        <option value="{key.value}">{key.name}</option>
+        {#each sort as {name, value}}
+          <option {value}>{name}</option>
         {/each}
       </select>
     </ladel>
@@ -277,9 +277,9 @@
           this.store.memo()
         }
       },
-      viewModelChenge (event) {
+      viewModelChenge (model, bool) {
         const {cardViewModels} = this.store.get()
-        cardViewModels[event[0]] = !event[1]
+        cardViewModels[model] = !bool
         this.store.set({cardViewModels}, true)
       },
     }

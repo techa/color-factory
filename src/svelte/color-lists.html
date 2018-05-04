@@ -10,8 +10,8 @@
   <div class="scrollbar-wrapper">
     <div class="scrollbar-body">
       <div ref:colortips class="scrollbar-content">
-        {#each list as tip}
-          <div class="tip" title={title(tip)} style="background-color: {tip.color};"></div>
+        {#each list as {name, color} }
+          <div class="tip" title="{name+' : '+color}" style="background-color: {color};"></div>
         {/each}
       </div>
     </div>
@@ -105,11 +105,6 @@
         }
       })
     },
-    helpers: {
-      title (tip) {
-        return tip.name + ' : ' + tip.color
-      },
-    }
   }
 
   function parser (list, temp) {

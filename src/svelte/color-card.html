@@ -4,12 +4,10 @@
   <div class="cardtext {($textvisible || card.textMode)? '': 'textvisible'}">
     <h3 ref:title class="card_title" contenteditable="{edit}">{card.name}</h3>
     {#each modelsEntries as [key, value]}
-      {#if value}
-        {#if key === 'contrast'}
-        <div>{contrast}</div>
-        {:else}
-        <div>{card.color.toString(key)}</div>
-        {/if}
+      {#if key === 'contrast'}
+      <div>{contrast}</div>
+      {:else}
+      <div>{card.color.toString(key)}</div>
       {/if}
     {/each}
   </div>
@@ -21,7 +19,7 @@
     <i class="fas fa-times fa-fw"></i>
     <!-- ✖️ -->
   </span>
-    <div ref:handle class="icon resize-handle"></div>
+  <div ref:handle class="icon resize-handle"></div>
 </div>
 
 <script>
@@ -57,7 +55,7 @@
       },
       contrast: ({ card, $bgColor }) => round($bgColor.contrast(card.color), 1),
 
-      modelsEntries: ({ $cardViewModels }) => Object.entries($cardViewModels),
+      modelsEntries: ({ $cardViewModels }) => Object.entries($cardViewModels).filter(([, value]) => value),
     },
 
 
