@@ -1,6 +1,5 @@
-<div ref:box class="spectrum">
-  <canvas ref:canvas class="spectrum-canvas" {...rect} ></canvas>
-  <div ref:handle class="color-handle"></div>
+<div ref:spectrum class="spectrum {model}" style="background-color: {color};">
+  <div ref:handle class="color-handle" style="left:{left}px;top:{top}px;"></div>
 </div>
 
 <style>
@@ -8,6 +7,27 @@
     position: relative;
     cursor: crosshair;
     pointer-events: auto;
+  }
+  .spectrum.hsv {
+    background:
+      linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%),
+      linear-gradient(left, #FFF 0%, rgba(255, 255, 255, 0) 100%);
+
+    background: -moz-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -moz-linear-gradient(left, #FFF 0%, rgba(255, 255, 255, 0) 100%);
+    background: -webkit-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -webkit-linear-gradient(left, #FFF 0%, rgba(255, 255, 255, 0) 100%);
+    background: -ms-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -ms-linear-gradient(left, #FFF 0%, rgba(255, 255, 255, 0) 100%);
+    background: -o-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -o-linear-gradient(left, #FFF 0%, rgba(255, 255, 255, 0) 100%);
+  }
+  .spectrum.hsl {
+    background:
+      linear-gradient(top, #FFF 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, #000 100%),
+      linear-gradient(left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
+
+    background: -moz-linear-gradient(top, hsl(0, 0%, 100%) 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, hsl(0, 0%, 0%) 100%), -moz-linear-gradient(left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
+    background: -webkit-linear-gradient(top, hsl(0, 0%, 100%) 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, hsl(0, 0%, 0%) 100%), -webkit-linear-gradient(left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
+    background-color: rgba(0, 0, 0, 0);
+    background: -ms-linear-gradient(top, hsl(0, 0%, 100%) 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, hsl(0, 0%, 0%) 100%), -ms-linear-gradient(left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
+    background: -o-linear-gradient(top, hsl(0, 0%, 100%) 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, hsl(0, 0%, 0%) 100%), -o-linear-gradient(left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
   }
   .color-handle {
     position: absolute;
@@ -34,26 +54,19 @@
 </style>
 
 <script>
+  import Color from 'color'
   import { MousePosition } from '../mouse.js'
 
   export default {
     data () {
       return {
-        rect: {width: 0, height: 0},
         color: 'red',
+        model: 'hsv',
       }
     },
     oncreate () {
-      // get size getBoundingClientRect() / getClientRect()[0]
-      // const rect = this.refs.box.getBoundingClientRect()
-      const rect = {
-        width: this.refs.box.clientWidth,
-        height: this.refs.box.clientHeight,
-      }
-      this.set({rect})
-
       // picker
-      return new MousePosition(this.refs.canvas, {
+      return new MousePosition(this.refs.spectrum, {
         start: (e, position) => {
           this.setColor(position)
         },
@@ -65,54 +78,26 @@
     onupdate ({ changed, current }) {
       // update oncolorchange
       if (changed.color) {
-        this.draw(current.color.hue())
         this.setPosition()
       }
     },
     methods: {
-      resize () {
-        const rect = {
-          width: this.refs.box.clientWidth,
-          height: this.refs.box.clientHeight,
-        }
-        this.set({rect})
-      },
       setColor (position) {
-        const color = this.get().color
-          .saturationv(position.percentLeft)
-          .value(100 - position.percentTop)
-        this.set({ color })
+        const {color, model} = this.get()
+        const arr = color[model]().array()
+        arr[1] = position.percentLeft
+        arr[2] = 100 - position.percentTop
+        this.set({ color: Color(arr, model) })
       },
       setPosition () {
-        const {color, rect} = this.get()
-        const {width, height} = rect
-        this.refs.handle.style.left = width * color.saturationv() / 100 + 'px'
-        this.refs.handle.style.top = height - (height * color.value() / 100) + 'px'
+        const {color, model} = this.get()
+        const {width, height} = this.refs.spectrum.getBoundingClientRect()
+        const arr = color[model]().array()
+        this.set({
+          left: width * arr[1] / 100,
+          top: height - (height * arr[2] / 100),
+        })
       },
-      draw (hue = this.get().color.hue()) {
-        const canvas = this.refs.canvas
-        const cxt = canvas.getContext('2d')
-        const [w, h] = [canvas.width, canvas.height]
-
-        cxt.clearRect(0, 0, w, h)
-
-        cxt.fillStyle = `hsl(${hue}, 100%, 50%)`
-        cxt.fillRect(0, 0, w, h)
-
-        const whiteGrd = cxt.createLinearGradient(0, 0, w, 0)
-        whiteGrd.addColorStop(0.01, 'rgba(255, 255, 255, 1.000)')
-        whiteGrd.addColorStop(0.99, 'rgba(255, 255, 255, 0.000)')
-
-        cxt.fillStyle = whiteGrd
-        cxt.fillRect(0, 0, w, h)
-
-        const blackGrd = cxt.createLinearGradient(0, 0, 0, h)
-        blackGrd.addColorStop(0.01, 'rgba(0, 0, 0, 0.000)')
-        blackGrd.addColorStop(0.99, 'rgba(0, 0, 0, 1.000)')
-
-        cxt.fillStyle = blackGrd
-        cxt.fillRect(0, 0, w, h)
-      }
     }
   }
 </script>
