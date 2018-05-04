@@ -92,6 +92,18 @@
           }, 'tip')
         }
       })
+      colortips.addEventListener('dblclick', (e) => {
+        e.preventDefault()
+        const el = e.target
+        if (el.classList.contains('tip')) {
+          const [name, color] = el.title.split(' : ')
+
+          store.fire('cards.ADD_CARD', {
+            name,
+            color: Color(color)
+          })
+        }
+      })
     },
     helpers: {
       title (tip) {
