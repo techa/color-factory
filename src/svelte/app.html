@@ -201,7 +201,7 @@
           const maxR = Math.min(maxW, maxH) / 2
           console.log('deg', card.color.hsl(),  deg)
           card.left = Math.round(maxR * Math.cos(deg) * radius + maxR + colorsWidth)
-          card.top = Math.round(maxR * Math.sin(deg) * radius + maxR + cardSize / 2)
+          card.top = Math.round(maxR * Math.sin(deg) * radius + maxR)
         } else {
           if (card.left == null || sortX !== 'none') {
             card.left = Math.round((maxW) * byer(sortX, card) + colorsWidth)
