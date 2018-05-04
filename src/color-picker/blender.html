@@ -99,7 +99,7 @@
     methods: {
       getColor (position) {
         const {width} = this.get().rect
-        const x = Math.max(0, Math.min(position.x, width - 40.5))
+        const x = Math.max(0, Math.min(position.x, width - 1))
         const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data
         const color = Color({r, g, b})
 
