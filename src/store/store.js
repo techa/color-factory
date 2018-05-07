@@ -19,7 +19,7 @@ const store = new Histore(
     },
   }, defaultpalette),
   {
-    storageKey: '$$color-factory',
+    storageKey: '$color-factory',
     keymaps: [
       {
         key: 'ctrl+z',
