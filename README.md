@@ -5,19 +5,24 @@ Color Factory
 ## Features
 * Color cards
     * auto color name: Source: [XKCD Color Names](https://xkcd.com/color/rgb/)
-    * fill/text
+    * selectable
+        * select all `ctrl+a`
     * movable
-    * sortable: hue, saturationl, lightness, saturationv, value, chroma, gray, contrast
-    * filter: grayscale
-    * undo/redo
+    * sortable: hue, hue(circle), saturationl, lightness, saturationv, value, chroma, gray, contrast
+    * undo `ctrl+z` / redo `ctrl+shift+z`
+    * View
+        * fill/text
+        * filter: grayscale
+        * color models
     * Right click on Card!
+        * Rename
         * Duplicate
         * Reverse: fill/text
         * Delete
-        * View
 * Color tools
     * input model(format): Hex, RGB, HSL, HSV, XYZ, LAB, CMYK
     * HSV Color picker
+    * Random Color
     * mixer:
         * between 2colors mixer
     * [WCAG2.0 1.4.3 Contrast](https://www.w3.org/TR/2008/REC-WCAG20-20081211/#visual-audio-contrast)
@@ -35,6 +40,7 @@ Color Factory
     * [PANTONE®](http://www.pantone.com): Source https://github.com/frontendstacked/color-palettes-for-sass
     * [crayola](https://www.w3schools.com/colors/colors_crayola.asp)
 * Save Storage
+    * palette data save
 
 ## Dependencies
 * [svelte.js](https://svelte.technology/)
@@ -42,12 +48,3 @@ Color Factory
 
 ## Inspiration
 * [mozilla/Color picker tool](https://developer.mozilla.org/ja/docs/Web/CSS/CSS_Colors/Color_picker_tool)
-
-## Todo
-- [x] addCard: sorted position
-- [x] rename Card.name
-- [x] view: card parameter list edit
-- [x] palette data save
-    - [x] create palette list
-- [x] random Color in picker
-- [x] sorted position Hue Circle
