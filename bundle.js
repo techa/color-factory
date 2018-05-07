@@ -2223,6 +2223,141 @@ function zeroArray(arr, length) {
 
 var color = Color;
 
+var xkcd = [["AcidGreen",{"h":87,"s":99,"l":52}],["Adobe",{"h":18,"s":47,"l":51}],["Algae",{"h":134,"s":35,"l":50}],["AlgaeGreen",{"h":149,"s":71,"l":45}],["AlmostBlack",{"h":180,"s":30,"l":4}],["Amber",{"h":42,"s":99,"l":51}],["Amethyst",{"h":277,"s":43,"l":56}],["Apple",{"h":99,"s":58,"l":52}],["AppleGreen",{"h":91,"s":69,"l":48}],["Apricot",{"h":28,"s":100,"l":71}],["Aqua",{"h":171,"s":85,"l":50}],["AquaBlue",{"h":184,"s":98,"l":46}],["AquaGreen",{"h":157,"s":85,"l":48}],["AquaMarine",{"h":165,"s":80,"l":55}],["Aquamarine",{"h":169,"s":96,"l":43}],["ArmyGreen",{"h":75,"s":62,"l":23}],["Asparagus",{"h":97,"s":34,"l":50}],["Aubergine",{"h":310,"s":79,"l":13}],["Auburn",{"h":18,"s":99,"l":30}],["Avocado",{"h":76,"s":55,"l":45}],["AvocadoGreen",{"h":75,"s":67,"l":40}],["Azul",{"h":221,"s":84,"l":52}],["Azure",{"h":203,"s":95,"l":49}],["BabyBlue",{"h":211,"s":98,"l":82}],["BabyGreen",{"h":129,"s":100,"l":77}],["BabyPink",{"h":341,"s":100,"l":86}],["BabyPoo",{"h":50,"s":95,"l":34}],["BabyPoop",{"h":51,"s":100,"l":29}],["BabyPoopGreen",{"h":64,"s":94,"l":31}],["BabyPukeGreen",{"h":64,"s":94,"l":40}],["BabyPurple",{"h":271,"s":85,"l":79}],["BabyShitBrown",{"h":49,"s":86,"l":36}],["BabyShitGreen",{"h":67,"s":74,"l":34}],["Banana",{"h":60,"s":100,"l":75}],["BananaYellow",{"h":61,"s":99,"l":65}],["BarbiePink",{"h":329,"s":99,"l":64}],["BarfGreen",{"h":68,"s":98,"l":34}],["Barney",{"h":295,"s":73,"l":42}],["BarneyPurple",{"h":303,"s":95,"l":32}],["BattleshipGrey",{"h":201,"s":11,"l":47}],["Beige",{"h":49,"s":56,"l":78}],["Berry",{"h":334,"s":82,"l":33}],["Bile",{"h":64,"s":94,"l":39}],["Black",{"h":0,"s":0,"l":0}],["Bland",{"h":48,"s":18,"l":62}],["Blood",{"h":359,"s":100,"l":23}],["BloodOrange",{"h":17,"s":99,"l":50}],["BloodRed",{"h":359,"s":100,"l":30}],["Blue",{"h":164,"s":99,"l":38}],["Blue",{"h":223,"s":97,"l":44}],["Blue",{"h":204,"s":17,"l":47}],["Blue",{"h":261,"s":73,"l":47}],["BlueBlue",{"h":228,"s":71,"l":46}],["BlueGreen",{"h":170,"s":74,"l":28}],["BlueGrey",{"h":203,"s":19,"l":47}],["BluePurple",{"h":257,"s":67,"l":48}],["BlueViolet",{"h":263,"s":95,"l":47}],["BlueWithAHintOfPurple",{"h":250,"s":55,"l":51}],["Blueberry",{"h":244,"s":40,"l":42}],["Bluegreen",{"h":180,"s":98,"l":24}],["Bluegrey",{"h":200,"s":23,"l":61}],["BlueyGreen",{"h":155,"s":61,"l":43}],["BlueyGrey",{"h":205,"s":20,"l":61}],["BlueyPurple",{"h":255,"s":54,"l":52}],["Bluish",{"h":208,"s":64,"l":45}],["BluishGreen",{"h":160,"s":82,"l":36}],["BluishGrey",{"h":201,"s":14,"l":52}],["BluishPurple",{"h":258,"s":78,"l":57}],["Blurple",{"h":251,"s":59,"l":51}],["Blush",{"h":10,"s":79,"l":75}],["BlushPink",{"h":355,"s":98,"l":75}],["Booger",{"h":73,"s":50,"l":47}],["BoogerGreen",{"h":70,"s":97,"l":36}],["Bordeaux",{"h":339,"s":100,"l":24}],["BoringGreen",{"h":122,"s":34,"l":55}],["BottleGreen",{"h":121,"s":90,"l":15}],["Brick",{"h":9,"s":64,"l":38}],["BrickOrange",{"h":21,"s":91,"l":40}],["BrickRed",{"h":8,"s":97,"l":28}],["BrightAqua",{"h":176,"s":95,"l":51}],["BrightBlue",{"h":216,"s":99,"l":50}],["BrightCyan",{"h":180,"s":99,"l":63}],["BrightGreen",{"h":121,"s":100,"l":50}],["BrightLavender",{"h":279,"s":100,"l":69}],["BrightLightBlue",{"h":182,"s":98,"l":57}],["BrightLightGreen",{"h":131,"s":99,"l":59}],["BrightLilac",{"h":281,"s":95,"l":68}],["BrightLime",{"h":89,"s":98,"l":51}],["BrightLimeGreen",{"h":97,"s":99,"l":51}],["BrightMagenta",{"h":306,"s":100,"l":52}],["BrightOlive",{"h":70,"s":96,"l":37}],["BrightOrange",{"h":21,"s":100,"l":50}],["BrightPink",{"h":318,"s":99,"l":50}],["BrightPurple",{"h":285,"s":98,"l":50}],["BrightRed",{"h":357,"s":100,"l":50}],["BrightSeaGreen",{"h":159,"s":100,"l":51}],["BrightSkyBlue",{"h":192,"s":99,"l":50}],["BrightTeal",{"h":168,"s":99,"l":49}],["BrightTurquoise",{"h":179,"s":99,"l":53}],["BrightViolet",{"h":280,"s":98,"l":52}],["BrightYellow",{"h":60,"s":100,"l":50}],["BrightYellowGreen",{"h":83,"s":100,"l":50}],["BritishRacingGreen",{"h":127,"s":87,"l":15}],["Bronze",{"h":43,"s":100,"l":33}],["Brown",{"h":33,"s":100,"l":20}],["BrownGreen",{"h":57,"s":74,"l":25}],["BrownGrey",{"h":45,"s":15,"l":48}],["BrownOrange",{"h":34,"s":98,"l":37}],["BrownRed",{"h":16,"s":93,"l":30}],["BrownYellow",{"h":51,"s":95,"l":36}],["Brownish",{"h":19,"s":28,"l":48}],["BrownishGreen",{"h":62,"s":85,"l":23}],["BrownishGrey",{"h":37,"s":17,"l":45}],["BrownishOrange",{"h":30,"s":71,"l":47}],["BrownishPink",{"h":4,"s":37,"l":62}],["BrownishPurple",{"h":346,"s":28,"l":36}],["BrownishRed",{"h":9,"s":64,"l":38}],["BrownishYellow",{"h":52,"s":97,"l":40}],["BrownyGreen",{"h":58,"s":83,"l":24}],["BrownyOrange",{"h":32,"s":98,"l":40}],["Bruise",{"h":313,"s":33,"l":37}],["BubbleGumPink",{"h":332,"s":100,"l":71}],["Bubblegum",{"h":330,"s":100,"l":71}],["BubblegumPink",{"h":324,"s":98,"l":75}],["Buff",{"h":55,"s":98,"l":81}],["Burgundy",{"h":338,"s":100,"l":19}],["BurntOrange",{"h":24,"s":99,"l":38}],["BurntRed",{"h":12,"s":94,"l":32}],["BurntSiena",{"h":26,"s":97,"l":36}],["BurntSienna",{"h":23,"s":84,"l":37}],["BurntUmber",{"h":23,"s":84,"l":34}],["BurntYellow",{"h":48,"s":92,"l":44}],["Burple",{"h":258,"s":76,"l":54}],["Butter",{"h":60,"s":100,"l":75}],["ButterYellow",{"h":59,"s":100,"l":73}],["Butterscotch",{"h":35,"s":98,"l":64}],["CadetBlue",{"h":208,"s":32,"l":45}],["Camel",{"h":39,"s":49,"l":56}],["Camo",{"h":75,"s":29,"l":43}],["CamoGreen",{"h":78,"s":46,"l":27}],["CamouflageGreen",{"h":77,"s":67,"l":23}],["Canary",{"h":61,"s":100,"l":69}],["CanaryYellow",{"h":60,"s":100,"l":63}],["CandyPink",{"h":308,"s":100,"l":69}],["Caramel",{"h":37,"s":90,"l":36}],["Carmine",{"h":352,"s":97,"l":31}],["Carnation",{"h":350,"s":97,"l":73}],["CarnationPink",{"h":341,"s":100,"l":75}],["CarolinaBlue",{"h":216,"s":98,"l":77}],["Celadon",{"h":114,"s":95,"l":85}],["Celery",{"h":95,"s":96,"l":79}],["Cement",{"h":54,"s":10,"l":61}],["Cerise",{"h":335,"s":90,"l":46}],["Cerulean",{"h":202,"s":96,"l":42}],["CeruleanBlue",{"h":213,"s":96,"l":48}],["Charcoal",{"h":165,"s":4,"l":21}],["CharcoalGrey",{"h":190,"s":5,"l":25}],["Chartreuse",{"h":74,"s":94,"l":51}],["Cherry",{"h":345,"s":98,"l":41}],["CherryRed",{"h":350,"s":98,"l":49}],["Chestnut",{"h":20,"s":97,"l":23}],["Chocolate",{"h":26,"s":94,"l":12}],["ChocolateBrown",{"h":23,"s":100,"l":13}],["Cinnamon",{"h":26,"s":93,"l":35}],["Claret",{"h":346,"s":100,"l":20}],["Clay",{"h":15,"s":41,"l":51}],["ClayBrown",{"h":27,"s":49,"l":47}],["ClearBlue",{"h":216,"s":98,"l":57}],["CloudyBlue",{"h":211,"s":37,"l":76}],["Cobalt",{"h":218,"s":65,"l":34}],["CobaltBlue",{"h":237,"s":96,"l":33}],["Cocoa",{"h":25,"s":34,"l":39}],["Coffee",{"h":35,"s":37,"l":47}],["CoolBlue",{"h":208,"s":44,"l":50}],["CoolGreen",{"h":142,"s":57,"l":46}],["CoolGrey",{"h":191,"s":9,"l":62}],["Copper",{"h":26,"s":66,"l":43}],["Coral",{"h":3,"s":97,"l":65}],["CoralPink",{"h":359,"s":100,"l":69}],["Cornflower",{"h":234,"s":90,"l":69}],["CornflowerBlue",{"h":226,"s":63,"l":58}],["Cranberry",{"h":338,"s":100,"l":31}],["Cream",{"h":60,"s":100,"l":88}],["Creme",{"h":60,"s":100,"l":86}],["Crimson",{"h":354,"s":100,"l":27}],["Custard",{"h":59,"s":100,"l":74}],["Cyan",{"h":180,"s":100,"l":50}],["Dandelion",{"h":52,"s":99,"l":51}],["Dark",{"h":215,"s":29,"l":15}],["DarkAqua",{"h":181,"s":91,"l":22}],["DarkAquamarine",{"h":179,"s":98,"l":23}],["DarkBeige",{"h":40,"s":31,"l":53}],["DarkBlue",{"h":238,"s":100,"l":18}],["DarkBlueGreen",{"h":173,"s":100,"l":16}],["DarkBlueGrey",{"h":203,"s":43,"l":21}],["DarkBrown",{"h":31,"s":93,"l":11}],["DarkCoral",{"h":2,"s":57,"l":56}],["DarkCream",{"h":53,"s":100,"l":80}],["DarkCyan",{"h":181,"s":86,"l":29}],["DarkForestGreen",{"h":125,"s":100,"l":9}],["DarkFuchsia",{"h":327,"s":91,"l":32}],["DarkGold",{"h":48,"s":84,"l":39}],["DarkGrassGreen",{"h":95,"s":94,"l":26}],["DarkGreen",{"h":117,"s":100,"l":10}],["DarkGreenBlue",{"h":169,"s":52,"l":25}],["DarkGrey",{"h":180,"s":1,"l":21}],["DarkGreyBlue",{"h":205,"s":38,"l":26}],["DarkHotPink",{"h":332,"s":99,"l":43}],["DarkIndigo",{"h":258,"s":81,"l":18}],["DarkKhaki",{"h":50,"s":29,"l":47}],["DarkLavender",{"h":277,"s":19,"l":50}],["DarkLilac",{"h":290,"s":24,"l":54}],["DarkLime",{"h":77,"s":99,"l":36}],["DarkLimeGreen",{"h":80,"s":99,"l":37}],["DarkMagenta",{"h":326,"s":100,"l":29}],["DarkMaroon",{"h":352,"s":100,"l":12}],["DarkMauve",{"h":338,"s":28,"l":41}],["DarkMint",{"h":141,"s":49,"l":52}],["DarkMintGreen",{"h":151,"s":71,"l":44}],["DarkMustard",{"h":49,"s":94,"l":34}],["DarkNavy",{"h":235,"s":100,"l":10}],["DarkNavyBlue",{"h":237,"s":100,"l":9}],["DarkOlive",{"h":67,"s":94,"l":13}],["DarkOliveGreen",{"h":74,"s":93,"l":16}],["DarkOrange",{"h":24,"s":98,"l":39}],["DarkPastelGreen",{"h":121,"s":35,"l":51}],["DarkPeach",{"h":15,"s":66,"l":62}],["DarkPeriwinkle",{"h":244,"s":55,"l":60}],["DarkPink",{"h":342,"s":57,"l":53}],["DarkPlum",{"h":318,"s":97,"l":13}],["DarkPurple",{"h":290,"s":82,"l":13}],["DarkRed",{"h":0,"s":100,"l":26}],["DarkRose",{"h":348,"s":43,"l":50}],["DarkRoyalBlue",{"h":238,"s":96,"l":22}],["DarkSage",{"h":116,"s":21,"l":43}],["DarkSalmon",{"h":4,"s":52,"l":55}],["DarkSand",{"h":41,"s":31,"l":50}],["DarkSeaGreen",{"h":159,"s":78,"l":30}],["DarkSeafoam",{"h":156,"s":71,"l":42}],["DarkSeafoamGreen",{"h":150,"s":48,"l":46}],["DarkSkyBlue",{"h":212,"s":75,"l":58}],["DarkSlateBlue",{"h":204,"s":49,"l":25}],["DarkTan",{"h":37,"s":41,"l":49}],["DarkTaupe",{"h":32,"s":24,"l":40}],["DarkTeal",{"h":181,"s":97,"l":15}],["DarkTurquoise",{"h":179,"s":92,"l":19}],["DarkViolet",{"h":289,"s":97,"l":13}],["DarkYellow",{"h":51,"s":91,"l":44}],["DarkYellowGreen",{"h":72,"s":97,"l":28}],["Darkblue",{"h":238,"s":94,"l":20}],["Darkgreen",{"h":122,"s":87,"l":15}],["DarkishBlue",{"h":210,"s":98,"l":26}],["DarkishGreen",{"h":131,"s":51,"l":32}],["DarkishPink",{"h":338,"s":67,"l":56}],["DarkishPurple",{"h":301,"s":65,"l":28}],["DarkishRed",{"h":358,"s":97,"l":34}],["DeepAqua",{"h":184,"s":88,"l":26}],["DeepBlue",{"h":241,"s":97,"l":23}],["DeepBrown",{"h":2,"s":100,"l":13}],["DeepGreen",{"h":129,"s":96,"l":18}],["DeepLavender",{"h":272,"s":38,"l":54}],["DeepLilac",{"h":270,"s":37,"l":59}],["DeepMagenta",{"h":326,"s":98,"l":32}],["DeepOrange",{"h":21,"s":99,"l":43}],["DeepPink",{"h":331,"s":99,"l":40}],["DeepPurple",{"h":291,"s":97,"l":13}],["DeepRed",{"h":1,"s":100,"l":30}],["DeepRose",{"h":345,"s":53,"l":53}],["DeepSeaBlue",{"h":201,"s":98,"l":26}],["DeepSkyBlue",{"h":213,"s":94,"l":51}],["DeepTeal",{"h":183,"s":100,"l":18}],["DeepTurquoise",{"h":181,"s":98,"l":23}],["DeepViolet",{"h":301,"s":85,"l":15}],["Denim",{"h":210,"s":41,"l":39}],["DenimBlue",{"h":218,"s":42,"l":40}],["Desert",{"h":43,"s":51,"l":59}],["Diarrhea",{"h":49,"s":96,"l":32}],["Dirt",{"h":36,"s":33,"l":41}],["DirtBrown",{"h":36,"s":39,"l":37}],["DirtyBlue",{"h":197,"s":43,"l":43}],["DirtyGreen",{"h":78,"s":48,"l":33}],["DirtyOrange",{"h":35,"s":94,"l":40}],["DirtyPink",{"h":356,"s":43,"l":64}],["DirtyPurple",{"h":320,"s":22,"l":37}],["DirtyYellow",{"h":58,"s":91,"l":42}],["DodgerBlue",{"h":219,"s":97,"l":62}],["Drab",{"h":61,"s":32,"l":39}],["DrabGreen",{"h":89,"s":30,"l":45}],["DriedBlood",{"h":0,"s":97,"l":15}],["DuckEggBlue",{"h":173,"s":88,"l":87}],["DullBlue",{"h":208,"s":36,"l":45}],["DullBrown",{"h":35,"s":29,"l":41}],["DullGreen",{"h":104,"s":28,"l":52}],["DullOrange",{"h":29,"s":67,"l":54}],["DullPink",{"h":343,"s":48,"l":68}],["DullPurple",{"h":308,"s":19,"l":43}],["DullRed",{"h":0,"s":50,"l":49}],["DullTeal",{"h":166,"s":25,"l":50}],["DullYellow",{"h":53,"s":81,"l":65}],["Dusk",{"h":233,"s":25,"l":41}],["DuskBlue",{"h":214,"s":58,"l":35}],["DuskyBlue",{"h":221,"s":35,"l":43}],["DuskyPink",{"h":348,"s":45,"l":64}],["DuskyPurple",{"h":318,"s":20,"l":45}],["DuskyRose",{"h":352,"s":37,"l":57}],["Dust",{"h":38,"s":31,"l":56}],["DustyBlue",{"h":208,"s":34,"l":52}],["DustyGreen",{"h":117,"s":24,"l":56}],["DustyLavender",{"h":306,"s":19,"l":60}],["DustyOrange",{"h":24,"s":86,"l":58}],["DustyPink",{"h":352,"s":47,"l":69}],["DustyPurple",{"h":293,"s":17,"l":45}],["DustyRed",{"h":357,"s":45,"l":50}],["DustyRose",{"h":355,"s":38,"l":60}],["DustyTeal",{"h":170,"s":31,"l":43}],["Earth",{"h":23,"s":45,"l":44}],["EasterGreen",{"h":113,"s":97,"l":74}],["EasterPurple",{"h":274,"s":99,"l":72}],["Ecru",{"h":61,"s":100,"l":90}],["EggShell",{"h":57,"s":100,"l":88}],["Eggplant",{"h":304,"s":75,"l":13}],["EggplantPurple",{"h":302,"s":86,"l":14}],["Eggshell",{"h":60,"s":100,"l":92}],["EggshellBlue",{"h":172,"s":100,"l":88}],["ElectricBlue",{"h":222,"s":100,"l":51}],["ElectricGreen",{"h":115,"s":98,"l":52}],["ElectricLime",{"h":81,"s":100,"l":51}],["ElectricPink",{"h":327,"s":100,"l":51}],["ElectricPurple",{"h":277,"s":100,"l":57}],["Emerald",{"h":147,"s":99,"l":32}],["EmeraldGreen",{"h":132,"s":97,"l":28}],["Evergreen",{"h":154,"s":87,"l":15}],["FadedBlue",{"h":213,"s":39,"l":56}],["FadedGreen",{"h":113,"s":29,"l":58}],["FadedOrange",{"h":26,"s":84,"l":62}],["FadedPink",{"h":346,"s":50,"l":74}],["FadedPurple",{"h":289,"s":17,"l":52}],["FadedRed",{"h":358,"s":61,"l":56}],["FadedYellow",{"h":60,"s":100,"l":75}],["Fawn",{"h":37,"s":47,"l":65}],["Fern",{"h":107,"s":36,"l":49}],["FernGreen",{"h":107,"s":35,"l":41}],["FireEngineRed",{"h":0,"s":100,"l":50}],["FlatBlue",{"h":209,"s":47,"l":45}],["FlatGreen",{"h":99,"s":35,"l":46}],["FluorescentGreen",{"h":120,"s":100,"l":52}],["FluroGreen",{"h":118,"s":100,"l":50}],["FoamGreen",{"h":134,"s":96,"l":78}],["Forest",{"h":118,"s":81,"l":18}],["ForestGreen",{"h":126,"s":84,"l":15}],["ForrestGreen",{"h":105,"s":84,"l":15}],["FrenchBlue",{"h":217,"s":44,"l":47}],["FreshGreen",{"h":109,"s":64,"l":58}],["FrogGreen",{"h":93,"s":92,"l":38}],["Fuchsia",{"h":305,"s":90,"l":49}],["Gold",{"h":49,"s":90,"l":45}],["Golden",{"h":47,"s":98,"l":49}],["GoldenBrown",{"h":41,"s":99,"l":35}],["GoldenRod",{"h":45,"s":95,"l":50}],["GoldenYellow",{"h":46,"s":99,"l":54}],["Goldenrod",{"h":46,"s":96,"l":50}],["Grape",{"h":312,"s":35,"l":31}],["GrapePurple",{"h":310,"s":65,"l":22}],["Grapefruit",{"h":1,"s":98,"l":66}],["Grass",{"h":98,"s":59,"l":43}],["GrassGreen",{"h":98,"s":87,"l":33}],["GrassyGreen",{"h":96,"s":96,"l":31}],["Green",{"h":174,"s":82,"l":33}],["Green",{"h":77,"s":98,"l":62}],["Green",{"h":122,"s":79,"l":39}],["Green",{"h":105,"s":16,"l":56}],["GreenApple",{"h":100,"s":75,"l":49}],["GreenBlue",{"h":166,"s":94,"l":36}],["GreenBrown",{"h":56,"s":93,"l":17}],["GreenGrey",{"h":106,"s":14,"l":50}],["GreenTeal",{"h":158,"s":88,"l":38}],["GreenYellow",{"h":75,"s":100,"l":58}],["Greenblue",{"h":159,"s":70,"l":45}],["Greenish",{"h":144,"s":44,"l":45}],["GreenishBeige",{"h":65,"s":49,"l":65}],["GreenishBlue",{"h":178,"s":85,"l":29}],["GreenishBrown",{"h":54,"s":71,"l":24}],["GreenishCyan",{"h":160,"s":99,"l":58}],["GreenishGrey",{"h":104,"s":17,"l":62}],["GreenishTan",{"h":71,"s":44,"l":64}],["GreenishTeal",{"h":155,"s":59,"l":47}],["GreenishTurquoise",{"h":162,"s":100,"l":49}],["GreenishYellow",{"h":71,"s":98,"l":50}],["GreenyBlue",{"h":164,"s":46,"l":48}],["GreenyBrown",{"h":55,"s":89,"l":22}],["GreenyGrey",{"h":114,"s":17,"l":55}],["GreenyYellow",{"h":73,"s":94,"l":50}],["Grey",{"h":209,"s":20,"l":55}],["Grey",{"h":105,"s":2,"l":58}],["GreyBlue",{"h":206,"s":24,"l":53}],["GreyBrown",{"h":40,"s":21,"l":41}],["GreyGreen",{"h":113,"s":17,"l":53}],["GreyPink",{"h":347,"s":30,"l":66}],["GreyPurple",{"h":281,"s":12,"l":49}],["GreyTeal",{"h":163,"s":24,"l":49}],["Greyblue",{"h":199,"s":30,"l":59}],["Greyish",{"h":47,"s":10,"l":62}],["GreyishBlue",{"h":207,"s":25,"l":49}],["GreyishBrown",{"h":38,"s":21,"l":39}],["GreyishGreen",{"h":113,"s":19,"l":57}],["GreyishPink",{"h":353,"s":35,"l":67}],["GreyishPurple",{"h":283,"s":13,"l":51}],["GreyishTeal",{"h":162,"s":19,"l":53}],["GrossGreen",{"h":71,"s":79,"l":42}],["Gunmetal",{"h":195,"s":11,"l":36}],["Hazel",{"h":48,"s":71,"l":33}],["Heather",{"h":288,"s":19,"l":60}],["Heliotrope",{"h":290,"s":89,"l":64}],["HighlighterGreen",{"h":115,"s":98,"l":51}],["HospitalGreen",{"h":132,"s":59,"l":75}],["HotGreen",{"h":121,"s":100,"l":57}],["HotMagenta",{"h":311,"s":97,"l":49}],["HotPink",{"h":327,"s":100,"l":50}],["HotPurple",{"h":290,"s":100,"l":48}],["HunterGreen",{"h":117,"s":78,"l":14}],["Ice",{"h":173,"s":100,"l":92}],["IceBlue",{"h":179,"s":100,"l":92}],["IckyGreen",{"h":73,"s":67,"l":41}],["IndianRed",{"h":5,"s":94,"l":27}],["Indigo",{"h":265,"s":97,"l":26}],["IndigoBlue",{"h":253,"s":76,"l":39}],["Iris",{"h":246,"s":48,"l":56}],["IrishGreen",{"h":136,"s":99,"l":29}],["Ivory",{"h":60,"s":100,"l":90}],["Jade",{"h":158,"s":69,"l":39}],["JadeGreen",{"h":149,"s":61,"l":43}],["JungleGreen",{"h":150,"s":94,"l":26}],["KelleyGreen",{"h":142,"s":100,"l":29}],["KellyGreen",{"h":136,"s":98,"l":34}],["KermitGreen",{"h":89,"s":100,"l":35}],["KeyLime",{"h":94,"s":100,"l":72}],["Khaki",{"h":57,"s":30,"l":53}],["KhakiGreen",{"h":76,"s":40,"l":37}],["Kiwi",{"h":89,"s":84,"l":60}],["KiwiGreen",{"h":91,"s":76,"l":57}],["Lavender",{"h":270,"s":71,"l":78}],["LavenderBlue",{"h":242,"s":89,"l":75}],["LavenderPink",{"h":304,"s":56,"l":69}],["LawnGreen",{"h":94,"s":90,"l":34}],["Leaf",{"h":89,"s":53,"l":44}],["LeafGreen",{"h":88,"s":95,"l":34}],["LeafyGreen",{"h":109,"s":51,"l":47}],["Leather",{"h":32,"s":54,"l":44}],["Lemon",{"h":61,"s":100,"l":66}],["LemonGreen",{"h":78,"s":98,"l":49}],["LemonLime",{"h":78,"s":99,"l":58}],["LemonYellow",{"h":61,"s":100,"l":61}],["Lichen",{"h":100,"s":29,"l":60}],["LightAqua",{"h":161,"s":100,"l":77}],["LightAquamarine",{"h":155,"s":97,"l":74}],["LightBeige",{"h":59,"s":100,"l":86}],["LightBlue",{"h":206,"s":94,"l":79}],["LightBlueGreen",{"h":145,"s":94,"l":74}],["LightBlueGrey",{"h":215,"s":43,"l":80}],["LightBluishGreen",{"h":142,"s":97,"l":73}],["LightBrightGreen",{"h":123,"s":99,"l":66}],["LightBrown",{"h":32,"s":37,"l":50}],["LightBurgundy",{"h":345,"s":44,"l":46}],["LightCyan",{"h":178,"s":100,"l":84}],["LightEggplant",{"h":304,"s":33,"l":40}],["LightForestGreen",{"h":124,"s":29,"l":44}],["LightGold",{"h":48,"s":98,"l":68}],["LightGrassGreen",{"h":98,"s":90,"l":68}],["LightGreen",{"h":107,"s":91,"l":73}],["LightGreenBlue",{"h":147,"s":97,"l":66}],["LightGreenishBlue",{"h":153,"s":90,"l":68}],["LightGrey",{"h":100,"s":8,"l":85}],["LightGreyBlue",{"h":206,"s":39,"l":72}],["LightGreyGreen",{"h":99,"s":52,"l":76}],["LightIndigo",{"h":250,"s":55,"l":58}],["LightKhaki",{"h":69,"s":75,"l":79}],["LightLavendar",{"h":285,"s":97,"l":87}],["LightLavender",{"h":267,"s":97,"l":88}],["LightLightBlue",{"h":175,"s":100,"l":90}],["LightLightGreen",{"h":102,"s":100,"l":85}],["LightLilac",{"h":280,"s":100,"l":89}],["LightLime",{"h":93,"s":97,"l":71}],["LightLimeGreen",{"h":87,"s":100,"l":70}],["LightMagenta",{"h":301,"s":94,"l":68}],["LightMaroon",{"h":350,"s":38,"l":46}],["LightMauve",{"h":341,"s":28,"l":67}],["LightMint",{"h":124,"s":100,"l":86}],["LightMintGreen",{"h":128,"s":91,"l":82}],["LightMossGreen",{"h":85,"s":43,"l":62}],["LightMustard",{"h":46,"s":90,"l":67}],["LightNavy",{"h":208,"s":73,"l":30}],["LightNavyBlue",{"h":211,"s":49,"l":36}],["LightNeonGreen",{"h":122,"s":98,"l":65}],["LightOlive",{"h":73,"s":40,"l":58}],["LightOliveGreen",{"h":76,"s":43,"l":55}],["LightOrange",{"h":32,"s":98,"l":64}],["LightPastelGreen",{"h":111,"s":91,"l":82}],["LightPeaGreen",{"h":88,"s":98,"l":75}],["LightPeach",{"h":30,"s":100,"l":85}],["LightPeriwinkle",{"h":235,"s":91,"l":87}],["LightPink",{"h":342,"s":100,"l":91}],["LightPlum",{"h":322,"s":29,"l":48}],["LightPurple",{"h":274,"s":88,"l":72}],["LightRed",{"h":358,"s":100,"l":64}],["LightRose",{"h":354,"s":100,"l":89}],["LightRoyalBlue",{"h":243,"s":99,"l":59}],["LightSage",{"h":105,"s":63,"l":80}],["LightSalmon",{"h":12,"s":98,"l":79}],["LightSeaGreen",{"h":135,"s":84,"l":78}],["LightSeafoam",{"h":140,"s":98,"l":81}],["LightSeafoamGreen",{"h":130,"s":100,"l":83}],["LightSkyBlue",{"h":183,"s":100,"l":89}],["LightTan",{"h":50,"s":91,"l":83}],["LightTeal",{"h":155,"s":61,"l":73}],["LightTurquoise",{"h":160,"s":84,"l":73}],["LightUrple",{"h":270,"s":88,"l":70}],["LightViolet",{"h":268,"s":92,"l":85}],["LightYellow",{"h":60,"s":100,"l":74}],["LightYellowGreen",{"h":83,"s":97,"l":75}],["LightYellowishGreen",{"h":91,"s":100,"l":77}],["Lightblue",{"h":202,"s":87,"l":72}],["LighterGreen",{"h":113,"s":97,"l":69}],["LighterPurple",{"h":269,"s":88,"l":65}],["Lightgreen",{"h":122,"s":100,"l":73}],["LightishBlue",{"h":221,"s":98,"l":62}],["LightishGreen",{"h":120,"s":68,"l":63}],["LightishPurple",{"h":274,"s":75,"l":61}],["LightishRed",{"h":352,"s":99,"l":59}],["Lilac",{"h":269,"s":96,"l":81}],["Liliac",{"h":269,"s":97,"l":77}],["Lime",{"h":85,"s":100,"l":60}],["LimeGreen",{"h":88,"s":99,"l":51}],["LimeYellow",{"h":72,"s":99,"l":55}],["Lipstick",{"h":343,"s":81,"l":46}],["LipstickRed",{"h":346,"s":98,"l":38}],["MacaroniAndCheese",{"h":41,"s":85,"l":57}],["Magenta",{"h":323,"s":100,"l":38}],["Mahogany",{"h":1,"s":100,"l":15}],["Maize",{"h":47,"s":88,"l":64}],["Mango",{"h":35,"s":100,"l":58}],["Manilla",{"h":58,"s":100,"l":76}],["Marigold",{"h":45,"s":98,"l":51}],["Marine",{"h":213,"s":92,"l":20}],["MarineBlue",{"h":209,"s":98,"l":21}],["Maroon",{"h":340,"s":100,"l":20}],["Mauve",{"h":344,"s":27,"l":56}],["MediumBlue",{"h":212,"s":62,"l":45}],["MediumBrown",{"h":35,"s":75,"l":28}],["MediumGreen",{"h":128,"s":50,"l":45}],["MediumGrey",{"h":100,"s":1,"l":49}],["MediumPink",{"h":338,"s":86,"l":67}],["MediumPurple",{"h":297,"s":41,"l":45}],["Melon",{"h":12,"s":100,"l":67}],["Merlot",{"h":330,"s":100,"l":23}],["MetallicBlue",{"h":206,"s":29,"l":43}],["MidBlue",{"h":211,"s":64,"l":43}],["MidGreen",{"h":114,"s":40,"l":47}],["Midnight",{"h":243,"s":96,"l":9}],["MidnightBlue",{"h":242,"s":100,"l":10}],["MidnightPurple",{"h":283,"s":96,"l":11}],["MilitaryGreen",{"h":81,"s":33,"l":36}],["MilkChocolate",{"h":30,"s":62,"l":31}],["Mint",{"h":131,"s":98,"l":81}],["MintGreen",{"h":129,"s":100,"l":78}],["MintyGreen",{"h":149,"s":94,"l":51}],["Mocha",{"h":29,"s":32,"l":47}],["Moss",{"h":92,"s":27,"l":47}],["MossGreen",{"h":87,"s":43,"l":38}],["MossyGreen",{"h":84,"s":56,"l":35}],["Mud",{"h":46,"s":73,"l":26}],["MudBrown",{"h":41,"s":73,"l":22}],["MudGreen",{"h":64,"s":96,"l":20}],["MuddyBrown",{"h":45,"s":92,"l":28}],["MuddyGreen",{"h":74,"s":40,"l":33}],["MuddyYellow",{"h":54,"s":95,"l":38}],["Mulberry",{"h":330,"s":87,"l":31}],["MurkyGreen",{"h":68,"s":79,"l":27}],["Mushroom",{"h":26,"s":27,"l":63}],["Mustard",{"h":52,"s":99,"l":41}],["MustardBrown",{"h":44,"s":95,"l":35}],["MustardGreen",{"h":64,"s":96,"l":36}],["MustardYellow",{"h":54,"s":91,"l":43}],["MutedBlue",{"h":208,"s":46,"l":43}],["MutedGreen",{"h":110,"s":32,"l":47}],["MutedPink",{"h":344,"s":50,"l":64}],["MutedPurple",{"h":290,"s":19,"l":44}],["NastyGreen",{"h":94,"s":48,"l":47}],["Navy",{"h":220,"s":97,"l":12}],["NavyBlue",{"h":225,"s":100,"l":14}],["NavyGreen",{"h":85,"s":78,"l":18}],["NeonBlue",{"h":189,"s":100,"l":51}],["NeonGreen",{"h":120,"s":100,"l":52}],["NeonPink",{"h":324,"s":99,"l":50}],["NeonPurple",{"h":283,"s":99,"l":54}],["NeonRed",{"h":348,"s":100,"l":51}],["NeonYellow",{"h":71,"s":100,"l":51}],["NiceBlue",{"h":200,"s":83,"l":38}],["NightBlue",{"h":241,"s":92,"l":15}],["Ocean",{"h":190,"s":99,"l":29}],["OceanBlue",{"h":197,"s":96,"l":31}],["OceanGreen",{"h":155,"s":43,"l":42}],["Ocher",{"h":48,"s":88,"l":40}],["Ochre",{"h":45,"s":95,"l":38}],["Ocre",{"h":47,"s":96,"l":40}],["OffBlue",{"h":209,"s":35,"l":51}],["OffGreen",{"h":102,"s":33,"l":48}],["OffWhite",{"h":60,"s":100,"l":95}],["OffYellow",{"h":61,"s":88,"l":60}],["OldPink",{"h":350,"s":41,"l":63}],["OldRose",{"h":352,"s":40,"l":64}],["Olive",{"h":64,"s":79,"l":26}],["OliveBrown",{"h":50,"s":94,"l":20}],["OliveDrab",{"h":66,"s":40,"l":33}],["OliveGreen",{"h":70,"s":94,"l":25}],["OliveYellow",{"h":56,"s":91,"l":40}],["Orange",{"h":27,"s":95,"l":50}],["OrangeBrown",{"h":32,"s":100,"l":37}],["OrangePink",{"h":10,"s":100,"l":66}],["OrangeRed",{"h":9,"s":98,"l":55}],["OrangeYellow",{"h":41,"s":100,"l":50}],["Orangeish",{"h":23,"s":98,"l":64}],["Orangered",{"h":13,"s":99,"l":53}],["OrangeyBrown",{"h":32,"s":98,"l":35}],["OrangeyRed",{"h":8,"s":96,"l":56}],["OrangeyYellow",{"h":42,"s":98,"l":54}],["Orangish",{"h":19,"s":97,"l":64}],["OrangishBrown",{"h":32,"s":97,"l":35}],["OrangishRed",{"h":12,"s":96,"l":49}],["Orchid",{"h":303,"s":43,"l":62}],["Pale",{"h":52,"s":100,"l":91}],["PaleAqua",{"h":163,"s":100,"l":86}],["PaleBlue",{"h":180,"s":96,"l":91}],["PaleBrown",{"h":31,"s":30,"l":56}],["PaleCyan",{"h":176,"s":100,"l":86}],["PaleGold",{"h":47,"s":97,"l":71}],["PaleGreen",{"h":105,"s":95,"l":85}],["PaleGrey",{"h":240,"s":33,"l":99}],["PaleLavender",{"h":280,"s":96,"l":90}],["PaleLightGreen",{"h":105,"s":94,"l":79}],["PaleLilac",{"h":269,"s":100,"l":90}],["PaleLime",{"h":87,"s":97,"l":72}],["PaleLimeGreen",{"h":90,"s":100,"l":70}],["PaleMagenta",{"h":323,"s":58,"l":62}],["PaleMauve",{"h":303,"s":96,"l":91}],["PaleOlive",{"h":75,"s":42,"l":65}],["PaleOliveGreen",{"h":83,"s":49,"l":65}],["PaleOrange",{"h":29,"s":100,"l":67}],["PalePeach",{"h":41,"s":100,"l":84}],["PalePink",{"h":344,"s":100,"l":91}],["PalePurple",{"h":274,"s":44,"l":70}],["PaleRed",{"h":3,"s":65,"l":58}],["PaleRose",{"h":356,"s":94,"l":87}],["PaleSalmon",{"h":14,"s":100,"l":80}],["PaleSkyBlue",{"h":187,"s":97,"l":87}],["PaleTeal",{"h":159,"s":41,"l":65}],["PaleTurquoise",{"h":153,"s":91,"l":82}],["PaleViolet",{"h":265,"s":88,"l":83}],["PaleYellow",{"h":60,"s":100,"l":76}],["Parchment",{"h":58,"s":98,"l":84}],["PastelBlue",{"h":221,"s":98,"l":82}],["PastelGreen",{"h":108,"s":100,"l":81}],["PastelOrange",{"h":24,"s":100,"l":65}],["PastelPink",{"h":343,"s":100,"l":86}],["PastelPurple",{"h":267,"s":100,"l":81}],["PastelRed",{"h":1,"s":65,"l":60}],["PastelYellow",{"h":60,"s":100,"l":72}],["Pea",{"h":70,"s":71,"l":44}],["PeaGreen",{"h":71,"s":81,"l":37}],["PeaSoup",{"h":63,"s":99,"l":30}],["PeaSoupGreen",{"h":68,"s":76,"l":37}],["Peach",{"h":24,"s":100,"l":74}],["PeachyPink",{"h":8,"s":100,"l":77}],["PeacockBlue",{"h":199,"s":99,"l":29}],["Pear",{"h":78,"s":92,"l":67}],["Periwinkle",{"h":246,"s":98,"l":75}],["PeriwinkleBlue",{"h":234,"s":93,"l":77}],["Perrywinkle",{"h":242,"s":65,"l":73}],["Petrol",{"h":186,"s":100,"l":21}],["PigPink",{"h":344,"s":65,"l":73}],["Pine",{"h":131,"s":37,"l":27}],["PineGreen",{"h":139,"s":76,"l":16}],["Pink",{"h":330,"s":100,"l":75}],["Pink",{"h":298,"s":74,"l":51}],["PinkPurple",{"h":300,"s":67,"l":58}],["PinkRed",{"h":342,"s":96,"l":49}],["Pinkish",{"h":349,"s":55,"l":62}],["PinkishBrown",{"h":13,"s":34,"l":54}],["PinkishGrey",{"h":6,"s":22,"l":72}],["PinkishOrange",{"h":13,"s":100,"l":65}],["PinkishPurple",{"h":300,"s":64,"l":56}],["PinkishRed",{"h":345,"s":91,"l":50}],["PinkishTan",{"h":17,"s":53,"l":68}],["Pinky",{"h":342,"s":95,"l":76}],["PinkyPurple",{"h":305,"s":54,"l":54}],["PinkyRed",{"h":351,"s":97,"l":57}],["PissYellow",{"h":58,"s":80,"l":48}],["Pistachio",{"h":91,"s":92,"l":76}],["Plum",{"h":319,"s":71,"l":20}],["PlumPurple",{"h":298,"s":88,"l":17}],["PoisonGreen",{"h":109,"s":98,"l":54}],["Poo",{"h":48,"s":96,"l":29}],["PooBrown",{"h":42,"s":99,"l":27}],["Poop",{"h":44,"s":100,"l":25}],["PoopBrown",{"h":44,"s":98,"l":24}],["PoopGreen",{"h":66,"s":100,"l":24}],["PowderBlue",{"h":214,"s":93,"l":84}],["PowderPink",{"h":337,"s":100,"l":85}],["PrimaryBlue",{"h":241,"s":97,"l":50}],["PrussianBlue",{"h":205,"s":100,"l":23}],["Puce",{"h":32,"s":34,"l":48}],["Puke",{"h":60,"s":98,"l":33}],["PukeBrown",{"h":48,"s":92,"l":30}],["PukeGreen",{"h":67,"s":92,"l":35}],["PukeYellow",{"h":59,"s":87,"l":41}],["Pumpkin",{"h":32,"s":99,"l":44}],["PumpkinOrange",{"h":29,"s":97,"l":51}],["PureBlue",{"h":240,"s":98,"l":45}],["Purple",{"h":286,"s":68,"l":36}],["Purple",{"h":262,"s":95,"l":48}],["Purple",{"h":302,"s":87,"l":53}],["PurpleBlue",{"h":257,"s":81,"l":55}],["PurpleBrown",{"h":353,"s":28,"l":32}],["PurpleGrey",{"h":303,"s":9,"l":48}],["PurplePink",{"h":303,"s":72,"l":56}],["PurpleRed",{"h":332,"s":99,"l":30}],["Purpleish",{"h":310,"s":28,"l":47}],["PurpleishBlue",{"h":251,"s":85,"l":59}],["PurpleishPink",{"h":310,"s":69,"l":59}],["Purpley",{"h":261,"s":72,"l":62}],["PurpleyBlue",{"h":254,"s":79,"l":55}],["PurpleyGrey",{"h":300,"s":9,"l":54}],["PurpleyPink",{"h":306,"s":56,"l":51}],["Purplish",{"h":308,"s":26,"l":46}],["PurplishBlue",{"h":258,"s":95,"l":55}],["PurplishBrown",{"h":353,"s":24,"l":34}],["PurplishGrey",{"h":287,"s":10,"l":45}],["PurplishPink",{"h":317,"s":54,"l":59}],["PurplishRed",{"h":335,"s":94,"l":35}],["Purply",{"h":286,"s":48,"l":47}],["PurplyBlue",{"h":262,"s":86,"l":52}],["PurplyPink",{"h":305,"s":80,"l":70}],["Putty",{"h":42,"s":29,"l":64}],["RacingGreen",{"h":119,"s":100,"l":14}],["RadioactiveGreen",{"h":116,"s":96,"l":55}],["Raspberry",{"h":335,"s":99,"l":35}],["RawSienna",{"h":38,"s":100,"l":30}],["RawUmber",{"h":32,"s":90,"l":35}],["ReallyLightBlue",{"h":180,"s":100,"l":92}],["Red",{"h":0,"s":100,"l":45}],["RedBrown",{"h":12,"s":73,"l":32}],["RedOrange",{"h":13,"s":98,"l":51}],["RedPink",{"h":348,"s":95,"l":57}],["RedPurple",{"h":329,"s":90,"l":27}],["RedViolet",{"h":321,"s":99,"l":31}],["RedWine",{"h":338,"s":100,"l":27}],["Reddish",{"h":1,"s":53,"l":51}],["ReddishBrown",{"h":17,"s":85,"l":27}],["ReddishGrey",{"h":7,"s":17,"l":52}],["ReddishOrange",{"h":12,"s":94,"l":54}],["ReddishPink",{"h":349,"s":99,"l":58}],["ReddishPurple",{"h":328,"s":88,"l":30}],["ReddyBrown",{"h":6,"s":91,"l":23}],["RichBlue",{"h":234,"s":98,"l":49}],["RichPurple",{"h":314,"s":100,"l":22}],["Robin'sEgg",{"h":187,"s":97,"l":71}],["Robin'sEggBlue",{"h":186,"s":89,"l":79}],["RobinEggBlue",{"h":187,"s":98,"l":77}],["Rosa",{"h":345,"s":98,"l":76}],["Rose",{"h":350,"s":53,"l":60}],["RosePink",{"h":350,"s":88,"l":75}],["RoseRed",{"h":341,"s":99,"l":37}],["RosyPink",{"h":344,"s":89,"l":69}],["Rouge",{"h":345,"s":81,"l":37}],["Royal",{"h":235,"s":85,"l":31}],["RoyalBlue",{"h":240,"s":95,"l":34}],["RoyalPurple",{"h":281,"s":100,"l":22}],["Ruby",{"h":339,"s":99,"l":40}],["Russet",{"h":20,"s":94,"l":33}],["Rust",{"h":19,"s":90,"l":35}],["RustBrown",{"h":20,"s":96,"l":28}],["RustOrange",{"h":25,"s":92,"l":40}],["RustRed",{"h":13,"s":95,"l":34}],["RustyOrange",{"h":24,"s":92,"l":42}],["RustyRed",{"h":13,"s":86,"l":37}],["Saffron",{"h":41,"s":99,"l":52}],["Sage",{"h":100,"s":27,"l":57}],["SageGreen",{"h":104,"s":28,"l":59}],["Salmon",{"h":5,"s":100,"l":71}],["SalmonPink",{"h":0,"s":98,"l":74}],["Sand",{"h":47,"s":65,"l":67}],["SandBrown",{"h":39,"s":51,"l":59}],["SandYellow",{"h":49,"s":96,"l":69}],["Sandstone",{"h":41,"s":44,"l":62}],["Sandy",{"h":48,"s":81,"l":71}],["SandyBrown",{"h":42,"s":46,"l":57}],["SandyYellow",{"h":53,"s":97,"l":72}],["SapGreen",{"h":84,"s":74,"l":31}],["Sapphire",{"h":230,"s":68,"l":40}],["Scarlet",{"h":352,"s":99,"l":37}],["Sea",{"h":175,"s":44,"l":42}],["SeaBlue",{"h":194,"s":95,"l":30}],["SeaGreen",{"h":148,"s":97,"l":66}],["Seafoam",{"h":142,"s":91,"l":74}],["SeafoamBlue",{"h":162,"s":49,"l":65}],["SeafoamGreen",{"h":143,"s":91,"l":73}],["Seaweed",{"h":152,"s":79,"l":46}],["SeaweedGreen",{"h":147,"s":53,"l":44}],["Sepia",{"h":28,"s":56,"l":38}],["Shamrock",{"h":145,"s":99,"l":35}],["ShamrockGreen",{"h":144,"s":98,"l":38}],["Shit",{"h":45,"s":100,"l":25}],["ShitBrown",{"h":42,"s":94,"l":25}],["ShitGreen",{"h":65,"s":100,"l":25}],["ShockingPink",{"h":322,"s":99,"l":50}],["SickGreen",{"h":72,"s":62,"l":45}],["SicklyGreen",{"h":72,"s":73,"l":40}],["SicklyYellow",{"h":66,"s":78,"l":53}],["Sienna",{"h":24,"s":70,"l":39}],["Silver",{"h":150,"s":4,"l":78}],["Sky",{"h":205,"s":95,"l":75}],["SkyBlue",{"h":209,"s":97,"l":73}],["Slate",{"h":204,"s":17,"l":38}],["SlateBlue",{"h":208,"s":25,"l":48}],["SlateGreen",{"h":132,"s":17,"l":47}],["SlateGrey",{"h":204,"s":10,"l":39}],["SlimeGreen",{"h":75,"s":96,"l":41}],["Snot",{"h":65,"s":87,"l":39}],["SnotGreen",{"h":71,"s":100,"l":38}],["SoftBlue",{"h":224,"s":76,"l":65}],["SoftGreen",{"h":125,"s":40,"l":60}],["SoftPink",{"h":348,"s":95,"l":84}],["SoftPurple",{"h":287,"s":32,"l":57}],["Spearmint",{"h":144,"s":94,"l":55}],["SpringGreen",{"h":95,"s":92,"l":71}],["Spruce",{"h":152,"s":81,"l":21}],["Squash",{"h":41,"s":89,"l":52}],["Steel",{"h":208,"s":14,"l":52}],["SteelBlue",{"h":207,"s":26,"l":48}],["SteelGrey",{"h":198,"s":11,"l":49}],["Stone",{"h":47,"s":19,"l":60}],["StormyBlue",{"h":206,"s":32,"l":46}],["Straw",{"h":57,"s":96,"l":73}],["Strawberry",{"h":353,"s":96,"l":57}],["StrongBlue",{"h":241,"s":95,"l":50}],["StrongPink",{"h":329,"s":100,"l":51}],["SunYellow",{"h":51,"s":100,"l":57}],["Sunflower",{"h":45,"s":100,"l":54}],["SunflowerYellow",{"h":51,"s":100,"l":51}],["SunnyYellow",{"h":58,"s":100,"l":55}],["SunshineYellow",{"h":59,"s":100,"l":61}],["Swamp",{"h":81,"s":39,"l":37}],["SwampGreen",{"h":68,"s":100,"l":26}],["Tan",{"h":41,"s":52,"l":63}],["TanBrown",{"h":32,"s":38,"l":48}],["TanGreen",{"h":76,"s":38,"l":59}],["Tangerine",{"h":34,"s":100,"l":52}],["Taupe",{"h":35,"s":29,"l":62}],["Tea",{"h":140,"s":29,"l":53}],["TeaGreen",{"h":102,"s":86,"l":81}],["Teal",{"h":175,"s":97,"l":29}],["TealBlue",{"h":189,"s":99,"l":31}],["TealGreen",{"h":155,"s":63,"l":39}],["Tealish",{"h":172,"s":68,"l":44}],["TealishGreen",{"h":150,"s":90,"l":45}],["TerraCotta",{"h":17,"s":57,"l":51}],["Terracota",{"h":16,"s":57,"l":53}],["Terracotta",{"h":16,"s":56,"l":52}],["TiffanyBlue",{"h":168,"s":82,"l":72}],["Tomato",{"h":8,"s":86,"l":54}],["TomatoRed",{"h":11,"s":99,"l":46}],["Topaz",{"h":176,"s":82,"l":40}],["Toupe",{"h":38,"s":40,"l":64}],["ToxicGreen",{"h":102,"s":73,"l":52}],["TreeGreen",{"h":110,"s":67,"l":30}],["TrueBlue",{"h":236,"s":99,"l":40}],["TrueGreen",{"h":118,"s":95,"l":30}],["Turquoise",{"h":173,"s":94,"l":39}],["TurquoiseBlue",{"h":186,"s":94,"l":40}],["TurquoiseGreen",{"h":153,"s":97,"l":49}],["TurtleGreen",{"h":98,"s":43,"l":52}],["Twilight",{"h":237,"s":28,"l":43}],["TwilightBlue",{"h":209,"s":85,"l":26}],["UglyBlue",{"h":204,"s":48,"l":37}],["UglyBrown",{"h":54,"s":95,"l":25}],["UglyGreen",{"h":72,"s":96,"l":30}],["UglyPink",{"h":350,"s":47,"l":63}],["UglyPurple",{"h":302,"s":43,"l":45}],["UglyYellow",{"h":56,"s":99,"l":41}],["Ultramarine",{"h":251,"s":100,"l":35}],["UltramarineBlue",{"h":245,"s":96,"l":44}],["Umber",{"h":34,"s":100,"l":35}],["Velvet",{"h":320,"s":87,"l":25}],["Vermillion",{"h":10,"s":91,"l":50}],["VeryDarkBlue",{"h":239,"s":100,"l":10}],["VeryDarkBrown",{"h":4,"s":100,"l":6}],["VeryDarkGreen",{"h":116,"s":88,"l":10}],["VeryDarkPurple",{"h":288,"s":96,"l":10}],["VeryLightBlue",{"h":180,"s":100,"l":92}],["VeryLightBrown",{"h":38,"s":48,"l":67}],["VeryLightGreen",{"h":102,"s":100,"l":87}],["VeryLightPink",{"h":9,"s":100,"l":97}],["VeryLightPurple",{"h":292,"s":88,"l":90}],["VeryPaleBlue",{"h":179,"s":100,"l":92}],["VeryPaleGreen",{"h":102,"s":94,"l":86}],["VibrantBlue",{"h":227,"s":98,"l":49}],["VibrantGreen",{"h":119,"s":93,"l":45}],["VibrantPurple",{"h":287,"s":97,"l":44}],["Violet",{"h":278,"s":89,"l":49}],["VioletBlue",{"h":262,"s":91,"l":41}],["VioletPink",{"h":300,"s":96,"l":68}],["VioletRed",{"h":329,"s":100,"l":32}],["Viridian",{"h":158,"s":66,"l":34}],["VividBlue",{"h":234,"s":100,"l":54}],["VividGreen",{"h":112,"s":87,"l":50}],["VividPurple",{"h":277,"s":100,"l":49}],["Vomit",{"h":61,"s":77,"l":36}],["VomitGreen",{"h":69,"s":96,"l":32}],["VomitYellow",{"h":58,"s":89,"l":41}],["WarmBlue",{"h":235,"s":67,"l":58}],["WarmBrown",{"h":31,"s":97,"l":30}],["WarmGrey",{"h":19,"s":8,"l":55}],["WarmPink",{"h":344,"s":95,"l":66}],["WarmPurple",{"h":303,"s":53,"l":38}],["WashedOutGreen",{"h":103,"s":80,"l":81}],["WaterBlue",{"h":202,"s":87,"l":43}],["Watermelon",{"h":354,"s":98,"l":63}],["WeirdGreen",{"h":144,"s":77,"l":56}],["Wheat",{"h":46,"s":94,"l":74}],["White",{"h":0,"s":0,"l":100}],["WindowsBlue",{"h":211,"s":55,"l":48}],["Wine",{"h":331,"s":98,"l":25}],["WineRed",{"h":344,"s":95,"l":25}],["Wintergreen",{"h":148,"s":95,"l":55}],["Wisteria",{"h":277,"s":36,"l":63}],["Yellow",{"h":68,"s":93,"l":42}],["Yellow",{"h":60,"s":100,"l":54}],["YellowBrown",{"h":49,"s":100,"l":36}],["YellowGreen",{"h":77,"s":96,"l":58}],["YellowOchre",{"h":46,"s":94,"l":41}],["YellowOrange",{"h":42,"s":99,"l":50}],["YellowTan",{"h":48,"s":100,"l":72}],["Yellowgreen",{"h":76,"s":95,"l":52}],["Yellowish",{"h":55,"s":94,"l":69}],["YellowishBrown",{"h":47,"s":99,"l":31}],["YellowishGreen",{"h":74,"s":82,"l":48}],["YellowishOrange",{"h":39,"s":100,"l":53}],["YellowishTan",{"h":60,"s":95,"l":75}],["YellowyBrown",{"h":47,"s":87,"l":36}],["YellowyGreen",{"h":75,"s":88,"l":55}]]
+;
+
+class Color$1 extends color {
+  constructor (param, model) {
+    const match = typeof param === 'string' && param.replace(/\s*/g, '').match(
+      /(hsv|hwb|xyz|lab|cmyk)a?\((\d+),-?(\d+)%?,-?(\d+)%?(?:,([.\d]+))?\)/i
+    );
+    if (match) {
+      param = match.slice(2);
+      param[3] = param[3] == null ? 1 : param[3] || 0;
+      model = match[1];
+      param = param.map((a) => +a || 0);
+    }
+    super(param, model);
+  }
+  toString (model) {
+    // console.log('model', model)
+    const color$$1 = this.alpha(Math.round(this.valpha * 100) / 100);
+    switch (model) {
+      case 'hex':
+        return color$$1.hex()
+      case 'rgb':
+      case 'hsl':
+        return color$$1[model]().string(0)
+      case 'prgb':
+      case '%':
+        return color$$1.percentString(0)
+      case 'hsv':
+      case 'hwb':
+      case 'xyz':
+      case 'lab':
+        let str = model;
+        const arr = color$$1[model]().round().array();
+        if (color$$1.valpha !== 1) {
+          str += 'a';
+        }
+        return str + `(${arr.join(', ')})`
+      case 'cmyk':
+        const cmyk = color$$1.cmyk().round().array();
+        return `cmyk(${cmyk.join(', ')})`
+      default:
+        return color$$1.string(0)
+    }
+  }
+  toJSON () {
+    return this[this.model]().round(2).object()
+  }
+  nearColorName () {
+    const hsl = this.hsl().alpha(1).object();
+    let difference = 50;
+    let name = '';
+    xkcd.forEach(([_name, _hsl]) => {
+      let diff = 0;
+      // gray
+      if (hsl.s < 5) {
+        diff += Math.abs(hsl.s - _hsl.s);
+        if (diff < 5) {
+          diff += Math.abs(hsl.l - _hsl.l);
+          if (diff < difference) {
+            difference = diff;
+            name = _name;
+          }
+          return
+        }
+        diff = 0;
+      }
+
+      for (const key in hsl) {
+        diff += Math.abs(hsl[key] - _hsl[key]);
+      }
+      if (diff < difference) {
+        difference = diff;
+        name = _name;
+      }
+    });
+    return name
+  }
+  /**
+   * Alpha Blending in CSS
+   *
+   * <-back   layer   front->
+   * Color.alphaBlending('rgba(...)', txtColor)
+   *
+   * @export
+   * @param {Color} colors indexが深いほど手前。index0が一番奥の色
+   * @see https://engineering.canva.com/2017/12/04/WebGL-David-Guan/
+   * @returns
+   */
+  alphaBlending (...colors) {
+    return new Color$1(colors
+      .map((color$$1) => new Color$1(color$$1).rgb().array())
+      .reduce((back, front) => {
+        const color$$1 = [];
+        const a = front[3] == null ? 1 : front[3];
+        for (let i = 0; i < 3; i++) {
+          color$$1[i] = front[i] * a + back[i] * (1 - a);
+        }
+        return color$$1
+      }, [255, 255, 255, 1])
+    )
+  }
+  contrast (txtColor) {
+    let bgColor = this;
+    if (this.valpha !== 1 && txtColor.valpha !== 1) {
+      bgColor = this.alphaBlending();
+      txtColor = bgColor.alphaBlending(txtColor);
+    } else {
+      bgColor = this.valpha === 1 ? this : txtColor.alphaBlending(this);
+      txtColor = txtColor.valpha === 1 ? txtColor : this.alphaBlending(txtColor);
+    }
+    const lum1 = bgColor.luminosity();
+    const lum2 = txtColor.luminosity();
+
+    if (lum1 > lum2) return (lum1 + 0.05) / (lum2 + 0.05)
+    return (lum2 + 0.05) / (lum1 + 0.05)
+  }
+  mostReadable (...colors) {
+    let mostlum = 0;
+    let mostread;
+    for (const color$$1 of colors) {
+      const contrast = this.contrast(new Color$1(color$$1));
+      if (mostlum < contrast) {
+        mostlum = contrast;
+        mostread = color$$1;
+      }
+    }
+    return mostread
+  }
+}
+
+Color$1.random = function () {
+  return new Color$1('#' + Math.random().toString(16).slice(2, 8))
+};
+
 function round (num, digit) {
   return Number(num.toFixed(digit))
 }
@@ -2275,27 +2410,27 @@ function copyTextToClipboard (textVal) {
 
 /* src\color-picker\color-input.html generated by Svelte v2.4.4 */
 
-function caretIndex (event, color$$1) {
+function caretIndex (event, color) {
   const {value, selectionStart} = event.target;
   const index = value[0] === '#'
     ? Math.floor((selectionStart - 1) / 2)
     // count ',' before selectionStart
     : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1;
-  return ((value[0] === '#' || color$$1.alpha() === 1) && index === 3) || index === 4 ? -1 : index
+  return ((value[0] === '#' || color.alpha() === 1) && index === 3) || index === 4 ? -1 : index
 }
 
-function value({ color: color$$1, model }) {
-	return color$$1.toString(model);
+function value({ color, model }) {
+	return color.toString(model);
 }
 
-function textColor({ color: color$$1, bgColor }) {
-	return bgColor.alphaBlending(color$$1).isDark() ? '#fff' : '#000';
+function textColor({ color, bgColor }) {
+	return bgColor.alphaBlending(color).isDark() ? '#fff' : '#000';
 }
 
 function data() {
   return {
     phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
-    color: color('#050'),
+    color: new Color$1('#050'),
     bgColor: '',
     models: ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'],
     model: 'rgb',
@@ -2328,35 +2463,35 @@ function updown(node, callback) {
     }
   }
 }
-function modelStyler(_model, model, color$$1, bgColor, textColor) {
+function modelStyler(_model, model, color, bgColor, textColor) {
   return model === _model
-    ? `color: ${textColor}; background-color: ${color$$1};`
+    ? `color: ${textColor}; background-color: ${color};`
     : `color: ${bgColor.mostReadable('#ccc', '#333')}; background-color: transparent;`
 }
 var methods = {
   randomColor () {
-    this.set({color: color.random()});
+    this.set({color: Color$1.random()});
   },
   keydown (event) {
     const value = event.target.value;
-    const color$$1 = color(value);
+    const color = new Color$1(value);
     if (/^#?([a-f\d]{3})$/i.test(value) && event.key === 'Enter') {
-      this.set({ color: color$$1, model: 'hex' });
+      this.set({ color, model: 'hex' });
     }
   },
   input (event) {
     const value = event.target.value;
     if (!event.target.value) return
 
-    let color$$1;
+    let color;
     try {
-      color$$1 = color(value);
+      color = new Color$1(value);
     } catch (error) {
       return
     }
     if (/^#?([a-f\d]{3})$/i.test(value)) return
-    const model = /^#?([a-f\d]{6})$/i.test(value) ? 'hex' : color$$1.model;
-    this.set({ color: color$$1, model });
+    const model = /^#?([a-f\d]{6})$/i.test(value) ? 'hex' : color.model;
+    this.set({ color, model });
   },
   updown (event) {
     const {value, selectionStart, selectionEnd} = event.target;
@@ -2369,13 +2504,13 @@ var methods = {
     }
 
     const {model, models} = this.get();
-    let color$$1;
+    let color;
     try {
-      color$$1 = color(value);
+      color = new Color$1(value);
     } catch (error) {
       try {
         const arr = value.match(/.*?\(([-\d.%, ]*)\)/)[1].split(',');
-        color$$1 = color(arr.map((v) => {
+        color = new Color$1(arr.map((v) => {
           v = v.trim();
           if (v.slice(-1) === '%') {
             v = parseFloat(v) / 100;
@@ -2389,7 +2524,7 @@ var methods = {
       }
     }
 
-    const index = caretIndex(event, color$$1);
+    const index = caretIndex(event, color);
 
     if (index === -1) {
       const arrow = event.type === 'keydown'
@@ -2409,27 +2544,27 @@ var methods = {
         ? (event.key === 'ArrowUp' ? 1 : -1) * (event.shiftKey ? 10 : 1)
         : event.deltaY < 0 ? 10 : -10;
 
-      let param = model === '%' ? color$$1.unitArray() : color$$1[model]().array();
+      let param = model === '%' ? color.unitArray() : color[model]().array();
 
       if (index === 3) {
         // alpla
-        color$$1 = color$$1.alpha(color$$1.alpha() + arrow / 100);
+        color = color.alpha(color.alpha() + arrow / 100);
       } else {
         // not alpla
         switch (model) {
           case '%':
             const val = (param[index] + arrow / 100) * 255;
-            param = color$$1.rgb().array();
+            param = color.rgb().array();
             param[index] = val;
-            color$$1 = color(param, 'rgb');
+            color = new Color$1(param, 'rgb');
             break
           default:
             param[index] += arrow;
-            color$$1 = color(param, model);
+            color = new Color$1(param, model);
             break
         }
       }
-      this.set({ color: color$$1 });
+      this.set({ color });
       if (model !== 'hex') {
         let result;
         for (let i = -1; i < index; i++) {
@@ -2500,7 +2635,7 @@ function create_each_block(component, ctx) {
 
 			addListener(button, "click", click_handler);
 			button.style.cssText = button_style_value = modelStyler(ctx._model, ctx.model, ctx.color, ctx.bgColor, ctx.textColor);
-			button.className = "svelte-qzhqz5";
+			button.className = "svelte-xtt6go";
 		},
 
 		m(target, anchor) {
@@ -2590,13 +2725,13 @@ function create_if_block_1(component, ctx) {
 				each_blocks[i].c();
 			}
 
-			text_1 = createText("\r\n  ");
+			text_1 = createText("\n  ");
 			div_1 = createElement("div");
 			input = createElement("input");
-			text_2 = createText("\r\n    ");
+			text_2 = createText("\n    ");
 			button = createElement("button");
 			button.textContent = "!";
-			div.className = "models button-set svelte-qzhqz5";
+			div.className = "models button-set svelte-xtt6go";
 			addListener(input, "input", input_handler);
 
 			updown_handler = updown.call(component, input, function(event) {
@@ -2605,18 +2740,18 @@ function create_if_block_1(component, ctx) {
 
 			addListener(input, "wheel", wheel_handler);
 			addListener(input, "keydown", keydown_handler);
-			input.className = "color-text svelte-qzhqz5";
+			input.className = "color-text svelte-xtt6go";
 			setStyle(input, "color", ctx.textColor);
 			setStyle(input, "background-color", ctx.color.rgb());
 			input.value = ctx.value;
 			input.spellcheck = "";
 			input.placeholder = "keypress: ↑↓";
 			addListener(button, "click", click_handler_1);
-			button.className = "random-color svelte-qzhqz5";
+			button.className = "random-color svelte-xtt6go";
 			button.title = "Random Color";
 			setStyle(button, "color", ctx.color.hex());
 			setStyle(button, "background-color", ctx.textColor);
-			div_1.className = "input-wrapper svelte-qzhqz5";
+			div_1.className = "input-wrapper svelte-xtt6go";
 		},
 
 		m(target, anchor) {
@@ -3377,16 +3512,16 @@ function data$1() {
 }
 var methods$1 = {
   setColor (position) {
-    const {color: color$$1, model} = this.get();
-    const arr = color$$1[model]().array();
+    const {color, model} = this.get();
+    const arr = color[model]().array();
     arr[1] = position.percentLeft;
     arr[2] = 100 - position.percentTop;
-    this.set({ color: color(arr, model) });
+    this.set({ color: new Color$1(arr, model) });
   },
   setPosition () {
-    const {color: color$$1, model} = this.get();
+    const {color, model} = this.get();
     const {width, height} = this.refs.spectrum.getBoundingClientRect();
-    const arr = color$$1[model]().array();
+    const arr = color[model]().array();
     this.refs.handle.style.left = width * arr[1] / 100 + 'px';
     this.refs.handle.style.top = height - (height * arr[2] / 100) + 'px';
   },
@@ -3663,26 +3798,26 @@ assign(Slider.prototype, methods$2);
 
 /* src\color-picker\hsv-picker.html generated by Svelte v2.4.4 */
 
-function textColor$1({ color: color$$1 }) {
-	return color$$1.isDark() ? '#fff' : '#000';
+function textColor$1({ color }) {
+	return color.isDark() ? '#fff' : '#000';
 }
 
 function data$3() {
   return {
-    color: color('#000'),
+    color: new Color$1('#000'),
   }
 }
 function oncreate$2() {
   this.refs.hue.on('state', ({ changed, current, previous }) => {
     if (changed.value) {
-      const {color: color$$1} = this.get();
-      this.set({color: color$$1.hue(current.value)});
+      const {color} = this.get();
+      this.set({color: color.hue(current.value)});
     }
   });
   this.refs.alpha.on('state', ({ changed, current, previous }) => {
     if (changed.value) {
-      const {color: color$$1} = this.get();
-      this.set({color: color$$1.alpha(current.value / 100)});
+      const {color} = this.get();
+      this.set({color: color.alpha(current.value / 100)});
     }
   });
 }
@@ -3840,11 +3975,11 @@ var methods$3 = {
     const {width} = this.get().rect;
     const x = Math.max(0, Math.min(position.x, width - 1));
     const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data;
-    const color$$1 = color({r, g, b});
+    const color = new Color$1({r, g, b});
 
     this.refs.handle.style.left = x + 'px';
-    this.refs.handle.style.backgroundColor = color$$1.isDark() ? '#fff' : '#000';
-    return color$$1
+    this.refs.handle.style.backgroundColor = color.isDark() ? '#fff' : '#000';
+    return color
   },
   draw () {
     const {direction, color1, color2} = this.get();
@@ -3857,8 +3992,8 @@ var methods$3 = {
       ? cxt.createLinearGradient(0, 0, 0, h)
       : cxt.createLinearGradient(0, 0, w, 0);
 
-    grd.addColorStop(0.02, color(color1).rgb().string());
-    grd.addColorStop(0.98, color(color2).rgb().string());
+    grd.addColorStop(0.02, new Color$1(color1).rgb().string());
+    grd.addColorStop(0.98, new Color$1(color2).rgb().string());
 
     cxt.fillStyle = grd;
     cxt.fillRect(0, 0, w, h);
@@ -3902,7 +4037,7 @@ function create_main_fragment$4(component, ctx) {
 	}
 
 	var canvas_levels = [
-		{ class: "blender-canvas svelte-9a06ho" },
+		{ class: "blender-canvas svelte-5950l5" },
 		ctx.rect
 	];
 
@@ -3919,21 +4054,21 @@ function create_main_fragment$4(component, ctx) {
 		c() {
 			div = createElement("div");
 			dv = createElement("dv");
-			text = createText("\r\n  ");
+			text = createText("\n  ");
 			div_1 = createElement("div");
 			canvas = createElement("canvas");
-			text_1 = createText("\r\n    ");
+			text_1 = createText("\n    ");
 			div_2 = createElement("div");
-			text_3 = createText("\r\n  ");
+			text_3 = createText("\n  ");
 			dv_1 = createElement("dv");
 			addListener(dv, "click", click_handler);
-			dv.className = "blender-btn color1 svelte-9a06ho";
+			dv.className = "blender-btn color1 svelte-5950l5";
 			setAttributes(canvas, canvas_data);
-			div_2.className = div_2_class_value = "blender-handle " + ctx.direction + " svelte-9a06ho";
-			div_1.className = "blender-slider svelte-9a06ho";
+			div_2.className = div_2_class_value = "blender-handle " + ctx.direction + " svelte-5950l5";
+			div_1.className = "blender-slider svelte-5950l5";
 			addListener(dv_1, "click", click_handler_1);
-			dv_1.className = "blender-btn color2 svelte-9a06ho";
-			div.className = "blender svelte-9a06ho";
+			dv_1.className = "blender-btn color2 svelte-5950l5";
+			div.className = "blender svelte-5950l5";
 		},
 
 		m(target, anchor) {
@@ -3956,11 +4091,11 @@ function create_main_fragment$4(component, ctx) {
 		p(changed, _ctx) {
 			ctx = _ctx;
 			setAttributes(canvas, getSpreadUpdate(canvas_levels, [
-				{ class: "blender-canvas svelte-9a06ho" },
+				{ class: "blender-canvas svelte-5950l5" },
 				changed.rect && ctx.rect
 			]));
 
-			if ((changed.direction) && div_2_class_value !== (div_2_class_value = "blender-handle " + ctx.direction + " svelte-9a06ho")) {
+			if ((changed.direction) && div_2_class_value !== (div_2_class_value = "blender-handle " + ctx.direction + " svelte-5950l5")) {
 				div_2.className = div_2_class_value;
 			}
 		},
@@ -4011,8 +4146,8 @@ assign(Blender.prototype, methods$3);
 
 /* src\color-picker\color-picker.html generated by Svelte v2.4.4 */
 
-function contrast({ color: color$$1, bgColor }) {
-	return round(color(bgColor).contrast(color$$1), 1);
+function contrast({ color, bgColor }) {
+	return round(new Color$1(bgColor).contrast(color), 1);
 }
 
 function data$5() {
@@ -4023,20 +4158,20 @@ function data$5() {
 }
 var methods$4 = {
   alphaBlending () {
-    const {color: color$$1, bgColor} = this.get();
+    const {color, bgColor} = this.get();
     this.set({
-      color: bgColor.alphaBlending(color$$1),
+      color: bgColor.alphaBlending(color),
     });
   },
-  setBgColor ({color: color$$1} = this.get()) {
-    this.set({bgColor: color$$1});
-    this.fire('setBgColor', color$$1);
+  setBgColor ({color} = this.get()) {
+    this.set({bgColor: color});
+    this.fire('setBgColor', color);
   },
 };
 
 function onstate({ changed, current }) {
   if (changed.color) {
-    this.set({color: color(current.color)});
+    this.set({color: new Color$1(current.color)});
   }
 }
 function create_main_fragment$5(component, ctx) {
@@ -4120,34 +4255,34 @@ function create_main_fragment$5(component, ctx) {
 		c() {
 			div = createElement("div");
 			colorinput._fragment.c();
-			text = createText("\r\n  ");
+			text = createText("\n  ");
 			div_1 = createElement("div");
 			hsvpicker._fragment.c();
-			text_2 = createText("\r\n  ");
+			text_2 = createText("\n  ");
 			div_2 = createElement("div");
 			div_3 = createElement("div");
 			button = createElement("button");
 			text_3 = createText(ctx.contrast);
-			text_6 = createText("\r\n    ");
+			text_6 = createText("\n    ");
 			div_4 = createElement("div");
 			blender._fragment.c();
-			text_8 = createText("\r\n    ");
+			text_8 = createText("\n    ");
 			div_5 = createElement("div");
 			button_1 = createElement("button");
 			button_1.textContent = "a=1";
-			div_1.className = "picker-body svelte-1nih27n";
+			div_1.className = "picker-body svelte-en6dq1";
 			addListener(button, "click", click_handler);
-			button.className = button_class_value = "contrast " + ctx.bgColor.level(ctx.color) + " svelte-1nih27n";
+			button.className = button_class_value = "contrast " + ctx.bgColor.level(ctx.color) + " svelte-en6dq1";
 			setStyle(button, "color", ctx.color);
-			div_3.className = "button svelte-1nih27n";
+			div_3.className = "button svelte-en6dq1";
 			div_3.title = "Click: set BG-color. Display: Readable Score(1~21).";
-			div_4.className = "blender-wrapper svelte-1nih27n";
+			div_4.className = "blender-wrapper svelte-en6dq1";
 			addListener(button_1, "click", click_handler_1);
-			button_1.className = "svelte-1nih27n";
-			div_5.className = "button svelte-1nih27n";
+			button_1.className = "svelte-en6dq1";
+			div_5.className = "button svelte-en6dq1";
 			div_5.title = "Alpha Blending by BG-color";
-			div_2.className = "picker-footer svelte-1nih27n";
-			div.className = "color-picker svelte-1nih27n";
+			div_2.className = "picker-footer svelte-en6dq1";
+			div.className = "color-picker svelte-en6dq1";
 		},
 
 		m(target, anchor) {
@@ -4192,7 +4327,7 @@ function create_main_fragment$5(component, ctx) {
 				text_3.data = ctx.contrast;
 			}
 
-			if ((changed.bgColor || changed.color) && button_class_value !== (button_class_value = "contrast " + ctx.bgColor.level(ctx.color) + " svelte-1nih27n")) {
+			if ((changed.bgColor || changed.color) && button_class_value !== (button_class_value = "contrast " + ctx.bgColor.level(ctx.color) + " svelte-en6dq1")) {
 				button.className = button_class_value;
 			}
 
@@ -4772,13 +4907,13 @@ const store = new Histore(
       if (state.cards) {
         for (let i = 0; i < state.cards.length; i++) {
           const card = state.cards[i];
-          card.color = color(card.color);
+          card.color = new Color$1(card.color);
           card.index = i;
           card.zIndex = card.zIndex == null ? i : card.zIndex;
         }
       }
-      state.bgColor = color(state.bgColor);
-      console.log('Color, Color()', state);
+      state.bgColor = new Color$1(state.bgColor);
+      console.log('Color, new Color()', state);
     }
   }
 );
@@ -4786,7 +4921,7 @@ const store = new Histore(
 // Events
 store.on('cards.ADD_CARD', (card) => {
   store.set({cards: (cards) => {
-    card.color = color(card.color);
+    card.color = new Color$1(card.color);
     card.zIndex = cards.length;
     card.index = cards.length;
     return [...cards, store.cardPosition(card)]
@@ -4806,7 +4941,7 @@ store.on('cards.DUPLICATE_CARD', (indexs) => {
   store.set({cards: (cards) => {
     const newCards = indexs.map((index, i) => {
       const card = Object.assign({}, cards[index]);
-      card.color = color(card.color);
+      card.color = new Color$1(card.color);
       card.zIndex = cards.length + i;
       card.index = cards.length + i;
       card.left += 30;
@@ -13073,12 +13208,12 @@ function data$7() {
         list: parser(WEBCOLOR) },
       { name: 'GOOGLE MATERIAL',
         list: Object.keys(MATERIALCOLOR).reduce((ary, key) => {
-          MATERIALCOLOR[key].forEach((color$$1, i) => {
+          MATERIALCOLOR[key].forEach((color, i) => {
             let name = key;
             if (i === 0)      name += 50;
             else if (i < 10)  name += i * 100;
             else if (i >= 10) name += ['A100', 'A200', 'A400', 'A700'][i % 10];
-            ary.push({name, color: color$$1});
+            ary.push({name, color});
           });
           return ary
         }, []) },
@@ -13107,18 +13242,18 @@ function oncreate$5() {
   colortips.addEventListener('click', (e) => {
     const el = e.target;
     if (el.classList.contains('tip')) {
-      const [name, color$$1] = el.title.split(' : ');
-      this.fire('colorpick', {current: { name, color: color(color$$1) }});
+      const [name, color] = el.title.split(' : ');
+      this.fire('colorpick', {current: { name, color: new Color$1(color) }});
     }
   });
   colortips.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     const el = e.target;
     if (el.classList.contains('tip')) {
-      const [name, color$$1] = el.title.split(' : ');
+      const [name, color] = el.title.split(' : ');
       store.fire('menu_open', e, {
         name,
-        color: color(color$$1)
+        color: new Color$1(color)
       }, 'tip');
     }
   });
@@ -13126,11 +13261,11 @@ function oncreate$5() {
     e.preventDefault();
     const el = e.target;
     if (el.classList.contains('tip')) {
-      const [name, color$$1] = el.title.split(' : ');
+      const [name, color] = el.title.split(' : ');
 
       store.fire('cards.ADD_CARD', {
         name,
-        color: color(color$$1)
+        color: new Color$1(color)
       });
     }
   });
@@ -13180,7 +13315,7 @@ function create_main_fragment$7(component, ctx) {
 				each_blocks[i].c();
 			}
 
-			text_1 = createText("\r\n\r\n");
+			text_1 = createText("\n\n");
 			div_1 = createElement("div");
 			div_2 = createElement("div");
 			div_3 = createElement("div");
@@ -13189,12 +13324,12 @@ function create_main_fragment$7(component, ctx) {
 				each_1_blocks[i].c();
 			}
 			addListener(select, "change", change_handler);
-			select.className = "svelte-z7pkpf";
+			select.className = "svelte-nyzeoa";
 			div.id = "colorlists";
-			div.className = "select-wrapper svelte-z7pkpf";
-			div_3.className = "scrollbar-content svelte-z7pkpf";
-			div_2.className = "scrollbar-body svelte-z7pkpf";
-			div_1.className = "colortips scrollbar-wrapper svelte-z7pkpf";
+			div.className = "select-wrapper svelte-nyzeoa";
+			div_3.className = "scrollbar-content svelte-nyzeoa";
+			div_2.className = "scrollbar-body svelte-nyzeoa";
+			div_1.className = "colortips scrollbar-wrapper svelte-nyzeoa";
 			setStyle(div_1, "flex", "1");
 		},
 
@@ -13301,7 +13436,7 @@ function create_each_block$2(component, ctx) {
 			text = createText(text_value);
 			option.__value = ctx.index;
 			option.value = option.__value;
-			option.className = "svelte-z7pkpf";
+			option.className = "svelte-nyzeoa";
 		},
 
 		m(target, anchor) {
@@ -13330,7 +13465,7 @@ function create_each_block_1(component, ctx) {
 	return {
 		c() {
 			div = createElement("div");
-			div.className = "tip svelte-z7pkpf";
+			div.className = "tip svelte-nyzeoa";
 			div.title = div_title_value = ctx.name+' : '+ctx.color;
 			setStyle(div, "background-color", ctx.color);
 		},
@@ -14001,7 +14136,7 @@ assign(Modal.prototype, proto);
 const saveKeys = Object.keys(defaultpalette);
 
 function colorlist (cards) {
-  return cards.map((card) => color(card.color))
+  return cards.map((card) => new Color$1(card.color))
 }
 
 function nowpalette({ $cards }) {
@@ -14109,48 +14244,48 @@ function create_main_fragment$10(component, ctx) {
 
 	return {
 		c() {
-			text = createText("\r\n  ");
+			text = createText("\n  ");
 			h2 = createElement("h2");
 			text_1 = createText("Save & Load");
-			text_2 = createText("\r\n\r\n  ");
+			text_2 = createText("\n\n  ");
 			div = createElement("div");
 			div_1 = createElement("div");
 			input = createElement("input");
-			text_3 = createText("\r\n      ");
+			text_3 = createText("\n      ");
 			if (if_block) if_block.c();
-			text_5 = createText("\r\n    ");
+			text_5 = createText("\n    ");
 			div_2 = createElement("div");
 
 			for (var i_1 = 0; i_1 < each_blocks.length; i_1 += 1) {
 				each_blocks[i_1].c();
 			}
 
-			text_7 = createText("\r\n    ");
+			text_7 = createText("\n    ");
 			div_3 = createElement("div");
 			text_8 = createText(text_8_value);
-			text_10 = createText("\r\n    ");
+			text_10 = createText("\n    ");
 			div_4 = createElement("div");
 			button = createElement("button");
 			button.innerHTML = "<i class=\"fa fa-plus-square\"></i>";
-			text_14 = createText("\r\n\r\n  ");
+			text_14 = createText("\n\n  ");
 			hr = createElement("hr");
-			text_15 = createText("\r\n\r\n  ");
+			text_15 = createText("\n\n  ");
 
 			for (var i_1 = 0; i_1 < each_1_blocks.length; i_1 += 1) {
 				each_1_blocks[i_1].c();
 			}
 
-			text_16 = createText("\r\n\r\n");
+			text_16 = createText("\n\n");
 			modal._fragment.c();
 			setAttribute(h2, "slot", "header");
 			addListener(input, "input", input_input_handler);
 			addListener(input, "focus", focus_handler);
 			addListener(input, "blur", blur_handler);
 			input.placeholder = "Palette Name";
-			input.className = "svelte-1x3eg8t";
-			div_1.className = "name svelte-1x3eg8t";
-			div_2.className = "palette button-set svelte-1x3eg8t";
-			div_3.className = "color-num svelte-1x3eg8t";
+			input.className = "svelte-1yx9eop";
+			div_1.className = "name svelte-1yx9eop";
+			div_2.className = "palette button-set svelte-1yx9eop";
+			div_3.className = "color-num svelte-1yx9eop";
 			addListener(button, "click", click_handler);
 			div_4.className = "btns";
 			div.className = "button-set";
@@ -14397,7 +14532,7 @@ function create_each_block_1$1(component, ctx) {
 	return {
 		c() {
 			div = createElement("div");
-			div.className = "tip svelte-1x3eg8t";
+			div.className = "tip svelte-1yx9eop";
 			setStyle(div, "background-color", ctx.color);
 		},
 
@@ -14436,32 +14571,32 @@ function create_each_block_2(component, ctx) {
 			div = createElement("div");
 			div_1 = createElement("div");
 			text = createText(text_value);
-			text_2 = createText("\r\n    ");
+			text_2 = createText("\n    ");
 			div_2 = createElement("div");
 
 			for (var i_1 = 0; i_1 < each_blocks.length; i_1 += 1) {
 				each_blocks[i_1].c();
 			}
 
-			text_4 = createText("\r\n    ");
+			text_4 = createText("\n    ");
 			div_3 = createElement("div");
 			text_5 = createText(text_5_value);
-			text_7 = createText("\r\n    ");
+			text_7 = createText("\n    ");
 			div_4 = createElement("div");
 			button = createElement("button");
 			button.innerHTML = "<i class=\"fa fa-minus-square\"></i>";
 			div_1._svelte = { component, ctx };
 
 			addListener(div_1, "click", click_handler$2);
-			div_1.className = "name svelte-1x3eg8t";
-			div_2.className = "palette button-set svelte-1x3eg8t";
-			div_3.className = "color-num svelte-1x3eg8t";
+			div_1.className = "name svelte-1yx9eop";
+			div_2.className = "palette button-set svelte-1yx9eop";
+			div_3.className = "color-num svelte-1yx9eop";
 
 			button._svelte = { component, ctx };
 
 			addListener(button, "click", click_handler_1);
 			div_4.className = "btns";
-			div.className = div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1x3eg8t";
+			div.className = div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1yx9eop";
 		},
 
 		m(target, anchor) {
@@ -14517,7 +14652,7 @@ function create_each_block_2(component, ctx) {
 			}
 
 			button._svelte.ctx = ctx;
-			if ((changed.list || changed.value) && div_class_value !== (div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1x3eg8t")) {
+			if ((changed.list || changed.value) && div_class_value !== (div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1yx9eop")) {
 				div.className = div_class_value;
 			}
 		},
@@ -14547,7 +14682,7 @@ function create_each_block_3(component, ctx) {
 	return {
 		c() {
 			div = createElement("div");
-			div.className = "tip svelte-1x3eg8t";
+			div.className = "tip svelte-1yx9eop";
 			setStyle(div, "background-color", ctx.color);
 		},
 
@@ -14679,18 +14814,18 @@ const sort = [
 ];
 
 function textColor$3({ $bgColor }) {
-	return color($bgColor).isDark() ? '#fff' : '#000';
+	return new Color$1($bgColor).isDark() ? '#fff' : '#000';
 }
 
 function bgColor({ $bgColor, $grayscale }) {
-	return $grayscale ? color($bgColor).grayscale() : color($bgColor);
+	return $grayscale ? new Color$1($bgColor).grayscale() : new Color$1($bgColor);
 }
 
 function data$10() {
   return {
     current: {
       name: '',
-      color: color.random(),
+      color: Color$1.random(),
     },
     memo: null,
     sort,
@@ -14698,12 +14833,12 @@ function data$10() {
 }
 var methods$8 = {
   addCard (current, textMode) {
-    const {name, color: color$$1} = current;
+    const {name, color} = current;
     if (!name) {
-      current.name = color$$1.nearColorName();
+      current.name = color.nearColorName();
     }
     this.store.fire('cards.ADD_CARD', Object.assign({textMode}, current));
-    this.set({current: { name: '', color: color$$1 }});
+    this.set({current: { name: '', color }});
   },
   cardsPosition (sortXY, value) {
     if (sortXY && value) {
@@ -14716,9 +14851,9 @@ var methods$8 = {
     this.store.set({cards});
     this.store.memo();
   },
-  setBgColor (color$$1) {
+  setBgColor (color) {
     const {bgColor} = this.store.get();
-    const coloraplha1 = bgColor.alphaBlending(color$$1);
+    const coloraplha1 = bgColor.alphaBlending(color);
     this.store.set({bgColor: coloraplha1});
     this.addCard({name: 'background', color: coloraplha1});
   },
@@ -14805,8 +14940,8 @@ function oncreate$8() {
       const {memo, current} = this.get();
 
       if (selects.length === 1) {
-        const {name, color: color$$1} = store.get().cards[selects[0].index];
-        this.set({current: { name, color: color$$1 }});
+        const {name, color} = store.get().cards[selects[0].index];
+        this.set({current: { name, color }});
         if (!memo) {
           this.set({ memo: current });
         }
@@ -15755,9 +15890,6 @@ App.prototype._recompute = function _recompute(changed, state) {
 	}
 };
 
-var xkcd = [["AcidGreen",{"h":87,"s":99,"l":52}],["Adobe",{"h":18,"s":47,"l":51}],["Algae",{"h":134,"s":35,"l":50}],["AlgaeGreen",{"h":149,"s":71,"l":45}],["AlmostBlack",{"h":180,"s":30,"l":4}],["Amber",{"h":42,"s":99,"l":51}],["Amethyst",{"h":277,"s":43,"l":56}],["Apple",{"h":99,"s":58,"l":52}],["AppleGreen",{"h":91,"s":69,"l":48}],["Apricot",{"h":28,"s":100,"l":71}],["Aqua",{"h":171,"s":85,"l":50}],["AquaBlue",{"h":184,"s":98,"l":46}],["AquaGreen",{"h":157,"s":85,"l":48}],["AquaMarine",{"h":165,"s":80,"l":55}],["Aquamarine",{"h":169,"s":96,"l":43}],["ArmyGreen",{"h":75,"s":62,"l":23}],["Asparagus",{"h":97,"s":34,"l":50}],["Aubergine",{"h":310,"s":79,"l":13}],["Auburn",{"h":18,"s":99,"l":30}],["Avocado",{"h":76,"s":55,"l":45}],["AvocadoGreen",{"h":75,"s":67,"l":40}],["Azul",{"h":221,"s":84,"l":52}],["Azure",{"h":203,"s":95,"l":49}],["BabyBlue",{"h":211,"s":98,"l":82}],["BabyGreen",{"h":129,"s":100,"l":77}],["BabyPink",{"h":341,"s":100,"l":86}],["BabyPoo",{"h":50,"s":95,"l":34}],["BabyPoop",{"h":51,"s":100,"l":29}],["BabyPoopGreen",{"h":64,"s":94,"l":31}],["BabyPukeGreen",{"h":64,"s":94,"l":40}],["BabyPurple",{"h":271,"s":85,"l":79}],["BabyShitBrown",{"h":49,"s":86,"l":36}],["BabyShitGreen",{"h":67,"s":74,"l":34}],["Banana",{"h":60,"s":100,"l":75}],["BananaYellow",{"h":61,"s":99,"l":65}],["BarbiePink",{"h":329,"s":99,"l":64}],["BarfGreen",{"h":68,"s":98,"l":34}],["Barney",{"h":295,"s":73,"l":42}],["BarneyPurple",{"h":303,"s":95,"l":32}],["BattleshipGrey",{"h":201,"s":11,"l":47}],["Beige",{"h":49,"s":56,"l":78}],["Berry",{"h":334,"s":82,"l":33}],["Bile",{"h":64,"s":94,"l":39}],["Black",{"h":0,"s":0,"l":0}],["Bland",{"h":48,"s":18,"l":62}],["Blood",{"h":359,"s":100,"l":23}],["BloodOrange",{"h":17,"s":99,"l":50}],["BloodRed",{"h":359,"s":100,"l":30}],["Blue",{"h":164,"s":99,"l":38}],["Blue",{"h":223,"s":97,"l":44}],["Blue",{"h":204,"s":17,"l":47}],["Blue",{"h":261,"s":73,"l":47}],["BlueBlue",{"h":228,"s":71,"l":46}],["BlueGreen",{"h":170,"s":74,"l":28}],["BlueGrey",{"h":203,"s":19,"l":47}],["BluePurple",{"h":257,"s":67,"l":48}],["BlueViolet",{"h":263,"s":95,"l":47}],["BlueWithAHintOfPurple",{"h":250,"s":55,"l":51}],["Blueberry",{"h":244,"s":40,"l":42}],["Bluegreen",{"h":180,"s":98,"l":24}],["Bluegrey",{"h":200,"s":23,"l":61}],["BlueyGreen",{"h":155,"s":61,"l":43}],["BlueyGrey",{"h":205,"s":20,"l":61}],["BlueyPurple",{"h":255,"s":54,"l":52}],["Bluish",{"h":208,"s":64,"l":45}],["BluishGreen",{"h":160,"s":82,"l":36}],["BluishGrey",{"h":201,"s":14,"l":52}],["BluishPurple",{"h":258,"s":78,"l":57}],["Blurple",{"h":251,"s":59,"l":51}],["Blush",{"h":10,"s":79,"l":75}],["BlushPink",{"h":355,"s":98,"l":75}],["Booger",{"h":73,"s":50,"l":47}],["BoogerGreen",{"h":70,"s":97,"l":36}],["Bordeaux",{"h":339,"s":100,"l":24}],["BoringGreen",{"h":122,"s":34,"l":55}],["BottleGreen",{"h":121,"s":90,"l":15}],["Brick",{"h":9,"s":64,"l":38}],["BrickOrange",{"h":21,"s":91,"l":40}],["BrickRed",{"h":8,"s":97,"l":28}],["BrightAqua",{"h":176,"s":95,"l":51}],["BrightBlue",{"h":216,"s":99,"l":50}],["BrightCyan",{"h":180,"s":99,"l":63}],["BrightGreen",{"h":121,"s":100,"l":50}],["BrightLavender",{"h":279,"s":100,"l":69}],["BrightLightBlue",{"h":182,"s":98,"l":57}],["BrightLightGreen",{"h":131,"s":99,"l":59}],["BrightLilac",{"h":281,"s":95,"l":68}],["BrightLime",{"h":89,"s":98,"l":51}],["BrightLimeGreen",{"h":97,"s":99,"l":51}],["BrightMagenta",{"h":306,"s":100,"l":52}],["BrightOlive",{"h":70,"s":96,"l":37}],["BrightOrange",{"h":21,"s":100,"l":50}],["BrightPink",{"h":318,"s":99,"l":50}],["BrightPurple",{"h":285,"s":98,"l":50}],["BrightRed",{"h":357,"s":100,"l":50}],["BrightSeaGreen",{"h":159,"s":100,"l":51}],["BrightSkyBlue",{"h":192,"s":99,"l":50}],["BrightTeal",{"h":168,"s":99,"l":49}],["BrightTurquoise",{"h":179,"s":99,"l":53}],["BrightViolet",{"h":280,"s":98,"l":52}],["BrightYellow",{"h":60,"s":100,"l":50}],["BrightYellowGreen",{"h":83,"s":100,"l":50}],["BritishRacingGreen",{"h":127,"s":87,"l":15}],["Bronze",{"h":43,"s":100,"l":33}],["Brown",{"h":33,"s":100,"l":20}],["BrownGreen",{"h":57,"s":74,"l":25}],["BrownGrey",{"h":45,"s":15,"l":48}],["BrownOrange",{"h":34,"s":98,"l":37}],["BrownRed",{"h":16,"s":93,"l":30}],["BrownYellow",{"h":51,"s":95,"l":36}],["Brownish",{"h":19,"s":28,"l":48}],["BrownishGreen",{"h":62,"s":85,"l":23}],["BrownishGrey",{"h":37,"s":17,"l":45}],["BrownishOrange",{"h":30,"s":71,"l":47}],["BrownishPink",{"h":4,"s":37,"l":62}],["BrownishPurple",{"h":346,"s":28,"l":36}],["BrownishRed",{"h":9,"s":64,"l":38}],["BrownishYellow",{"h":52,"s":97,"l":40}],["BrownyGreen",{"h":58,"s":83,"l":24}],["BrownyOrange",{"h":32,"s":98,"l":40}],["Bruise",{"h":313,"s":33,"l":37}],["BubbleGumPink",{"h":332,"s":100,"l":71}],["Bubblegum",{"h":330,"s":100,"l":71}],["BubblegumPink",{"h":324,"s":98,"l":75}],["Buff",{"h":55,"s":98,"l":81}],["Burgundy",{"h":338,"s":100,"l":19}],["BurntOrange",{"h":24,"s":99,"l":38}],["BurntRed",{"h":12,"s":94,"l":32}],["BurntSiena",{"h":26,"s":97,"l":36}],["BurntSienna",{"h":23,"s":84,"l":37}],["BurntUmber",{"h":23,"s":84,"l":34}],["BurntYellow",{"h":48,"s":92,"l":44}],["Burple",{"h":258,"s":76,"l":54}],["Butter",{"h":60,"s":100,"l":75}],["ButterYellow",{"h":59,"s":100,"l":73}],["Butterscotch",{"h":35,"s":98,"l":64}],["CadetBlue",{"h":208,"s":32,"l":45}],["Camel",{"h":39,"s":49,"l":56}],["Camo",{"h":75,"s":29,"l":43}],["CamoGreen",{"h":78,"s":46,"l":27}],["CamouflageGreen",{"h":77,"s":67,"l":23}],["Canary",{"h":61,"s":100,"l":69}],["CanaryYellow",{"h":60,"s":100,"l":63}],["CandyPink",{"h":308,"s":100,"l":69}],["Caramel",{"h":37,"s":90,"l":36}],["Carmine",{"h":352,"s":97,"l":31}],["Carnation",{"h":350,"s":97,"l":73}],["CarnationPink",{"h":341,"s":100,"l":75}],["CarolinaBlue",{"h":216,"s":98,"l":77}],["Celadon",{"h":114,"s":95,"l":85}],["Celery",{"h":95,"s":96,"l":79}],["Cement",{"h":54,"s":10,"l":61}],["Cerise",{"h":335,"s":90,"l":46}],["Cerulean",{"h":202,"s":96,"l":42}],["CeruleanBlue",{"h":213,"s":96,"l":48}],["Charcoal",{"h":165,"s":4,"l":21}],["CharcoalGrey",{"h":190,"s":5,"l":25}],["Chartreuse",{"h":74,"s":94,"l":51}],["Cherry",{"h":345,"s":98,"l":41}],["CherryRed",{"h":350,"s":98,"l":49}],["Chestnut",{"h":20,"s":97,"l":23}],["Chocolate",{"h":26,"s":94,"l":12}],["ChocolateBrown",{"h":23,"s":100,"l":13}],["Cinnamon",{"h":26,"s":93,"l":35}],["Claret",{"h":346,"s":100,"l":20}],["Clay",{"h":15,"s":41,"l":51}],["ClayBrown",{"h":27,"s":49,"l":47}],["ClearBlue",{"h":216,"s":98,"l":57}],["CloudyBlue",{"h":211,"s":37,"l":76}],["Cobalt",{"h":218,"s":65,"l":34}],["CobaltBlue",{"h":237,"s":96,"l":33}],["Cocoa",{"h":25,"s":34,"l":39}],["Coffee",{"h":35,"s":37,"l":47}],["CoolBlue",{"h":208,"s":44,"l":50}],["CoolGreen",{"h":142,"s":57,"l":46}],["CoolGrey",{"h":191,"s":9,"l":62}],["Copper",{"h":26,"s":66,"l":43}],["Coral",{"h":3,"s":97,"l":65}],["CoralPink",{"h":359,"s":100,"l":69}],["Cornflower",{"h":234,"s":90,"l":69}],["CornflowerBlue",{"h":226,"s":63,"l":58}],["Cranberry",{"h":338,"s":100,"l":31}],["Cream",{"h":60,"s":100,"l":88}],["Creme",{"h":60,"s":100,"l":86}],["Crimson",{"h":354,"s":100,"l":27}],["Custard",{"h":59,"s":100,"l":74}],["Cyan",{"h":180,"s":100,"l":50}],["Dandelion",{"h":52,"s":99,"l":51}],["Dark",{"h":215,"s":29,"l":15}],["DarkAqua",{"h":181,"s":91,"l":22}],["DarkAquamarine",{"h":179,"s":98,"l":23}],["DarkBeige",{"h":40,"s":31,"l":53}],["DarkBlue",{"h":238,"s":100,"l":18}],["DarkBlueGreen",{"h":173,"s":100,"l":16}],["DarkBlueGrey",{"h":203,"s":43,"l":21}],["DarkBrown",{"h":31,"s":93,"l":11}],["DarkCoral",{"h":2,"s":57,"l":56}],["DarkCream",{"h":53,"s":100,"l":80}],["DarkCyan",{"h":181,"s":86,"l":29}],["DarkForestGreen",{"h":125,"s":100,"l":9}],["DarkFuchsia",{"h":327,"s":91,"l":32}],["DarkGold",{"h":48,"s":84,"l":39}],["DarkGrassGreen",{"h":95,"s":94,"l":26}],["DarkGreen",{"h":117,"s":100,"l":10}],["DarkGreenBlue",{"h":169,"s":52,"l":25}],["DarkGrey",{"h":180,"s":1,"l":21}],["DarkGreyBlue",{"h":205,"s":38,"l":26}],["DarkHotPink",{"h":332,"s":99,"l":43}],["DarkIndigo",{"h":258,"s":81,"l":18}],["DarkKhaki",{"h":50,"s":29,"l":47}],["DarkLavender",{"h":277,"s":19,"l":50}],["DarkLilac",{"h":290,"s":24,"l":54}],["DarkLime",{"h":77,"s":99,"l":36}],["DarkLimeGreen",{"h":80,"s":99,"l":37}],["DarkMagenta",{"h":326,"s":100,"l":29}],["DarkMaroon",{"h":352,"s":100,"l":12}],["DarkMauve",{"h":338,"s":28,"l":41}],["DarkMint",{"h":141,"s":49,"l":52}],["DarkMintGreen",{"h":151,"s":71,"l":44}],["DarkMustard",{"h":49,"s":94,"l":34}],["DarkNavy",{"h":235,"s":100,"l":10}],["DarkNavyBlue",{"h":237,"s":100,"l":9}],["DarkOlive",{"h":67,"s":94,"l":13}],["DarkOliveGreen",{"h":74,"s":93,"l":16}],["DarkOrange",{"h":24,"s":98,"l":39}],["DarkPastelGreen",{"h":121,"s":35,"l":51}],["DarkPeach",{"h":15,"s":66,"l":62}],["DarkPeriwinkle",{"h":244,"s":55,"l":60}],["DarkPink",{"h":342,"s":57,"l":53}],["DarkPlum",{"h":318,"s":97,"l":13}],["DarkPurple",{"h":290,"s":82,"l":13}],["DarkRed",{"h":0,"s":100,"l":26}],["DarkRose",{"h":348,"s":43,"l":50}],["DarkRoyalBlue",{"h":238,"s":96,"l":22}],["DarkSage",{"h":116,"s":21,"l":43}],["DarkSalmon",{"h":4,"s":52,"l":55}],["DarkSand",{"h":41,"s":31,"l":50}],["DarkSeaGreen",{"h":159,"s":78,"l":30}],["DarkSeafoam",{"h":156,"s":71,"l":42}],["DarkSeafoamGreen",{"h":150,"s":48,"l":46}],["DarkSkyBlue",{"h":212,"s":75,"l":58}],["DarkSlateBlue",{"h":204,"s":49,"l":25}],["DarkTan",{"h":37,"s":41,"l":49}],["DarkTaupe",{"h":32,"s":24,"l":40}],["DarkTeal",{"h":181,"s":97,"l":15}],["DarkTurquoise",{"h":179,"s":92,"l":19}],["DarkViolet",{"h":289,"s":97,"l":13}],["DarkYellow",{"h":51,"s":91,"l":44}],["DarkYellowGreen",{"h":72,"s":97,"l":28}],["Darkblue",{"h":238,"s":94,"l":20}],["Darkgreen",{"h":122,"s":87,"l":15}],["DarkishBlue",{"h":210,"s":98,"l":26}],["DarkishGreen",{"h":131,"s":51,"l":32}],["DarkishPink",{"h":338,"s":67,"l":56}],["DarkishPurple",{"h":301,"s":65,"l":28}],["DarkishRed",{"h":358,"s":97,"l":34}],["DeepAqua",{"h":184,"s":88,"l":26}],["DeepBlue",{"h":241,"s":97,"l":23}],["DeepBrown",{"h":2,"s":100,"l":13}],["DeepGreen",{"h":129,"s":96,"l":18}],["DeepLavender",{"h":272,"s":38,"l":54}],["DeepLilac",{"h":270,"s":37,"l":59}],["DeepMagenta",{"h":326,"s":98,"l":32}],["DeepOrange",{"h":21,"s":99,"l":43}],["DeepPink",{"h":331,"s":99,"l":40}],["DeepPurple",{"h":291,"s":97,"l":13}],["DeepRed",{"h":1,"s":100,"l":30}],["DeepRose",{"h":345,"s":53,"l":53}],["DeepSeaBlue",{"h":201,"s":98,"l":26}],["DeepSkyBlue",{"h":213,"s":94,"l":51}],["DeepTeal",{"h":183,"s":100,"l":18}],["DeepTurquoise",{"h":181,"s":98,"l":23}],["DeepViolet",{"h":301,"s":85,"l":15}],["Denim",{"h":210,"s":41,"l":39}],["DenimBlue",{"h":218,"s":42,"l":40}],["Desert",{"h":43,"s":51,"l":59}],["Diarrhea",{"h":49,"s":96,"l":32}],["Dirt",{"h":36,"s":33,"l":41}],["DirtBrown",{"h":36,"s":39,"l":37}],["DirtyBlue",{"h":197,"s":43,"l":43}],["DirtyGreen",{"h":78,"s":48,"l":33}],["DirtyOrange",{"h":35,"s":94,"l":40}],["DirtyPink",{"h":356,"s":43,"l":64}],["DirtyPurple",{"h":320,"s":22,"l":37}],["DirtyYellow",{"h":58,"s":91,"l":42}],["DodgerBlue",{"h":219,"s":97,"l":62}],["Drab",{"h":61,"s":32,"l":39}],["DrabGreen",{"h":89,"s":30,"l":45}],["DriedBlood",{"h":0,"s":97,"l":15}],["DuckEggBlue",{"h":173,"s":88,"l":87}],["DullBlue",{"h":208,"s":36,"l":45}],["DullBrown",{"h":35,"s":29,"l":41}],["DullGreen",{"h":104,"s":28,"l":52}],["DullOrange",{"h":29,"s":67,"l":54}],["DullPink",{"h":343,"s":48,"l":68}],["DullPurple",{"h":308,"s":19,"l":43}],["DullRed",{"h":0,"s":50,"l":49}],["DullTeal",{"h":166,"s":25,"l":50}],["DullYellow",{"h":53,"s":81,"l":65}],["Dusk",{"h":233,"s":25,"l":41}],["DuskBlue",{"h":214,"s":58,"l":35}],["DuskyBlue",{"h":221,"s":35,"l":43}],["DuskyPink",{"h":348,"s":45,"l":64}],["DuskyPurple",{"h":318,"s":20,"l":45}],["DuskyRose",{"h":352,"s":37,"l":57}],["Dust",{"h":38,"s":31,"l":56}],["DustyBlue",{"h":208,"s":34,"l":52}],["DustyGreen",{"h":117,"s":24,"l":56}],["DustyLavender",{"h":306,"s":19,"l":60}],["DustyOrange",{"h":24,"s":86,"l":58}],["DustyPink",{"h":352,"s":47,"l":69}],["DustyPurple",{"h":293,"s":17,"l":45}],["DustyRed",{"h":357,"s":45,"l":50}],["DustyRose",{"h":355,"s":38,"l":60}],["DustyTeal",{"h":170,"s":31,"l":43}],["Earth",{"h":23,"s":45,"l":44}],["EasterGreen",{"h":113,"s":97,"l":74}],["EasterPurple",{"h":274,"s":99,"l":72}],["Ecru",{"h":61,"s":100,"l":90}],["EggShell",{"h":57,"s":100,"l":88}],["Eggplant",{"h":304,"s":75,"l":13}],["EggplantPurple",{"h":302,"s":86,"l":14}],["Eggshell",{"h":60,"s":100,"l":92}],["EggshellBlue",{"h":172,"s":100,"l":88}],["ElectricBlue",{"h":222,"s":100,"l":51}],["ElectricGreen",{"h":115,"s":98,"l":52}],["ElectricLime",{"h":81,"s":100,"l":51}],["ElectricPink",{"h":327,"s":100,"l":51}],["ElectricPurple",{"h":277,"s":100,"l":57}],["Emerald",{"h":147,"s":99,"l":32}],["EmeraldGreen",{"h":132,"s":97,"l":28}],["Evergreen",{"h":154,"s":87,"l":15}],["FadedBlue",{"h":213,"s":39,"l":56}],["FadedGreen",{"h":113,"s":29,"l":58}],["FadedOrange",{"h":26,"s":84,"l":62}],["FadedPink",{"h":346,"s":50,"l":74}],["FadedPurple",{"h":289,"s":17,"l":52}],["FadedRed",{"h":358,"s":61,"l":56}],["FadedYellow",{"h":60,"s":100,"l":75}],["Fawn",{"h":37,"s":47,"l":65}],["Fern",{"h":107,"s":36,"l":49}],["FernGreen",{"h":107,"s":35,"l":41}],["FireEngineRed",{"h":0,"s":100,"l":50}],["FlatBlue",{"h":209,"s":47,"l":45}],["FlatGreen",{"h":99,"s":35,"l":46}],["FluorescentGreen",{"h":120,"s":100,"l":52}],["FluroGreen",{"h":118,"s":100,"l":50}],["FoamGreen",{"h":134,"s":96,"l":78}],["Forest",{"h":118,"s":81,"l":18}],["ForestGreen",{"h":126,"s":84,"l":15}],["ForrestGreen",{"h":105,"s":84,"l":15}],["FrenchBlue",{"h":217,"s":44,"l":47}],["FreshGreen",{"h":109,"s":64,"l":58}],["FrogGreen",{"h":93,"s":92,"l":38}],["Fuchsia",{"h":305,"s":90,"l":49}],["Gold",{"h":49,"s":90,"l":45}],["Golden",{"h":47,"s":98,"l":49}],["GoldenBrown",{"h":41,"s":99,"l":35}],["GoldenRod",{"h":45,"s":95,"l":50}],["GoldenYellow",{"h":46,"s":99,"l":54}],["Goldenrod",{"h":46,"s":96,"l":50}],["Grape",{"h":312,"s":35,"l":31}],["GrapePurple",{"h":310,"s":65,"l":22}],["Grapefruit",{"h":1,"s":98,"l":66}],["Grass",{"h":98,"s":59,"l":43}],["GrassGreen",{"h":98,"s":87,"l":33}],["GrassyGreen",{"h":96,"s":96,"l":31}],["Green",{"h":174,"s":82,"l":33}],["Green",{"h":77,"s":98,"l":62}],["Green",{"h":122,"s":79,"l":39}],["Green",{"h":105,"s":16,"l":56}],["GreenApple",{"h":100,"s":75,"l":49}],["GreenBlue",{"h":166,"s":94,"l":36}],["GreenBrown",{"h":56,"s":93,"l":17}],["GreenGrey",{"h":106,"s":14,"l":50}],["GreenTeal",{"h":158,"s":88,"l":38}],["GreenYellow",{"h":75,"s":100,"l":58}],["Greenblue",{"h":159,"s":70,"l":45}],["Greenish",{"h":144,"s":44,"l":45}],["GreenishBeige",{"h":65,"s":49,"l":65}],["GreenishBlue",{"h":178,"s":85,"l":29}],["GreenishBrown",{"h":54,"s":71,"l":24}],["GreenishCyan",{"h":160,"s":99,"l":58}],["GreenishGrey",{"h":104,"s":17,"l":62}],["GreenishTan",{"h":71,"s":44,"l":64}],["GreenishTeal",{"h":155,"s":59,"l":47}],["GreenishTurquoise",{"h":162,"s":100,"l":49}],["GreenishYellow",{"h":71,"s":98,"l":50}],["GreenyBlue",{"h":164,"s":46,"l":48}],["GreenyBrown",{"h":55,"s":89,"l":22}],["GreenyGrey",{"h":114,"s":17,"l":55}],["GreenyYellow",{"h":73,"s":94,"l":50}],["Grey",{"h":209,"s":20,"l":55}],["Grey",{"h":105,"s":2,"l":58}],["GreyBlue",{"h":206,"s":24,"l":53}],["GreyBrown",{"h":40,"s":21,"l":41}],["GreyGreen",{"h":113,"s":17,"l":53}],["GreyPink",{"h":347,"s":30,"l":66}],["GreyPurple",{"h":281,"s":12,"l":49}],["GreyTeal",{"h":163,"s":24,"l":49}],["Greyblue",{"h":199,"s":30,"l":59}],["Greyish",{"h":47,"s":10,"l":62}],["GreyishBlue",{"h":207,"s":25,"l":49}],["GreyishBrown",{"h":38,"s":21,"l":39}],["GreyishGreen",{"h":113,"s":19,"l":57}],["GreyishPink",{"h":353,"s":35,"l":67}],["GreyishPurple",{"h":283,"s":13,"l":51}],["GreyishTeal",{"h":162,"s":19,"l":53}],["GrossGreen",{"h":71,"s":79,"l":42}],["Gunmetal",{"h":195,"s":11,"l":36}],["Hazel",{"h":48,"s":71,"l":33}],["Heather",{"h":288,"s":19,"l":60}],["Heliotrope",{"h":290,"s":89,"l":64}],["HighlighterGreen",{"h":115,"s":98,"l":51}],["HospitalGreen",{"h":132,"s":59,"l":75}],["HotGreen",{"h":121,"s":100,"l":57}],["HotMagenta",{"h":311,"s":97,"l":49}],["HotPink",{"h":327,"s":100,"l":50}],["HotPurple",{"h":290,"s":100,"l":48}],["HunterGreen",{"h":117,"s":78,"l":14}],["Ice",{"h":173,"s":100,"l":92}],["IceBlue",{"h":179,"s":100,"l":92}],["IckyGreen",{"h":73,"s":67,"l":41}],["IndianRed",{"h":5,"s":94,"l":27}],["Indigo",{"h":265,"s":97,"l":26}],["IndigoBlue",{"h":253,"s":76,"l":39}],["Iris",{"h":246,"s":48,"l":56}],["IrishGreen",{"h":136,"s":99,"l":29}],["Ivory",{"h":60,"s":100,"l":90}],["Jade",{"h":158,"s":69,"l":39}],["JadeGreen",{"h":149,"s":61,"l":43}],["JungleGreen",{"h":150,"s":94,"l":26}],["KelleyGreen",{"h":142,"s":100,"l":29}],["KellyGreen",{"h":136,"s":98,"l":34}],["KermitGreen",{"h":89,"s":100,"l":35}],["KeyLime",{"h":94,"s":100,"l":72}],["Khaki",{"h":57,"s":30,"l":53}],["KhakiGreen",{"h":76,"s":40,"l":37}],["Kiwi",{"h":89,"s":84,"l":60}],["KiwiGreen",{"h":91,"s":76,"l":57}],["Lavender",{"h":270,"s":71,"l":78}],["LavenderBlue",{"h":242,"s":89,"l":75}],["LavenderPink",{"h":304,"s":56,"l":69}],["LawnGreen",{"h":94,"s":90,"l":34}],["Leaf",{"h":89,"s":53,"l":44}],["LeafGreen",{"h":88,"s":95,"l":34}],["LeafyGreen",{"h":109,"s":51,"l":47}],["Leather",{"h":32,"s":54,"l":44}],["Lemon",{"h":61,"s":100,"l":66}],["LemonGreen",{"h":78,"s":98,"l":49}],["LemonLime",{"h":78,"s":99,"l":58}],["LemonYellow",{"h":61,"s":100,"l":61}],["Lichen",{"h":100,"s":29,"l":60}],["LightAqua",{"h":161,"s":100,"l":77}],["LightAquamarine",{"h":155,"s":97,"l":74}],["LightBeige",{"h":59,"s":100,"l":86}],["LightBlue",{"h":206,"s":94,"l":79}],["LightBlueGreen",{"h":145,"s":94,"l":74}],["LightBlueGrey",{"h":215,"s":43,"l":80}],["LightBluishGreen",{"h":142,"s":97,"l":73}],["LightBrightGreen",{"h":123,"s":99,"l":66}],["LightBrown",{"h":32,"s":37,"l":50}],["LightBurgundy",{"h":345,"s":44,"l":46}],["LightCyan",{"h":178,"s":100,"l":84}],["LightEggplant",{"h":304,"s":33,"l":40}],["LightForestGreen",{"h":124,"s":29,"l":44}],["LightGold",{"h":48,"s":98,"l":68}],["LightGrassGreen",{"h":98,"s":90,"l":68}],["LightGreen",{"h":107,"s":91,"l":73}],["LightGreenBlue",{"h":147,"s":97,"l":66}],["LightGreenishBlue",{"h":153,"s":90,"l":68}],["LightGrey",{"h":100,"s":8,"l":85}],["LightGreyBlue",{"h":206,"s":39,"l":72}],["LightGreyGreen",{"h":99,"s":52,"l":76}],["LightIndigo",{"h":250,"s":55,"l":58}],["LightKhaki",{"h":69,"s":75,"l":79}],["LightLavendar",{"h":285,"s":97,"l":87}],["LightLavender",{"h":267,"s":97,"l":88}],["LightLightBlue",{"h":175,"s":100,"l":90}],["LightLightGreen",{"h":102,"s":100,"l":85}],["LightLilac",{"h":280,"s":100,"l":89}],["LightLime",{"h":93,"s":97,"l":71}],["LightLimeGreen",{"h":87,"s":100,"l":70}],["LightMagenta",{"h":301,"s":94,"l":68}],["LightMaroon",{"h":350,"s":38,"l":46}],["LightMauve",{"h":341,"s":28,"l":67}],["LightMint",{"h":124,"s":100,"l":86}],["LightMintGreen",{"h":128,"s":91,"l":82}],["LightMossGreen",{"h":85,"s":43,"l":62}],["LightMustard",{"h":46,"s":90,"l":67}],["LightNavy",{"h":208,"s":73,"l":30}],["LightNavyBlue",{"h":211,"s":49,"l":36}],["LightNeonGreen",{"h":122,"s":98,"l":65}],["LightOlive",{"h":73,"s":40,"l":58}],["LightOliveGreen",{"h":76,"s":43,"l":55}],["LightOrange",{"h":32,"s":98,"l":64}],["LightPastelGreen",{"h":111,"s":91,"l":82}],["LightPeaGreen",{"h":88,"s":98,"l":75}],["LightPeach",{"h":30,"s":100,"l":85}],["LightPeriwinkle",{"h":235,"s":91,"l":87}],["LightPink",{"h":342,"s":100,"l":91}],["LightPlum",{"h":322,"s":29,"l":48}],["LightPurple",{"h":274,"s":88,"l":72}],["LightRed",{"h":358,"s":100,"l":64}],["LightRose",{"h":354,"s":100,"l":89}],["LightRoyalBlue",{"h":243,"s":99,"l":59}],["LightSage",{"h":105,"s":63,"l":80}],["LightSalmon",{"h":12,"s":98,"l":79}],["LightSeaGreen",{"h":135,"s":84,"l":78}],["LightSeafoam",{"h":140,"s":98,"l":81}],["LightSeafoamGreen",{"h":130,"s":100,"l":83}],["LightSkyBlue",{"h":183,"s":100,"l":89}],["LightTan",{"h":50,"s":91,"l":83}],["LightTeal",{"h":155,"s":61,"l":73}],["LightTurquoise",{"h":160,"s":84,"l":73}],["LightUrple",{"h":270,"s":88,"l":70}],["LightViolet",{"h":268,"s":92,"l":85}],["LightYellow",{"h":60,"s":100,"l":74}],["LightYellowGreen",{"h":83,"s":97,"l":75}],["LightYellowishGreen",{"h":91,"s":100,"l":77}],["Lightblue",{"h":202,"s":87,"l":72}],["LighterGreen",{"h":113,"s":97,"l":69}],["LighterPurple",{"h":269,"s":88,"l":65}],["Lightgreen",{"h":122,"s":100,"l":73}],["LightishBlue",{"h":221,"s":98,"l":62}],["LightishGreen",{"h":120,"s":68,"l":63}],["LightishPurple",{"h":274,"s":75,"l":61}],["LightishRed",{"h":352,"s":99,"l":59}],["Lilac",{"h":269,"s":96,"l":81}],["Liliac",{"h":269,"s":97,"l":77}],["Lime",{"h":85,"s":100,"l":60}],["LimeGreen",{"h":88,"s":99,"l":51}],["LimeYellow",{"h":72,"s":99,"l":55}],["Lipstick",{"h":343,"s":81,"l":46}],["LipstickRed",{"h":346,"s":98,"l":38}],["MacaroniAndCheese",{"h":41,"s":85,"l":57}],["Magenta",{"h":323,"s":100,"l":38}],["Mahogany",{"h":1,"s":100,"l":15}],["Maize",{"h":47,"s":88,"l":64}],["Mango",{"h":35,"s":100,"l":58}],["Manilla",{"h":58,"s":100,"l":76}],["Marigold",{"h":45,"s":98,"l":51}],["Marine",{"h":213,"s":92,"l":20}],["MarineBlue",{"h":209,"s":98,"l":21}],["Maroon",{"h":340,"s":100,"l":20}],["Mauve",{"h":344,"s":27,"l":56}],["MediumBlue",{"h":212,"s":62,"l":45}],["MediumBrown",{"h":35,"s":75,"l":28}],["MediumGreen",{"h":128,"s":50,"l":45}],["MediumGrey",{"h":100,"s":1,"l":49}],["MediumPink",{"h":338,"s":86,"l":67}],["MediumPurple",{"h":297,"s":41,"l":45}],["Melon",{"h":12,"s":100,"l":67}],["Merlot",{"h":330,"s":100,"l":23}],["MetallicBlue",{"h":206,"s":29,"l":43}],["MidBlue",{"h":211,"s":64,"l":43}],["MidGreen",{"h":114,"s":40,"l":47}],["Midnight",{"h":243,"s":96,"l":9}],["MidnightBlue",{"h":242,"s":100,"l":10}],["MidnightPurple",{"h":283,"s":96,"l":11}],["MilitaryGreen",{"h":81,"s":33,"l":36}],["MilkChocolate",{"h":30,"s":62,"l":31}],["Mint",{"h":131,"s":98,"l":81}],["MintGreen",{"h":129,"s":100,"l":78}],["MintyGreen",{"h":149,"s":94,"l":51}],["Mocha",{"h":29,"s":32,"l":47}],["Moss",{"h":92,"s":27,"l":47}],["MossGreen",{"h":87,"s":43,"l":38}],["MossyGreen",{"h":84,"s":56,"l":35}],["Mud",{"h":46,"s":73,"l":26}],["MudBrown",{"h":41,"s":73,"l":22}],["MudGreen",{"h":64,"s":96,"l":20}],["MuddyBrown",{"h":45,"s":92,"l":28}],["MuddyGreen",{"h":74,"s":40,"l":33}],["MuddyYellow",{"h":54,"s":95,"l":38}],["Mulberry",{"h":330,"s":87,"l":31}],["MurkyGreen",{"h":68,"s":79,"l":27}],["Mushroom",{"h":26,"s":27,"l":63}],["Mustard",{"h":52,"s":99,"l":41}],["MustardBrown",{"h":44,"s":95,"l":35}],["MustardGreen",{"h":64,"s":96,"l":36}],["MustardYellow",{"h":54,"s":91,"l":43}],["MutedBlue",{"h":208,"s":46,"l":43}],["MutedGreen",{"h":110,"s":32,"l":47}],["MutedPink",{"h":344,"s":50,"l":64}],["MutedPurple",{"h":290,"s":19,"l":44}],["NastyGreen",{"h":94,"s":48,"l":47}],["Navy",{"h":220,"s":97,"l":12}],["NavyBlue",{"h":225,"s":100,"l":14}],["NavyGreen",{"h":85,"s":78,"l":18}],["NeonBlue",{"h":189,"s":100,"l":51}],["NeonGreen",{"h":120,"s":100,"l":52}],["NeonPink",{"h":324,"s":99,"l":50}],["NeonPurple",{"h":283,"s":99,"l":54}],["NeonRed",{"h":348,"s":100,"l":51}],["NeonYellow",{"h":71,"s":100,"l":51}],["NiceBlue",{"h":200,"s":83,"l":38}],["NightBlue",{"h":241,"s":92,"l":15}],["Ocean",{"h":190,"s":99,"l":29}],["OceanBlue",{"h":197,"s":96,"l":31}],["OceanGreen",{"h":155,"s":43,"l":42}],["Ocher",{"h":48,"s":88,"l":40}],["Ochre",{"h":45,"s":95,"l":38}],["Ocre",{"h":47,"s":96,"l":40}],["OffBlue",{"h":209,"s":35,"l":51}],["OffGreen",{"h":102,"s":33,"l":48}],["OffWhite",{"h":60,"s":100,"l":95}],["OffYellow",{"h":61,"s":88,"l":60}],["OldPink",{"h":350,"s":41,"l":63}],["OldRose",{"h":352,"s":40,"l":64}],["Olive",{"h":64,"s":79,"l":26}],["OliveBrown",{"h":50,"s":94,"l":20}],["OliveDrab",{"h":66,"s":40,"l":33}],["OliveGreen",{"h":70,"s":94,"l":25}],["OliveYellow",{"h":56,"s":91,"l":40}],["Orange",{"h":27,"s":95,"l":50}],["OrangeBrown",{"h":32,"s":100,"l":37}],["OrangePink",{"h":10,"s":100,"l":66}],["OrangeRed",{"h":9,"s":98,"l":55}],["OrangeYellow",{"h":41,"s":100,"l":50}],["Orangeish",{"h":23,"s":98,"l":64}],["Orangered",{"h":13,"s":99,"l":53}],["OrangeyBrown",{"h":32,"s":98,"l":35}],["OrangeyRed",{"h":8,"s":96,"l":56}],["OrangeyYellow",{"h":42,"s":98,"l":54}],["Orangish",{"h":19,"s":97,"l":64}],["OrangishBrown",{"h":32,"s":97,"l":35}],["OrangishRed",{"h":12,"s":96,"l":49}],["Orchid",{"h":303,"s":43,"l":62}],["Pale",{"h":52,"s":100,"l":91}],["PaleAqua",{"h":163,"s":100,"l":86}],["PaleBlue",{"h":180,"s":96,"l":91}],["PaleBrown",{"h":31,"s":30,"l":56}],["PaleCyan",{"h":176,"s":100,"l":86}],["PaleGold",{"h":47,"s":97,"l":71}],["PaleGreen",{"h":105,"s":95,"l":85}],["PaleGrey",{"h":240,"s":33,"l":99}],["PaleLavender",{"h":280,"s":96,"l":90}],["PaleLightGreen",{"h":105,"s":94,"l":79}],["PaleLilac",{"h":269,"s":100,"l":90}],["PaleLime",{"h":87,"s":97,"l":72}],["PaleLimeGreen",{"h":90,"s":100,"l":70}],["PaleMagenta",{"h":323,"s":58,"l":62}],["PaleMauve",{"h":303,"s":96,"l":91}],["PaleOlive",{"h":75,"s":42,"l":65}],["PaleOliveGreen",{"h":83,"s":49,"l":65}],["PaleOrange",{"h":29,"s":100,"l":67}],["PalePeach",{"h":41,"s":100,"l":84}],["PalePink",{"h":344,"s":100,"l":91}],["PalePurple",{"h":274,"s":44,"l":70}],["PaleRed",{"h":3,"s":65,"l":58}],["PaleRose",{"h":356,"s":94,"l":87}],["PaleSalmon",{"h":14,"s":100,"l":80}],["PaleSkyBlue",{"h":187,"s":97,"l":87}],["PaleTeal",{"h":159,"s":41,"l":65}],["PaleTurquoise",{"h":153,"s":91,"l":82}],["PaleViolet",{"h":265,"s":88,"l":83}],["PaleYellow",{"h":60,"s":100,"l":76}],["Parchment",{"h":58,"s":98,"l":84}],["PastelBlue",{"h":221,"s":98,"l":82}],["PastelGreen",{"h":108,"s":100,"l":81}],["PastelOrange",{"h":24,"s":100,"l":65}],["PastelPink",{"h":343,"s":100,"l":86}],["PastelPurple",{"h":267,"s":100,"l":81}],["PastelRed",{"h":1,"s":65,"l":60}],["PastelYellow",{"h":60,"s":100,"l":72}],["Pea",{"h":70,"s":71,"l":44}],["PeaGreen",{"h":71,"s":81,"l":37}],["PeaSoup",{"h":63,"s":99,"l":30}],["PeaSoupGreen",{"h":68,"s":76,"l":37}],["Peach",{"h":24,"s":100,"l":74}],["PeachyPink",{"h":8,"s":100,"l":77}],["PeacockBlue",{"h":199,"s":99,"l":29}],["Pear",{"h":78,"s":92,"l":67}],["Periwinkle",{"h":246,"s":98,"l":75}],["PeriwinkleBlue",{"h":234,"s":93,"l":77}],["Perrywinkle",{"h":242,"s":65,"l":73}],["Petrol",{"h":186,"s":100,"l":21}],["PigPink",{"h":344,"s":65,"l":73}],["Pine",{"h":131,"s":37,"l":27}],["PineGreen",{"h":139,"s":76,"l":16}],["Pink",{"h":330,"s":100,"l":75}],["Pink",{"h":298,"s":74,"l":51}],["PinkPurple",{"h":300,"s":67,"l":58}],["PinkRed",{"h":342,"s":96,"l":49}],["Pinkish",{"h":349,"s":55,"l":62}],["PinkishBrown",{"h":13,"s":34,"l":54}],["PinkishGrey",{"h":6,"s":22,"l":72}],["PinkishOrange",{"h":13,"s":100,"l":65}],["PinkishPurple",{"h":300,"s":64,"l":56}],["PinkishRed",{"h":345,"s":91,"l":50}],["PinkishTan",{"h":17,"s":53,"l":68}],["Pinky",{"h":342,"s":95,"l":76}],["PinkyPurple",{"h":305,"s":54,"l":54}],["PinkyRed",{"h":351,"s":97,"l":57}],["PissYellow",{"h":58,"s":80,"l":48}],["Pistachio",{"h":91,"s":92,"l":76}],["Plum",{"h":319,"s":71,"l":20}],["PlumPurple",{"h":298,"s":88,"l":17}],["PoisonGreen",{"h":109,"s":98,"l":54}],["Poo",{"h":48,"s":96,"l":29}],["PooBrown",{"h":42,"s":99,"l":27}],["Poop",{"h":44,"s":100,"l":25}],["PoopBrown",{"h":44,"s":98,"l":24}],["PoopGreen",{"h":66,"s":100,"l":24}],["PowderBlue",{"h":214,"s":93,"l":84}],["PowderPink",{"h":337,"s":100,"l":85}],["PrimaryBlue",{"h":241,"s":97,"l":50}],["PrussianBlue",{"h":205,"s":100,"l":23}],["Puce",{"h":32,"s":34,"l":48}],["Puke",{"h":60,"s":98,"l":33}],["PukeBrown",{"h":48,"s":92,"l":30}],["PukeGreen",{"h":67,"s":92,"l":35}],["PukeYellow",{"h":59,"s":87,"l":41}],["Pumpkin",{"h":32,"s":99,"l":44}],["PumpkinOrange",{"h":29,"s":97,"l":51}],["PureBlue",{"h":240,"s":98,"l":45}],["Purple",{"h":286,"s":68,"l":36}],["Purple",{"h":262,"s":95,"l":48}],["Purple",{"h":302,"s":87,"l":53}],["PurpleBlue",{"h":257,"s":81,"l":55}],["PurpleBrown",{"h":353,"s":28,"l":32}],["PurpleGrey",{"h":303,"s":9,"l":48}],["PurplePink",{"h":303,"s":72,"l":56}],["PurpleRed",{"h":332,"s":99,"l":30}],["Purpleish",{"h":310,"s":28,"l":47}],["PurpleishBlue",{"h":251,"s":85,"l":59}],["PurpleishPink",{"h":310,"s":69,"l":59}],["Purpley",{"h":261,"s":72,"l":62}],["PurpleyBlue",{"h":254,"s":79,"l":55}],["PurpleyGrey",{"h":300,"s":9,"l":54}],["PurpleyPink",{"h":306,"s":56,"l":51}],["Purplish",{"h":308,"s":26,"l":46}],["PurplishBlue",{"h":258,"s":95,"l":55}],["PurplishBrown",{"h":353,"s":24,"l":34}],["PurplishGrey",{"h":287,"s":10,"l":45}],["PurplishPink",{"h":317,"s":54,"l":59}],["PurplishRed",{"h":335,"s":94,"l":35}],["Purply",{"h":286,"s":48,"l":47}],["PurplyBlue",{"h":262,"s":86,"l":52}],["PurplyPink",{"h":305,"s":80,"l":70}],["Putty",{"h":42,"s":29,"l":64}],["RacingGreen",{"h":119,"s":100,"l":14}],["RadioactiveGreen",{"h":116,"s":96,"l":55}],["Raspberry",{"h":335,"s":99,"l":35}],["RawSienna",{"h":38,"s":100,"l":30}],["RawUmber",{"h":32,"s":90,"l":35}],["ReallyLightBlue",{"h":180,"s":100,"l":92}],["Red",{"h":0,"s":100,"l":45}],["RedBrown",{"h":12,"s":73,"l":32}],["RedOrange",{"h":13,"s":98,"l":51}],["RedPink",{"h":348,"s":95,"l":57}],["RedPurple",{"h":329,"s":90,"l":27}],["RedViolet",{"h":321,"s":99,"l":31}],["RedWine",{"h":338,"s":100,"l":27}],["Reddish",{"h":1,"s":53,"l":51}],["ReddishBrown",{"h":17,"s":85,"l":27}],["ReddishGrey",{"h":7,"s":17,"l":52}],["ReddishOrange",{"h":12,"s":94,"l":54}],["ReddishPink",{"h":349,"s":99,"l":58}],["ReddishPurple",{"h":328,"s":88,"l":30}],["ReddyBrown",{"h":6,"s":91,"l":23}],["RichBlue",{"h":234,"s":98,"l":49}],["RichPurple",{"h":314,"s":100,"l":22}],["Robin'sEgg",{"h":187,"s":97,"l":71}],["Robin'sEggBlue",{"h":186,"s":89,"l":79}],["RobinEggBlue",{"h":187,"s":98,"l":77}],["Rosa",{"h":345,"s":98,"l":76}],["Rose",{"h":350,"s":53,"l":60}],["RosePink",{"h":350,"s":88,"l":75}],["RoseRed",{"h":341,"s":99,"l":37}],["RosyPink",{"h":344,"s":89,"l":69}],["Rouge",{"h":345,"s":81,"l":37}],["Royal",{"h":235,"s":85,"l":31}],["RoyalBlue",{"h":240,"s":95,"l":34}],["RoyalPurple",{"h":281,"s":100,"l":22}],["Ruby",{"h":339,"s":99,"l":40}],["Russet",{"h":20,"s":94,"l":33}],["Rust",{"h":19,"s":90,"l":35}],["RustBrown",{"h":20,"s":96,"l":28}],["RustOrange",{"h":25,"s":92,"l":40}],["RustRed",{"h":13,"s":95,"l":34}],["RustyOrange",{"h":24,"s":92,"l":42}],["RustyRed",{"h":13,"s":86,"l":37}],["Saffron",{"h":41,"s":99,"l":52}],["Sage",{"h":100,"s":27,"l":57}],["SageGreen",{"h":104,"s":28,"l":59}],["Salmon",{"h":5,"s":100,"l":71}],["SalmonPink",{"h":0,"s":98,"l":74}],["Sand",{"h":47,"s":65,"l":67}],["SandBrown",{"h":39,"s":51,"l":59}],["SandYellow",{"h":49,"s":96,"l":69}],["Sandstone",{"h":41,"s":44,"l":62}],["Sandy",{"h":48,"s":81,"l":71}],["SandyBrown",{"h":42,"s":46,"l":57}],["SandyYellow",{"h":53,"s":97,"l":72}],["SapGreen",{"h":84,"s":74,"l":31}],["Sapphire",{"h":230,"s":68,"l":40}],["Scarlet",{"h":352,"s":99,"l":37}],["Sea",{"h":175,"s":44,"l":42}],["SeaBlue",{"h":194,"s":95,"l":30}],["SeaGreen",{"h":148,"s":97,"l":66}],["Seafoam",{"h":142,"s":91,"l":74}],["SeafoamBlue",{"h":162,"s":49,"l":65}],["SeafoamGreen",{"h":143,"s":91,"l":73}],["Seaweed",{"h":152,"s":79,"l":46}],["SeaweedGreen",{"h":147,"s":53,"l":44}],["Sepia",{"h":28,"s":56,"l":38}],["Shamrock",{"h":145,"s":99,"l":35}],["ShamrockGreen",{"h":144,"s":98,"l":38}],["Shit",{"h":45,"s":100,"l":25}],["ShitBrown",{"h":42,"s":94,"l":25}],["ShitGreen",{"h":65,"s":100,"l":25}],["ShockingPink",{"h":322,"s":99,"l":50}],["SickGreen",{"h":72,"s":62,"l":45}],["SicklyGreen",{"h":72,"s":73,"l":40}],["SicklyYellow",{"h":66,"s":78,"l":53}],["Sienna",{"h":24,"s":70,"l":39}],["Silver",{"h":150,"s":4,"l":78}],["Sky",{"h":205,"s":95,"l":75}],["SkyBlue",{"h":209,"s":97,"l":73}],["Slate",{"h":204,"s":17,"l":38}],["SlateBlue",{"h":208,"s":25,"l":48}],["SlateGreen",{"h":132,"s":17,"l":47}],["SlateGrey",{"h":204,"s":10,"l":39}],["SlimeGreen",{"h":75,"s":96,"l":41}],["Snot",{"h":65,"s":87,"l":39}],["SnotGreen",{"h":71,"s":100,"l":38}],["SoftBlue",{"h":224,"s":76,"l":65}],["SoftGreen",{"h":125,"s":40,"l":60}],["SoftPink",{"h":348,"s":95,"l":84}],["SoftPurple",{"h":287,"s":32,"l":57}],["Spearmint",{"h":144,"s":94,"l":55}],["SpringGreen",{"h":95,"s":92,"l":71}],["Spruce",{"h":152,"s":81,"l":21}],["Squash",{"h":41,"s":89,"l":52}],["Steel",{"h":208,"s":14,"l":52}],["SteelBlue",{"h":207,"s":26,"l":48}],["SteelGrey",{"h":198,"s":11,"l":49}],["Stone",{"h":47,"s":19,"l":60}],["StormyBlue",{"h":206,"s":32,"l":46}],["Straw",{"h":57,"s":96,"l":73}],["Strawberry",{"h":353,"s":96,"l":57}],["StrongBlue",{"h":241,"s":95,"l":50}],["StrongPink",{"h":329,"s":100,"l":51}],["SunYellow",{"h":51,"s":100,"l":57}],["Sunflower",{"h":45,"s":100,"l":54}],["SunflowerYellow",{"h":51,"s":100,"l":51}],["SunnyYellow",{"h":58,"s":100,"l":55}],["SunshineYellow",{"h":59,"s":100,"l":61}],["Swamp",{"h":81,"s":39,"l":37}],["SwampGreen",{"h":68,"s":100,"l":26}],["Tan",{"h":41,"s":52,"l":63}],["TanBrown",{"h":32,"s":38,"l":48}],["TanGreen",{"h":76,"s":38,"l":59}],["Tangerine",{"h":34,"s":100,"l":52}],["Taupe",{"h":35,"s":29,"l":62}],["Tea",{"h":140,"s":29,"l":53}],["TeaGreen",{"h":102,"s":86,"l":81}],["Teal",{"h":175,"s":97,"l":29}],["TealBlue",{"h":189,"s":99,"l":31}],["TealGreen",{"h":155,"s":63,"l":39}],["Tealish",{"h":172,"s":68,"l":44}],["TealishGreen",{"h":150,"s":90,"l":45}],["TerraCotta",{"h":17,"s":57,"l":51}],["Terracota",{"h":16,"s":57,"l":53}],["Terracotta",{"h":16,"s":56,"l":52}],["TiffanyBlue",{"h":168,"s":82,"l":72}],["Tomato",{"h":8,"s":86,"l":54}],["TomatoRed",{"h":11,"s":99,"l":46}],["Topaz",{"h":176,"s":82,"l":40}],["Toupe",{"h":38,"s":40,"l":64}],["ToxicGreen",{"h":102,"s":73,"l":52}],["TreeGreen",{"h":110,"s":67,"l":30}],["TrueBlue",{"h":236,"s":99,"l":40}],["TrueGreen",{"h":118,"s":95,"l":30}],["Turquoise",{"h":173,"s":94,"l":39}],["TurquoiseBlue",{"h":186,"s":94,"l":40}],["TurquoiseGreen",{"h":153,"s":97,"l":49}],["TurtleGreen",{"h":98,"s":43,"l":52}],["Twilight",{"h":237,"s":28,"l":43}],["TwilightBlue",{"h":209,"s":85,"l":26}],["UglyBlue",{"h":204,"s":48,"l":37}],["UglyBrown",{"h":54,"s":95,"l":25}],["UglyGreen",{"h":72,"s":96,"l":30}],["UglyPink",{"h":350,"s":47,"l":63}],["UglyPurple",{"h":302,"s":43,"l":45}],["UglyYellow",{"h":56,"s":99,"l":41}],["Ultramarine",{"h":251,"s":100,"l":35}],["UltramarineBlue",{"h":245,"s":96,"l":44}],["Umber",{"h":34,"s":100,"l":35}],["Velvet",{"h":320,"s":87,"l":25}],["Vermillion",{"h":10,"s":91,"l":50}],["VeryDarkBlue",{"h":239,"s":100,"l":10}],["VeryDarkBrown",{"h":4,"s":100,"l":6}],["VeryDarkGreen",{"h":116,"s":88,"l":10}],["VeryDarkPurple",{"h":288,"s":96,"l":10}],["VeryLightBlue",{"h":180,"s":100,"l":92}],["VeryLightBrown",{"h":38,"s":48,"l":67}],["VeryLightGreen",{"h":102,"s":100,"l":87}],["VeryLightPink",{"h":9,"s":100,"l":97}],["VeryLightPurple",{"h":292,"s":88,"l":90}],["VeryPaleBlue",{"h":179,"s":100,"l":92}],["VeryPaleGreen",{"h":102,"s":94,"l":86}],["VibrantBlue",{"h":227,"s":98,"l":49}],["VibrantGreen",{"h":119,"s":93,"l":45}],["VibrantPurple",{"h":287,"s":97,"l":44}],["Violet",{"h":278,"s":89,"l":49}],["VioletBlue",{"h":262,"s":91,"l":41}],["VioletPink",{"h":300,"s":96,"l":68}],["VioletRed",{"h":329,"s":100,"l":32}],["Viridian",{"h":158,"s":66,"l":34}],["VividBlue",{"h":234,"s":100,"l":54}],["VividGreen",{"h":112,"s":87,"l":50}],["VividPurple",{"h":277,"s":100,"l":49}],["Vomit",{"h":61,"s":77,"l":36}],["VomitGreen",{"h":69,"s":96,"l":32}],["VomitYellow",{"h":58,"s":89,"l":41}],["WarmBlue",{"h":235,"s":67,"l":58}],["WarmBrown",{"h":31,"s":97,"l":30}],["WarmGrey",{"h":19,"s":8,"l":55}],["WarmPink",{"h":344,"s":95,"l":66}],["WarmPurple",{"h":303,"s":53,"l":38}],["WashedOutGreen",{"h":103,"s":80,"l":81}],["WaterBlue",{"h":202,"s":87,"l":43}],["Watermelon",{"h":354,"s":98,"l":63}],["WeirdGreen",{"h":144,"s":77,"l":56}],["Wheat",{"h":46,"s":94,"l":74}],["White",{"h":0,"s":0,"l":100}],["WindowsBlue",{"h":211,"s":55,"l":48}],["Wine",{"h":331,"s":98,"l":25}],["WineRed",{"h":344,"s":95,"l":25}],["Wintergreen",{"h":148,"s":95,"l":55}],["Wisteria",{"h":277,"s":36,"l":63}],["Yellow",{"h":68,"s":93,"l":42}],["Yellow",{"h":60,"s":100,"l":54}],["YellowBrown",{"h":49,"s":100,"l":36}],["YellowGreen",{"h":77,"s":96,"l":58}],["YellowOchre",{"h":46,"s":94,"l":41}],["YellowOrange",{"h":42,"s":99,"l":50}],["YellowTan",{"h":48,"s":100,"l":72}],["Yellowgreen",{"h":76,"s":95,"l":52}],["Yellowish",{"h":55,"s":94,"l":69}],["YellowishBrown",{"h":47,"s":99,"l":31}],["YellowishGreen",{"h":74,"s":82,"l":48}],["YellowishOrange",{"h":39,"s":100,"l":53}],["YellowishTan",{"h":60,"s":95,"l":75}],["YellowyBrown",{"h":47,"s":87,"l":36}],["YellowyGreen",{"h":75,"s":88,"l":55}]]
-;
-
 color.prototype.toJSON = function () {
   return this[this.model]().round(2).object()
 };
@@ -15854,7 +15986,7 @@ color.prototype.mostReadable = function (...colors) {
   return mostread
 };
 color.random = function () {
-  return color('#' + Math.random().toString(16).slice(2, 8))
+  return new color('#' + Math.random().toString(16).slice(2, 8))
 };
 
 /**
@@ -15869,8 +16001,8 @@ color.random = function () {
  * @returns
  */
 function alphaBlending (...colors) {
-  return color(colors
-    .map((color$$1) => color(color$$1).rgb().array())
+  return new color(colors
+    .map((color$$1) => new color(color$$1).rgb().array())
     .reduce((back, front) => {
       const color$$1 = [];
       const a = front[3] == null ? 1 : front[3];
