@@ -1,5 +1,5 @@
 <div class="color-picker">
-  <ColorInput bind:color {bgColor} />
+  <ColorInput bind:color bind:model {bgColor} />
   <div class="picker-body">
     <HsvPicker bind:color />
   </div>
@@ -86,6 +86,7 @@
       return {
         color: '',
         bgColor: '',
+        model: 'hex',
       }
     },
     computed: {
@@ -94,6 +95,10 @@
     onstate ({ changed, current }) {
       if (changed.color) {
         this.set({color: new Color(current.color)})
+      }
+
+      if (changed.model) {
+        this.fire('modelChange', current.model)
       }
     },
     methods: {

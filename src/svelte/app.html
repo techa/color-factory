@@ -79,7 +79,12 @@
     <div><button on:click="setBgColor(current.color)" title="set Background Color">BG</button></div>
   </div>
 
-  <ColorPicker bind:color="current.color" bgColor="{$bgColor}" on:setBgColor="setBgColor(current.color)" />
+  <ColorPicker
+    bind:color="current.color"
+    bgColor="{$bgColor}"
+    model="{$pickermodel}"
+    on:modelChange="$set({pickermodel: event}, true)"
+    on:setBgColor="setBgColor(current.color)" />
   <hr>
   <ColorLists on:colorpick="set({current: event.current})" />
 

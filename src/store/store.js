@@ -4,6 +4,7 @@ import Color from '../Colorx.js'
 
 const store = new Histore(
   Object.assign({
+    pickermodel: 'hsl',
     grayscale: false,
     textvisible: true,
     cardViewModels: {
@@ -18,7 +19,7 @@ const store = new Histore(
     },
   }, defaultpalette),
   {
-    storageKey: '$color-factory',
+    storageKey: '$$color-factory',
     keymaps: [
       {
         key: 'ctrl+z',
