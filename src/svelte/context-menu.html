@@ -18,8 +18,8 @@
       <i class="fas fa-times fa-fw"></i>
       DELETE
     </p>
-    <hr>
-    <!-- <p class="menuitem" on:mouseover="submenuVisible(this)">
+    <!-- <hr>
+    <p class="menuitem" on:mouseover="submenuVisible(this)">
       <i class="fas fa-eye fa-fw"></i>
       VIEW
       <span>▶</span>
@@ -64,7 +64,10 @@
     },
     oncreate () {
       console.log('menu-render')
-      const {menu, submenu} = this.refs
+      const {
+        menu,
+        // submenu
+      } = this.refs
 
       const menuHide = (e) => {
         store.fire('menu_close')
