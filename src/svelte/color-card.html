@@ -58,7 +58,6 @@
       modelsEntries: ({ $cardViewModels }) => Object.entries($cardViewModels).filter(([, value]) => value),
     },
 
-
     oncreate () {
       console.log('card-render')
 
@@ -131,6 +130,13 @@
         store.fire('menu_open', e, this, 'card')
       }, false)
     },
+
+    onupdate ({changed, current}) {
+      if (changed.edit) {
+        this.movable.toggle(!current.edit)
+      }
+    },
+
     methods: {
       reverse () {
         const {card} = this.get()

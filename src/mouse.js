@@ -213,7 +213,8 @@ export class MousePosition {
       handle: null,
       // start: noop,
       // drag: noop,
-      // stop: noop
+      // stop: noop,
+      switch: true,
     }, options || {})
 
     // イベント登録
@@ -233,8 +234,13 @@ export class MousePosition {
     off(0, 'mousedown touchstart', this._event.mdown)
   }
 
+  toggle (bool = !this.options.switch) {
+    this.options.switch = bool
+  }
+
   // マウスが押された際の関数
   mdown (e, handle) {
+    if (!this.options.switch) return
     const {options, position} = this
     // マウス座標を保存
     position.set(e, true, handle)
@@ -248,6 +254,7 @@ export class MousePosition {
   }
   // マウスカーソルが動いたときに発火
   mmove (e) {
+    if (!this.options.switch) return
     const {options, position} = this
     // マウスが動いたベクトルを保存
     position.set(e)
@@ -263,6 +270,7 @@ export class MousePosition {
   }
   // マウスボタンが上がったら発火
   mup (e) {
+    if (!this.options.switch) return
     const {options, position} = this
     // マウスが動いたベクトルを保存
     position.set(e)
