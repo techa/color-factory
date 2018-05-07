@@ -4154,6 +4154,7 @@ function data$5() {
   return {
     color: '',
     bgColor: '',
+    model: 'hex',
   }
 }
 var methods$4 = {
@@ -4173,6 +4174,10 @@ function onstate({ changed, current }) {
   if (changed.color) {
     this.set({color: new Color$1(current.color)});
   }
+
+  if (changed.model) {
+    this.fire('modelChange', current.model);
+  }
 }
 function create_main_fragment$5(component, ctx) {
 	var div, colorinput_updating = {}, text, div_1, hsvpicker_updating = {}, text_2, div_2, div_3, button, text_3, button_class_value, text_6, div_4, blender_updating = {}, text_8, div_5, button_1;
@@ -4182,6 +4187,10 @@ function create_main_fragment$5(component, ctx) {
 		colorinput_initial_data.color = ctx.color ;
 		colorinput_updating.color = true;
 	}
+	if ('model' in ctx) {
+		colorinput_initial_data.model = ctx.model ;
+		colorinput_updating.model = true;
+	}
 	var colorinput = new Color_input({
 		root: component.root,
 		data: colorinput_initial_data,
@@ -4190,13 +4199,17 @@ function create_main_fragment$5(component, ctx) {
 			if (!colorinput_updating.color && changed.color) {
 				newState.color = childState.color;
 			}
+
+			if (!colorinput_updating.model && changed.model) {
+				newState.model = childState.model;
+			}
 			component._set(newState);
 			colorinput_updating = {};
 		}
 	});
 
 	component.root._beforecreate.push(function() {
-		colorinput._bind({ color: 1 }, colorinput.get());
+		colorinput._bind({ color: 1, model: 1 }, colorinput.get());
 	});
 
 	var hsvpicker_initial_data = {};
@@ -4311,6 +4324,10 @@ function create_main_fragment$5(component, ctx) {
 			if (!colorinput_updating.color && changed.color) {
 				colorinput_changes.color = ctx.color ;
 				colorinput_updating.color = true;
+			}
+			if (!colorinput_updating.model && changed.model) {
+				colorinput_changes.model = ctx.model ;
+				colorinput_updating.model = true;
 			}
 			colorinput._set(colorinput_changes);
 			colorinput_updating = {};
@@ -4873,6 +4890,7 @@ class Histore extends Store {
 
 const store = new Histore(
   Object.assign({
+    pickermodel: 'hsl',
     grayscale: false,
     textvisible: true,
     cardViewModels: {
@@ -4887,7 +4905,7 @@ const store = new Histore(
     },
   }, defaultpalette),
   {
-    storageKey: '$color-factory',
+    storageKey: '$$color-factory',
     keymaps: [
       {
         key: 'ctrl+z',
@@ -15054,7 +15072,10 @@ function create_main_fragment$11(component, ctx) {
 		component.setBgColor(ctx.current.color);
 	}
 
-	var colorpicker_initial_data = { bgColor: ctx.$bgColor };
+	var colorpicker_initial_data = {
+	 	bgColor: ctx.$bgColor,
+	 	model: ctx.$pickermodel
+	 };
 	if ('color' in ctx.current) {
 		colorpicker_initial_data.color = ctx.current.color;
 		colorpicker_updating.color = true;
@@ -15077,6 +15098,9 @@ function create_main_fragment$11(component, ctx) {
 		colorpicker._bind({ color: 1 }, colorpicker.get());
 	});
 
+	colorpicker.on("modelChange", function(event) {
+		component.store.set({pickermodel: event}, true);
+	});
 	colorpicker.on("setBgColor", function(event) {
 		component.setBgColor(ctx.current.color);
 	});
@@ -15421,6 +15445,7 @@ function create_main_fragment$11(component, ctx) {
 
 			var colorpicker_changes = {};
 			if (changed.$bgColor) colorpicker_changes.bgColor = ctx.$bgColor;
+			if (changed.$pickermodel) colorpicker_changes.model = ctx.$pickermodel;
 			if (!colorpicker_updating.color && changed.current) {
 				colorpicker_changes.color = ctx.current.color;
 				colorpicker_updating.color = true;
@@ -15735,7 +15760,7 @@ function create_each_block_2$1(component, ctx) {
 	};
 }
 
-// (94:2) {#each $cards as card, index}
+// (99:2) {#each $cards as card, index}
 function create_each_block_3$1(component, ctx) {
 
 	var colorcard_initial_data = {
@@ -15772,7 +15797,7 @@ function create_each_block_3$1(component, ctx) {
 	};
 }
 
-// (101:0) {#if showModal}
+// (106:0) {#if showModal}
 function create_if_block_1$3(component, ctx) {
 
 	var savemodal = new Save_modal({
@@ -15846,8 +15871,8 @@ function get_each_2_context(ctx, list, i) {
 function App(options) {
 	init(this, options);
 	this.refs = {};
-	this._state = assign(assign(assign({ Object : Object }, this.store._init(["bgColor","grayscale","textvisible","cardViewModels","sortX","sortY","cards"])), data$10()), options.data);
-	this.store._add(this, ["bgColor","grayscale","textvisible","cardViewModels","sortX","sortY","cards"]);
+	this._state = assign(assign(assign({ Object : Object }, this.store._init(["bgColor","grayscale","textvisible","cardViewModels","sortX","sortY","pickermodel","cards"])), data$10()), options.data);
+	this.store._add(this, ["bgColor","grayscale","textvisible","cardViewModels","sortX","sortY","pickermodel","cards"]);
 	this._recompute({ $bgColor: 1, $grayscale: 1 }, this._state);
 
 	this._handlers.destroy = [removeFromStore];
