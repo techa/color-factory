@@ -2955,7 +2955,8 @@ class MousePosition {
       handle: null,
       // start: noop,
       // drag: noop,
-      // stop: noop
+      // stop: noop,
+      switch: true,
     }, options || {});
 
     // イベント登録
@@ -2975,8 +2976,13 @@ class MousePosition {
     off(0, 'mousedown touchstart', this._event.mdown);
   }
 
+  toggle (bool = !this.options.switch) {
+    this.options.switch = bool;
+  }
+
   // マウスが押された際の関数
   mdown (e, handle) {
+    if (!this.options.switch) return
     const {options, position} = this;
     // マウス座標を保存
     position.set(e, true, handle);
@@ -2990,6 +2996,7 @@ class MousePosition {
   }
   // マウスカーソルが動いたときに発火
   mmove (e) {
+    if (!this.options.switch) return
     const {options, position} = this;
     // マウスが動いたベクトルを保存
     position.set(e);
@@ -3005,6 +3012,7 @@ class MousePosition {
   }
   // マウスボタンが上がったら発火
   mup (e) {
+    if (!this.options.switch) return
     const {options, position} = this;
     // マウスが動いたベクトルを保存
     position.set(e);
@@ -4977,6 +4985,11 @@ function oncreate$4() {
     store.fire('menu_open', e, this, 'card');
   }, false);
 }
+function onupdate$4({changed, current}) {
+  if (changed.edit) {
+    this.movable.toggle(!current.edit);
+  }
+}
 function create_main_fragment$6(component, ctx) {
 	var div, div_1, h3, text_value = ctx.card.name, text, text_1, div_1_class_value, text_3, span, text_5, span_1, text_7, div_2, div_style_value;
 
@@ -5002,31 +5015,31 @@ function create_main_fragment$6(component, ctx) {
 			div_1 = createElement("div");
 			h3 = createElement("h3");
 			text = createText(text_value);
-			text_1 = createText("\r\n    ");
+			text_1 = createText("\n    ");
 
 			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
 				each_blocks[i_2].c();
 			}
 
-			text_3 = createText("\r\n  ");
+			text_3 = createText("\n  ");
 			span = createElement("span");
 			span.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>";
-			text_5 = createText("\r\n  ");
+			text_5 = createText("\n  ");
 			span_1 = createElement("span");
 			span_1.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>";
-			text_7 = createText("\r\n  ");
+			text_7 = createText("\n  ");
 			div_2 = createElement("div");
-			h3.className = "card_title svelte-mv8r9f";
+			h3.className = "card_title svelte-pjl41q";
 			h3.contentEditable = ctx.edit;
-			div_1.className = div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-mv8r9f";
+			div_1.className = div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-pjl41q";
 			addListener(span, "click", click_handler);
-			span.className = "icon card-reverse svelte-mv8r9f";
+			span.className = "icon card-reverse svelte-pjl41q";
 			span.style.cssText = ctx.textColor;
 			addListener(span_1, "click", click_handler_1);
-			span_1.className = "icon card-delete svelte-mv8r9f";
+			span_1.className = "icon card-delete svelte-pjl41q";
 			span_1.style.cssText = ctx.textColor;
-			div_2.className = "icon resize-handle svelte-mv8r9f";
-			div.className = "card animated bounceIn svelte-mv8r9f";
+			div_2.className = "icon resize-handle svelte-pjl41q";
+			div.className = "card animated bounceIn svelte-pjl41q";
 			div.style.cssText = div_style_value = "" + ctx.cardStyle + " z-index: " + ctx.card.zIndex + ";";
 		},
 
@@ -5083,7 +5096,7 @@ function create_main_fragment$6(component, ctx) {
 				each_blocks.length = each_value.length;
 			}
 
-			if ((changed.$textvisible || changed.card) && div_1_class_value !== (div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-mv8r9f")) {
+			if ((changed.$textvisible || changed.card) && div_1_class_value !== (div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-pjl41q")) {
 				div_1.className = div_1_class_value;
 			}
 
@@ -5237,6 +5250,7 @@ function Color_card(options) {
 	this._state = assign(assign(this.store._init(["bgColor","grayscale","cardViewModels","textvisible"]), data$6()), options.data);
 	this.store._add(this, ["bgColor","grayscale","cardViewModels","textvisible"]);
 	this._recompute({ card: 1, $bgColor: 1, contrast: 1, $grayscale: 1, $cardViewModels: 1 }, this._state);
+	this._handlers.update = [onupdate$4];
 
 	this._handlers.destroy = [removeFromStore];
 
@@ -13511,7 +13525,10 @@ var methods$6 = {
 
 function oncreate$6() {
   console.log('menu-render');
-  const {menu, submenu} = this.refs;
+  const {
+    menu,
+    // submenu
+  } = this.refs;
 
   const menuHide = (e) => {
     store.fire('menu_close');
@@ -13569,9 +13586,9 @@ function create_main_fragment$8(component, ctx) {
 		c() {
 			div = createElement("div");
 			if (if_block) if_block.c();
-			text = createText("\r\n  ");
+			text = createText("\n  ");
 			hr = createElement("hr");
-			text_1 = createText("\r\n  ");
+			text_1 = createText("\n  ");
 			if (if_block_2) if_block_2.c();
 			div.className = "context-menu";
 		},
@@ -13658,7 +13675,7 @@ function create_if_block$2(component, ctx) {
 
 // (4:26) 
 function create_if_block_1$2(component, ctx) {
-	var p, text_1, p_1, text_3, p_2, text_5, p_3, text_7, hr;
+	var p, text_1, p_1, text_3, p_2, text_5, p_3;
 
 	function click_handler(event) {
 		component.edit();
@@ -13679,18 +13696,16 @@ function create_if_block_1$2(component, ctx) {
 	return {
 		c() {
 			p = createElement("p");
-			p.innerHTML = "<i class=\"fas fa-edit fa-fw\"></i>\r\n      EDIT";
-			text_1 = createText("\r\n    ");
+			p.innerHTML = "<i class=\"fas fa-edit fa-fw\"></i>\n      RENAME";
+			text_1 = createText("\n    ");
 			p_1 = createElement("p");
-			p_1.innerHTML = "<i class=\"fas fa-copy fa-fw\"></i>\r\n      DUPLICATE";
-			text_3 = createText("\r\n    ");
+			p_1.innerHTML = "<i class=\"fas fa-copy fa-fw\"></i>\n      DUPLICATE";
+			text_3 = createText("\n    ");
 			p_2 = createElement("p");
-			p_2.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>\r\n      REVERSE";
-			text_5 = createText("\r\n    ");
+			p_2.innerHTML = "<i class=\"fas fa-sync fa-fw\"></i>\n      FILL/TEXT";
+			text_5 = createText("\n    ");
 			p_3 = createElement("p");
-			p_3.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\r\n      DELETE";
-			text_7 = createText("\r\n    ");
-			hr = createElement("hr");
+			p_3.innerHTML = "<i class=\"fas fa-times fa-fw\"></i>\n      DELETE";
 			addListener(p, "click", click_handler);
 			p.className = "menuitem";
 			addListener(p_1, "click", click_handler_1);
@@ -13709,8 +13724,6 @@ function create_if_block_1$2(component, ctx) {
 			insertNode(p_2, target, anchor);
 			insertNode(text_5, target, anchor);
 			insertNode(p_3, target, anchor);
-			insertNode(text_7, target, anchor);
-			insertNode(hr, target, anchor);
 		},
 
 		u() {
@@ -13721,8 +13734,6 @@ function create_if_block_1$2(component, ctx) {
 			detachNode(p_2);
 			detachNode(text_5);
 			detachNode(p_3);
-			detachNode(text_7);
-			detachNode(hr);
 		},
 
 		d() {
@@ -14963,32 +14974,32 @@ function create_main_fragment$11(component, ctx) {
 			div_1 = createElement("div");
 			button = createElement("button");
 			button.innerHTML = "<i class=\"fas fa-hdd\"></i>";
-			text_1 = createText("\r\n    ");
+			text_1 = createText("\n    ");
 			button_1 = createElement("button");
 			button_1.innerHTML = "<i class=\"fas fa-undo\"></i>";
-			text_3 = createText("\r\n    ");
+			text_3 = createText("\n    ");
 			button_2 = createElement("button");
 			button_2.innerHTML = "<i class=\"fas fa-redo\"></i>";
-			text_5 = createText("\r\n    ");
+			text_5 = createText("\n    ");
 			button_3 = createElement("button");
 			button_3.innerHTML = "<i class=\"fas fa-eye-dropper\"></i>";
-			text_7 = createText("\r\n    ");
+			text_7 = createText("\n    ");
 			button_4 = createElement("button");
 			button_4.innerHTML = "<i class=\"fas fa-font\"></i>";
-			text_9 = createText("\r\n    ");
+			text_9 = createText("\n    ");
 			button_5 = createElement("button");
 			button_5.innerHTML = "<i class=\"fas fa-eye\"></i>";
-			text_11 = createText("\r\n    ");
+			text_11 = createText("\n    ");
 			button_6 = createElement("button");
 			button_6.innerHTML = "<i class=\"fas fa-trash\"></i>";
-			text_13 = createText("\r\n    ");
+			text_13 = createText("\n    ");
 			if (if_block) if_block.c();
-			text_15 = createText("\r\n\r\n  \r\n  ");
+			text_15 = createText("\n\n  \n  ");
 			div_2 = createElement("div");
 			div_3 = createElement("div");
 			button_7 = createElement("button");
 			button_7.textContent = "X";
-			text_17 = createText("\r\n    ");
+			text_17 = createText("\n    ");
 			ladel = createElement("ladel");
 			select = createElement("select");
 
@@ -14996,11 +15007,11 @@ function create_main_fragment$11(component, ctx) {
 				each_blocks[i_8].c();
 			}
 
-			text_19 = createText("\r\n\r\n    ");
+			text_19 = createText("\n\n    ");
 			div_4 = createElement("div");
 			button_8 = createElement("button");
 			button_8.textContent = "Y";
-			text_21 = createText("\r\n    ");
+			text_21 = createText("\n    ");
 			ladel_1 = createElement("ladel");
 			select_1 = createElement("select");
 
@@ -15008,43 +15019,43 @@ function create_main_fragment$11(component, ctx) {
 				each_1_blocks[i_8].c();
 			}
 
-			text_24 = createText("\r\n\r\n  ");
+			text_24 = createText("\n\n  ");
 			hr = createElement("hr");
-			text_25 = createText("\r\n\r\n  ");
+			text_25 = createText("\n\n  ");
 			div_5 = createElement("div");
 			div_6 = createElement("div");
 			input = createElement("input");
-			text_27 = createText("\r\n    ");
+			text_27 = createText("\n    ");
 			div_7 = createElement("div");
 			button_9 = createElement("button");
 			button_9.textContent = "➕";
-			text_30 = createText("\r\n    ");
+			text_30 = createText("\n    ");
 			div_8 = createElement("div");
 			button_10 = createElement("button");
 			button_10.textContent = "➕";
-			text_33 = createText("\r\n    ");
+			text_33 = createText("\n    ");
 			div_9 = createElement("div");
 			button_11 = createElement("button");
 			button_11.textContent = "BG";
-			text_36 = createText("\r\n\r\n  ");
+			text_36 = createText("\n\n  ");
 			colorpicker._fragment.c();
-			text_37 = createText("\r\n  ");
+			text_37 = createText("\n  ");
 			hr_1 = createElement("hr");
-			text_38 = createText("\r\n  ");
+			text_38 = createText("\n  ");
 			colorlists._fragment.c();
-			text_39 = createText("\r\n\r\n\r\n  ");
+			text_39 = createText("\n\n\n  ");
 			div_10 = createElement("div");
-			div_10.innerHTML = "2018 ©techa\r\n    <a href=\"https://github.com/techa/color-factory\" class=\"svelte-1afgjyw\"><i class=\"fab fa-github fa-fw\"></i></a>";
-			text_43 = createText("\r\n\r\n");
+			div_10.innerHTML = "2018 © techa\n    <a href=\"https://github.com/techa/color-factory\" class=\"svelte-ahjp35\"><i class=\"fab fa-github fa-fw\"></i></a>";
+			text_43 = createText("\n\n");
 			div_11 = createElement("div");
 
 			for (var i_8 = 0; i_8 < each_2_blocks.length; i_8 += 1) {
 				each_2_blocks[i_8].c();
 			}
 
-			text_45 = createText("\r\n\r\n");
+			text_45 = createText("\n\n");
 			contextmenu._fragment.c();
-			text_46 = createText("\r\n\r\n");
+			text_46 = createText("\n\n");
 			if (if_block_1) if_block_1.c();
 			if_block_1_anchor = createComment();
 			addListener(button, "click", click_handler);
@@ -15061,7 +15072,7 @@ function create_main_fragment$11(component, ctx) {
 			button_5.title = "Card Color Models Visible";
 			addListener(button_6, "click", click_handler_6);
 			button_6.title = "Delete";
-			div_1.className = "tool-box svelte-1afgjyw";
+			div_1.className = "tool-box svelte-ahjp35";
 			addListener(button_7, "click", click_handler_7);
 			addListener(select, "change", select_change_handler);
 			if (!('$sortX' in ctx)) component.root._beforecreate.push(select_change_handler);
@@ -15074,38 +15085,38 @@ function create_main_fragment$11(component, ctx) {
 			addListener(select_1, "change", change_handler_1);
 			ladel_1.className = "select-wrapper";
 			setStyle(ladel_1, "flex", "1 1 auto");
-			div_2.className = "button-set border radius svelte-1afgjyw";
-			hr.className = "svelte-1afgjyw";
+			div_2.className = "button-set border radius svelte-ahjp35";
+			hr.className = "svelte-ahjp35";
 			addListener(input, "input", input_input_handler);
 			input.placeholder = input_placeholder_value = ctx.current.color.nearColorName();
 			setStyle(input, "color", ctx.textColor);
-			input.className = "svelte-1afgjyw";
-			div_6.className = "svelte-1afgjyw";
+			input.className = "svelte-ahjp35";
+			div_6.className = "svelte-ahjp35";
 			addListener(button_9, "click", click_handler_9);
 			button_9.title = "Add Card: text";
 			setStyle(button_9, "color", ctx.current.color);
-			button_9.className = "svelte-1afgjyw";
-			div_7.className = "svelte-1afgjyw";
+			button_9.className = "svelte-ahjp35";
+			div_7.className = "svelte-ahjp35";
 			addListener(button_10, "click", click_handler_10);
 			button_10.title = "Add Card: fill";
 			setStyle(button_10, "color", (ctx.current.color.isDark()?'#fff':'#000'));
 			setStyle(button_10, "background-color", ctx.current.color);
-			button_10.className = "svelte-1afgjyw";
-			div_8.className = "svelte-1afgjyw";
+			button_10.className = "svelte-ahjp35";
+			div_8.className = "svelte-ahjp35";
 			addListener(button_11, "click", click_handler_11);
 			button_11.title = "set Background Color";
-			button_11.className = "svelte-1afgjyw";
-			div_9.className = "svelte-1afgjyw";
-			div_5.className = "top-input-wrapper button-set border radius svelte-1afgjyw";
-			hr_1.className = "svelte-1afgjyw";
-			div_10.className = "links svelte-1afgjyw";
+			button_11.className = "svelte-ahjp35";
+			div_9.className = "svelte-ahjp35";
+			div_5.className = "top-input-wrapper button-set border radius svelte-ahjp35";
+			hr_1.className = "svelte-ahjp35";
+			div_10.className = "links svelte-ahjp35";
 			setStyle(div_10, "color", ctx.textColor);
 			div.id = "controller";
 			setStyle(div, "color", ctx.textColor);
-			div.className = "svelte-1afgjyw";
+			div.className = "svelte-ahjp35";
 			div_11.id = "box";
 			setStyle(div_11, "background-color", ctx.bgColor);
-			div_11.className = "svelte-1afgjyw";
+			div_11.className = "svelte-ahjp35";
 		},
 
 		m(target, anchor) {
@@ -15399,7 +15410,7 @@ function create_each_block$5(component, ctx) {
 			p = createElement("p");
 			label = createElement("label");
 			input = createElement("input");
-			text = createText("\r\n          ");
+			text = createText("\n          ");
 			text_1 = createText(text_1_value);
 			input._svelte = { component, ctx };
 
@@ -15523,7 +15534,7 @@ function create_each_block_1$2(component, ctx) {
 			text = createText(text_value);
 			option.__value = option_value_value = ctx.value;
 			option.value = option.__value;
-			option.className = "svelte-1afgjyw";
+			option.className = "svelte-ahjp35";
 		},
 
 		m(target, anchor) {
@@ -15561,7 +15572,7 @@ function create_each_block_2$1(component, ctx) {
 			text = createText(text_value);
 			option.__value = option_value_value = ctx.value;
 			option.value = option.__value;
-			option.className = "svelte-1afgjyw";
+			option.className = "svelte-ahjp35";
 		},
 
 		m(target, anchor) {
