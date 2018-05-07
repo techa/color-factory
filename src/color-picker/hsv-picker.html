@@ -25,7 +25,7 @@
 </style>
 
 <script>
-  import Color from 'color'
+  import Color from '../Colorx.js'
 
   import Spectrum from './spectrum.html'
   import Slider from './slider.html'
@@ -37,7 +37,7 @@
     },
     data () {
       return {
-        color: Color('#000'),
+        color: new Color('#000'),
       }
     },
     computed: {

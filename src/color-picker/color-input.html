@@ -63,7 +63,7 @@
 </style>
 
 <script>
-  import Color from 'color'
+  import Color from '../Colorx.js'
 
   function caretIndex (event, color) {
     const {value, selectionStart} = event.target
@@ -78,7 +78,7 @@
     data () {
       return {
         phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
-        color: Color('#050'),
+        color: new Color('#050'),
         bgColor: '',
         models: ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'],
         model: 'rgb',
@@ -101,7 +101,7 @@
       },
       keydown (event) {
         const value = event.target.value
-        const color = Color(value)
+        const color = new Color(value)
         if (/^#?([a-f\d]{3})$/i.test(value) && event.key === 'Enter') {
           this.set({ color, model: 'hex' })
         }
@@ -112,7 +112,7 @@
 
         let color
         try {
-          color = Color(value)
+          color = new Color(value)
         } catch (error) {
           return
         }
@@ -133,11 +133,11 @@
         const {model, models} = this.get()
         let color
         try {
-          color = Color(value)
+          color = new Color(value)
         } catch (error) {
           try {
             const arr = value.match(/.*?\(([-\d.%, ]*)\)/)[1].split(',')
-            color = Color(arr.map((v) => {
+            color = new Color(arr.map((v) => {
               v = v.trim()
               if (v.slice(-1) === '%') {
                 v = parseFloat(v) / 100
@@ -183,11 +183,11 @@
                 const val = (param[index] + arrow / 100) * 255
                 param = color.rgb().array()
                 param[index] = val
-                color = Color(param, 'rgb')
+                color = new Color(param, 'rgb')
                 break
               default:
                 param[index] += arrow
-                color = Color(param, model)
+                color = new Color(param, model)
                 break
             }
           }

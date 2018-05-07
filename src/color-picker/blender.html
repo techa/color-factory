@@ -59,7 +59,7 @@
 </style>
 
 <script>
-  import Color from 'color'
+  import Color from '../Colorx.js'
   import { MousePosition } from '../mouse.js'
   export default {
     data () {
@@ -101,7 +101,7 @@
         const {width} = this.get().rect
         const x = Math.max(0, Math.min(position.x, width - 1))
         const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data
-        const color = Color({r, g, b})
+        const color = new Color({r, g, b})
 
         this.refs.handle.style.left = x + 'px'
         this.refs.handle.style.backgroundColor = color.isDark() ? '#fff' : '#000'
@@ -118,8 +118,8 @@
           ? cxt.createLinearGradient(0, 0, 0, h)
           : cxt.createLinearGradient(0, 0, w, 0)
 
-        grd.addColorStop(0.02, Color(color1).rgb().string())
-        grd.addColorStop(0.98, Color(color2).rgb().string())
+        grd.addColorStop(0.02, new Color(color1).rgb().string())
+        grd.addColorStop(0.98, new Color(color2).rgb().string())
 
         cxt.fillStyle = grd
         cxt.fillRect(0, 0, w, h)

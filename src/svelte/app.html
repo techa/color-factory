@@ -111,7 +111,7 @@
 
   import SaveModal from './save-modal.html'
 
-  import Color from 'color'
+  import Color from '../Colorx.js'
   import store from '../store/store.js'
   import {Selectable} from '../mouse'
 
@@ -154,8 +154,8 @@
       }
     },
     computed: {
-      textColor: ({ $bgColor }) => Color($bgColor).isDark() ? '#fff' : '#000',
-      bgColor: ({ $bgColor, $grayscale }) => $grayscale ? Color($bgColor).grayscale() : Color($bgColor),
+      textColor: ({ $bgColor }) => new Color($bgColor).isDark() ? '#fff' : '#000',
+      bgColor: ({ $bgColor, $grayscale }) => $grayscale ? new Color($bgColor).grayscale() : new Color($bgColor),
     },
     oncreate () {
       this.refs.name.addEventListener('focus', function (e) {

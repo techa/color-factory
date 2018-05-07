@@ -54,7 +54,7 @@
 </style>
 
 <script>
-  import Color from 'color'
+  import Color from '../Colorx.js'
   import { MousePosition } from '../mouse.js'
 
   export default {
@@ -87,7 +87,7 @@
         const arr = color[model]().array()
         arr[1] = position.percentLeft
         arr[2] = 100 - position.percentTop
-        this.set({ color: Color(arr, model) })
+        this.set({ color: new Color(arr, model) })
       },
       setPosition () {
         const {color, model} = this.get()

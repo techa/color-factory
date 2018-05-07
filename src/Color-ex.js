@@ -97,7 +97,7 @@ Color.prototype.mostReadable = function (...colors) {
   return mostread
 }
 Color.random = function () {
-  return Color('#' + Math.random().toString(16).slice(2, 8))
+  return new Color('#' + Math.random().toString(16).slice(2, 8))
 }
 
 /**
@@ -112,8 +112,8 @@ Color.random = function () {
  * @returns
  */
 export function alphaBlending (...colors) {
-  return Color(colors
-    .map((color) => Color(color).rgb().array())
+  return new Color(colors
+    .map((color) => new Color(color).rgb().array())
     .reduce((back, front) => {
       const color = []
       const a = front[3] == null ? 1 : front[3]

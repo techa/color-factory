@@ -88,13 +88,13 @@
 
 <script>
   import Modal from './modal.html'
-  import Color from 'color'
+  import Color from '../Colorx.js'
   import defaultpalette from '../constants/newwebcolor'
 
   const saveKeys = Object.keys(defaultpalette)
 
   function colorlist (cards) {
-    return cards.map((card) => Color(card.color))
+    return cards.map((card) => new Color(card.color))
   }
 
   export default {

@@ -1,6 +1,6 @@
 import defaultpalette from '../constants/newwebcolor'
 import Histore from './svelte-store-ex.js'
-import Color from 'color'
+import Color from '../Colorx.js'
 
 const store = new Histore(
   Object.assign({
@@ -38,13 +38,13 @@ const store = new Histore(
       if (state.cards) {
         for (let i = 0; i < state.cards.length; i++) {
           const card = state.cards[i]
-          card.color = Color(card.color)
+          card.color = new Color(card.color)
           card.index = i
           card.zIndex = card.zIndex == null ? i : card.zIndex
         }
       }
-      state.bgColor = Color(state.bgColor)
-      console.log('Color, Color()', state)
+      state.bgColor = new Color(state.bgColor)
+      console.log('Color, new Color()', state)
     }
   }
 )
@@ -52,7 +52,7 @@ const store = new Histore(
 // Events
 store.on('cards.ADD_CARD', (card) => {
   store.set({cards: (cards) => {
-    card.color = Color(card.color)
+    card.color = new Color(card.color)
     card.zIndex = cards.length
     card.index = cards.length
     return [...cards, store.cardPosition(card)]
@@ -72,7 +72,7 @@ store.on('cards.DUPLICATE_CARD', (indexs) => {
   store.set({cards: (cards) => {
     const newCards = indexs.map((index, i) => {
       const card = Object.assign({}, cards[index])
-      card.color = Color(card.color)
+      card.color = new Color(card.color)
       card.zIndex = cards.length + i
       card.index = cards.length + i
       card.left += 30

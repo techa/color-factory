@@ -18,7 +18,7 @@
 
 <script>
   import store from '../store/store.js'
-  import Color from 'color'
+  import Color from '../Colorx.js'
   import WEBCOLOR      from '../constants/webcolor.json'
   import JISCOLOR_EN   from '../constants/jiscolor_en.json'
   import JISCOLOR_JA   from '../constants/jiscolor_ja.json'
@@ -76,7 +76,7 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          this.fire('colorpick', {current: { name, color: Color(color) }})
+          this.fire('colorpick', {current: { name, color: new Color(color) }})
         }
       })
       colortips.addEventListener('contextmenu', (e) => {
@@ -86,7 +86,7 @@
           const [name, color] = el.title.split(' : ')
           store.fire('menu_open', e, {
             name,
-            color: Color(color)
+            color: new Color(color)
           }, 'tip')
         }
       })
@@ -98,7 +98,7 @@
 
           store.fire('cards.ADD_CARD', {
             name,
-            color: Color(color)
+            color: new Color(color)
           })
         }
       })
