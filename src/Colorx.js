@@ -48,7 +48,10 @@ export default class Color extends color {
     }
   }
   toJSON () {
-    return this[this.model]().round(2).object()
+    if (this.valpha !== 1) {
+      return this.hex() + Math.round(this.valpha * 255).toString(16)
+    }
+    return this.hex() // this[this.model]().round(2).object()
   }
   nearColorName () {
     const hsl = this.hsl().alpha(1).object()
