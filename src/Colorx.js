@@ -88,16 +88,17 @@ export default class Color extends color {
    * @returns
    */
   alphaBlending (...colors) {
-    return new Color(colors
-      .map((color) => new Color(color).rgb().array())
-      .reduce((back, front) => {
-        const color = []
-        const a = front[3] == null ? 1 : front[3]
-        for (let i = 0; i < 3; i++) {
-          color[i] = front[i] * a + back[i] * (1 - a)
-        }
-        return color
-      }, [255, 255, 255, 1])
+    return new Color(
+      [this, ...colors]
+        .map((color) => new Color(color).rgb().array())
+        .reduce((back, front) => {
+          const color = []
+          const a = front[3] == null ? 1 : front[3]
+          for (let i = 0; i < 3; i++) {
+            color[i] = front[i] * a + back[i] * (1 - a)
+          }
+          return color
+        }, [255, 255, 255, 1])
     )
   }
   contrast (txtColor) {
