@@ -15,24 +15,18 @@
   ],
   "main": "src/index.js",
   "scripts": {
-    "start": "npm-run-all -p watch browse",
+    "start": "npm run browse | npm run build -- -w",
     "clean": "rm -rf dist/*",
-    "watch": "onchange \"src/**/*.{js,html}\" -d 100 -- npm run build:dev",
-    "browse": "browser-sync start --server --index \"index.html\" --files \"src/**/.css, dist/bundle.js\" --no-notify",
-    "build": "npm-run-all build:*",
-    "build:dev": "rollup -c",
-    "build:prod": "set NODE_ENV=production && rollup -c ./rollup.config.js"
+    "browse": "browser-sync start --server --index \"index.html\" --files \"src/**/.css, dist/bundle.js\"",
+    "build": "rollup -c"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
-    "npm-run-all": "^4.1.2",
-    "onchange": "^3.3.0",
     "rollup": "^0.56.4",
     "rollup-plugin-babel": "^3.0.3",
     "rollup-plugin-commonjs": "^9.0.0",
     "rollup-plugin-json": "^2.3.0",
     "rollup-plugin-node-resolve": "^3.0.3",
-    "rollup-plugin-replace": "^2.0.0",
     "rollup-plugin-svelte": "^4.1.0",
     "rollup-plugin-uglify": "^3.0.0",
     "svelte": "^2.4.4"

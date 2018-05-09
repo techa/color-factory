@@ -2,15 +2,14 @@ import commonjs    from 'rollup-plugin-commonjs'
 import nodeResolve from 'rollup-plugin-node-resolve'
 
 import json from 'rollup-plugin-json'
-import replace from 'rollup-plugin-replace'
 
 import svelte from 'rollup-plugin-svelte'
 
 import babel from 'rollup-plugin-babel'
 import uglify from 'rollup-plugin-uglify'
 
-const env = (process.env.NODE_ENV || 'development').trim()
-const suffix = (env === 'production') ? '.min' : ''
+const production = !process.env.ROLLUP_WATCH
+const suffix = (production) ? '.min' : ''
 
 export default {
   input: 'src/index.js',
@@ -22,6 +21,13 @@ export default {
   },
   // http://qiita.com/cognitom/items/e3ac0da00241f427dad6#appendix
   plugins: [
+    svelte({
+      dev: !production,
+      css: css => {
+        css.write('dist/bundle.css')
+      },
+      store: true,
+    }),
     commonjs(), // CommonJSモジュールをES6に変換
     json({preferConst: true}),
     nodeResolve({
@@ -29,17 +35,8 @@ export default {
       main: true, // if provided in CommonJS
       browser: true, // if provided for browsers
     }), // npmモジュールを`node_modules`から読み込む
-    replace({
-      'process.env.NODE_ENV': JSON.stringify(env)
-    }),
-    svelte({
-      css: css => {
-        css.write('dist/bundle.css')
-      },
-      store: true,
-    }),
-    (env === 'production' && babel()),
-    (env === 'production' && uglify({
+    (production && babel()),
+    (production && uglify({
       compress: {
         dead_code: true,
         global_defs: {
@@ -49,4 +46,8 @@ export default {
       },
     })),
   ],
+  watch: {
+    chokidar: false,
+    include: 'src/**'
+  },
 }
