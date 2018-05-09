@@ -156,6 +156,13 @@ function destroy(detach) {
 	this._state = {};
 }
 
+function destroyDev(detach) {
+	destroy.call(this, detach);
+	this.destroy = function() {
+		console.warn('Component was already destroyed');
+	};
+}
+
 function _differs(a, b) {
 	return a != a ? b == b : a !== b || ((a && typeof a === 'object') || typeof a === 'function');
 }
@@ -236,6 +243,17 @@ function _set(newState) {
 	}
 }
 
+function setDev(newState) {
+	if (typeof newState !== 'object') {
+		throw new Error(
+			this._debugName + '.set was called without an object of data key-values to update.'
+		);
+	}
+
+	this._checkReadOnly(newState);
+	set.call(this, newState);
+}
+
 function callAll(fns) {
 	while (fns && fns.length) fns.shift()();
 }
@@ -252,12 +270,12 @@ function removeFromStore() {
 	this.store._remove(this);
 }
 
-var proto = {
-	destroy,
+var protoDev = {
+	destroy: destroyDev,
 	get,
 	fire,
 	on,
-	set,
+	set: setDev,
 	_recompute: noop,
 	_set,
 	_mount,
@@ -2229,7 +2247,7 @@ var xkcd = [["AcidGreen",{"h":87,"s":99,"l":52}],["Adobe",{"h":18,"s":47,"l":51}
 class Color$1 extends color {
   constructor (param, model) {
     const match = typeof param === 'string' && param.replace(/\s*/g, '').match(
-      /(hsv|hwb|xyz|lab|cmyk)a?\((\d+),-?(\d+)%?,-?(\d+)%?(?:,([.\d]+))?\)/i
+      /(hsv|hwb|xyz|lab|cmyk)a?\([-+]?(\d+),-?(\d+)%?,-?(\d+)%?(?:,([.\d]+))?\)/i
     );
     if (match) {
       param = match.slice(2);
@@ -2259,6 +2277,10 @@ class Color$1 extends color {
         const arr = color$$1[model]().round().array();
         if (color$$1.valpha !== 1) {
           str += 'a';
+        }
+        if (/hsv|hwb/.test(model)) {
+          arr[1] += '%';
+          arr[2] += '%';
         }
         return str + `(${arr.join(', ')})`
       case 'cmyk':
@@ -2313,16 +2335,17 @@ class Color$1 extends color {
    * @returns
    */
   alphaBlending (...colors) {
-    return new Color$1(colors
-      .map((color$$1) => new Color$1(color$$1).rgb().array())
-      .reduce((back, front) => {
-        const color$$1 = [];
-        const a = front[3] == null ? 1 : front[3];
-        for (let i = 0; i < 3; i++) {
-          color$$1[i] = front[i] * a + back[i] * (1 - a);
-        }
-        return color$$1
-      }, [255, 255, 255, 1])
+    return new Color$1(
+      [this, ...colors]
+        .map((color$$1) => new Color$1(color$$1).rgb().array())
+        .reduce((back, front) => {
+          const color$$1 = [];
+          const a = front[3] == null ? 1 : front[3];
+          for (let i = 0; i < 3; i++) {
+            color$$1[i] = front[i] * a + back[i] * (1 - a);
+          }
+          return color$$1
+        }, [255, 255, 255, 1])
     )
   }
   contrast (txtColor) {
@@ -2589,17 +2612,17 @@ function create_main_fragment(component, ctx) {
 	var if_block = current_block_type(component, ctx);
 
 	return {
-		c() {
+		c: function create() {
 			if_block.c();
 			if_block_anchor = createComment();
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			if_block.m(target, anchor);
 			insertNode(if_block_anchor, target, anchor);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
 				if_block.p(changed, ctx);
 			} else {
@@ -2611,12 +2634,12 @@ function create_main_fragment(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			if_block.u();
 			detachNode(if_block_anchor);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			if_block.d();
 		}
 	};
@@ -2627,7 +2650,7 @@ function create_each_block(component, ctx) {
 	var div, button, text_value = ctx._model.toUpperCase(), text, button_style_value;
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			button = createElement("button");
 			text = createText(text_value);
@@ -2638,13 +2661,13 @@ function create_each_block(component, ctx) {
 			button.className = "svelte-xtt6go";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			appendNode(button, div);
 			appendNode(text, button);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.models) && text_value !== (text_value = ctx._model.toUpperCase())) {
 				text.data = text_value;
 			}
@@ -2655,11 +2678,11 @@ function create_each_block(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			removeListener(button, "click", click_handler);
 		}
 	};
@@ -2670,18 +2693,18 @@ function create_if_block(component, ctx) {
 	var input;
 
 	return {
-		c() {
+		c: function create() {
 			input = createElement("input");
 			setAttribute(input, "type", "color");
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(input, target, anchor);
 		},
 
 		p: noop,
 
-		u() {
+		u: function unmount() {
 			detachNode(input);
 		},
 
@@ -2718,7 +2741,7 @@ function create_if_block_1(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 
 			for (var i = 0; i < each_blocks.length; i += 1) {
@@ -2754,7 +2777,7 @@ function create_if_block_1(component, ctx) {
 			div_1.className = "input-wrapper svelte-xtt6go";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 
 			for (var i = 0; i < each_blocks.length; i += 1) {
@@ -2768,7 +2791,7 @@ function create_if_block_1(component, ctx) {
 			appendNode(button, div_1);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if (changed.models || changed.model || changed.color || changed.bgColor || changed.textColor) {
 				each_value = ctx.models;
 
@@ -2812,7 +2835,7 @@ function create_if_block_1(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 
 			for (var i = 0; i < each_blocks.length; i += 1) {
@@ -2823,7 +2846,7 @@ function create_if_block_1(component, ctx) {
 			detachNode(div_1);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			destroyEach(each_blocks);
 
 			removeListener(input, "input", input_handler);
@@ -2850,20 +2873,33 @@ function click_handler(event) {
 }
 
 function Color_input(options) {
+	this._debugName = '<Color_input>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this._state = assign(data(), options.data);
 	this._recompute({ color: 1, model: 1, bgColor: 1 }, this._state);
+	if (!('color' in this._state)) console.warn("<Color_input> was created without expected data property 'color'");
+	if (!('model' in this._state)) console.warn("<Color_input> was created without expected data property 'model'");
+	if (!('bgColor' in this._state)) console.warn("<Color_input> was created without expected data property 'bgColor'");
+	if (!('phone' in this._state)) console.warn("<Color_input> was created without expected data property 'phone'");
+	if (!('models' in this._state)) console.warn("<Color_input> was created without expected data property 'models'");
 
 	this._fragment = create_main_fragment(this, this._state);
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 	}
 }
 
-assign(Color_input.prototype, proto);
+assign(Color_input.prototype, protoDev);
 assign(Color_input.prototype, methods);
+
+Color_input.prototype._checkReadOnly = function _checkReadOnly(newState) {
+	if ('value' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_input>: Cannot set read-only property 'value'");
+	if ('textColor' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_input>: Cannot set read-only property 'textColor'");
+};
 
 Color_input.prototype._recompute = function _recompute(changed, state) {
 	if (changed.color || changed.model) {
@@ -3548,7 +3584,7 @@ function create_main_fragment$1(component, ctx) {
 	var div, div_1, div_class_value;
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			div_1 = createElement("div");
 			div_1.className = "color-handle svelte-1b9ntd4";
@@ -3556,14 +3592,14 @@ function create_main_fragment$1(component, ctx) {
 			setStyle(div, "background-color", "hsl(" + ctx.color.hue() + ",100%,50%)");
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			appendNode(div_1, div);
 			component.refs.handle = div_1;
 			component.refs.spectrum = div;
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.model) && div_class_value !== (div_class_value = "spectrum " + ctx.model + " svelte-1b9ntd4")) {
 				div.className = div_class_value;
 			}
@@ -3573,11 +3609,11 @@ function create_main_fragment$1(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			if (component.refs.handle === div_1) component.refs.handle = null;
 			if (component.refs.spectrum === div) component.refs.spectrum = null;
 		}
@@ -3585,9 +3621,13 @@ function create_main_fragment$1(component, ctx) {
 }
 
 function Spectrum(options) {
+	this._debugName = '<Spectrum>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this.refs = {};
 	this._state = assign(data$1(), options.data);
+	if (!('model' in this._state)) console.warn("<Spectrum> was created without expected data property 'model'");
+	if (!('color' in this._state)) console.warn("<Spectrum> was created without expected data property 'color'");
 	this._handlers.update = [onupdate];
 
 	if (!options.root) {
@@ -3602,6 +3642,7 @@ function Spectrum(options) {
 	});
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 
@@ -3609,8 +3650,11 @@ function Spectrum(options) {
 	}
 }
 
-assign(Spectrum.prototype, proto);
+assign(Spectrum.prototype, protoDev);
 assign(Spectrum.prototype, methods$1);
+
+Spectrum.prototype._checkReadOnly = function _checkReadOnly(newState) {
+};
 
 /* src\color-picker\slider.html generated by Svelte v2.4.4 */
 
@@ -3721,7 +3765,7 @@ function create_main_fragment$2(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			canvas = createElement("canvas");
 			text = createText("\r\n  ");
@@ -3731,7 +3775,7 @@ function create_main_fragment$2(component, ctx) {
 			div.className = div_class_value = "slider alpha-check-bg " + ctx.direction + " svelte-1qjgv7z";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			appendNode(canvas, div);
 			component.refs.slider = canvas;
@@ -3741,7 +3785,7 @@ function create_main_fragment$2(component, ctx) {
 			component.refs.box = div;
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			setAttributes(canvas, getSpreadUpdate(canvas_levels, [
 				{ class: "slider-canvas svelte-1qjgv7z" },
 				changed.rect && ctx.rect
@@ -3756,11 +3800,11 @@ function create_main_fragment$2(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			if (component.refs.slider === canvas) component.refs.slider = null;
 			if (component.refs.sliderHandle === div_1) component.refs.sliderHandle = null;
 			if (component.refs.box === div) component.refs.box = null;
@@ -3769,9 +3813,13 @@ function create_main_fragment$2(component, ctx) {
 }
 
 function Slider(options) {
+	this._debugName = '<Slider>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this.refs = {};
 	this._state = assign(data$2(), options.data);
+	if (!('direction' in this._state)) console.warn("<Slider> was created without expected data property 'direction'");
+	if (!('rect' in this._state)) console.warn("<Slider> was created without expected data property 'rect'");
 	this._handlers.update = [onupdate$1];
 
 	if (!options.root) {
@@ -3786,6 +3834,7 @@ function Slider(options) {
 	});
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 
@@ -3793,8 +3842,11 @@ function Slider(options) {
 	}
 }
 
-assign(Slider.prototype, proto);
+assign(Slider.prototype, protoDev);
 assign(Slider.prototype, methods$2);
+
+Slider.prototype._checkReadOnly = function _checkReadOnly(newState) {
+};
 
 /* src\color-picker\hsv-picker.html generated by Svelte v2.4.4 */
 
@@ -3869,7 +3921,7 @@ function create_main_fragment$3(component, ctx) {
 	component.refs.alpha = slider_1;
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			slider._fragment.c();
 			text = createText("\n  ");
@@ -3879,7 +3931,7 @@ function create_main_fragment$3(component, ctx) {
 			div.className = "hsv-picker svelte-1uj57gw";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			slider._mount(div, null);
 			appendNode(text, div);
@@ -3888,7 +3940,7 @@ function create_main_fragment$3(component, ctx) {
 			slider_1._mount(div, null);
 		},
 
-		p(changed, _ctx) {
+		p: function update(changed, _ctx) {
 			ctx = _ctx;
 			var slider_changes = {};
 			if (changed.color) slider_changes.value = ctx.color.hue();
@@ -3907,11 +3959,11 @@ function create_main_fragment$3(component, ctx) {
 			slider_1._set(slider_1_changes);
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			slider.destroy(false);
 			if (component.refs.hue === slider) component.refs.hue = null;
 			spectrum.destroy(false);
@@ -3922,10 +3974,13 @@ function create_main_fragment$3(component, ctx) {
 }
 
 function Hsv_picker(options) {
+	this._debugName = '<Hsv_picker>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this.refs = {};
 	this._state = assign(data$3(), options.data);
 	this._recompute({ color: 1 }, this._state);
+	if (!('color' in this._state)) console.warn("<Hsv_picker> was created without expected data property 'color'");
 	this._handlers.update = [onupdate$2];
 
 	if (!options.root) {
@@ -3942,6 +3997,7 @@ function Hsv_picker(options) {
 	});
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 
@@ -3953,7 +4009,11 @@ function Hsv_picker(options) {
 	}
 }
 
-assign(Hsv_picker.prototype, proto);
+assign(Hsv_picker.prototype, protoDev);
+
+Hsv_picker.prototype._checkReadOnly = function _checkReadOnly(newState) {
+	if ('textColor' in newState && !this._updatingReadonlyProperty) throw new Error("<Hsv_picker>: Cannot set read-only property 'textColor'");
+};
 
 Hsv_picker.prototype._recompute = function _recompute(changed, state) {
 	if (changed.color) {
@@ -4051,7 +4111,7 @@ function create_main_fragment$4(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			dv = createElement("dv");
 			text = createText("\n  ");
@@ -4071,7 +4131,7 @@ function create_main_fragment$4(component, ctx) {
 			div.className = "blender svelte-5950l5";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			appendNode(dv, div);
 			component.refs.color1 = dv;
@@ -4088,7 +4148,7 @@ function create_main_fragment$4(component, ctx) {
 			component.refs.color2 = dv_1;
 		},
 
-		p(changed, _ctx) {
+		p: function update(changed, _ctx) {
 			ctx = _ctx;
 			setAttributes(canvas, getSpreadUpdate(canvas_levels, [
 				{ class: "blender-canvas svelte-5950l5" },
@@ -4100,11 +4160,11 @@ function create_main_fragment$4(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			removeListener(dv, "click", click_handler);
 			if (component.refs.color1 === dv) component.refs.color1 = null;
 			if (component.refs.canvas === canvas) component.refs.canvas = null;
@@ -4117,9 +4177,14 @@ function create_main_fragment$4(component, ctx) {
 }
 
 function Blender(options) {
+	this._debugName = '<Blender>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this.refs = {};
 	this._state = assign(data$4(), options.data);
+	if (!('color' in this._state)) console.warn("<Blender> was created without expected data property 'color'");
+	if (!('rect' in this._state)) console.warn("<Blender> was created without expected data property 'rect'");
+	if (!('direction' in this._state)) console.warn("<Blender> was created without expected data property 'direction'");
 	this._handlers.update = [onupdate$3];
 
 	if (!options.root) {
@@ -4134,6 +4199,7 @@ function Blender(options) {
 	});
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 
@@ -4141,8 +4207,11 @@ function Blender(options) {
 	}
 }
 
-assign(Blender.prototype, proto);
+assign(Blender.prototype, protoDev);
 assign(Blender.prototype, methods$3);
+
+Blender.prototype._checkReadOnly = function _checkReadOnly(newState) {
+};
 
 /* src\color-picker\color-picker.html generated by Svelte v2.4.4 */
 
@@ -4265,7 +4334,7 @@ function create_main_fragment$5(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			colorinput._fragment.c();
 			text = createText("\n  ");
@@ -4298,7 +4367,7 @@ function create_main_fragment$5(component, ctx) {
 			div.className = "color-picker svelte-en6dq1";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			colorinput._mount(div, null);
 			appendNode(text, div);
@@ -4317,7 +4386,7 @@ function create_main_fragment$5(component, ctx) {
 			appendNode(button_1, div_5);
 		},
 
-		p(changed, _ctx) {
+		p: function update(changed, _ctx) {
 			ctx = _ctx;
 			var colorinput_changes = {};
 			if (changed.bgColor) colorinput_changes.bgColor = ctx.bgColor;
@@ -4361,11 +4430,11 @@ function create_main_fragment$5(component, ctx) {
 			blender_updating = {};
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			colorinput.destroy(false);
 			hsvpicker.destroy(false);
 			removeListener(button, "click", click_handler);
@@ -4376,9 +4445,14 @@ function create_main_fragment$5(component, ctx) {
 }
 
 function Color_picker(options) {
+	this._debugName = '<Color_picker>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this._state = assign(data$5(), options.data);
 	this._recompute({ color: 1, bgColor: 1 }, this._state);
+	if (!('color' in this._state)) console.warn("<Color_picker> was created without expected data property 'color'");
+	if (!('bgColor' in this._state)) console.warn("<Color_picker> was created without expected data property 'bgColor'");
+	if (!('model' in this._state)) console.warn("<Color_picker> was created without expected data property 'model'");
 
 	this._handlers.state = [onstate];
 
@@ -4396,6 +4470,7 @@ function Color_picker(options) {
 	});
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 
@@ -4407,8 +4482,12 @@ function Color_picker(options) {
 	}
 }
 
-assign(Color_picker.prototype, proto);
+assign(Color_picker.prototype, protoDev);
 assign(Color_picker.prototype, methods$4);
+
+Color_picker.prototype._checkReadOnly = function _checkReadOnly(newState) {
+	if ('contrast' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_picker>: Cannot set read-only property 'contrast'");
+};
 
 Color_picker.prototype._recompute = function _recompute(changed, state) {
 	if (changed.color || changed.bgColor) {
@@ -4756,8 +4835,6 @@ class Histore extends Store {
     };
 
     this.on('update', this._memo.bind(this));
-
-    this.methodToEventHandler('undo', 'redo');
   }
   on (eventName, handler) {
     if (eventName === 'state' || eventName === 'update') {
@@ -4777,13 +4854,6 @@ class Histore extends Store {
       console.error(`fire: ${eventName} is undefind`);
     }
     return this
-  }
-  methodToEventHandler (...eventnames) {
-    for (const eventname of eventnames) {
-      if (typeof this[eventname] === 'function') {
-        this.on(eventname, this[eventname].bind(this));
-      }
-    }
   }
   set (newState, memo) {
     for (const key in newState) {
@@ -5163,7 +5233,7 @@ function create_main_fragment$6(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			div_1 = createElement("div");
 			h3 = createElement("h3");
@@ -5196,7 +5266,7 @@ function create_main_fragment$6(component, ctx) {
 			div.style.cssText = div_style_value = "" + ctx.cardStyle + " z-index: " + ctx.card.zIndex + ";";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			appendNode(div_1, div);
 			appendNode(h3, div_1);
@@ -5218,7 +5288,7 @@ function create_main_fragment$6(component, ctx) {
 			component.refs.card = div;
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.card) && text_value !== (text_value = ctx.card.name)) {
 				text.data = text_value;
 			}
@@ -5263,7 +5333,7 @@ function create_main_fragment$6(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 
 			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
@@ -5271,7 +5341,7 @@ function create_main_fragment$6(component, ctx) {
 			}
 		},
 
-		d() {
+		d: function destroy$$1() {
 			if (component.refs.title === h3) component.refs.title = null;
 
 			destroyEach(each_blocks);
@@ -5297,17 +5367,17 @@ function create_each_block$1(component, ctx) {
 	var if_block = current_block_type(component, ctx);
 
 	return {
-		c() {
+		c: function create() {
 			if_block.c();
 			if_block_anchor = createComment();
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			if_block.m(target, anchor);
 			insertNode(if_block_anchor, target, anchor);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
 				if_block.p(changed, ctx);
 			} else {
@@ -5319,12 +5389,12 @@ function create_each_block$1(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			if_block.u();
 			detachNode(if_block_anchor);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			if_block.d();
 		}
 	};
@@ -5335,23 +5405,23 @@ function create_if_block$1(component, ctx) {
 	var div, text;
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			text = createText(ctx.contrast);
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			appendNode(text, div);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if (changed.contrast) {
 				text.data = ctx.contrast;
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
@@ -5364,23 +5434,23 @@ function create_if_block_1$1(component, ctx) {
 	var div, text_value = ctx.card.color.toString(ctx.key), text;
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			text = createText(text_value);
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			appendNode(text, div);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.card || changed.modelsEntries) && text_value !== (text_value = ctx.card.color.toString(ctx.key))) {
 				text.data = text_value;
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
@@ -5398,11 +5468,21 @@ function get_each_context$1(ctx, list, i) {
 }
 
 function Color_card(options) {
+	this._debugName = '<Color_card>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this.refs = {};
 	this._state = assign(assign(this.store._init(["bgColor","grayscale","cardViewModels","textvisible"]), data$6()), options.data);
 	this.store._add(this, ["bgColor","grayscale","cardViewModels","textvisible"]);
 	this._recompute({ card: 1, $bgColor: 1, contrast: 1, $grayscale: 1, $cardViewModels: 1 }, this._state);
+	if (!('card' in this._state)) console.warn("<Color_card> was created without expected data property 'card'");
+	if (!('$bgColor' in this._state)) console.warn("<Color_card> was created without expected data property '$bgColor'");
+
+	if (!('$grayscale' in this._state)) console.warn("<Color_card> was created without expected data property '$grayscale'");
+	if (!('$cardViewModels' in this._state)) console.warn("<Color_card> was created without expected data property '$cardViewModels'");
+
+	if (!('$textvisible' in this._state)) console.warn("<Color_card> was created without expected data property '$textvisible'");
+	if (!('edit' in this._state)) console.warn("<Color_card> was created without expected data property 'edit'");
 	this._handlers.update = [onupdate$4];
 
 	this._handlers.destroy = [removeFromStore];
@@ -5419,6 +5499,7 @@ function Color_card(options) {
 	});
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 
@@ -5426,8 +5507,15 @@ function Color_card(options) {
 	}
 }
 
-assign(Color_card.prototype, proto);
+assign(Color_card.prototype, protoDev);
 assign(Color_card.prototype, methods$5);
+
+Color_card.prototype._checkReadOnly = function _checkReadOnly(newState) {
+	if ('contrast' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_card>: Cannot set read-only property 'contrast'");
+	if ('textColor' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_card>: Cannot set read-only property 'textColor'");
+	if ('cardStyle' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_card>: Cannot set read-only property 'cardStyle'");
+	if ('modelsEntries' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_card>: Cannot set read-only property 'modelsEntries'");
+};
 
 Color_card.prototype._recompute = function _recompute(changed, state) {
 	if (changed.card || changed.$bgColor) {
@@ -13325,7 +13413,7 @@ function create_main_fragment$7(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			select = createElement("select");
 
@@ -13351,7 +13439,7 @@ function create_main_fragment$7(component, ctx) {
 			setStyle(div_1, "flex", "1");
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			appendNode(select, div);
 
@@ -13371,7 +13459,7 @@ function create_main_fragment$7(component, ctx) {
 			component.refs.colortips = div_3;
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if (changed.colorlists) {
 				each_value = ctx.colorlists;
 
@@ -13417,7 +13505,7 @@ function create_main_fragment$7(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 
 			for (var i = 0; i < each_blocks.length; i += 1) {
@@ -13432,7 +13520,7 @@ function create_main_fragment$7(component, ctx) {
 			}
 		},
 
-		d() {
+		d: function destroy$$1() {
 			destroyEach(each_blocks);
 
 			removeListener(select, "change", change_handler);
@@ -13449,7 +13537,7 @@ function create_each_block$2(component, ctx) {
 	var option, text_value = ctx.data.name, text;
 
 	return {
-		c() {
+		c: function create() {
 			option = createElement("option");
 			text = createText(text_value);
 			option.__value = ctx.index;
@@ -13457,18 +13545,18 @@ function create_each_block$2(component, ctx) {
 			option.className = "svelte-nyzeoa";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(option, target, anchor);
 			appendNode(text, option);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.colorlists) && text_value !== (text_value = ctx.data.name)) {
 				text.data = text_value;
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(option);
 		},
 
@@ -13481,18 +13569,18 @@ function create_each_block_1(component, ctx) {
 	var div, div_title_value;
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			div.className = "tip svelte-nyzeoa";
 			div.title = div_title_value = ctx.name+' : '+ctx.color;
 			setStyle(div, "background-color", ctx.color);
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.list) && div_title_value !== (div_title_value = ctx.name+' : '+ctx.color)) {
 				div.title = div_title_value;
 			}
@@ -13502,7 +13590,7 @@ function create_each_block_1(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
@@ -13528,10 +13616,14 @@ function get_each_1_context(ctx, list, i) {
 }
 
 function Color_lists(options) {
+	this._debugName = '<Color_lists>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this.refs = {};
 	this._state = assign(data$7(), options.data);
 	this._recompute({ colorlists: 1, colorlistsIndex: 1 }, this._state);
+	if (!('colorlists' in this._state)) console.warn("<Color_lists> was created without expected data property 'colorlists'");
+	if (!('colorlistsIndex' in this._state)) console.warn("<Color_lists> was created without expected data property 'colorlistsIndex'");
 
 	if (!options.root) {
 		this._oncreate = [];
@@ -13545,6 +13637,7 @@ function Color_lists(options) {
 	});
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 
@@ -13552,7 +13645,11 @@ function Color_lists(options) {
 	}
 }
 
-assign(Color_lists.prototype, proto);
+assign(Color_lists.prototype, protoDev);
+
+Color_lists.prototype._checkReadOnly = function _checkReadOnly(newState) {
+	if ('list' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_lists>: Cannot set read-only property 'list'");
+};
 
 Color_lists.prototype._recompute = function _recompute(changed, state) {
 	if (changed.colorlists || changed.colorlistsIndex) {
@@ -13736,7 +13833,7 @@ function create_main_fragment$8(component, ctx) {
 	var if_block_2 = (ctx.activeCard) && create_if_block_2(component, ctx);
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			if (if_block) if_block.c();
 			text = createText("\n  ");
@@ -13746,7 +13843,7 @@ function create_main_fragment$8(component, ctx) {
 			div.className = "context-menu";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			if (if_block) if_block.m(div, null);
 			appendNode(text, div);
@@ -13756,7 +13853,7 @@ function create_main_fragment$8(component, ctx) {
 			component.refs.menu = div;
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
 				if (if_block) {
 					if_block.u();
@@ -13782,13 +13879,13 @@ function create_main_fragment$8(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 			if (if_block) if_block.u();
 			if (if_block_2) if_block_2.u();
 		},
 
-		d() {
+		d: function destroy$$1() {
 			if (if_block) if_block.d();
 			if (if_block_2) if_block_2.d();
 			if (component.refs.menu === div) component.refs.menu = null;
@@ -13805,22 +13902,22 @@ function create_if_block$2(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			p = createElement("p");
 			p.textContent = "ADD CARD";
 			addListener(p, "click", click_handler);
 			p.className = "menuitem";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(p, target, anchor);
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(p);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			removeListener(p, "click", click_handler);
 		}
 	};
@@ -13847,7 +13944,7 @@ function create_if_block_1$2(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			p = createElement("p");
 			p.innerHTML = "<i class=\"fas fa-edit fa-fw\"></i>\n      RENAME";
 			text_1 = createText("\n    ");
@@ -13869,7 +13966,7 @@ function create_if_block_1$2(component, ctx) {
 			p_3.className = "menuitem";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(p, target, anchor);
 			insertNode(text_1, target, anchor);
 			insertNode(p_1, target, anchor);
@@ -13879,7 +13976,7 @@ function create_if_block_1$2(component, ctx) {
 			insertNode(p_3, target, anchor);
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(p);
 			detachNode(text_1);
 			detachNode(p_1);
@@ -13889,7 +13986,7 @@ function create_if_block_1$2(component, ctx) {
 			detachNode(p_3);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			removeListener(p, "click", click_handler);
 			removeListener(p_1, "click", click_handler_1);
 			removeListener(p_2, "click", click_handler_2);
@@ -13903,7 +14000,7 @@ function create_each_block$3(component, ctx) {
 	var p, text, text_1_value = ctx.activeCard.color[ctx.model](), text_1;
 
 	return {
-		c() {
+		c: function create() {
 			p = createElement("p");
 			text = createText("COPY: ");
 			text_1 = createText(text_1_value);
@@ -13913,13 +14010,13 @@ function create_each_block$3(component, ctx) {
 			p.className = "menuitem";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(p, target, anchor);
 			appendNode(text, p);
 			appendNode(text_1, p);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.activeCard || changed.copys) && text_1_value !== (text_1_value = ctx.activeCard.color[ctx.model]())) {
 				text_1.data = text_1_value;
 			}
@@ -13927,11 +14024,11 @@ function create_each_block$3(component, ctx) {
 			p._svelte.ctx = ctx;
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(p);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			removeListener(p, "click", click_handler$1);
 		}
 	};
@@ -13950,7 +14047,7 @@ function create_if_block_2(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			for (var i = 0; i < each_blocks.length; i += 1) {
 				each_blocks[i].c();
 			}
@@ -13958,7 +14055,7 @@ function create_if_block_2(component, ctx) {
 			each_anchor = createComment();
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			for (var i = 0; i < each_blocks.length; i += 1) {
 				each_blocks[i].m(target, anchor);
 			}
@@ -13966,7 +14063,7 @@ function create_if_block_2(component, ctx) {
 			insertNode(each_anchor, target, anchor);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if (changed.copys || changed.activeCard) {
 				each_value = ctx.copys;
 
@@ -13990,7 +14087,7 @@ function create_if_block_2(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			for (var i = 0; i < each_blocks.length; i += 1) {
 				each_blocks[i].u();
 			}
@@ -13998,7 +14095,7 @@ function create_if_block_2(component, ctx) {
 			detachNode(each_anchor);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			destroyEach(each_blocks);
 		}
 	};
@@ -14019,11 +14116,17 @@ function click_handler$1(event) {
 }
 
 function Context_menu(options) {
+	this._debugName = '<Context_menu>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this.refs = {};
 	this._state = assign(assign(this.store._init(["cardViewModels"]), data$8()), options.data);
 	this.store._add(this, ["cardViewModels"]);
 	this._recompute({ $cardViewModels: 1 }, this._state);
+	if (!('$cardViewModels' in this._state)) console.warn("<Context_menu> was created without expected data property '$cardViewModels'");
+	if (!('mode' in this._state)) console.warn("<Context_menu> was created without expected data property 'mode'");
+	if (!('activeCard' in this._state)) console.warn("<Context_menu> was created without expected data property 'activeCard'");
+	if (!('copys' in this._state)) console.warn("<Context_menu> was created without expected data property 'copys'");
 
 	this._handlers.destroy = [removeFromStore];
 
@@ -14039,6 +14142,7 @@ function Context_menu(options) {
 	});
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 
@@ -14046,8 +14150,12 @@ function Context_menu(options) {
 	}
 }
 
-assign(Context_menu.prototype, proto);
+assign(Context_menu.prototype, protoDev);
 assign(Context_menu.prototype, methods$6);
+
+Context_menu.prototype._checkReadOnly = function _checkReadOnly(newState) {
+	if ('modelsEntries' in newState && !this._updatingReadonlyProperty) throw new Error("<Context_menu>: Cannot set read-only property 'modelsEntries'");
+};
 
 Context_menu.prototype._recompute = function _recompute(changed, state) {
 	if (changed.$cardViewModels) {
@@ -14069,7 +14177,7 @@ function create_main_fragment$9(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			text = createText("\r\n\r\n");
 			div_1 = createElement("div");
@@ -14086,7 +14194,7 @@ function create_main_fragment$9(component, ctx) {
 			div_1.className = "modal svelte-1tnlq1e";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			insertNode(text, target, anchor);
 			insertNode(div_1, target, anchor);
@@ -14110,7 +14218,7 @@ function create_main_fragment$9(component, ctx) {
 
 		p: noop,
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 			detachNode(text);
 			detachNode(div_1);
@@ -14124,7 +14232,7 @@ function create_main_fragment$9(component, ctx) {
 			}
 		},
 
-		d() {
+		d: function destroy$$1() {
 			removeListener(div, "click", click_handler);
 			removeListener(button, "click", click_handler_1);
 		}
@@ -14132,6 +14240,8 @@ function create_main_fragment$9(component, ctx) {
 }
 
 function Modal(options) {
+	this._debugName = '<Modal>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this._state = assign({}, options.data);
 
@@ -14142,12 +14252,16 @@ function Modal(options) {
 	this._fragment = create_main_fragment$9(this, this._state);
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 	}
 }
 
-assign(Modal.prototype, proto);
+assign(Modal.prototype, protoDev);
+
+Modal.prototype._checkReadOnly = function _checkReadOnly(newState) {
+};
 
 /* src\svelte\save-modal.html generated by Svelte v2.4.4 */
 
@@ -14261,7 +14375,7 @@ function create_main_fragment$10(component, ctx) {
 	});
 
 	return {
-		c() {
+		c: function create() {
 			text = createText("\n  ");
 			h2 = createElement("h2");
 			text_1 = createText("Save & Load");
@@ -14309,7 +14423,7 @@ function create_main_fragment$10(component, ctx) {
 			div.className = "button-set";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			appendNode(text, modal._slotted.default);
 			appendNode(h2, modal._slotted.header);
 			appendNode(text_1, h2);
@@ -14347,7 +14461,7 @@ function create_main_fragment$10(component, ctx) {
 			modal._mount(target, anchor);
 		},
 
-		p(changed, _ctx) {
+		p: function update(changed, _ctx) {
 			ctx = _ctx;
 			if (!input_updating) input.value = ctx.value ;
 
@@ -14414,7 +14528,7 @@ function create_main_fragment$10(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			if (if_block) if_block.u();
 
 			for (var i_1 = 0; i_1 < each_blocks.length; i_1 += 1) {
@@ -14428,7 +14542,7 @@ function create_main_fragment$10(component, ctx) {
 			modal._unmount();
 		},
 
-		d() {
+		d: function destroy$$1() {
 			removeListener(input, "input", input_input_handler);
 			removeListener(input, "focus", focus_handler);
 			removeListener(input, "blur", blur_handler);
@@ -14450,24 +14564,24 @@ function create_each_block$4(component, ctx) {
 	var p, text_value = ctx.paletteName, text;
 
 	return {
-		c() {
+		c: function create() {
 			p = createElement("p");
 			text = createText(text_value);
 			p.className = "menuitem";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(p, target, anchor);
 			appendNode(text, p);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.list) && text_value !== (text_value = ctx.paletteName)) {
 				text.data = text_value;
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(p);
 		},
 
@@ -14488,7 +14602,7 @@ function create_if_block$3(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 
 			for (var i = 0; i < each_blocks.length; i += 1) {
@@ -14497,7 +14611,7 @@ function create_if_block$3(component, ctx) {
 			div.className = "submenu";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 
 			for (var i = 0; i < each_blocks.length; i += 1) {
@@ -14505,7 +14619,7 @@ function create_if_block$3(component, ctx) {
 			}
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if (changed.list) {
 				each_value = ctx.list;
 
@@ -14529,7 +14643,7 @@ function create_if_block$3(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 
 			for (var i = 0; i < each_blocks.length; i += 1) {
@@ -14537,7 +14651,7 @@ function create_if_block$3(component, ctx) {
 			}
 		},
 
-		d() {
+		d: function destroy$$1() {
 			destroyEach(each_blocks);
 		}
 	};
@@ -14548,23 +14662,23 @@ function create_each_block_1$1(component, ctx) {
 	var div;
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			div.className = "tip svelte-1yx9eop";
 			setStyle(div, "background-color", ctx.color);
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if (changed.nowpalette) {
 				setStyle(div, "background-color", ctx.color);
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
@@ -14585,7 +14699,7 @@ function create_each_block_2(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			div_1 = createElement("div");
 			text = createText(text_value);
@@ -14617,7 +14731,7 @@ function create_each_block_2(component, ctx) {
 			div.className = div_class_value = "listitem button-set " + (ctx.paletteName == ctx.value ? 'active':'') + " svelte-1yx9eop";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			appendNode(div_1, div);
 			appendNode(text, div_1);
@@ -14636,7 +14750,7 @@ function create_each_block_2(component, ctx) {
 			appendNode(button, div_4);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.list) && text_value !== (text_value = ctx.paletteName)) {
 				text.data = text_value;
 			}
@@ -14675,7 +14789,7 @@ function create_each_block_2(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 
 			for (var i_1 = 0; i_1 < each_blocks.length; i_1 += 1) {
@@ -14683,7 +14797,7 @@ function create_each_block_2(component, ctx) {
 			}
 		},
 
-		d() {
+		d: function destroy$$1() {
 			removeListener(div_1, "click", click_handler$2);
 
 			destroyEach(each_blocks);
@@ -14698,23 +14812,23 @@ function create_each_block_3(component, ctx) {
 	var div;
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			div.className = "tip svelte-1yx9eop";
 			setStyle(div, "background-color", ctx.color);
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if (changed.list) {
 				setStyle(div, "background-color", ctx.color);
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 		},
 
@@ -14768,10 +14882,16 @@ function click_handler_1(event) {
 }
 
 function Save_modal(options) {
+	this._debugName = '<Save_modal>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this._state = assign(assign(this.store._init(["cards"]), data$9()), options.data);
 	this.store._add(this, ["cards"]);
 	this._recompute({ $cards: 1 }, this._state);
+	if (!('$cards' in this._state)) console.warn("<Save_modal> was created without expected data property '$cards'");
+	if (!('value' in this._state)) console.warn("<Save_modal> was created without expected data property 'value'");
+	if (!('showSubmenu' in this._state)) console.warn("<Save_modal> was created without expected data property 'showSubmenu'");
+	if (!('list' in this._state)) console.warn("<Save_modal> was created without expected data property 'list'");
 
 	this._handlers.destroy = [removeFromStore];
 
@@ -14789,6 +14909,7 @@ function Save_modal(options) {
 	});
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 
@@ -14800,8 +14921,12 @@ function Save_modal(options) {
 	}
 }
 
-assign(Save_modal.prototype, proto);
+assign(Save_modal.prototype, protoDev);
 assign(Save_modal.prototype, methods$7);
+
+Save_modal.prototype._checkReadOnly = function _checkReadOnly(newState) {
+	if ('nowpalette' in newState && !this._updatingReadonlyProperty) throw new Error("<Save_modal>: Cannot set read-only property 'nowpalette'");
+};
 
 Save_modal.prototype._recompute = function _recompute(changed, state) {
 	if (changed.$cards) {
@@ -14977,7 +15102,7 @@ function oncreate$8() {
   this.cardsPosition();
 }
 function create_main_fragment$11(component, ctx) {
-	var div, div_1, button, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, text_9, button_5, text_11, button_6, text_13, text_15, div_2, div_3, button_7, text_17, ladel, select, select_updating = false, text_19, div_4, button_8, text_21, ladel_1, select_1, select_1_updating = false, text_24, hr, text_25, div_5, div_6, input, input_updating = false, input_placeholder_value, text_27, div_7, button_9, text_30, div_8, button_10, text_33, div_9, button_11, text_36, colorpicker_updating = {}, text_37, hr_1, text_38, text_39, div_10, text_43, div_11, text_45, text_46, if_block_1_anchor;
+	var div, div_1, button, text_1, button_1, text_3, button_2, text_5, button_3, text_7, button_4, text_9, text_11, div_2, div_3, button_5, text_13, ladel, select, select_updating = false, text_15, div_4, button_6, text_17, ladel_1, select_1, select_1_updating = false, text_20, hr, text_21, div_5, div_6, input, input_updating = false, input_placeholder_value, text_23, div_7, button_7, text_26, div_8, button_8, text_29, div_9, button_9, text_32, colorpicker_updating = {}, text_33, hr_1, text_34, text_35, div_10, text_39, div_11, text_41, text_42, if_block_1_anchor;
 
 	function click_handler(event) {
 		component.set({ showModal: true });
@@ -14992,24 +15117,16 @@ function create_main_fragment$11(component, ctx) {
 	}
 
 	function click_handler_3(event) {
-		component.store.set({grayscale: !ctx.$grayscale}, true);
-	}
-
-	function click_handler_4(event) {
-		component.store.set({textvisible: !ctx.$textvisible}, true);
-	}
-
-	function click_handler_5(event) {
 		component.set({showSubmenu: !ctx.showSubmenu});
 	}
 
-	function click_handler_6(event) {
+	function click_handler_4(event) {
 		component.removeAll();
 	}
 
 	var if_block = (ctx.showSubmenu) && create_if_block$4(component, ctx);
 
-	function click_handler_7(event) {
+	function click_handler_5(event) {
 		component.cardsPosition('sortX');
 	}
 
@@ -15017,8 +15134,8 @@ function create_main_fragment$11(component, ctx) {
 
 	var each_blocks = [];
 
-	for (var i_8 = 0; i_8 < each_value_1.length; i_8 += 1) {
-		each_blocks[i_8] = create_each_block_1$2(component, get_each_context_1$1(ctx, each_value_1, i_8));
+	for (var i_6 = 0; i_6 < each_value_1.length; i_6 += 1) {
+		each_blocks[i_6] = create_each_block_1$2(component, get_each_context_1$1(ctx, each_value_1, i_6));
 	}
 
 	function select_change_handler() {
@@ -15031,7 +15148,7 @@ function create_main_fragment$11(component, ctx) {
 		component.cardsPosition('sortX', this.value);
 	}
 
-	function click_handler_8(event) {
+	function click_handler_6(event) {
 		component.cardsPosition('sortY');
 	}
 
@@ -15039,8 +15156,8 @@ function create_main_fragment$11(component, ctx) {
 
 	var each_1_blocks = [];
 
-	for (var i_8 = 0; i_8 < each_value_2.length; i_8 += 1) {
-		each_1_blocks[i_8] = create_each_block_2$1(component, get_each_1_context$2(ctx, each_value_2, i_8));
+	for (var i_6 = 0; i_6 < each_value_2.length; i_6 += 1) {
+		each_1_blocks[i_6] = create_each_block_2$1(component, get_each_1_context$2(ctx, each_value_2, i_6));
 	}
 
 	function select_1_change_handler() {
@@ -15060,15 +15177,15 @@ function create_main_fragment$11(component, ctx) {
 		input_updating = false;
 	}
 
-	function click_handler_9(event) {
+	function click_handler_7(event) {
 		component.addCard(ctx.current, true);
 	}
 
-	function click_handler_10(event) {
+	function click_handler_8(event) {
 		component.addCard(ctx.current);
 	}
 
-	function click_handler_11(event) {
+	function click_handler_9(event) {
 		component.setBgColor(ctx.current.color);
 	}
 
@@ -15113,12 +15230,16 @@ function create_main_fragment$11(component, ctx) {
 		component.set({current: event.current});
 	});
 
+	function mouseleave_handler(event) {
+		component.set({showSubmenu: false});
+	}
+
 	var each_value_3 = ctx.$cards;
 
 	var each_2_blocks = [];
 
-	for (var i_8 = 0; i_8 < each_value_3.length; i_8 += 1) {
-		each_2_blocks[i_8] = create_each_block_3$1(component, get_each_2_context(ctx, each_value_3, i_8));
+	for (var i_6 = 0; i_6 < each_value_3.length; i_6 += 1) {
+		each_2_blocks[i_6] = create_each_block_3$1(component, get_each_2_context(ctx, each_value_3, i_6));
 	}
 
 	var contextmenu = new Context_menu({
@@ -15128,7 +15249,7 @@ function create_main_fragment$11(component, ctx) {
 	var if_block_1 = (ctx.showModal) && create_if_block_1$3(component, ctx);
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
 			div_1 = createElement("div");
 			button = createElement("button");
@@ -15141,80 +15262,74 @@ function create_main_fragment$11(component, ctx) {
 			button_2.innerHTML = "<i class=\"fas fa-redo\"></i>";
 			text_5 = createText("\n    ");
 			button_3 = createElement("button");
-			button_3.innerHTML = "<i class=\"fas fa-eye-dropper\"></i>";
+			button_3.innerHTML = "<i class=\"fas fa-eye\"></i>";
 			text_7 = createText("\n    ");
 			button_4 = createElement("button");
-			button_4.innerHTML = "<i class=\"fas fa-font\"></i>";
+			button_4.innerHTML = "<i class=\"fas fa-trash\"></i>";
 			text_9 = createText("\n    ");
-			button_5 = createElement("button");
-			button_5.innerHTML = "<i class=\"fas fa-eye\"></i>";
-			text_11 = createText("\n    ");
-			button_6 = createElement("button");
-			button_6.innerHTML = "<i class=\"fas fa-trash\"></i>";
-			text_13 = createText("\n    ");
 			if (if_block) if_block.c();
-			text_15 = createText("\n\n  \n  ");
+			text_11 = createText("\n\n  \n  ");
 			div_2 = createElement("div");
 			div_3 = createElement("div");
-			button_7 = createElement("button");
-			button_7.textContent = "X";
-			text_17 = createText("\n    ");
+			button_5 = createElement("button");
+			button_5.textContent = "X";
+			text_13 = createText("\n    ");
 			ladel = createElement("ladel");
 			select = createElement("select");
 
-			for (var i_8 = 0; i_8 < each_blocks.length; i_8 += 1) {
-				each_blocks[i_8].c();
+			for (var i_6 = 0; i_6 < each_blocks.length; i_6 += 1) {
+				each_blocks[i_6].c();
 			}
 
-			text_19 = createText("\n\n    ");
+			text_15 = createText("\n\n    ");
 			div_4 = createElement("div");
-			button_8 = createElement("button");
-			button_8.textContent = "Y";
-			text_21 = createText("\n    ");
+			button_6 = createElement("button");
+			button_6.textContent = "Y";
+			text_17 = createText("\n    ");
 			ladel_1 = createElement("ladel");
 			select_1 = createElement("select");
 
-			for (var i_8 = 0; i_8 < each_1_blocks.length; i_8 += 1) {
-				each_1_blocks[i_8].c();
+			for (var i_6 = 0; i_6 < each_1_blocks.length; i_6 += 1) {
+				each_1_blocks[i_6].c();
 			}
 
-			text_24 = createText("\n\n  ");
+			text_20 = createText("\n\n  ");
 			hr = createElement("hr");
-			text_25 = createText("\n\n  ");
+			text_21 = createText("\n\n  ");
 			div_5 = createElement("div");
 			div_6 = createElement("div");
 			input = createElement("input");
-			text_27 = createText("\n    ");
+			text_23 = createText("\n    ");
 			div_7 = createElement("div");
-			button_9 = createElement("button");
-			button_9.textContent = "➕";
-			text_30 = createText("\n    ");
+			button_7 = createElement("button");
+			button_7.textContent = "➕";
+			text_26 = createText("\n    ");
 			div_8 = createElement("div");
-			button_10 = createElement("button");
-			button_10.textContent = "➕";
-			text_33 = createText("\n    ");
+			button_8 = createElement("button");
+			button_8.textContent = "➕";
+			text_29 = createText("\n    ");
 			div_9 = createElement("div");
-			button_11 = createElement("button");
-			button_11.textContent = "BG";
-			text_36 = createText("\n\n  ");
+			button_9 = createElement("button");
+			button_9.textContent = "BG";
+			text_32 = createText("\n\n  ");
 			colorpicker._fragment.c();
-			text_37 = createText("\n  ");
+			text_33 = createText("\n  ");
 			hr_1 = createElement("hr");
-			text_38 = createText("\n  ");
+			text_34 = createText("\n  ");
 			colorlists._fragment.c();
-			text_39 = createText("\n\n\n  ");
+			text_35 = createText("\n\n\n  ");
 			div_10 = createElement("div");
 			div_10.innerHTML = "2018 © techa\n    <a href=\"https://github.com/techa/color-factory\" class=\"svelte-ahjp35\"><i class=\"fab fa-github fa-fw\"></i></a>";
-			text_43 = createText("\n\n");
+			text_39 = createText("\n\n");
 			div_11 = createElement("div");
 
-			for (var i_8 = 0; i_8 < each_2_blocks.length; i_8 += 1) {
-				each_2_blocks[i_8].c();
+			for (var i_6 = 0; i_6 < each_2_blocks.length; i_6 += 1) {
+				each_2_blocks[i_6].c();
 			}
 
-			text_45 = createText("\n\n");
+			text_41 = createText("\n\n");
 			contextmenu._fragment.c();
-			text_46 = createText("\n\n");
+			text_42 = createText("\n\n");
 			if (if_block_1) if_block_1.c();
 			if_block_1_anchor = createComment();
 			addListener(button, "click", click_handler);
@@ -15224,21 +15339,17 @@ function create_main_fragment$11(component, ctx) {
 			addListener(button_2, "click", click_handler_2);
 			button_2.title = "Redo: ctrl+shift+z";
 			addListener(button_3, "click", click_handler_3);
-			button_3.title = "Filter grayscale";
+			button_3.title = "Card Color Models Visible";
 			addListener(button_4, "click", click_handler_4);
-			button_4.title = "Card Text Visible";
-			addListener(button_5, "click", click_handler_5);
-			button_5.title = "Card Color Models Visible";
-			addListener(button_6, "click", click_handler_6);
-			button_6.title = "Delete";
+			button_4.title = "Delete";
 			div_1.className = "tool-box svelte-ahjp35";
-			addListener(button_7, "click", click_handler_7);
+			addListener(button_5, "click", click_handler_5);
 			addListener(select, "change", select_change_handler);
 			if (!('$sortX' in ctx)) component.root._beforecreate.push(select_change_handler);
 			addListener(select, "change", change_handler);
 			ladel.className = "select-wrapper";
 			setStyle(ladel, "flex", "1 1 auto");
-			addListener(button_8, "click", click_handler_8);
+			addListener(button_6, "click", click_handler_6);
 			addListener(select_1, "change", select_1_change_handler);
 			if (!('$sortY' in ctx)) component.root._beforecreate.push(select_1_change_handler);
 			addListener(select_1, "change", change_handler_1);
@@ -15251,25 +15362,26 @@ function create_main_fragment$11(component, ctx) {
 			setStyle(input, "color", ctx.textColor);
 			input.className = "svelte-ahjp35";
 			div_6.className = "svelte-ahjp35";
-			addListener(button_9, "click", click_handler_9);
-			button_9.title = "Add Card: text";
-			setStyle(button_9, "color", ctx.current.color);
-			button_9.className = "svelte-ahjp35";
+			addListener(button_7, "click", click_handler_7);
+			button_7.title = "Add Card: text";
+			setStyle(button_7, "color", ctx.current.color);
+			button_7.className = "svelte-ahjp35";
 			div_7.className = "svelte-ahjp35";
-			addListener(button_10, "click", click_handler_10);
-			button_10.title = "Add Card: fill";
-			setStyle(button_10, "color", (ctx.current.color.isDark()?'#fff':'#000'));
-			setStyle(button_10, "background-color", ctx.current.color);
-			button_10.className = "svelte-ahjp35";
+			addListener(button_8, "click", click_handler_8);
+			button_8.title = "Add Card: fill";
+			setStyle(button_8, "color", (ctx.current.color.isDark()?'#fff':'#000'));
+			setStyle(button_8, "background-color", ctx.current.color);
+			button_8.className = "svelte-ahjp35";
 			div_8.className = "svelte-ahjp35";
-			addListener(button_11, "click", click_handler_11);
-			button_11.title = "set Background Color";
-			button_11.className = "svelte-ahjp35";
+			addListener(button_9, "click", click_handler_9);
+			button_9.title = "set Background Color";
+			button_9.className = "svelte-ahjp35";
 			div_9.className = "svelte-ahjp35";
 			div_5.className = "top-input-wrapper button-set border radius svelte-ahjp35";
 			hr_1.className = "svelte-ahjp35";
 			div_10.className = "links svelte-ahjp35";
 			setStyle(div_10, "color", ctx.textColor);
+			addListener(div, "mouseleave", mouseleave_handler);
 			div.id = "controller";
 			setStyle(div, "color", ctx.textColor);
 			div.className = "svelte-ahjp35";
@@ -15278,7 +15390,7 @@ function create_main_fragment$11(component, ctx) {
 			div_11.className = "svelte-ahjp35";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
 			appendNode(div_1, div);
 			appendNode(button, div_1);
@@ -15291,41 +15403,37 @@ function create_main_fragment$11(component, ctx) {
 			appendNode(text_7, div_1);
 			appendNode(button_4, div_1);
 			appendNode(text_9, div_1);
-			appendNode(button_5, div_1);
-			appendNode(text_11, div_1);
-			appendNode(button_6, div_1);
-			appendNode(text_13, div_1);
 			if (if_block) if_block.m(div_1, null);
-			appendNode(text_15, div);
+			appendNode(text_11, div);
 			appendNode(div_2, div);
 			appendNode(div_3, div_2);
-			appendNode(button_7, div_3);
-			appendNode(text_17, div_2);
+			appendNode(button_5, div_3);
+			appendNode(text_13, div_2);
 			appendNode(ladel, div_2);
 			appendNode(select, ladel);
 
-			for (var i_8 = 0; i_8 < each_blocks.length; i_8 += 1) {
-				each_blocks[i_8].m(select, null);
+			for (var i_6 = 0; i_6 < each_blocks.length; i_6 += 1) {
+				each_blocks[i_6].m(select, null);
 			}
 
 			selectOption(select, ctx.$sortX);
 
-			appendNode(text_19, div_2);
+			appendNode(text_15, div_2);
 			appendNode(div_4, div_2);
-			appendNode(button_8, div_4);
-			appendNode(text_21, div_2);
+			appendNode(button_6, div_4);
+			appendNode(text_17, div_2);
 			appendNode(ladel_1, div_2);
 			appendNode(select_1, ladel_1);
 
-			for (var i_8 = 0; i_8 < each_1_blocks.length; i_8 += 1) {
-				each_1_blocks[i_8].m(select_1, null);
+			for (var i_6 = 0; i_6 < each_1_blocks.length; i_6 += 1) {
+				each_1_blocks[i_6].m(select_1, null);
 			}
 
 			selectOption(select_1, ctx.$sortY);
 
-			appendNode(text_24, div);
+			appendNode(text_20, div);
 			appendNode(hr, div);
-			appendNode(text_25, div);
+			appendNode(text_21, div);
 			appendNode(div_5, div);
 			appendNode(div_6, div_5);
 			appendNode(input, div_6);
@@ -15333,39 +15441,39 @@ function create_main_fragment$11(component, ctx) {
 
 			input.value = ctx.current.name;
 
-			appendNode(text_27, div_5);
+			appendNode(text_23, div_5);
 			appendNode(div_7, div_5);
-			appendNode(button_9, div_7);
-			appendNode(text_30, div_5);
+			appendNode(button_7, div_7);
+			appendNode(text_26, div_5);
 			appendNode(div_8, div_5);
-			appendNode(button_10, div_8);
-			appendNode(text_33, div_5);
+			appendNode(button_8, div_8);
+			appendNode(text_29, div_5);
 			appendNode(div_9, div_5);
-			appendNode(button_11, div_9);
-			appendNode(text_36, div);
+			appendNode(button_9, div_9);
+			appendNode(text_32, div);
 			colorpicker._mount(div, null);
-			appendNode(text_37, div);
+			appendNode(text_33, div);
 			appendNode(hr_1, div);
-			appendNode(text_38, div);
+			appendNode(text_34, div);
 			colorlists._mount(div, null);
-			appendNode(text_39, div);
+			appendNode(text_35, div);
 			appendNode(div_10, div);
-			insertNode(text_43, target, anchor);
+			insertNode(text_39, target, anchor);
 			insertNode(div_11, target, anchor);
 
-			for (var i_8 = 0; i_8 < each_2_blocks.length; i_8 += 1) {
-				each_2_blocks[i_8].m(div_11, null);
+			for (var i_6 = 0; i_6 < each_2_blocks.length; i_6 += 1) {
+				each_2_blocks[i_6].m(div_11, null);
 			}
 
 			component.refs.box = div_11;
-			insertNode(text_45, target, anchor);
+			insertNode(text_41, target, anchor);
 			contextmenu._mount(target, anchor);
-			insertNode(text_46, target, anchor);
+			insertNode(text_42, target, anchor);
 			if (if_block_1) if_block_1.m(target, anchor);
 			insertNode(if_block_1_anchor, target, anchor);
 		},
 
-		p(changed, _ctx) {
+		p: function update(changed, _ctx) {
 			ctx = _ctx;
 			if (ctx.showSubmenu) {
 				if (if_block) {
@@ -15384,21 +15492,21 @@ function create_main_fragment$11(component, ctx) {
 			if (changed.sort) {
 				each_value_1 = ctx.sort;
 
-				for (var i_8 = 0; i_8 < each_value_1.length; i_8 += 1) {
-					const child_ctx = get_each_context_1$1(ctx, each_value_1, i_8);
+				for (var i_6 = 0; i_6 < each_value_1.length; i_6 += 1) {
+					const child_ctx = get_each_context_1$1(ctx, each_value_1, i_6);
 
-					if (each_blocks[i_8]) {
-						each_blocks[i_8].p(changed, child_ctx);
+					if (each_blocks[i_6]) {
+						each_blocks[i_6].p(changed, child_ctx);
 					} else {
-						each_blocks[i_8] = create_each_block_1$2(component, child_ctx);
-						each_blocks[i_8].c();
-						each_blocks[i_8].m(select, null);
+						each_blocks[i_6] = create_each_block_1$2(component, child_ctx);
+						each_blocks[i_6].c();
+						each_blocks[i_6].m(select, null);
 					}
 				}
 
-				for (; i_8 < each_blocks.length; i_8 += 1) {
-					each_blocks[i_8].u();
-					each_blocks[i_8].d();
+				for (; i_6 < each_blocks.length; i_6 += 1) {
+					each_blocks[i_6].u();
+					each_blocks[i_6].d();
 				}
 				each_blocks.length = each_value_1.length;
 			}
@@ -15408,21 +15516,21 @@ function create_main_fragment$11(component, ctx) {
 			if (changed.sort) {
 				each_value_2 = ctx.sort;
 
-				for (var i_8 = 0; i_8 < each_value_2.length; i_8 += 1) {
-					const child_ctx = get_each_1_context$2(ctx, each_value_2, i_8);
+				for (var i_6 = 0; i_6 < each_value_2.length; i_6 += 1) {
+					const child_ctx = get_each_1_context$2(ctx, each_value_2, i_6);
 
-					if (each_1_blocks[i_8]) {
-						each_1_blocks[i_8].p(changed, child_ctx);
+					if (each_1_blocks[i_6]) {
+						each_1_blocks[i_6].p(changed, child_ctx);
 					} else {
-						each_1_blocks[i_8] = create_each_block_2$1(component, child_ctx);
-						each_1_blocks[i_8].c();
-						each_1_blocks[i_8].m(select_1, null);
+						each_1_blocks[i_6] = create_each_block_2$1(component, child_ctx);
+						each_1_blocks[i_6].c();
+						each_1_blocks[i_6].m(select_1, null);
 					}
 				}
 
-				for (; i_8 < each_1_blocks.length; i_8 += 1) {
-					each_1_blocks[i_8].u();
-					each_1_blocks[i_8].d();
+				for (; i_6 < each_1_blocks.length; i_6 += 1) {
+					each_1_blocks[i_6].u();
+					each_1_blocks[i_6].d();
 				}
 				each_1_blocks.length = each_value_2.length;
 			}
@@ -15438,9 +15546,9 @@ function create_main_fragment$11(component, ctx) {
 			}
 
 			if (changed.current) {
-				setStyle(button_9, "color", ctx.current.color);
-				setStyle(button_10, "color", (ctx.current.color.isDark()?'#fff':'#000'));
-				setStyle(button_10, "background-color", ctx.current.color);
+				setStyle(button_7, "color", ctx.current.color);
+				setStyle(button_8, "color", (ctx.current.color.isDark()?'#fff':'#000'));
+				setStyle(button_8, "background-color", ctx.current.color);
 			}
 
 			var colorpicker_changes = {};
@@ -15461,21 +15569,21 @@ function create_main_fragment$11(component, ctx) {
 			if (changed.$cards) {
 				each_value_3 = ctx.$cards;
 
-				for (var i_8 = 0; i_8 < each_value_3.length; i_8 += 1) {
-					const child_ctx = get_each_2_context(ctx, each_value_3, i_8);
+				for (var i_6 = 0; i_6 < each_value_3.length; i_6 += 1) {
+					const child_ctx = get_each_2_context(ctx, each_value_3, i_6);
 
-					if (each_2_blocks[i_8]) {
-						each_2_blocks[i_8].p(changed, child_ctx);
+					if (each_2_blocks[i_6]) {
+						each_2_blocks[i_6].p(changed, child_ctx);
 					} else {
-						each_2_blocks[i_8] = create_each_block_3$1(component, child_ctx);
-						each_2_blocks[i_8].c();
-						each_2_blocks[i_8].m(div_11, null);
+						each_2_blocks[i_6] = create_each_block_3$1(component, child_ctx);
+						each_2_blocks[i_6].c();
+						each_2_blocks[i_6].m(div_11, null);
 					}
 				}
 
-				for (; i_8 < each_2_blocks.length; i_8 += 1) {
-					each_2_blocks[i_8].u();
-					each_2_blocks[i_8].d();
+				for (; i_6 < each_2_blocks.length; i_6 += 1) {
+					each_2_blocks[i_6].u();
+					each_2_blocks[i_6].d();
 				}
 				each_2_blocks.length = each_value_3.length;
 			}
@@ -15497,48 +15605,46 @@ function create_main_fragment$11(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 			if (if_block) if_block.u();
 
-			for (var i_8 = 0; i_8 < each_blocks.length; i_8 += 1) {
-				each_blocks[i_8].u();
+			for (var i_6 = 0; i_6 < each_blocks.length; i_6 += 1) {
+				each_blocks[i_6].u();
 			}
 
-			for (var i_8 = 0; i_8 < each_1_blocks.length; i_8 += 1) {
-				each_1_blocks[i_8].u();
+			for (var i_6 = 0; i_6 < each_1_blocks.length; i_6 += 1) {
+				each_1_blocks[i_6].u();
 			}
 
-			detachNode(text_43);
+			detachNode(text_39);
 			detachNode(div_11);
 
-			for (var i_8 = 0; i_8 < each_2_blocks.length; i_8 += 1) {
-				each_2_blocks[i_8].u();
+			for (var i_6 = 0; i_6 < each_2_blocks.length; i_6 += 1) {
+				each_2_blocks[i_6].u();
 			}
 
-			detachNode(text_45);
+			detachNode(text_41);
 			contextmenu._unmount();
-			detachNode(text_46);
+			detachNode(text_42);
 			if (if_block_1) if_block_1.u();
 			detachNode(if_block_1_anchor);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			removeListener(button, "click", click_handler);
 			removeListener(button_1, "click", click_handler_1);
 			removeListener(button_2, "click", click_handler_2);
 			removeListener(button_3, "click", click_handler_3);
 			removeListener(button_4, "click", click_handler_4);
-			removeListener(button_5, "click", click_handler_5);
-			removeListener(button_6, "click", click_handler_6);
 			if (if_block) if_block.d();
-			removeListener(button_7, "click", click_handler_7);
+			removeListener(button_5, "click", click_handler_5);
 
 			destroyEach(each_blocks);
 
 			removeListener(select, "change", select_change_handler);
 			removeListener(select, "change", change_handler);
-			removeListener(button_8, "click", click_handler_8);
+			removeListener(button_6, "click", click_handler_6);
 
 			destroyEach(each_1_blocks);
 
@@ -15546,11 +15652,12 @@ function create_main_fragment$11(component, ctx) {
 			removeListener(select_1, "change", change_handler_1);
 			removeListener(input, "input", input_input_handler);
 			if (component.refs.name === input) component.refs.name = null;
+			removeListener(button_7, "click", click_handler_7);
+			removeListener(button_8, "click", click_handler_8);
 			removeListener(button_9, "click", click_handler_9);
-			removeListener(button_10, "click", click_handler_10);
-			removeListener(button_11, "click", click_handler_11);
 			colorpicker.destroy(false);
 			colorlists.destroy(false);
+			removeListener(div, "mouseleave", mouseleave_handler);
 
 			destroyEach(each_2_blocks);
 
@@ -15561,12 +15668,12 @@ function create_main_fragment$11(component, ctx) {
 	};
 }
 
-// (28:6) {#each Object.entries($cardViewModels) as [model, bool]}
+// (31:6) {#each Object.entries($cardViewModels) as [model, bool]}
 function create_each_block$5(component, ctx) {
 	var p, label, input, input_checked_value, text, text_1_value = ctx.model.toUpperCase(), text_1;
 
 	return {
-		c() {
+		c: function create() {
 			p = createElement("p");
 			label = createElement("label");
 			input = createElement("input");
@@ -15580,7 +15687,7 @@ function create_each_block$5(component, ctx) {
 			p.className = "menuitem";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(p, target, anchor);
 			appendNode(label, p);
 			appendNode(input, label);
@@ -15588,7 +15695,7 @@ function create_each_block$5(component, ctx) {
 			appendNode(text_1, label);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			input._svelte.ctx = ctx;
 			if ((changed.Object || changed.$cardViewModels) && input_checked_value !== (input_checked_value = ctx.bool)) {
 				input.checked = input_checked_value;
@@ -15599,26 +15706,34 @@ function create_each_block$5(component, ctx) {
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(p);
 		},
 
-		d() {
+		d: function destroy$$1() {
 			removeListener(input, "click", click_handler$3);
 		}
 	};
 }
 
-// (26:4) {#if showSubmenu}
+// (20:4) {#if showSubmenu}
 function create_if_block$4(component, ctx) {
-	var div;
+	var div, p, text_1, p_1, text_3, hr, text_4;
+
+	function click_handler(event) {
+		component.store.set({grayscale: !ctx.$grayscale}, true);
+	}
+
+	function click_handler_1(event) {
+		component.store.set({textvisible: !ctx.$textvisible}, true);
+	}
 
 	var each_value = ctx.Object.entries(ctx.$cardViewModels);
 
 	var each_blocks = [];
 
-	for (var i = 0; i < each_value.length; i += 1) {
-		each_blocks[i] = create_each_block$5(component, get_each_context$5(ctx, each_value, i));
+	for (var i_2 = 0; i_2 < each_value.length; i_2 += 1) {
+		each_blocks[i_2] = create_each_block$5(component, get_each_context$5(ctx, each_value, i_2));
 	}
 
 	function mouseleave_handler(event) {
@@ -15626,57 +15741,80 @@ function create_if_block$4(component, ctx) {
 	}
 
 	return {
-		c() {
+		c: function create() {
 			div = createElement("div");
+			p = createElement("p");
+			p.innerHTML = "<i class=\"fas fa-filter fa-fw\"></i>\n        Filter Grayscale";
+			text_1 = createText("\n      ");
+			p_1 = createElement("p");
+			p_1.innerHTML = "<i class=\"fas fa-font fa-fw\"></i>\n        Card Text Visible";
+			text_3 = createText("\n      ");
+			hr = createElement("hr");
+			text_4 = createText("\n      ");
 
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].c();
+			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
+				each_blocks[i_2].c();
 			}
+			addListener(p, "click", click_handler);
+			p.className = "menuitem";
+			addListener(p_1, "click", click_handler_1);
+			p_1.className = "menuitem";
+			hr.className = "svelte-ahjp35";
 			addListener(div, "mouseleave", mouseleave_handler);
 			div.className = "submenu";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(div, target, anchor);
+			appendNode(p, div);
+			appendNode(text_1, div);
+			appendNode(p_1, div);
+			appendNode(text_3, div);
+			appendNode(hr, div);
+			appendNode(text_4, div);
 
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].m(div, null);
+			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
+				each_blocks[i_2].m(div, null);
 			}
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, _ctx) {
+			ctx = _ctx;
 			if (changed.Object || changed.$cardViewModels) {
 				each_value = ctx.Object.entries(ctx.$cardViewModels);
 
-				for (var i = 0; i < each_value.length; i += 1) {
-					const child_ctx = get_each_context$5(ctx, each_value, i);
+				for (var i_2 = 0; i_2 < each_value.length; i_2 += 1) {
+					const child_ctx = get_each_context$5(ctx, each_value, i_2);
 
-					if (each_blocks[i]) {
-						each_blocks[i].p(changed, child_ctx);
+					if (each_blocks[i_2]) {
+						each_blocks[i_2].p(changed, child_ctx);
 					} else {
-						each_blocks[i] = create_each_block$5(component, child_ctx);
-						each_blocks[i].c();
-						each_blocks[i].m(div, null);
+						each_blocks[i_2] = create_each_block$5(component, child_ctx);
+						each_blocks[i_2].c();
+						each_blocks[i_2].m(div, null);
 					}
 				}
 
-				for (; i < each_blocks.length; i += 1) {
-					each_blocks[i].u();
-					each_blocks[i].d();
+				for (; i_2 < each_blocks.length; i_2 += 1) {
+					each_blocks[i_2].u();
+					each_blocks[i_2].d();
 				}
 				each_blocks.length = each_value.length;
 			}
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(div);
 
-			for (var i = 0; i < each_blocks.length; i += 1) {
-				each_blocks[i].u();
+			for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
+				each_blocks[i_2].u();
 			}
 		},
 
-		d() {
+		d: function destroy$$1() {
+			removeListener(p, "click", click_handler);
+			removeListener(p_1, "click", click_handler_1);
+
 			destroyEach(each_blocks);
 
 			removeListener(div, "mouseleave", mouseleave_handler);
@@ -15684,12 +15822,12 @@ function create_if_block$4(component, ctx) {
 	};
 }
 
-// (45:8) {#each sort as {name, value}}
+// (48:8) {#each sort as {name, value}}
 function create_each_block_1$2(component, ctx) {
 	var option, text_value = ctx.name, text, option_value_value;
 
 	return {
-		c() {
+		c: function create() {
 			option = createElement("option");
 			text = createText(text_value);
 			option.__value = option_value_value = ctx.value;
@@ -15697,12 +15835,12 @@ function create_each_block_1$2(component, ctx) {
 			option.className = "svelte-ahjp35";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(option, target, anchor);
 			appendNode(text, option);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.sort) && text_value !== (text_value = ctx.name)) {
 				text.data = text_value;
 			}
@@ -15714,7 +15852,7 @@ function create_each_block_1$2(component, ctx) {
 			option.value = option.__value;
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(option);
 		},
 
@@ -15722,12 +15860,12 @@ function create_each_block_1$2(component, ctx) {
 	};
 }
 
-// (54:8) {#each sort as {name, value}}
+// (57:8) {#each sort as {name, value}}
 function create_each_block_2$1(component, ctx) {
 	var option, text_value = ctx.name, text, option_value_value;
 
 	return {
-		c() {
+		c: function create() {
 			option = createElement("option");
 			text = createText(text_value);
 			option.__value = option_value_value = ctx.value;
@@ -15735,12 +15873,12 @@ function create_each_block_2$1(component, ctx) {
 			option.className = "svelte-ahjp35";
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			insertNode(option, target, anchor);
 			appendNode(text, option);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			if ((changed.sort) && text_value !== (text_value = ctx.name)) {
 				text.data = text_value;
 			}
@@ -15752,7 +15890,7 @@ function create_each_block_2$1(component, ctx) {
 			option.value = option.__value;
 		},
 
-		u() {
+		u: function unmount() {
 			detachNode(option);
 		},
 
@@ -15760,7 +15898,7 @@ function create_each_block_2$1(component, ctx) {
 	};
 }
 
-// (99:2) {#each $cards as card, index}
+// (102:2) {#each $cards as card, index}
 function create_each_block_3$1(component, ctx) {
 
 	var colorcard_initial_data = {
@@ -15773,31 +15911,31 @@ function create_each_block_3$1(component, ctx) {
 	});
 
 	return {
-		c() {
+		c: function create() {
 			colorcard._fragment.c();
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			colorcard._mount(target, anchor);
 		},
 
-		p(changed, ctx) {
+		p: function update(changed, ctx) {
 			var colorcard_changes = {};
 			if (changed.$cards) colorcard_changes.card = ctx.card;
 			colorcard._set(colorcard_changes);
 		},
 
-		u() {
+		u: function unmount() {
 			colorcard._unmount();
 		},
 
-		d() {
+		d: function destroy$$1() {
 			colorcard.destroy(false);
 		}
 	};
 }
 
-// (106:0) {#if showModal}
+// (109:0) {#if showModal}
 function create_if_block_1$3(component, ctx) {
 
 	var savemodal = new Save_modal({
@@ -15809,19 +15947,19 @@ function create_if_block_1$3(component, ctx) {
 	});
 
 	return {
-		c() {
+		c: function create() {
 			savemodal._fragment.c();
 		},
 
-		m(target, anchor) {
+		m: function mount(target, anchor) {
 			savemodal._mount(target, anchor);
 		},
 
-		u() {
+		u: function unmount() {
 			savemodal._unmount();
 		},
 
-		d() {
+		d: function destroy$$1() {
 			savemodal.destroy(false);
 		}
 	};
@@ -15869,11 +16007,28 @@ function get_each_2_context(ctx, list, i) {
 }
 
 function App(options) {
+	this._debugName = '<App>';
+	if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 	init(this, options);
 	this.refs = {};
 	this._state = assign(assign(assign({ Object : Object }, this.store._init(["bgColor","grayscale","textvisible","cardViewModels","sortX","sortY","pickermodel","cards"])), data$10()), options.data);
 	this.store._add(this, ["bgColor","grayscale","textvisible","cardViewModels","sortX","sortY","pickermodel","cards"]);
 	this._recompute({ $bgColor: 1, $grayscale: 1 }, this._state);
+	if (!('$bgColor' in this._state)) console.warn("<App> was created without expected data property '$bgColor'");
+	if (!('$grayscale' in this._state)) console.warn("<App> was created without expected data property '$grayscale'");
+
+	if (!('showSubmenu' in this._state)) console.warn("<App> was created without expected data property 'showSubmenu'");
+	if (!('$textvisible' in this._state)) console.warn("<App> was created without expected data property '$textvisible'");
+
+	if (!('$cardViewModels' in this._state)) console.warn("<App> was created without expected data property '$cardViewModels'");
+	if (!('$sortX' in this._state)) console.warn("<App> was created without expected data property '$sortX'");
+	if (!('sort' in this._state)) console.warn("<App> was created without expected data property 'sort'");
+	if (!('$sortY' in this._state)) console.warn("<App> was created without expected data property '$sortY'");
+	if (!('current' in this._state)) console.warn("<App> was created without expected data property 'current'");
+	if (!('$pickermodel' in this._state)) console.warn("<App> was created without expected data property '$pickermodel'");
+
+	if (!('$cards' in this._state)) console.warn("<App> was created without expected data property '$cards'");
+	if (!('showModal' in this._state)) console.warn("<App> was created without expected data property 'showModal'");
 
 	this._handlers.destroy = [removeFromStore];
 
@@ -15891,6 +16046,7 @@ function App(options) {
 	});
 
 	if (options.target) {
+		if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
 		this._fragment.c();
 		this._mount(options.target, options.anchor);
 
@@ -15902,8 +16058,13 @@ function App(options) {
 	}
 }
 
-assign(App.prototype, proto);
+assign(App.prototype, protoDev);
 assign(App.prototype, methods$8);
+
+App.prototype._checkReadOnly = function _checkReadOnly(newState) {
+	if ('textColor' in newState && !this._updatingReadonlyProperty) throw new Error("<App>: Cannot set read-only property 'textColor'");
+	if ('bgColor' in newState && !this._updatingReadonlyProperty) throw new Error("<App>: Cannot set read-only property 'bgColor'");
+};
 
 App.prototype._recompute = function _recompute(changed, state) {
 	if (changed.$bgColor) {
