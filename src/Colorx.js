@@ -4,7 +4,7 @@ import xkcd from './constants/xkcd.json'
 export default class Color extends color {
   constructor (param, model) {
     const match = typeof param === 'string' && param.replace(/\s*/g, '').match(
-      /(hsv|hwb|xyz|lab|cmyk)a?\((\d+),-?(\d+)%?,-?(\d+)%?(?:,([.\d]+))?\)/i
+      /(hsv|hwb|xyz|lab|cmyk)a?\([-+]?(\d+),-?(\d+)%?,-?(\d+)%?(?:,([.\d]+))?\)/i
     )
     if (match) {
       param = match.slice(2)
@@ -34,6 +34,10 @@ export default class Color extends color {
         const arr = color[model]().round().array()
         if (color.valpha !== 1) {
           str += 'a'
+        }
+        if (/hsv|hwb/.test(model)) {
+          arr[1] += '%'
+          arr[2] += '%'
         }
         return str + `(${arr.join(', ')})`
       case 'cmyk':
