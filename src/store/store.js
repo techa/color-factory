@@ -1,6 +1,7 @@
 import defaultpalette from '../constants/newwebcolor'
 import Histore from './svelte-store-ex.js'
 import Color from '../Colorx.js'
+import {objectToUrl, searchToObject} from '../url.js'
 
 const store = new Histore(
   Object.assign({
@@ -49,6 +50,31 @@ const store = new Histore(
     }
   }
 )
+
+
+const query = searchToObject()
+const keys = Object.keys(defaultpalette)
+if (query.data) {
+  const key = query.data.paletteName || 'Imported palette'
+  query.data.paletteName = key
+  query.data.imported = true
+  store.set(query.data, true)
+  store.save(key, keys)
+  store.load(key)
+} else if (!window.localStorage.getItem(defaultpalette.paletteName)) {
+  // Load defaultpalette
+  store.save(defaultpalette.paletteName, keys)
+}
+
+store.on('update', ({changed, current}) => {
+  if (changed) {
+    objectToUrl(keys.reduce((obj, key) => {
+      obj[key] = current[key]
+      return obj
+    }, {}))
+  }
+})
+
 
 // Events
 store.on('cards.ADD_CARD', (card) => {
