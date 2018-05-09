@@ -41,8 +41,6 @@ export default class Histore extends Store {
     }
 
     this.on('update', this._memo.bind(this))
-
-    this.methodToEventHandler('undo', 'redo')
   }
   on (eventName, handler) {
     if (eventName === 'state' || eventName === 'update') {
@@ -62,13 +60,6 @@ export default class Histore extends Store {
       console.error(`fire: ${eventName} is undefind`)
     }
     return this
-  }
-  methodToEventHandler (...eventnames) {
-    for (const eventname of eventnames) {
-      if (typeof this[eventname] === 'function') {
-        this.on(eventname, this[eventname].bind(this))
-      }
-    }
   }
   set (newState, memo) {
     for (const key in newState) {
