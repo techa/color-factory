@@ -65,7 +65,7 @@
 
   <div class="top-input-wrapper button-set border radius">
     <div>
-      <input ref:name bind:value="current.name" placeholder="{current.color.nearColorName()}" style="color: {textColor};">
+      <input ref:name bind:value="current.name" {placeholder} style="color: {textColor};">
     </div>
     <div>
       <button
@@ -164,6 +164,7 @@
     computed: {
       textColor: ({ $bgColor }) => new Color($bgColor).isDark() ? '#fff' : '#000',
       bgColor: ({ $bgColor, $grayscale }) => $grayscale ? new Color($bgColor).grayscale() : new Color($bgColor),
+      placeholder: ({ current }) => new Color(current.color).nearColorName(),
     },
     oncreate () {
       this.refs.name.addEventListener('focus', function (e) {

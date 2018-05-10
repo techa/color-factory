@@ -1,7 +1,6 @@
 /* eslint  no-new: 0 */
-import './Color-ex'
-import App from './svelte/app.html'
 import store from './store/store.js'
+import App from './svelte/app.html'
 
 new App({
   target: document.querySelector('#root'),

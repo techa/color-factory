@@ -1,19 +1,7 @@
 import color from 'color'
 import xkcd from './constants/xkcd.json'
 
-export default class Color extends color {
-  constructor (param, model) {
-    const match = typeof param === 'string' && param.replace(/\s*/g, '').match(
-      /(hsv|hwb|xyz|lab|cmyk)a?\([-+]?(\d+),-?(\d+)%?,-?(\d+)%?(?:,([.\d]+))?\)/i
-    )
-    if (match) {
-      param = match.slice(2)
-      param[3] = param[3] == null ? 1 : param[3] || 0
-      model = match[1]
-      param = param.map((a) => +a || 0)
-    }
-    super(param, model)
-  }
+Object.assign(color.prototype, {
   toString (model) {
     // console.log('model', model)
     const color = this.alpha(Math.round(this.valpha * 100) / 100)
@@ -46,6 +34,21 @@ export default class Color extends color {
       default:
         return color.string(0)
     }
+  },
+})
+
+export default class Color extends color {
+  constructor (param, model) {
+    const match = typeof param === 'string' && param.replace(/\s*/g, '').match(
+      /(hsv|hwb|xyz|lab|cmyk)a?\([-+]?(\d+),-?(\d+)%?,-?(\d+)%?(?:,([.\d]+))?\)/i
+    )
+    if (match) {
+      param = match.slice(2)
+      param[3] = param[3] == null ? 1 : param[3] || 0
+      model = match[1]
+      param = param.map((a) => +a || 0)
+    }
+    super(param, model)
   }
   toJSON () {
     if (this.valpha !== 1) {
