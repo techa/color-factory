@@ -276,7 +276,6 @@
         const {bgColor} = this.store.get()
         const coloraplha1 = bgColor.alphaBlending(color)
         this.store.set({bgColor: coloraplha1})
-        this.addCard({name: 'background', color: coloraplha1})
       },
       removeAll () {
         const selects = this.selectable.selects
