@@ -42,7 +42,7 @@
 
   <!-- カード整列 -->
   <div class="button-set border radius">
-    <div><button on:click="cardsPosition('sortX')">X</button></div>
+    <div><button on:click="sortZindex('sortX')">X</button></div>
     <ladel class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
         {#each sort as {name, value}}
@@ -51,7 +51,7 @@
       </select>
     </ladel>
 
-    <div><button on:click="cardsPosition('sortY')">Y</button></div>
+    <div><button on:click="sortZindex('sortY')">Y</button></div>
     <ladel class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
         {#each sort as {name, value}}
@@ -260,6 +260,26 @@
         }
         this.store.fire('cards.ADD_CARD', Object.assign({textMode}, current))
         this.set({current: { name: '', color }})
+      },
+      sortZindex (sortXY) {
+        const state = this.store.get()
+        const {cards, bgColor} = state
+        const sort = state[sortXY]
+        if (typeof bgColor[sort] === 'function') {
+          this.store.set({
+            cards: cards
+              .sort((a, b) => {
+                const colorA = a.color[sort]()
+                const colorB = b.color[sort]()
+                return colorA - colorB
+              })
+              .map((card, i) => {
+                card.zIndex = i
+                return card
+              })
+              .sort((a, b) => a.index - b.index),
+          })
+        }
       },
       cardsPosition (sortXY, value) {
         if (sortXY && value) {
