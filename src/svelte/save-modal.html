@@ -1,50 +1,21 @@
 <Modal on:close="fire('close')">
-  <h2 slot='header'>Save &amp; Load</h2>
+  <h3 slot='header'>Save &amp; Load</h3>
 
-  <div class="button-set">
-    <div class="name">
-      <input bind:value placeholder="Palette Name"
-        on:focus="set({showSubmenu: true})"
-        on:blur="blur(event)" >
-      {#if showSubmenu && !value}
-      <div class="submenu">
-        {#each list as {paletteName}}
-        <p class="menuitem">
-          {paletteName}
-        </p>
-        {/each}
-      </div>
-      {/if}
-    </div>
-    <div class="palette button-set">
-      {#each nowpalette as color}
-        <div class="tip" style="background-color: {color};"></div>
-      {/each}
-    </div>
-    <div class="color-num">
-      {nowpalette.length}
-    </div>
-    <div class="btns">
-      <button on:click="save(value)">
-        <i class="fa fa-plus-square"></i>
-      </button>
-    </div>
-  </div>
-
-  <hr>
-
-  {#each list as {paletteName, palette} }
-  <div class="listitem button-set {paletteName == value ? 'active':''}">
+  {#each list as {paletteName, palette, cardsLength} }
+  <div class="listitem button-set {paletteName == $paletteName ? 'active':''}">
     <div class="name" on:click="load(paletteName)">
       {paletteName}
     </div>
-    <div class="palette button-set">
+    <div class="palette button-set" on:click="load(paletteName)">
       {#each palette as color}
         <div class="tip" style="background-color: {color};"></div>
       {/each}
     </div>
     <div class="color-num">
       {palette.length}
+    </div>
+    <div class="color-num">
+      {cardsLength}
     </div>
     <div class="btns">
       <button on:click="remove(paletteName)">
@@ -54,6 +25,20 @@
   </div>
   {/each}
 
+  <hr>
+
+  <div class="footer button-set">
+    <div>Save as:</div>
+    <input bind:value placeholder="Palette Name" style="flex: 1;">
+    <button on:click="save(value)" style="background-color: {listContains?'aquamarine':'dodgerblue'};">
+      {#if listContains}
+        Overwrite
+      {:else}
+        New Save
+      {/if}
+      <i class="fa fa-plus-square"></i>
+    </button>
+  </div>
 </Modal>
 
 <style>
@@ -62,16 +47,27 @@
     width: 200px;
     flex: 3 0 200px;
   }
-  .name input {
-    border-color: black;
+  input {
+    border-color: silver;
     border-style: solid;
-    border-width: 0 0 1px 0;
+    border-width: 1px;
+  }
+  .listitem,
+  .footer,
+  .footer input,
+  .footer button,
+  .footer div {
+    padding: 5px;
+  }
+  .footer button {
+    margin: 0 0 0 8px;
+    border-radius: 4px;
   }
   .listitem.active {
     background: aquamarine;
   }
   .listitem:hover {
-    background: aqua;
+    background: #9edada;
   }
   .palette {
     position: relative;
@@ -94,7 +90,14 @@
   const saveKeys = Object.keys(defaultpalette)
 
   function colorlist (cards) {
-    return cards.map((card) => new Color(card.color))
+    return cards
+      .map((card) => new Color(card.color).toJSON())
+      .reduce((result, card) => {
+        if (!~result.indexOf(card)) {
+          result.push(card)
+        }
+        return result
+      }, [])
   }
 
   export default {
@@ -108,25 +111,32 @@
       }
     },
     computed: {
-      nowpalette: ({ $cards }) => colorlist($cards),
+      listContains: ({list, value}) => list.some(({paletteName}) => paletteName === value),
     },
     oncreate () {
+      const {paletteName} = this.store.get()
       this.set({
+        value: paletteName,
         list: this.getList(),
       })
     },
     methods: {
       getList () {
         return this.store.dataList().map(({ paletteName, cards }) => {
+          const palette = colorlist(cards)
           return {
             paletteName,
-            palette: colorlist(cards),
+            palette,
+            cardsLength: cards.length,
           }
         })
       },
       load (paletteName) {
         this.store.load(paletteName)
         this.root.cardsPosition()
+        this.set({
+          value: paletteName,
+        })
       },
       remove (paletteName) {
         this.store.remove(paletteName)
@@ -141,17 +151,8 @@
         this.store.set({paletteName: value})
         this.store.save(value, saveKeys)
         this.set({
-          value: '',
-          list: this.getList()
+          list: this.getList(),
         })
-      },
-      blur (e) {
-        const el = e.explicitOriginalTarget
-        if (el.classList && el.classList.contains('menuitem')) {
-          this.set({value: el.textContent, showSubmenu: false})
-        } else {
-          this.set({showSubmenu: false})
-        }
       },
     }
   }
