@@ -256,7 +256,7 @@
       addCard (current, textMode) {
         const {name, color} = current
         if (!name) {
-          current.name = color.nearColorName()
+          current.name = `(${new Color(color).nearColorName()})`
         }
         this.store.fire('cards.ADD_CARD', Object.assign({textMode}, current))
         this.set({current: { name: '', color }})
