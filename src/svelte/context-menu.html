@@ -121,57 +121,7 @@
         store.fire('cards.ADD_CARD', this.get().activeCard)
       },
       edit () {
-        this.cardComponent.set({
-          edit: true,
-        })
-        const title = this.cardComponent.refs.title
-        const selection = window.getSelection()
-        const range = document.createRange()
-        const name = title.textContent
-        // range.setStart(title, 0)
-        // range.setEnd(title, title.childNodes.length)
-        range.selectNodeContents(title)
-        selection.removeAllRanges()
-        selection.addRange(range)
-
-        const editOff = (e, cb) => {
-          if (title.textContent && title.textContent !== name) {
-            store.fire('cards.EDIT_CARD', this.cardComponent.get().index, {
-              name: title.textContent,
-            })
-            store.memo()
-          } else {
-            title.textContent = name
-          }
-          this.cardComponent.set({
-            edit: false,
-          })
-
-          // 選択解除
-          range.setStart(title, 0)
-          range.setEnd(title, 0)
-          selection.addRange(range)
-
-          document.removeEventListener('selectionchange', cb)
-          document.removeEventListener('click', cb)
-          window.removeEventListener('blur', editOff)
-        }
-        const selectionchange = (e) => {
-          const selection = window.getSelection()
-          if (selection.focusNode.parentNode === title || selection.focusNode === title) {
-            return
-          }
-          editOff(e, selectionchange)
-        }
-        const click = (e) => {
-          if (e.target === title || e.target.classList.contains('menuitem')) {
-            return
-          }
-          editOff(e, click)
-        }
-        document.addEventListener('selectionchange', selectionchange)
-        document.addEventListener('click', click)
-        window.addEventListener('blur', editOff)
+        this.cardComponent.edit()
       },
       duplicate () {
         const selects = this.root.selectable.selects
