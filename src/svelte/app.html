@@ -139,7 +139,8 @@
     {name: 'C(CMYK)', value: 'cyan'},
     {name: 'M(CMYK)', value: 'magenta'},
     {name: 'Y(CMYK)', value: 'yellow'},
-    {name: 'B(CMYK)', value: 'black'},
+    {name: 'K(CMYK)', value: 'black'},
+    {name: 'Grayscale', value: 'grayscale'},
     {name: 'Contrast', value: 'contrast'},
   ]
 
@@ -187,6 +188,9 @@
             return Math.random()
           case 'deg':
             return (card.color.hue() - 90) * Math.PI / 180
+          case 'grayscale':
+            by = card.color.grayscale().lightness()
+            break
           case 'contrast':
             by = (this.store.get().bgColor[sort](card.color) - 1) / 20
             break
