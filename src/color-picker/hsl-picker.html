@@ -56,12 +56,6 @@
       hsl: ({ _color }) => _color.hsl(),
       textColor: ({ _color }) => tinycolor.mostReadable(_color, ['#fff', '#000']),
     },
-    onstate ({ changed, current }) {
-      // // update oncolorchange
-      if (changed._color) {
-        this.setPosition(current._color)
-      }
-    },
     oncreate () {
       // canvas init
       this.draw()
@@ -83,6 +77,12 @@
         },
       })
     },
+    onupdate ({ changed, current }) {
+      // update oncolorchange
+      if (changed._color) {
+        this.setPosition(current._color)
+      }
+    },
     methods: {
       setColor (position) {
         const {hsl} = this.get()
@@ -103,8 +103,6 @@
         const [w, h] = [canvas.width, canvas.height]
 
         cxt.clearRect(0, 0, w, h)
-
-        const W = 3
 
         for (let i = 0; i < h; i++) {
           const grd = cxt.createLinearGradient(0, 0, 0, h)

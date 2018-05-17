@@ -23,7 +23,6 @@ export default class Histore extends Store {
       state = JSON.parse(data) || state
     }
 
-    if (init) init(state)
     super(state, options)
     this._keyManager = new KeyManager(this, options)
     this.options = options
@@ -90,7 +89,7 @@ export default class Histore extends Store {
     if (!data) return
     const loadstate = JSON.parse(data)
 
-    this.set(this._parse(loadstate), true)
+    this.set(loadstate, true)
   }
   remove (storageKey) {
     window.localStorage.removeItem(storageKey)
@@ -142,24 +141,16 @@ export default class Histore extends Store {
     this._history.memo = false
     console.log('State', this.get())
   }
-  _parse (state) {
-    if (typeof state === 'string') {
-      state = JSON.parse(state) || state
-    }
-    const {init} = this.options
-    if (init) init(state)
-    return state
-  }
   undo () {
     const history = this._history
     if (history.undostock.length) {
-      this.set(this._parse(history.undostock.pop()), 'undo')
+      this.set(JSON.parse(history.undostock.pop()), 'undo')
     }
   }
   redo () {
     const history = this._history
     if (history.redostock.length) {
-      this.set(this._parse(history.redostock.pop()), 'redo')
+      this.set(JSON.parse(history.redostock.pop()), 'redo')
     }
   }
 }

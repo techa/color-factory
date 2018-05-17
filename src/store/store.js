@@ -35,37 +35,24 @@ const store = new Histore(
         action: 'selectAll',
       },
     ],
-    // immutable: true,
-    init (state) {
-      if (state.cards) {
-        for (let i = 0; i < state.cards.length; i++) {
-          const card = state.cards[i]
-          card.color = new Color(card.color)
-          card.index = i
-          card.zIndex = card.zIndex == null ? i : card.zIndex
-        }
-      }
-      state.bgColor = new Color(state.bgColor)
-      console.log('Color, new Color()', state)
-    }
   }
 )
 
-
-const query = searchToObject()
-const keys = Object.keys(defaultpalette)
-if (query.data) {
-  const key = query.data.paletteName || 'Imported palette'
-  query.data.paletteName = key
-  query.data.imported = true
-  store.set(query.data, true)
-  store.save(key, keys)
-  store.load(key)
-} else if (!window.localStorage.getItem(defaultpalette.paletteName)) {
-  // Load defaultpalette
-  store.save(defaultpalette.paletteName, keys)
-}
-
+store.on('state', ({changed, current}) => {
+  if (changed.cards) {
+    for (let i = 0; i < current.cards.length; i++) {
+      const card = current.cards[i]
+      if (!(card.color instanceof Color)) {
+        card.color = new Color(card.color)
+      }
+      card.index = i
+      card.zIndex = card.zIndex == null ? i : card.zIndex
+    }
+  }
+  if (changed.bgColor || (current.bgColor && !(current.bgColor instanceof Color))) {
+    current.bgColor = new Color(current.bgColor)
+  }
+})
 store.on('update', ({changed, current}) => {
   if (changed) {
     objectToUrl(keys.reduce((obj, key) => {
@@ -74,6 +61,21 @@ store.on('update', ({changed, current}) => {
     }, {}))
   }
 })
+
+const query = searchToObject()
+const keys = Object.keys(defaultpalette)
+if (query.data) {
+  const key = query.data.paletteName || 'Imported palette'
+  query.data.paletteName = key
+  store.set(query.data, true)
+  if (!window.localStorage.getItem(key)) {
+    store.save(key, keys)
+    store.load(key)
+  }
+} else if (!window.localStorage.getItem(defaultpalette.paletteName)) {
+  // Load defaultpalette
+  store.save(defaultpalette.paletteName, keys)
+}
 
 
 // Events

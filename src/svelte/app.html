@@ -163,8 +163,8 @@
       }
     },
     computed: {
-      textColor: ({ $bgColor }) => new Color($bgColor).isDark() ? '#fff' : '#000',
-      bgColor: ({ $bgColor, $grayscale }) => $grayscale ? new Color($bgColor).grayscale() : new Color($bgColor),
+      textColor: ({ $bgColor }) => $bgColor.isDark() ? '#fff' : '#000',
+      bgColor: ({ $bgColor, $grayscale }) => $grayscale ? $bgColor.grayscale() : $bgColor,
       placeholder: ({ current }) => new Color(current.color).nearColorName(),
     },
     oncreate () {
