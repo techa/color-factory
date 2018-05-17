@@ -90,11 +90,14 @@
       }
     },
     computed: {
-      contrast: ({ color, bgColor }) => round(new Color(bgColor).contrast(color), 1),
+      contrast: ({ color, bgColor }) => round(bgColor.contrast(color), 1),
     },
     onstate ({ changed, current }) {
       if (changed.color) {
         this.set({color: new Color(current.color)})
+      }
+      if (changed.bgColor) {
+        this.set({bgColor: new Color(current.bgColor)})
       }
 
       if (changed.model) {
