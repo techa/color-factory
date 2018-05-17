@@ -14,7 +14,7 @@ const EVENTS = constructor._events = {}
 
 export default class Histore extends Store {
   constructor (state, options) {
-    const {storageKey, storageListKey, init} = options
+    const {storageKey, storageListKey} = options
     if (storageKey) {
       const data = window.localStorage.getItem(storageKey)
       if (!data) {

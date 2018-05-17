@@ -49,10 +49,13 @@ store.on('state', ({changed, current}) => {
       card.zIndex = card.zIndex == null ? i : card.zIndex
     }
   }
-  if (changed.bgColor || (current.bgColor && !(current.bgColor instanceof Color))) {
+  if (current.bgColor && !(current.bgColor instanceof Color)) {
     current.bgColor = new Color(current.bgColor)
   }
 })
+
+const keys = Object.keys(defaultpalette)
+
 store.on('update', ({changed, current}) => {
   if (changed) {
     objectToUrl(keys.reduce((obj, key) => {
@@ -63,7 +66,6 @@ store.on('update', ({changed, current}) => {
 })
 
 const query = searchToObject()
-const keys = Object.keys(defaultpalette)
 if (query.data) {
   const key = query.data.paletteName || 'Imported palette'
   query.data.paletteName = key
@@ -77,6 +79,7 @@ if (query.data) {
   store.save(defaultpalette.paletteName, keys)
 }
 
+store.fire('state', {changed: {cards:true, bgColor:true}, current: store.get()})
 
 // Events
 store.on('cards.ADD_CARD', (card) => {
