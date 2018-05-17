@@ -8,6 +8,9 @@ Object.assign(color.prototype, {
     switch (model) {
       case 'hex':
         return color.hex()
+      case 'zaa':
+        const [h, s, l] = color.hsl().round().array().map((a) => a / 10)
+        return '$' + h.toString(36) + s.toString(11) + l.toString(11)
       case 'rgb':
       case 'hsl':
         return color[model]().string(0)
@@ -47,6 +50,20 @@ export default class Color extends color {
       param[3] = param[3] == null ? 1 : param[3] || 0
       model = match[1]
       param = param.map((a) => +a || 0)
+    } else {
+      // $zaa code
+      const match = typeof param === 'string' && param.replace(/\s*/g, '').match(
+        /^\$([0-9a-z]\d)([0-9a]\d)([0-9a]\d)|\$([0-9a-z])([0-9a])([0-9a])$/i
+      )
+      if (match) {
+        const [h, s, l] = match[1] ? match.slice(1) : match.slice(4)
+        param = [
+          parseInt(h[0], 36) * 10 + parseInt(h[1] | 0, 10),
+          parseInt(s[0], 11) * 10 + parseInt(s[1] | 0, 10),
+          parseInt(l[0], 11) * 10 + parseInt(l[1] | 0, 10)
+        ]
+        model = 'hsl'
+      }
     }
     super(param, model)
   }
