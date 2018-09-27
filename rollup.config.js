@@ -6,7 +6,7 @@ import json from 'rollup-plugin-json'
 import svelte from 'rollup-plugin-svelte'
 
 import babel from 'rollup-plugin-babel'
-import uglify from 'rollup-plugin-uglify'
+import { terser } from 'rollup-plugin-terser'
 
 const production = !process.env.ROLLUP_WATCH
 const suffix = (production) ? '.min' : ''
@@ -29,19 +29,39 @@ export default {
       store: true,
     }),
     commonjs(), // CommonJSモジュールをES6に変換
-    json({preferConst: true}),
+    json({ preferConst: true }),
     nodeResolve({
       jsnext: true, // if provided in ES6
       main: true, // if provided in CommonJS
       browser: true, // if provided for browsers
     }), // npmモジュールを`node_modules`から読み込む
-    (production && babel()),
-    (production && uglify({
+    (production && babel({
+      // https://github.com/rollup/rollup-plugin-babel/issues/120
+      exclude: 'node_modules/**',
+      presets: [
+        [
+          '@babel/preset-env',
+          {
+            targets: {
+              browsers: [
+                'last 2 versions',
+                'safari >= 7'
+              ],
+            },
+            // https://github.com/babel/babel/tree/master/packages/babel-preset-env#modules
+            modules: false,
+          },
+        ],
+      ],
+      plugins: [
+        '@babel/plugin-external-helpers',
+      ],
+      // https://github.com/rollup/rollup-plugin-babel#configuring-babel
+      externalHelpers: true,
+    })),
+    (production && terser({
       compress: {
-        dead_code: true,
-        global_defs: {
-          DEBUG: false
-        },
+        // https://github.com/mishoo/UglifyJS2/blob/master/README.md#compress-options
         drop_console: true
       },
     })),
