@@ -3,23 +3,26 @@ Color Factory
 > デジタルカラーカードで配色考察とかしちゃう君
 
 ## Features
-* Color cards
-    * auto color name: Source: [XKCD Color Names](https://xkcd.com/color/rgb/)
-    * selectable
-        * select all `ctrl+a`
-    * movable
-    * sortable: hue, hue(circle), saturationl, lightness, saturationv, value, chroma, gray, contrast
+* Tool
+    * palette data save
     * undo `ctrl+z` / redo `ctrl+shift+z`
+    * pick Background-color
+    * select all `ctrl+a`
     * View
         * fill/text
         * filter: grayscale
         * color models
+    * sortable: hue, hue(circle), saturationl, lightness, saturationv, value, chroma, gray, contrast
+* Color cards
+    * auto color name: Source: [XKCD Color Names](https://xkcd.com/color/rgb/)
+    * selectable
+    * movable
     * Right click on Card!
         * Rename
         * Duplicate
         * Reverse: fill/text
         * Delete
-* Color tools
+* Color picker
     * input model(format): Hex, RGB, HSL, HSV, XYZ, LAB, CMYK
     * HSV Color picker
     * Random Color
@@ -39,8 +42,6 @@ Color Factory
     * [RAL](http://www.ral-farben.de/): Source: http://www.ralcolor.com/
     * [PANTONE®](http://www.pantone.com): Source https://github.com/frontendstacked/color-palettes-for-sass
     * [crayola](https://www.w3schools.com/colors/colors_crayola.asp)
-* Save Storage
-    * palette data save
 
 ## Dependencies
 * [svelte.js](https://svelte.technology/)
