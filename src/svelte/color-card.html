@@ -73,9 +73,12 @@
         axis: 'shift',
         start: (e, position) => {
           e.stopPropagation()
-          store.fire('cards.CARD_FORWARD', index)
 
-          cards = store.get().cards
+          // 右クリック以外のとき
+          if (!(e.which === 3 || e.button === 2)) {
+            store.fire('cards.CARD_FORWARD', index)
+            cards = store.get().cards
+          }
         },
         drag: (e, position) => {
           e.stopPropagation()
