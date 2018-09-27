@@ -74,6 +74,7 @@ store.on('update', ({ changed, current }) => {
 
 store.add('palette', defaultpalette.paletteName, defaultpalette)
 store.add('palette', fuji.paletteName, fuji)
+store.load('palette', defaultpalette.paletteName)
 
 const query = searchToObject()
 if (query.data) {

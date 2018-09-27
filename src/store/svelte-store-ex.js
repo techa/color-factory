@@ -131,7 +131,6 @@ export default class Histore extends Store {
     const storageKey = this._createStorageKey(saveType, saveName)
     if (!load(storageKey)) {
       this._save(saveType, saveName, data)
-      this.load(saveType, saveName)
     }
   }
   /**
