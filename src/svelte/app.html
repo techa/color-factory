@@ -17,7 +17,7 @@
     <button on:click="reverse()" title="Reverse">
       <i class="fas fa-sync fa-fw"></i>
     </button>
-    <button on:click="removeAll()" title="Delete">
+    <button on:click="remove()" title="Delete">
       <i class="fas fa-trash"></i>
     </button>
     {#if showSubmenu}
@@ -258,6 +258,9 @@
       this.store.on('selectAll', () => {
         this.selectable.selectAll()
       })
+      this.store.on('delete', () => {
+        this.remove()
+      })
       this.cardsPosition()
     },
 
@@ -315,7 +318,7 @@
         const indexs = cards.map((card) => card.index)
         store.fire('cards.TOGGLE_TEXTMODE', indexs)
       },
-      removeAll () {
+      remove () {
         const selects = this.selectable.selects
         if (selects.length) {
           store.fire('cards.REMOVE_CARD', selects.map((select) => select.index))

@@ -42,6 +42,10 @@ const store = new Histore(
         key: 'ctrl+a',
         action: 'selectAll',
       },
+      {
+        key: 'delete',
+        action: 'delete',
+      },
     ],
   }
 )
