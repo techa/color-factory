@@ -73,10 +73,6 @@ export default class Histore extends Store {
       return obj
     }, {})
 
-    if (oldData) {
-      save(this.saveListsKey, this.saveLists)
-    }
-
     this._history = {
       oldstate: JSON.stringify(state),
       undostock: [],

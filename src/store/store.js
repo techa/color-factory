@@ -68,7 +68,6 @@ store.on('state', ({ changed, current }) => {
 
 store.add('palette', defaultpalette.paletteName, defaultpalette)
 store.add('palette', fuji.paletteName, fuji)
-store.load('palette', defaultpalette.paletteName)
 
 const query = searchToObject()
 if (query.data) {
@@ -76,7 +75,11 @@ if (query.data) {
   query.data.paletteName = key
   store.set(query.data, true)
 } else {
-  store.load('palette', '')
+  try {
+    store.load('palette', '')
+  } catch (error) {
+    store.load('palette', defaultpalette.paletteName)
+  }
 }
 
 const keys = Object.keys(defaultpalette)
