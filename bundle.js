@@ -280,7 +280,7 @@
 	  return store[key] || (store[key] = value !== undefined ? value : {});
 	})('versions', []).push({
 	  version: _core.version,
-	  mode: _library ? 'pure' : 'global',
+	  mode: 'global',
 	  copyright: '© 2018 Denis Pushkarev (zloirock.ru)'
 	});
 	});
@@ -3244,10 +3244,10 @@
 	    return capability.promise;
 	  }
 	});
-	_export(_export.S + _export.F * (!USE_NATIVE$1), PROMISE, {
+	_export(_export.S + _export.F * (_library || !USE_NATIVE$1), PROMISE, {
 	  // 25.4.4.6 Promise.resolve(x)
 	  resolve: function resolve(x) {
-	    return _promiseResolve(this, x);
+	    return _promiseResolve(_library && this === Wrapper ? $Promise : this, x);
 	  }
 	});
 	_export(_export.S + _export.F * !(USE_NATIVE$1 && _iterDetect(function (iter) {
@@ -13522,7 +13522,7 @@
 	    rect: { width: 0, height: 0 },
 	    color1: '#000',
 	    color2: '#fff',
-	    direction: 'vertical', // horizontal
+	    direction: 'horizontal', // vertical
 	  }
 	}
 	var methods$3 = {
@@ -13594,7 +13594,7 @@
 		}
 
 		var canvas_levels = [
-			{ class: "blender-canvas svelte-9a06ho" },
+			{ class: "blender-canvas svelte-5950l5" },
 			ctx.rect
 		];
 
@@ -13611,26 +13611,26 @@
 			c: function create() {
 				div = createElement("div");
 				div_1 = createElement("div");
-				text = createText("\r\n  ");
+				text = createText("\n  ");
 				div_2 = createElement("div");
 				canvas = createElement("canvas");
-				text_1 = createText("\r\n    ");
+				text_1 = createText("\n    ");
 				div_3 = createElement("div");
-				text_3 = createText("\r\n  ");
+				text_3 = createText("\n  ");
 				div_4 = createElement("div");
 				addListener(div_1, "click", click_handler);
-				div_1.className = "blender-btn color1 svelte-9a06ho";
-				addLoc(div_1, file$4, 1, 2, 25);
+				div_1.className = "blender-btn color1 svelte-5950l5";
+				addLoc(div_1, file$4, 1, 2, 24);
 				setAttributes(canvas, canvas_data);
-				addLoc(canvas, file$4, 3, 4, 156);
-				div_3.className = div_3_class_value = "blender-handle " + ctx.direction + " svelte-9a06ho";
-				addLoc(div_3, file$4, 4, 4, 224);
-				div_2.className = "blender-slider svelte-9a06ho";
-				addLoc(div_2, file$4, 2, 2, 110);
+				addLoc(canvas, file$4, 3, 4, 153);
+				div_3.className = div_3_class_value = "blender-handle " + ctx.direction + " svelte-5950l5";
+				addLoc(div_3, file$4, 4, 4, 220);
+				div_2.className = "blender-slider svelte-5950l5";
+				addLoc(div_2, file$4, 2, 2, 108);
 				addListener(div_4, "click", click_handler_1);
-				div_4.className = "blender-btn color2 svelte-9a06ho";
-				addLoc(div_4, file$4, 6, 2, 295);
-				div.className = "blender svelte-9a06ho";
+				div_4.className = "blender-btn color2 svelte-5950l5";
+				addLoc(div_4, file$4, 6, 2, 289);
+				div.className = "blender svelte-5950l5";
 				addLoc(div, file$4, 0, 0, 0);
 			},
 
@@ -13654,11 +13654,11 @@
 			p: function update(changed, _ctx) {
 				ctx = _ctx;
 				setAttributes(canvas, getSpreadUpdate(canvas_levels, [
-					{ class: "blender-canvas svelte-9a06ho" },
+					{ class: "blender-canvas svelte-5950l5" },
 					(changed.rect) && ctx.rect
 				]));
 
-				if ((changed.direction) && div_3_class_value !== (div_3_class_value = "blender-handle " + ctx.direction + " svelte-9a06ho")) {
+				if ((changed.direction) && div_3_class_value !== (div_3_class_value = "blender-handle " + ctx.direction + " svelte-5950l5")) {
 					div_3.className = div_3_class_value;
 				}
 			},
