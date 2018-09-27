@@ -34,7 +34,7 @@ function keydownHandler (handler) {
 
 export default class KeyManager {
   constructor (store, options = {}) {
-    const {keymaps} = this.options = Object.assign({
+    const { keymaps } = this.options = Object.assign({
       element: window,
       keymaps: defaultkeymaps,
     }, options)

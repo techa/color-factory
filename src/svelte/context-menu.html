@@ -48,7 +48,7 @@
 
 <script>
   import store from '../store/store.js'
-  import {styler, copyTextToClipboard} from '../utils'
+  import { styler, copyTextToClipboard } from '../utils'
 
   export default {
     data () {
@@ -91,7 +91,7 @@
 
         // 'tip' or 'card'
         const activeCard = mode === 'card' ? cardComponent.get().card : cardComponent
-        this.set({mode, activeCard})
+        this.set({ mode, activeCard })
         this.cardComponent = cardComponent
 
 
@@ -102,7 +102,7 @@
       store.on('menu_close', (e) => {
         menu.style.display = 'none'
         // submenu.style.display = 'none'
-        this.set({mode: false})
+        this.set({ mode: false })
         window.removeEventListener('blur', menuHide)
         document.removeEventListener('click', menuHide)
       })
@@ -153,9 +153,9 @@
         copyTextToClipboard(this.get().activeCard.color[model]())
       },
       viewModelChenge (event) {
-        const {cardViewModels} = this.store.get()
+        const { cardViewModels } = this.store.get()
         cardViewModels[event[0]] = !event[1]
-        this.store.set({cardViewModels}, true)
+        this.store.set({ cardViewModels }, true)
       },
     }
   }

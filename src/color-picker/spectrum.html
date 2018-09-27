@@ -83,15 +83,15 @@
     },
     methods: {
       setColor (position) {
-        const {color, model} = this.get()
+        const { color, model } = this.get()
         const arr = color[model]().array()
         arr[1] = position.percentLeft
         arr[2] = 100 - position.percentTop
         this.set({ color: new Color(arr, model) })
       },
       setPosition () {
-        const {color, model} = this.get()
-        const {width, height} = this.refs.spectrum.getBoundingClientRect()
+        const { color, model } = this.get()
+        const { width, height } = this.refs.spectrum.getBoundingClientRect()
         const arr = color[model]().array()
         this.refs.handle.style.left = width * arr[1] / 100 + 'px'
         this.refs.handle.style.top = height - (height * arr[2] / 100) + 'px'

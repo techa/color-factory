@@ -111,10 +111,10 @@
       }
     },
     computed: {
-      listContains: ({list, value}) => list.some(({paletteName}) => paletteName === value),
+      listContains: ({ list, value }) => list.some(({ paletteName }) => paletteName === value),
     },
     oncreate () {
-      const {paletteName} = this.store.get()
+      const { paletteName } = this.store.get()
       this.set({
         value: paletteName,
         list: this.getList(),
@@ -140,15 +140,15 @@
       },
       remove (paletteName) {
         this.store.remove(paletteName)
-        const {list} = this.get()
+        const { list } = this.get()
         list.splice(list.findIndex((item) => item.paletteName === paletteName), 1)
-        this.set({list})
+        this.set({ list })
       },
       save (value) {
         if (!value) {
           return
         }
-        this.store.set({paletteName: value})
+        this.store.set({ paletteName: value })
         this.store.save(value, saveKeys)
         this.set({
           list: this.getList(),

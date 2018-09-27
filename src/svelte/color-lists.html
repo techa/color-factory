@@ -43,7 +43,7 @@
                 if (i === 0)      name += 50
                 else if (i < 10)  name += i * 100
                 else if (i >= 10) name += ['A100', 'A200', 'A400', 'A700'][i % 10]
-                ary.push({name, color})
+                ary.push({ name, color })
               })
               return ary
             }, []) },
@@ -76,7 +76,7 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          this.fire('colorpick', {current: { name, color: new Color(color) }})
+          this.fire('colorpick', { current: { name, color: new Color(color) } })
         }
       })
       colortips.addEventListener('contextmenu', (e) => {

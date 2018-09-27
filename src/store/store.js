@@ -1,7 +1,7 @@
 import defaultpalette from '../constants/newwebcolor'
 import Histore from './svelte-store-ex.js'
 import Color from '../Colorx.js'
-import {objectToUrl, searchToObject} from '../url.js'
+import { objectToUrl, searchToObject } from '../url.js'
 
 const store = new Histore(
   Object.assign({
@@ -38,7 +38,7 @@ const store = new Histore(
   }
 )
 
-store.on('state', ({changed, current}) => {
+store.on('state', ({ changed, current }) => {
   if (changed.cards) {
     for (let i = 0; i < current.cards.length; i++) {
       const card = current.cards[i]
@@ -56,7 +56,7 @@ store.on('state', ({changed, current}) => {
 
 const keys = Object.keys(defaultpalette)
 
-store.on('update', ({changed, current}) => {
+store.on('update', ({ changed, current }) => {
   if (changed) {
     objectToUrl(keys.reduce((obj, key) => {
       obj[key] = current[key]
@@ -79,29 +79,29 @@ if (query.data) {
   store.save(defaultpalette.paletteName, keys)
 }
 
-store.fire('state', {changed: {cards:true, bgColor:true}, current: store.get()})
+store.fire('state', { changed: { cards:true, bgColor:true }, current: store.get() })
 
 // Events
 store.on('cards.ADD_CARD', (card) => {
-  store.set({cards: (cards) => {
+  store.set({ cards: (cards) => {
     card.color = new Color(card.color)
     card.zIndex = cards.length
     card.index = cards.length
     return [...cards, store.cardPosition(card)]
-  }})
+  } })
   store.memo()
 })
 
 store.on('cards.EDIT_CARD', (index, param) => {
-  store.set({cards: (cards) => {
+  store.set({ cards: (cards) => {
     const card = cards[index]
     Object.assign(card, param)
     return cards
-  }})
+  } })
 })
 // @params {array} indexs
 store.on('cards.DUPLICATE_CARD', (indexs) => {
-  store.set({cards: (cards) => {
+  store.set({ cards: (cards) => {
     const newCards = indexs.map((index, i) => {
       const card = Object.assign({}, cards[index])
       card.color = new Color(card.color)
@@ -112,18 +112,18 @@ store.on('cards.DUPLICATE_CARD', (indexs) => {
       return store.cardPosition(card)
     })
     return cards.concat(newCards)
-  }})
+  } })
   store.memo()
 })
 // @params {array} indexs
 store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
-  store.set({cards: (cards) => {
+  store.set({ cards: (cards) => {
     indexs.map((index) => {
       const card = cards[index]
       card.textMode = typeof bool === 'boolean' ? bool : !card.textMode
     })
     return cards
-  }})
+  } })
   store.memo()
 })
 
@@ -136,7 +136,7 @@ store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
  * [4,2,1,3,5,6]
  */
 store.on('cards.REMOVE_CARD', (indexs) => {
-  store.set({cards: (cards) => {
+  store.set({ cards: (cards) => {
     const zIndexs = indexs.map((i) => cards[i].zIndex)
     return cards.reduce((newcards, card, i) => {
       if (!~indexs.indexOf(i)) {
@@ -146,12 +146,12 @@ store.on('cards.REMOVE_CARD', (indexs) => {
       }
       return newcards
     }, [])
-  }})
+  } })
   store.memo()
 })
 
 store.on('cards.CARD_FORWARD', (index) => {
-  store.set({cards: (cards) => {
+  store.set({ cards: (cards) => {
     const currIndex = +cards[index].zIndex
     cards.forEach((card, i) => {
       if (i === index) {
@@ -161,7 +161,7 @@ store.on('cards.CARD_FORWARD', (index) => {
       }
     })
     return cards
-  }})
+  } })
 })
 
 export default store

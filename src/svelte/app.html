@@ -121,27 +121,27 @@
 
   import Color from '../Colorx.js'
   import store from '../store/store.js'
-  import {Selectable} from '../mouse'
+  import { Selectable } from '../mouse'
 
   const sort = [
-    {name: '---', value: 'none'},
-    {name: 'Random', value: 'random'},
-    {name: 'Hue', value: 'hue'},
-    {name: 'Hue(∠)', value: 'deg'},
-    {name: 'S(HSL)', value: 'saturationl'},
-    {name: 'L(HSL)', value: 'lightness'},
-    {name: 'S(HSV)', value: 'saturationv'},
-    {name: 'V(HSV)', value: 'value'},
-    {name: 'C(HCG)', value: 'chroma'},
-    {name: 'G(HCG)', value: 'gray'},
-    {name: 'W(HWB)', value: 'white'},
-    {name: 'B(HWB)', value: 'wblack'},
-    {name: 'C(CMYK)', value: 'cyan'},
-    {name: 'M(CMYK)', value: 'magenta'},
-    {name: 'Y(CMYK)', value: 'yellow'},
-    {name: 'K(CMYK)', value: 'black'},
-    {name: 'Grayscale', value: 'grayscale'},
-    {name: 'Contrast', value: 'contrast'},
+    { name: '---', value: 'none' },
+    { name: 'Random', value: 'random' },
+    { name: 'Hue', value: 'hue' },
+    { name: 'Hue(∠)', value: 'deg' },
+    { name: 'S(HSL)', value: 'saturationl' },
+    { name: 'L(HSL)', value: 'lightness' },
+    { name: 'S(HSV)', value: 'saturationv' },
+    { name: 'V(HSV)', value: 'value' },
+    { name: 'C(HCG)', value: 'chroma' },
+    { name: 'G(HCG)', value: 'gray' },
+    { name: 'W(HWB)', value: 'white' },
+    { name: 'B(HWB)', value: 'wblack' },
+    { name: 'C(CMYK)', value: 'cyan' },
+    { name: 'M(CMYK)', value: 'magenta' },
+    { name: 'Y(CMYK)', value: 'yellow' },
+    { name: 'K(CMYK)', value: 'black' },
+    { name: 'Grayscale', value: 'grayscale' },
+    { name: 'Contrast', value: 'contrast' },
   ]
 
   export default {
@@ -204,7 +204,7 @@
       // card position init
       store.cardPosition = (card) => {
         const rect = box.getBoundingClientRect()
-        const {sortX, sortY} = this.store.get()
+        const { sortX, sortY } = this.store.get()
         const maxW = rect.width - cardSize - colorsWidth
         const maxH = rect.height - cardSize
 
@@ -234,18 +234,18 @@
         },
         selected: (e) => {
           const selects = this.selectable.selects
-          const {memo, current} = this.get()
+          const { memo, current } = this.get()
 
           if (selects.length === 1) {
-            const {name, color} = store.get().cards[selects[0].index]
-            this.set({current: { name, color }})
+            const { name, color } = store.get().cards[selects[0].index]
+            this.set({ current: { name, color } })
             if (!memo) {
               this.set({ memo: current })
             }
           }
 
           if (!selects.length && memo) {
-            this.set({current: memo, memo: null})
+            this.set({ current: memo, memo: null })
           }
         },
       })
@@ -258,16 +258,16 @@
 
     methods: {
       addCard (current, textMode) {
-        const {name, color} = current
+        const { name, color } = current
         if (!name) {
           current.name = `(${new Color(color).nearColorName()})`
         }
-        this.store.fire('cards.ADD_CARD', Object.assign({textMode}, current))
-        this.set({current: { name: '', color }})
+        this.store.fire('cards.ADD_CARD', Object.assign({ textMode }, current))
+        this.set({ current: { name: '', color } })
       },
       sortZindex (sortXY) {
         const state = this.store.get()
-        const {cards, bgColor} = state
+        const { cards, bgColor } = state
         const sort = state[sortXY]
         if (typeof bgColor[sort] === 'function') {
           this.store.set({
@@ -287,33 +287,33 @@
       },
       cardsPosition (sortXY, value) {
         if (sortXY && value) {
-          this.store.set({[sortXY]: value})
+          this.store.set({ [sortXY]: value })
         }
-        const {cards} = this.store.get()
+        const { cards } = this.store.get()
         cards.forEach((card, i) => {
           cards[i] = this.store.cardPosition(card)
         })
-        this.store.set({cards})
+        this.store.set({ cards })
         this.store.memo()
       },
       setBgColor (color) {
-        const {bgColor} = this.store.get()
+        const { bgColor } = this.store.get()
         const coloraplha1 = bgColor.alphaBlending(color)
-        this.store.set({bgColor: coloraplha1})
+        this.store.set({ bgColor: coloraplha1 })
       },
       removeAll () {
         const selects = this.selectable.selects
         if (selects.length) {
           store.fire('cards.REMOVE_CARD', selects.map((select) => select.index))
         } else {
-          this.store.set({cards: []})
+          this.store.set({ cards: [] })
           this.store.memo()
         }
       },
       viewModelChenge (model, bool) {
-        const {cardViewModels} = this.store.get()
+        const { cardViewModels } = this.store.get()
         cardViewModels[model] = !bool
-        this.store.set({cardViewModels}, true)
+        this.store.set({ cardViewModels }, true)
       },
     }
   }

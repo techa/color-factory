@@ -44,14 +44,14 @@
     oncreate () {
       this.refs.hue.on('state', ({ changed, current, previous }) => {
         if (changed.value) {
-          const {color} = this.get()
-          this.set({color: color.hue(current.value)})
+          const { color } = this.get()
+          this.set({ color: color.hue(current.value) })
         }
       })
       this.refs.alpha.on('state', ({ changed, current, previous }) => {
         if (changed.value) {
-          const {color} = this.get()
-          this.set({color: color.alpha(current.value / 100)})
+          const { color } = this.get()
+          this.set({ color: color.alpha(current.value / 100) })
         }
       })
     },

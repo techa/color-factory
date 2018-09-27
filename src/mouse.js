@@ -28,7 +28,7 @@ export class PositionManager {
     this.startX = 0
     this.startY = 0
 
-    this.handleRect = {width: 0, height: 0, left: 0, top: 0}
+    this.handleRect = { width: 0, height: 0, left: 0, top: 0 }
 
     // position
     const position = { left: 0, top: 0 }
@@ -241,7 +241,7 @@ export class MousePosition {
   // マウスが押された際の関数
   mdown (e, handle) {
     if (!this.options.switch) return
-    const {options, position} = this
+    const { options, position } = this
     // マウス座標を保存
     position.set(e, true, handle)
 
@@ -255,7 +255,7 @@ export class MousePosition {
   // マウスカーソルが動いたときに発火
   mmove (e) {
     if (!this.options.switch) return
-    const {options, position} = this
+    const { options, position } = this
     // マウスが動いたベクトルを保存
     position.set(e)
     // フリックしたときに画面を動かさないようにデフォルト動作を抑制
@@ -271,7 +271,7 @@ export class MousePosition {
   // マウスボタンが上がったら発火
   mup (e) {
     if (!this.options.switch) return
-    const {options, position} = this
+    const { options, position } = this
     // マウスが動いたベクトルを保存
     position.set(e)
 
@@ -443,7 +443,7 @@ export class Selectable extends MousePosition {
     const callback = (e, that) => {
       if (e.shiftKey) {
         this.toggle(that)
-      } else if (!this.children.find(({el}) => el === that).isSelected) {
+      } else if (!this.children.find(({ el }) => el === that).isSelected) {
         this.unselectAll()
         this.toggle(that)
       }
@@ -454,7 +454,7 @@ export class Selectable extends MousePosition {
     }
     function cb (e) { callback(e, this) }
 
-    this.children.forEach(({el}, i) => {
+    this.children.forEach(({ el }, i) => {
       el.addEventListener('mousedown', cb)
     })
 
@@ -513,8 +513,8 @@ export class Selectable extends MousePosition {
     const opts = this.options
     const child = typeof search === 'number'
       ? this.children[search]
-      : this.children.find(({el}) => el === search)
-    const {el, isSelected} = child
+      : this.children.find(({ el }) => el === search)
+    const { el, isSelected } = child
 
     child.isSelected = flg = flg == null ? !isSelected : flg
 
@@ -569,13 +569,13 @@ export class Selectable extends MousePosition {
     width  = Math.abs(position.vectorX)
     height = Math.abs(position.vectorY)
     // 選択範囲のRectデータ
-    return {left, top, width, height}
+    return { left, top, width, height }
   }
 
   mdown (e, handle) {
     super.mdown(e, handle)
     const el = this.options.containment
-    const {position, helper} = this
+    const { position, helper } = this
     // array init
     if (!e.shiftKey) this.reset()
     else {
@@ -595,12 +595,12 @@ export class Selectable extends MousePosition {
   mmove (e) {
     super.mmove(e)
     const opts = this.options
-    const {position, helper} = this
+    const { position, helper } = this
     // 選択範囲のRectデータ
     const helperRect = this.helperRect(position)
 
     // 選択範囲内の要素にクラスを追加。範囲外の要素からクラスを削除
-    this.children.forEach(({rect}, i) => {
+    this.children.forEach(({ rect }, i) => {
       const hit = hitChecker(helperRect, rect, opts.tolerance)
       if (!this.children[i].shiftSelected) {
         this.toggle(i, hit)

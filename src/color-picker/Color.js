@@ -110,7 +110,7 @@
     }
 
     if (text === 'transparent') {
-      return {r: 0, g: 0, b: 0, a: 0, format: 'name'}
+      return { r: 0, g: 0, b: 0, a: 0, format: 'name' }
     }
 
     // color functions. [rgb, rgba, hsl, hsla, hsv, hsva]
@@ -167,7 +167,7 @@
     }
 
     if (Array.isArray(input)) {
-      input = {r: input[0], g: input[1], b: input[2]}
+      input = { r: input[0], g: input[1], b: input[2] }
       a = input[3] == null ? a : input[3]
       format = 'rgb'
     }
@@ -294,10 +294,10 @@
             const param = this.getParam(format)
             param[chara] = parseNum(val, MAX[chara] || 100)
             console.log('param', param)
-            this.setColor(param, {format})
+            this.setColor(param, { format })
           }
         }
-        Object.defineProperties(this, {[key]: value, [chara]: value})
+        Object.defineProperties(this, { [key]: value, [chara]: value })
       })
     })
     Object.defineProperty(this, 'alpha', {
@@ -311,7 +311,7 @@
   }
   Color.prototype = {
     setColor (params, opts = {}) {
-      const {hsl, format, ok, a} = input2hsl(params)
+      const { hsl, format, ok, a } = input2hsl(params)
       this.format = opts.format || format || 'rgb'
       this._hsl = hsl
       this._a = a
@@ -993,8 +993,8 @@
       return (Math.max(baseLuminance, lum) + 0.05) / (Math.min(baseLuminance, lum) + 0.05)
     }
     return colorList
-    .map((color) => new Color(color).getLuminance())
-    .sort((color1, color2) => rd(color2) - rd(color1))
+      .map((color) => new Color(color).getLuminance())
+      .sort((color1, color2) => rd(color2) - rd(color1))
   }
   function mostReadable (basecolor, colorList) {
     return sortReadable(basecolor, colorList)[0]

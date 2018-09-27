@@ -1,0 +1,28 @@
+export default {
+  cards: [
+    { name: 'bg 紫紺', color: '#261C29' },
+    { name: 'text 菜の花', color: '#F7F1D5' },
+    { name: 'invisibles ', color: '#4025AD' },
+    { name: 'selection ', color: '#45553C' },
+    { name: 'comment 銀鼠', color: '#91989F' },
+    { name: 'comment 灰', color: '#8B2929' },
+    { name: 'string 鴇', color: '#EEA9A9' },
+    { name: 'numeric 今様', color: '#D05A6E' },
+    { name: 'constant ', color: '#F596AA' },
+    { name: 'keyword 鶯', color: '#7F8F46' },
+    { name: 'argument 苔', color: '#838A2D' },
+    { name: 'keyword 鶯', color: '#6C6024' },
+    { name: 'variable 楝', color: '#9B90C2' },
+    { name: 'storagetype 鬱金', color: '#EFBB24' },
+    { name: 'class 藤', color: '#8B81C3' },
+    { name: 'function 苗', color: '#86C166' },
+    { name: 'function 柳染', color: '#91AD70' },
+    { name: 'argument ', color: '#7BB35D' },
+    { name: 'argument 紅梅', color: '#E16B8C' },
+    { name: 'argument 桜', color: '#FEDFE1' },
+    { name: 'constant 桜', color: '#ca91b6' },
+    { name: 'constant 桜', color: '#c274a7' },
+    { name: 'constant 桜', color: '#B07736' }
+  ],
+  bgColor: '#261C29',
+}

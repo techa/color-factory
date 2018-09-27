@@ -47,21 +47,21 @@
     methods: {
       positionRd (r, deg) {
         const d = (deg - 90) / 180 * Math.PI
-        const {center} = this.get()
+        const { center } = this.get()
         return [
           Math.floor((center + r * Math.cos(d)) * 100) / 100,
           Math.floor((center + r * Math.sin(d)) * 100) / 100,
         ]
       },
       positionTest (position) {
-        const {center, radius} = this.get()
+        const { center, radius } = this.get()
         const x = center - position.x,
               y = center - position.y,
               r = Math.hypot(x, y)
         return radius <= r && r <= center
       },
       setColor (position) {
-        const {center} = this.get()
+        const { center } = this.get()
         const x = center - position.x,
               y = center - position.y
 
@@ -72,13 +72,13 @@
         })
       },
       setPosition (hue) {
-        const {strokeWidth, radius} = this.get()
+        const { strokeWidth, radius } = this.get()
         const [mx, my] = this.positionRd(radius + strokeWidth / 2, hue)
         this.refs.handle.style.left = mx + 'px'
         this.refs.handle.style.top = my  + 'px'
       },
       draw () {
-        const {center, radius} = this.get()
+        const { center, radius } = this.get()
 
         const canvas = this.refs.canvas
         const cxt = canvas.getContext('2d')

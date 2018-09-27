@@ -14,7 +14,7 @@ const EVENTS = constructor._events = {}
 
 export default class Histore extends Store {
   constructor (state, options) {
-    const {storageKey, storageListKey} = options
+    const { storageKey, storageListKey } = options
     if (storageKey) {
       const data = window.localStorage.getItem(storageKey)
       if (!data) {
@@ -111,7 +111,7 @@ export default class Histore extends Store {
   }
   _memo ({ changed, current, previous }) {
     const newstateJSON = JSON.stringify(current)
-    const {oldstate, undostock, redostock, memo} = this._history
+    const { oldstate, undostock, redostock, memo } = this._history
     const storageKey = this.storageKey
     console.log('changed', newstateJSON !== oldstate)
     if (newstateJSON !== oldstate) {

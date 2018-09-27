@@ -63,7 +63,7 @@ const parsers = (function () {
         hue = /^(?:[-+]\d+)$/, // degree
         per = /^(?:100%|\d?\d%)$/, // 0%~100%
         alpha = /^(?:0|0?\.\d+|1(?:\.0*)?)$/, // 0~1
-        rgbNum = regReplace(/^(?:N255|per)$/, {N255, per})
+        rgbNum = regReplace(/^(?:N255|per)$/, { N255, per })
 
   const regs = {
     rgb: /rgb\((rgbNum), (rgbNum), (rgbNum)\)/,
@@ -74,7 +74,7 @@ const parsers = (function () {
     hsva: /hsva\((hue), (per), (per), (alpha)\)/
   }
   for (let key in regs) {
-    regs[key] = regReplace(regs[key], {rgbNum, hue, per, alpha}, true)
+    regs[key] = regReplace(regs[key], { rgbNum, hue, per, alpha }, true)
   }
 
   return Object.assign(regs, {
@@ -94,7 +94,7 @@ function string2object (text) {
   text = text.trim().toLowerCase()
 
   if (text === 'transparent') {
-    return {r: 0, g: 0, b: 0, a: 0, format: 'name'}
+    return { r: 0, g: 0, b: 0, a: 0, format: 'name' }
   }
 
   // color functions. [rgb, rgba, hsl, hsla, hsv, hsva]
@@ -152,7 +152,7 @@ function input2rgb (input) {
   const obj = {}
 
   if (typeof input === 'object') {
-    const {r, g, b, h, s, l, v} = input
+    const { r, g, b, h, s, l, v } = input
     if (parsers.rgbNum.test(r) && parsers.rgbNum.test(g) && parsers.rgbNum.test(b)) {
 
     } else if (parsers.hue.test(h) && parsers.per.test(s) && parsers.per.test(v)) {

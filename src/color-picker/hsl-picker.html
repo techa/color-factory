@@ -62,9 +62,9 @@
       this.refs.lightness.draw(tinycolor('#fff'), tinycolor('#000'))
 
       this.refs.lightness.on('state', ({ changed, current, previous }) => {
-        const {hsl} = this.get()
+        const { hsl } = this.get()
         hsl.l = 1 - current.value / 100
-        this.set({color: tinycolor(hsl)})
+        this.set({ color: tinycolor(hsl) })
       })
 
       // picker
@@ -85,7 +85,7 @@
     },
     methods: {
       setColor (position) {
-        const {hsl} = this.get()
+        const { hsl } = this.get()
         hsl.h = position.percentLeft / 100
         hsl.s = (100 - position.percentTop) / 100
         this.set({ color: tinycolor.fromRatio(hsl) })
@@ -93,7 +93,7 @@
       setPosition () {
         const canvas = this.refs.canvas
         const [w, h] = [canvas.width, canvas.height]
-        const {hsl} = this.get()
+        const { hsl } = this.get()
         this.refs.handle.style.left = w * hsl.h / 360 + 'px'
         this.refs.handle.style.top = h - (h * hsl.s) + 'px'
       },

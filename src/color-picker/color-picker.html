@@ -70,7 +70,7 @@
 
 <script>
   import Color from '../Colorx.js'
-  import {round} from '../utils.js'
+  import { round } from '../utils.js'
 
   import ColorInput from './color-input.html'
   import HsvPicker from './hsv-picker.html'
@@ -94,10 +94,10 @@
     },
     onstate ({ changed, current }) {
       if (changed.color) {
-        this.set({color: new Color(current.color)})
+        this.set({ color: new Color(current.color) })
       }
       if (changed.bgColor) {
-        this.set({bgColor: new Color(current.bgColor)})
+        this.set({ bgColor: new Color(current.bgColor) })
       }
 
       if (changed.model) {
@@ -106,13 +106,13 @@
     },
     methods: {
       alphaBlending () {
-        const {color, bgColor} = this.get()
+        const { color, bgColor } = this.get()
         this.set({
           color: bgColor.alphaBlending(color),
         })
       },
-      setBgColor ({color} = this.get()) {
-        this.set({bgColor: color})
+      setBgColor ({ color } = this.get()) {
+        this.set({ bgColor: color })
         this.fire('setBgColor', color)
       },
     },

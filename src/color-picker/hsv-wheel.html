@@ -87,17 +87,17 @@
     },
     oncreate () {
       this.refs.wheel.on('state', ({ changed, current, previous }) => {
-        const {hsv} = this.get()
+        const { hsv } = this.get()
         hsv.h = current.hue
-        this.set({color: tinycolor(hsv)})
+        this.set({ color: tinycolor(hsv) })
       })
       this.refs.spectrum.on('state', ({ changed, current, previous }) => {
-        this.set({color: tinycolor(current.hsv)})
+        this.set({ color: tinycolor(current.hsv) })
       })
     },
     methods: {
       spectrumCrement (meth) {
-        const {hsv} = this.get()
+        const { hsv } = this.get()
 
         hsv[meth[0]] += meth[1] ? 0.01 : -0.01
         if (hsv[meth[0]] === 1) {
