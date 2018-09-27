@@ -14,6 +14,9 @@
     <button on:click="set({showSubmenu: !showSubmenu})" title="Card Color Models Visible">
       <i class="fas fa-eye"></i>
     </button>
+    <button on:click="reverse()" title="Reverse">
+      <i class="fas fa-sync fa-fw"></i>
+    </button>
     <button on:click="removeAll()" title="Delete">
       <i class="fas fa-trash"></i>
     </button>
@@ -213,7 +216,7 @@
           const deg = sortX === 'deg' ? byer(sortX, card) : byer(sortY, card)
           const radius = sortY === 'deg' ? byer(sortX, card, true) : byer(sortY, card, true)
           const maxR = Math.min(maxW, maxH) / 2
-          console.log('deg', card.color.hsl(),  deg)
+          // console.log('deg', card.color.hsl(),  deg)
           card.left = Math.round(maxR * Math.cos(deg) * radius + maxR + colorsWidth)
           card.top = Math.round(maxR * Math.sin(deg) * radius + maxR)
         } else {
@@ -257,6 +260,9 @@
     },
 
     methods: {
+      history () {
+        console.log('')
+      },
       addCard (current, textMode) {
         const { name, color } = current
         if (!name) {
@@ -300,6 +306,12 @@
         const { bgColor } = this.store.get()
         const coloraplha1 = bgColor.alphaBlending(color)
         this.store.set({ bgColor: coloraplha1 })
+      },
+      reverse () {
+        const selects = this.selectable.selects
+        const cards = selects.length ? selects : this.store.get().cards
+        const indexs = cards.map((card) => card.index)
+        store.fire('cards.TOGGLE_TEXTMODE', indexs)
       },
       removeAll () {
         const selects = this.selectable.selects
