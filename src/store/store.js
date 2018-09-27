@@ -66,16 +66,6 @@ store.on('state', ({ changed, current }) => {
   }
 })
 
-const keys = Object.keys(defaultpalette)
-store.on('update', ({ changed, current }) => {
-  if (changed) {
-    objectToUrl(keys.reduce((obj, key) => {
-      obj[key] = current[key]
-      return obj
-    }, {}))
-  }
-})
-
 store.add('palette', defaultpalette.paletteName, defaultpalette)
 store.add('palette', fuji.paletteName, fuji)
 store.load('palette', defaultpalette.paletteName)
@@ -85,7 +75,19 @@ if (query.data) {
   const key = query.data.paletteName || 'Imported palette'
   query.data.paletteName = key
   store.set(query.data, true)
+} else {
+  store.load('palette', '')
 }
+
+const keys = Object.keys(defaultpalette)
+store.on('update', ({ changed, current }) => {
+  if (changed) {
+    objectToUrl(keys.reduce((obj, key) => {
+      obj[key] = current[key]
+      return obj
+    }, {}))
+  }
+})
 
 // Events
 store.on('cards.ADD_CARD', (card) => {
