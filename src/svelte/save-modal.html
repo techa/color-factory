@@ -85,9 +85,6 @@
 <script>
   import Modal from './modal.html'
   import Color from '../Colorx.js'
-  import defaultpalette from '../constants/newwebcolor'
-
-  const saveKeys = Object.keys(defaultpalette)
 
   function colorlist (cards) {
     return cards
@@ -114,15 +111,13 @@
       listContains: ({ list, value }) => list.some(({ paletteName }) => paletteName === value),
     },
     oncreate () {
-      const { paletteName } = this.store.get()
       this.set({
-        value: paletteName,
         list: this.getList(),
       })
     },
     methods: {
       getList () {
-        return this.store.dataList().map(({ paletteName, cards }) => {
+        return this.store.dataList('palette').map(({ paletteName, cards }) => {
           const palette = colorlist(cards)
           return {
             paletteName,
@@ -131,25 +126,30 @@
           }
         })
       },
-      load (paletteName) {
-        this.store.load(paletteName)
+      load (paletteName, loadFlg) {
+        this.store.load('palette', paletteName)
         this.root.cardsPosition()
         this.set({
           value: paletteName,
         })
       },
       remove (paletteName) {
-        this.store.remove(paletteName)
+        this.store.remove('palette', paletteName)
         const { list } = this.get()
         list.splice(list.findIndex((item) => item.paletteName === paletteName), 1)
         this.set({ list })
       },
       save (value) {
         if (!value) {
-          return
+          value = 'Palette'
+          const { list } = this.get()
+          let i = 0
+          while (list.some(({ paletteName }) => value === paletteName)) {
+            value =  'Palette ' + (++i)
+          }
         }
         this.store.set({ paletteName: value })
-        this.store.save(value, saveKeys)
+        this.store.save('palette', value)
         this.set({
           list: this.getList(),
         })

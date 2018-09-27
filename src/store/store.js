@@ -1,26 +1,34 @@
-import defaultpalette from '../constants/newwebcolor'
+import defaultpalette from '../constants/hslcolor-circle'
+import fuji from '../constants/fuji'
+
 import Histore from './svelte-store-ex.js'
 import Color from '../Colorx.js'
 import { objectToUrl, searchToObject } from '../url.js'
 
+const globalSave = {
+  pickermodel: 'hsl',
+  grayscale: false,
+  textvisible: true,
+  cardViewModels: {
+    hex: true,
+    rgb: false,
+    hsl: true,
+    hsv: false,
+    hcg: false,
+    hwb: false,
+    cmyk: false,
+    contrast: true,
+  },
+}
+
 const store = new Histore(
-  Object.assign({
-    pickermodel: 'hsl',
-    grayscale: false,
-    textvisible: true,
-    cardViewModels: {
-      hex: true,
-      rgb: false,
-      hsl: true,
-      hsv: false,
-      hcg: false,
-      hwb: false,
-      cmyk: false,
-      contrast: true,
-    },
-  }, defaultpalette),
+  Object.assign({}, globalSave, defaultpalette),
   {
-    storageKey: '$color-factory',
+    globalStorageKey: '$color-factory',
+    saveTypes: {
+      global: Object.keys(globalSave),
+      palette: Object.keys(defaultpalette),
+    },
     keymaps: [
       {
         key: 'ctrl+z',
@@ -55,7 +63,6 @@ store.on('state', ({ changed, current }) => {
 })
 
 const keys = Object.keys(defaultpalette)
-
 store.on('update', ({ changed, current }) => {
   if (changed) {
     objectToUrl(keys.reduce((obj, key) => {
@@ -65,21 +72,15 @@ store.on('update', ({ changed, current }) => {
   }
 })
 
+store.add('palette', defaultpalette.paletteName, defaultpalette)
+store.add('palette', fuji.paletteName, fuji)
+
 const query = searchToObject()
 if (query.data) {
   const key = query.data.paletteName || 'Imported palette'
   query.data.paletteName = key
   store.set(query.data, true)
-  if (!window.localStorage.getItem(key)) {
-    store.save(key, keys)
-    store.load(key)
-  }
-} else if (!window.localStorage.getItem(defaultpalette.paletteName)) {
-  // Load defaultpalette
-  store.save(defaultpalette.paletteName, keys)
 }
-
-store.fire('state', { changed: { cards:true, bgColor:true }, current: store.get() })
 
 // Events
 store.on('cards.ADD_CARD', (card) => {

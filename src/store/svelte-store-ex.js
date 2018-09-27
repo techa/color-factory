@@ -10,27 +10,56 @@ Set.prototype.toJSON = function toJSON () {
   return [...Set.prototype.values.call(this)]
 }
 
+function save (key, value) {
+  window.localStorage.setItem(key, JSON.stringify(value))
+}
+function load (key) {
+  const data = window.localStorage.getItem(key)
+  if (!data) {
+    console.warn(key + ' is Undefind')
+  }
+  return JSON.parse(window.localStorage.getItem(key))
+}
+
+function updater (globalStorageKey) {
+  const saveListsKey = globalStorageKey + '-list'
+  const saveList = load(saveListsKey)
+  if (saveList) {
+    saveList.forEach((saveName) => {
+      const data = load(saveName)
+      window.localStorage.removeItem(saveName)
+      const storageKey = globalStorageKey + '/palette/' + saveName
+      save(storageKey, data)
+    })
+  }
+  return saveList
+}
+
 const EVENTS = constructor._events = {}
 
 export default class Histore extends Store {
   constructor (state, options) {
-    const { storageKey, storageListKey } = options
-    if (storageKey) {
-      const data = window.localStorage.getItem(storageKey)
-      if (!data) {
-        window.localStorage.clear()
-      }
-      state = JSON.parse(data) || state
+    const { globalStorageKey } = options
+    const saveTypes = options.saveTypes || { global: Object.keys(state) }
+    if (globalStorageKey) {
+      state = load(globalStorageKey) || state
     }
 
     super(state, options)
     this._keyManager = new KeyManager(this, options)
     this.options = options
 
-    this.storageKey = storageKey
-    this.storageListKey = storageListKey || storageKey + '-list'
-    const data = window.localStorage.getItem(this.storageListKey)
-    this._storageSet = new Set(JSON.parse(data) || [])
+    this.globalStorageKey = globalStorageKey
+
+    this.saveListsKey = globalStorageKey + '-lists'
+    const _saveList = load(this.saveListsKey) || updater() || {}
+    /**
+     * @property {Set{}} saveLists { global: new Set(['saveName', 'saveName']) }
+     */
+    this.saveLists = Object.keys(saveTypes).reduce((obj, saveType) => {
+      obj[saveType] = new Set(_saveList[saveType] || [])
+      return obj
+    }, {})
 
     this._history = {
       oldstate: JSON.stringify(state),
@@ -75,44 +104,119 @@ export default class Histore extends Store {
       current: this.get(),
     })
   }
-  dataList () {
+  dataList (saveType) {
+    const saveList = this.saveLists[saveType]
     const list = []
-    this._storageSet.forEach((storageKey) => {
-      const data = window.localStorage.getItem(storageKey)
+    saveList.forEach((saveName) => {
+      const storageKey = this._createStorageKey(saveType, saveName)
+      const data = load(storageKey)
       if (!data) return
-      list.push(JSON.parse(data))
+      list.push(data)
     })
     return list
   }
-  load (storageKey) {
-    const data = window.localStorage.getItem(storageKey)
-    if (!data) return
-    const loadstate = JSON.parse(data)
+  _createStorageKey (saveType, saveName) {
+    return this.globalStorageKey + '/' + saveType + '/' + saveName
+  }
 
-    this.set(loadstate, true)
-  }
-  remove (storageKey) {
-    window.localStorage.removeItem(storageKey)
-    this._storageSet.delete(storageKey)
-    window.localStorage.setItem(this.storageListKey, JSON.stringify(this._storageSet))
-  }
-  save (storageKey, keys) {
-    if (!this._storageSet.has(storageKey)) {
-      this._storageSet.add(storageKey)
-      window.localStorage.setItem(this.storageListKey, JSON.stringify(this._storageSet))
+  /**
+   * LocalStrageにデータを追加
+   *
+   * @param {string} saveType
+   * @param {string} saveName
+   * @param {*} data
+   * @memberof Histore
+   */
+  add (saveType, saveName, data) {
+    const storageKey = this._createStorageKey(saveType, saveName)
+    if (!load(storageKey)) {
+      this._save(saveType, saveName, data)
+      this.load(saveType, saveName)
     }
-
-    keys = Array.isArray(keys) ? keys : Object.keys(keys)
-    const state = this.get()
-    window.localStorage.setItem(storageKey, JSON.stringify(keys.reduce((obj, key) => {
-      obj[key] = state[key]
-      return obj
-    }, {})))
   }
+  /**
+   * LocalStrageからデータを削除
+   *
+   * @param {string} saveType
+   * @param {string} saveName
+   * @memberof Histore
+   */
+  remove (saveType, saveName) {
+    const storageKey = this._createStorageKey(saveType, saveName)
+    const saveList = this.saveLists[saveType]
+    if (saveList && saveList.has(saveName)) {
+      window.localStorage.removeItem(storageKey)
+
+      saveList.delete(saveName)
+      save(this.saveListsKey, this.saveLists)
+    } else {
+      throw new Error(`Histore.remove(${saveType}, ${saveName}): save is undefind`)
+    }
+  }
+  /**
+   * LocalStrageからstateにデータをロード
+   *
+   * @param {string} saveType
+   * @param {string} saveName
+   * @memberof Histore
+   */
+  load (saveType, saveName) {
+    const storageKey = this._createStorageKey(saveType, saveName)
+    const data = load(storageKey)
+    if (data) {
+      data[saveType] = saveName
+      this.set(data)
+    } else {
+      throw new Error(`Histore.load(${saveType}, ${saveName}): savedata is undefind`)
+    }
+  }
+  /**
+   * LocalStrageにstateのデータを保存
+   *
+   * @param {string} [saveType] 省略した場合、すべて記録する
+   * @param {string} [saveName]
+   * @memberof Histore
+   */
+  save (saveType, saveName) {
+    const state = this.get()
+    const { saveTypes, saveUse } = this.options
+
+    if (saveType == null) {
+      Object.keys(saveTypes).forEach((savetype) => {
+        const data = saveTypes[savetype].reduce((obj, key) => {
+          obj[key] = state[key]
+          return obj
+        }, {})
+
+        if (savetype === 'global') {
+          save(this.globalStorageKey, data)
+        } else {
+          this._save(savetype, '', data)
+        }
+      })
+    } else {
+      const data = saveTypes[saveType].reduce((obj, key) => {
+        obj[key] = state[key]
+        return obj
+      }, {})
+
+      const savename = saveName || saveUse[saveType]
+      this._save(saveType, savename, data)
+    }
+  }
+  _save (saveType, saveName, data) {
+    const saveList = this.saveLists[saveType]
+    if (saveList && !saveList.has(saveName) && saveType !== 'global' && saveName) {
+      saveList.add(saveName)
+      save(this.saveListsKey, this.saveLists)
+    }
+    save(this._createStorageKey(saveType, saveName), data)
+  }
+
+
   _memo ({ changed, current, previous }) {
     const newstateJSON = JSON.stringify(current)
     const { oldstate, undostock, redostock, memo } = this._history
-    const storageKey = this.storageKey
     console.log('changed', newstateJSON !== oldstate)
     if (newstateJSON !== oldstate) {
       switch (memo) {
@@ -131,9 +235,7 @@ export default class Histore extends Store {
           break
       }
       if (memo) {
-        if (storageKey) {
-          window.localStorage.setItem(storageKey, newstateJSON)
-        }
+        this.save()
         this._history.oldstate = newstateJSON
       }
       console.log('memo', memo)
