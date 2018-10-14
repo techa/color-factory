@@ -3,11 +3,11 @@
     <button on:click="set({ showModal: true })" title="Save &amp; Load">
       <i class="fas fa-hdd"></i>
     </button>
-    <button class:cantUndo="cantUndo" on:click="$undo()" title="Undo: ctrl+z">
+    <button class:cantUndo on:click="$undo()" title="Undo: ctrl+z">
       <i class="fas fa-undo"></i>
       <!-- ↩️ -->
     </button>
-    <button class:cantRedo="cantRedo" on:click="$redo()" title="Redo: ctrl+shift+z">
+    <button class:cantRedo on:click="$redo()" title="Redo: ctrl+shift+z">
       <i class="fas fa-redo"></i>
       <!-- ↪️ -->
     </button>
