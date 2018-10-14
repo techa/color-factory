@@ -73,7 +73,7 @@ const query = searchToObject()
 if (query.data) {
   const key = query.data.paletteName || 'Imported palette'
   query.data.paletteName = key
-  store.set(query.data, true)
+  store.set(query.data)
 } else {
   try {
     store.load('palette', '')

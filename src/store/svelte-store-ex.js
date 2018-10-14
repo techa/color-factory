@@ -266,5 +266,11 @@ export default class Histore extends Store {
       this.set(JSON.parse(history.redostock.pop()), 'redo')
     }
   }
+  undoCount () {
+    return this._history.undostock.length
+  }
+  redoCount () {
+    return this._history.redostock.length
+  }
 }
 
