@@ -26,16 +26,20 @@
         <i class="fas fa-filter fa-fw"></i>
         Filter Grayscale
       </p>
+      <hr>
       <p class="menuitem" on:click="$set({textvisible: !$textvisible}, true)">
         <i class="fas fa-font fa-fw"></i>
         Card Text Visible
       </p>
-      <hr>
       {#each Object.entries($cardViewModels) as [model, bool]}
       <p class="menuitem">
         <label>
           <input type="checkbox" checked="{bool}" on:click="viewModelChenge(model, bool)">
-          {model.toUpperCase()}
+          {#if (model=='rgbp')}
+            RGB(%)
+          {:else}
+            {model.toUpperCase()}
+          {/if}
         </label>
       </p>
       {/each}

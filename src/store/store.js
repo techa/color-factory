@@ -12,6 +12,7 @@ const globalSave = {
   cardViewModels: {
     hex: true,
     rgb: false,
+    rgbp: false,
     hsl: true,
     hsv: false,
     hcg: false,

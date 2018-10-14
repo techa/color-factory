@@ -15,6 +15,7 @@ Object.assign(color.prototype, {
       case 'hsl':
         return color[model]().string(0)
       case 'prgb':
+      case 'rgbp':
       case '%':
         return color.percentString(0)
       case 'hsv':
