@@ -39,8 +39,6 @@ function updater (globalStorageKey) {
   return saveList
 }
 
-const EVENTS = constructor._events = {}
-
 export default class Histore extends Store {
   constructor (state, options) {
     const { globalStorageKey } = options
@@ -74,32 +72,13 @@ export default class Histore extends Store {
     }, {})
 
     this._history = {
-      oldstate: JSON.stringify(state),
+      oldstate: this._historyState(state),
       undostock: [],
       redostock: [],
       memo: false,
     }
 
     this.on('update', this._memo.bind(this))
-  }
-  on (eventName, handler) {
-    if (eventName === 'state' || eventName === 'update') {
-      super.on(eventName, handler)
-    } else {
-      (EVENTS[eventName] = EVENTS[eventName] || []).push(handler)
-    }
-    return this
-  }
-  fire (eventName, ...args) {
-    console.log('fire', eventName)
-    if (eventName === 'state' || eventName === 'update') {
-      super.fire(eventName, ...args)
-    } else if (EVENTS[eventName]) {
-      EVENTS[eventName].forEach((handler) => handler(...args))
-    } else {
-      console.error(`fire: ${eventName} is undefind`)
-    }
-    return this
   }
   set (newState, memo) {
     for (const key in newState) {
@@ -109,6 +88,9 @@ export default class Histore extends Store {
     }
     this._history.memo = memo
     super.set(newState)
+    if (!memo) {
+      this.save()
+    }
   }
   memo () {
     this._history.memo = true
@@ -226,7 +208,7 @@ export default class Histore extends Store {
 
 
   _memo ({ changed, current, previous }) {
-    const newstateJSON = JSON.stringify(current)
+    const newstateJSON = this._historyState(current)
     const { oldstate, undostock, redostock, memo } = this._history
     console.log('changed', newstateJSON !== oldstate)
     if (newstateJSON !== oldstate) {
@@ -254,6 +236,18 @@ export default class Histore extends Store {
     this._history.memo = false
     console.log('State', this.get())
   }
+
+  _historyState (target) {
+    const { saveTypes } = this.options
+    const data = Object.keys(target).reduce((map, key) => {
+      if (!saveTypes.global.includes(key)) {
+        map[key] = target[key]
+      }
+      return map
+    }, {})
+    return JSON.stringify(data)
+  }
+
   undo () {
     const history = this._history
     if (history.undostock.length) {
