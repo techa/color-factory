@@ -44,6 +44,11 @@ Object.assign(color.prototype, {
   },
 })
 
+/**
+ * @export
+ * @class Color
+ * @extends {color} https://github.com/Qix-/color/blob/master/index.js
+ */
 export default class Color extends color {
   constructor (param, model) {
     const match = typeof param === 'string' && param.replace(/\s*/g, '').match(

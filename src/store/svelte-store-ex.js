@@ -234,7 +234,7 @@ export default class Histore extends Store {
       console.log('memo', memo)
     }
     this._history.memo = false
-    console.log('State', this.get())
+    // console.log('State', this.get())
   }
 
   _historyState (target) {
