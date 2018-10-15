@@ -96,7 +96,7 @@
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
 
-          store.fire('cards.ADD_CARD', {
+          store.addCard({
             name,
             color: new Color(color)
           })

@@ -118,7 +118,7 @@
       //   })
       // },
       add () {
-        store.fire('cards.ADD_CARD', this.get().activeCard)
+        store.addCard(this.get().activeCard)
       },
       edit () {
         this.cardComponent.edit()
@@ -127,7 +127,7 @@
         const selects = this.root.selectable.selects
         // const howmany = selects.length
         if (selects.length) {
-          store.fire('cards.DUPLICATE_CARD', selects.map((select) => select.index))
+          store.duplicateCard(selects.map((select) => select.index))
         }
         // // reselect
         // const {cards} = store.get()
@@ -139,13 +139,13 @@
       remove () {
         const selects = this.root.selectable.selects
         if (selects.length) {
-          store.fire('cards.REMOVE_CARD', selects.map((select) => select.index))
+          store.removeCard(selects.map((select) => select.index))
         }
       },
       reverse () {
         const selects = this.root.selectable.selects
         if (selects.length) {
-          store.fire('cards.TOGGLE_TEXTMODE', selects.map((select) => select.index))
+          store.toggleTextmode(selects.map((select) => select.index))
         }
       },
 

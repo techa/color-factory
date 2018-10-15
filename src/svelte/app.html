@@ -286,7 +286,7 @@
         if (!name) {
           current.name = `(${new Color(color).nearColorName()})`
         }
-        this.store.fire('cards.ADD_CARD', Object.assign({ textMode }, current))
+        this.store.addCard(Object.assign({ textMode }, current))
         this.set({ current: { name: '', color } })
       },
       sortZindex (sortXY) {
@@ -329,12 +329,12 @@
         const selects = this.selectable.selects
         const cards = selects.length ? selects : this.store.get().cards
         const indexs = cards.map((card) => card.index)
-        store.fire('cards.TOGGLE_TEXTMODE', indexs)
+        this.store.toggleTextmode(indexs)
       },
       remove () {
         const selects = this.selectable.selects
         if (selects.length) {
-          store.fire('cards.REMOVE_CARD', selects.map((select) => select.index))
+          this.store.removeCard(selects.map((select) => select.index))
         } else {
           this.store.set({ cards: [] })
           this.store.memo()

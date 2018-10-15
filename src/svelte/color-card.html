@@ -76,7 +76,7 @@
 
           // 右クリック以外のとき
           if (!(e.which === 3 || e.button === 2)) {
-            store.fire('cards.CARD_FORWARD', index)
+            store.cardForward(index)
             cards = store.get().cards
           }
         },
@@ -121,8 +121,7 @@
         stop: (e) => {
           e.stopPropagation()
           const { width, height } = cardEl.getBoundingClientRect()
-          store.fire('cards.EDIT_CARD', index, { width, height })
-          store.memo()
+          store.editCard(index, { width, height })
         },
       })
 
@@ -147,11 +146,11 @@
     methods: {
       reverse () {
         const { card } = this.get()
-        store.fire('cards.TOGGLE_TEXTMODE', [card.index])
+        store.toggleTextmode([card.index])
       },
       remove () {
         const { card } = this.get()
-        store.fire('cards.REMOVE_CARD', [card.index])
+        store.removeCard([card.index])
       },
       edit () {
         this.set({ edit: true })
@@ -167,10 +166,9 @@
 
         const editOff = (e, cb) => {
           if (title.textContent && title.textContent !== name) {
-            store.fire('cards.EDIT_CARD', this.get().index, {
+            store.editCard(this.get().index, {
               name: title.textContent,
             })
-            store.memo()
           } else {
             title.textContent = name
           }
