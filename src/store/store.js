@@ -14,6 +14,7 @@ const globalSave = {
     rgb: false,
     rgbp: false,
     hsl: true,
+    zaa: false,
     hsv: false,
     hcg: false,
     hwb: false,

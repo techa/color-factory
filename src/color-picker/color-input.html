@@ -84,7 +84,7 @@
         phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
         color: new Color('#050'),
         bgColor: '',
-        models: ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'],
+        models: ['#', 'rgb', '%', 'hsl', '$', 'hsv', 'xyz', 'lab', 'cmyk'],
         model: 'rgb',
       }
     },
@@ -105,14 +105,22 @@
       },
       keydown (event) {
         const value = event.target.value
-        const color = new Color(value)
-        if (/^#?([a-f\d]{3})$/i.test(value) && event.key === 'Enter') {
-          this.set({ color, model: 'hex' })
+        if (event.key === 'Enter') {
+          let color
+          try {
+            color = new Color(value)
+          } catch (error) {
+            return
+          }
+          const model = /^#/i.test(value) ? '#' : /^\$/i.test(value) ? '$' : color.model
+          this.set({ color, model })
         }
       },
       input (event) {
         const value = event.target.value
         if (!event.target.value) return
+        if (/^#/i.test(value)) return
+        if (/^\$/i.test(value)) return
 
         let color
         try {
@@ -120,9 +128,7 @@
         } catch (error) {
           return
         }
-        if (/^#?([a-f\d]{3})$/i.test(value)) return
-        const model = /^#?([a-f\d]{6})$/i.test(value) ? 'hex' : color.model
-        this.set({ color, model })
+        this.set({ color, model: color.model })
       },
       updown (event) {
         const { value, selectionStart, selectionEnd } = event.target
@@ -196,7 +202,7 @@
             }
           }
           this.set({ color })
-          if (model !== 'hex') {
+          if (model !== '#') {
             let result
             for (let i = -1; i < index; i++) {
               result = numbercheckReg.exec(value)
