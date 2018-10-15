@@ -50,22 +50,22 @@
   <!-- カード整列 -->
   <div class="button-set border radius">
     <div><button on:click="sortZindex('sortX')">X</button></div>
-    <ladel class="select-wrapper" style="flex: 1 1 auto;">
+    <label class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
         {#each sort as {name, value}}
           <option {value}>{name}</option>
         {/each}
       </select>
-    </ladel>
+    </label>
 
     <div><button on:click="sortZindex('sortY')">Y</button></div>
-    <ladel class="select-wrapper" style="flex: 1 1 auto;">
+    <label class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
         {#each sort as {name, value}}
           <option {value}>{name}</option>
         {/each}
       </select>
-    </ladel>
+    </label>
   </div>
 
   <hr>
