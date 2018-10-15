@@ -58,6 +58,7 @@
   <hr>
 
   <!-- カード整列 -->
+  <h5>Sort Card</h5>
   <div class="button-set border radius">
     <div><button on:click="sortZindex('sortX')">X</button></div>
     <label class="select-wrapper" style="flex: 1 1 auto;">
@@ -80,6 +81,7 @@
 
   <hr>
 
+  <h5>Add Card</h5>
   <div class="top-input-wrapper button-set border radius">
     <div>
       <input ref:name bind:value="current.name" {placeholder} style="color: {textColor};">
@@ -387,6 +389,9 @@
   #box {
     width: 100%;
     height: 100%;
+  }
+  h5 {
+    margin: 0;
   }
   .tool-box {
     position: relative;
