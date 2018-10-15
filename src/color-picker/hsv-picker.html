@@ -1,7 +1,19 @@
 <div class="hsv-picker">
-  <Slider ref:hue value="{color.hue()}" max="359"/>
-  <Spectrum bind:color model="hsv" />
-  <Slider ref:alpha value="{color.alpha() * 100}" />
+  <Slider ref:hue
+    value="{color.hue()}" max="359" gradient="{hue}"
+    on:change="set({ color: color.hue(event.value) })"/>
+  <Slider ref:saturation
+    value="{color.saturationl()}" gradient="{saturation}"
+    on:change="set({ color: color.saturationl(event.value) })"/>
+
+  <Spectrum ref:spectrum bind:color model="hsv" />
+
+  <Slider ref:lightness
+    value="{color.lightness()}" gradient="{lightness}"
+    on:change="set({ color: color.lightness(event.value) })"/>
+  <Slider ref:alpha
+    value="{color.alpha() * 100}" gradient="{alpha}"
+    on:change="set({ color: color.alpha(event.value / 100) })"/>
 </div>
 
 <style>
@@ -14,13 +26,18 @@
     justify-content: space-around;
   }
 
-  .hsv-picker > :nth-child(2) {
-    margin: 0 8px;
+  .hsv-picker > :nth-child(3) {
     flex: 2 1 auto;
   }
-  .hsv-picker > :first-child,
-  .hsv-picker > :last-child {
-    flex: 0 1 30px;
+  .hsv-picker > :nth-child(1),
+  .hsv-picker > :nth-child(2),
+  .hsv-picker > :nth-child(4),
+  .hsv-picker > :nth-child(5) {
+    flex: 0 1 20px;
+  }
+  .hsv-picker > :nth-child(2),
+  .hsv-picker > :nth-child(4){
+    margin: 0 8px;
   }
 </style>
 
@@ -36,30 +53,20 @@
     data () {
       return {
         color: '#000',
+        hue: ['red', 'yellow', 'lime', 'cyan', 'blue', 'Magenta', 'red'],
       }
     },
     computed: {
-      textColor: ({ color }) => color.isDark() ? '#fff' : '#000',
-    },
-    oncreate () {
-      this.refs.hue.on('state', ({ changed, current, previous }) => {
-        if (changed.value) {
-          const { color } = this.get()
-          this.set({ color: color.hue(current.value) })
-        }
-      })
-      this.refs.alpha.on('state', ({ changed, current, previous }) => {
-        if (changed.value) {
-          const { color } = this.get()
-          this.set({ color: color.alpha(current.value / 100) })
-        }
-      })
-    },
-    onupdate ({ changed, current }) {
-      if (changed.color) {
-        const alphaColor = (alpha) => current.color.hsv().alpha(alpha).string()
-        this.refs.alpha.draw(alphaColor(0), alphaColor(1))
-      }
+      saturation: ({ color }) => [
+        color.alpha(1).saturationl(0),
+        color.alpha(1).saturationl(100)
+      ],
+      lightness: ({ color }) => [
+        color.alpha(1).lightness(0),
+        color.alpha(1).lightness(50),
+        color.alpha(1).lightness(100)
+      ],
+      alpha: ({ color }) => [color.alpha(0), color.alpha(1)],
     },
   }
 </script>

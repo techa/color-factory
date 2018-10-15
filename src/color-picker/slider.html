@@ -1,5 +1,5 @@
-<div ref:box class="slider alpha-check-bg {direction}">
-  <canvas ref:slider class="slider-canvas" {...rect} ></canvas>
+<div ref:box class="slider alpha-check-bg {direction}"
+  style="background: linear-gradient({direction === 'vertical' ? '' : '0.25turn, '}{gradient});">
   <div ref:sliderHandle class="slider-handle {direction}"></div>
 </div>
 
@@ -53,36 +53,18 @@
   export default {
     data () {
       return {
-        size: 0,
-        rect: { width: 0, height: 0 },
         direction: 'vertical',
         value: 50,
         min: 0,
         max: 100,
         step: 1,
-        reverse: false
+        reverse: false,
+        gradient: ['white', 'black'],
       }
     },
     oncreate () {
-      const rect = {
-        width: this.refs.box.clientWidth,
-        height: this.refs.box.clientHeight,
-      }
-      console.log('rect', rect)
-      this.set({ rect })
-      if (rect.width > rect.height) {
-        this.set({
-          direction: 'horizontal'
-        })
-      }
-      this.set({
-        size: Math.max(rect.width, rect.height)
-      })
-
-      this.draw('hue')
-
       // picker
-      new MousePosition(this.refs.slider, { // eslint-disable-line no-new
+      new MousePosition(this.refs.box, { // eslint-disable-line no-new
         // handle: this.refs.sliderHandle,
         start: (e, position) => {
           this.setValue(position)
@@ -95,6 +77,7 @@
     onupdate ({ changed, current }) {
       if (changed.value) {
         this.setPosition(current.value)
+        this.fire('change', current)
       }
     },
     methods: {
@@ -110,7 +93,8 @@
         })
       },
       setPosition (value) {
-        const { size, max, min, direction } = this.get()
+        const { max, min, direction } = this.get()
+        const size = this.refs.box[direction === 'vertical' ? 'clientHeight' : 'clientWidth']
         const side = direction === 'vertical' ? 'top' : 'left'
         let per = value / (max - min)
         if (this.get().reverse) {
@@ -118,31 +102,6 @@
         }
         this.refs.sliderHandle.style[side] = per * (size - 6) + 3 + 'px'
       },
-      draw (beginColor, endColor) {
-        const cxt = this.refs.slider.getContext('2d')
-        const { size, direction, reverse } = this.get()
-        cxt.clearRect(0, 0, size, size)
-
-        const grd = direction === 'vertical'
-          ? cxt.createLinearGradient(0, 0, 0, size)
-          : cxt.createLinearGradient(0, 0, size, 0)
-
-        const [begin, end] = reverse ? [1, 0] : [0, 1]
-
-        if (beginColor === 'hue') {
-          // hue gradient bar
-          const len = 12
-          for (let i = 0; i <= len; i++) {
-            grd.addColorStop(1 / len * i, `hsl(${360 / len * i}, 100%, 50%)`)
-          }
-        } else {
-          grd.addColorStop(begin, beginColor + '')
-          grd.addColorStop(end, endColor + '')
-        }
-
-        cxt.fillStyle = grd
-        cxt.fillRect(0, 0, size, size)
-      }
     }
   }
 </script>
