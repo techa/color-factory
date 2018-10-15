@@ -43,11 +43,11 @@
         }
         return `color: ${color.isDark() ? '#fff' : '#000'};`
       },
-      cardStyle: ({ card, $grayscale }) => {
+      cardStyle: ({ card, $filter }) => {
         const { width, height, top, left, color, textMode } = card
         const w = width > 120 ? width + 'px' : 'auto'
         const h = height > 120 ? height + 'px' : 'auto'
-        const c2 = $grayscale ? color.grayscale() : color
+        const c2 = $filter ? color[$filter]() : color
         const colorstyle = textMode
           ? `background-color: transparent; color: ${c2};`
           : `background-color: ${c2}; color: ${color.isDark() ? '#fff' : '#000'};`

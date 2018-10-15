@@ -7,7 +7,8 @@ import { objectToUrl, searchToObject } from '../url.js'
 
 const globalSave = {
   pickermodel: 'hsl',
-  grayscale: false,
+  filterSwitch: false,
+  selectingFilter: 'grayscale', // 'grayscale', 'greenBlindness', 'redBlindness'
   textvisible: true,
   cardViewModels: {
     hex: true,
@@ -26,6 +27,13 @@ const globalSave = {
 class Store extends Histore {
   constructor () {
     super(...arguments)
+
+    this.compute(
+      'filter',
+      ['filterSwitch', 'selectingFilter'],
+      (filterSwitch, selectingFilter) => filterSwitch ? selectingFilter : ''
+    )
+
     this.on('state', ({ changed, current }) => {
       if (changed.cards) {
         for (let i = 0; i < current.cards.length; i++) {

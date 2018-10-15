@@ -22,11 +22,6 @@
     </button>
     {#if showSubmenu}
     <div class="submenu" on:mouseleave="set({showSubmenu: false})">
-      <p class="menuitem" on:click="$set({grayscale: !$grayscale}, true)">
-        <i class="fas fa-filter fa-fw"></i>
-        Filter Grayscale
-      </p>
-      <hr>
       <p class="menuitem" on:click="$set({textvisible: !$textvisible}, true)">
         <i class="fas fa-font fa-fw"></i>
         Card Text Visible
@@ -46,6 +41,21 @@
     </div>
     {/if}
   </div>
+
+  <div class="filter-select button-set border radius" class:active="$filterSwitch">
+    <div><button on:click="$set({filterSwitch: !$filterSwitch})">
+      <i class="fas fa-filter fa-fw"></i>
+    </button></div>
+    <label class="select-wrapper" style="flex: 1 1 auto;">
+      <select bind:value="$selectingFilter" on:change="$set({filterSwitch: true})">
+        {#each filters as {name, value}}
+          <option {value}>{name}</option>
+        {/each}
+      </select>
+    </label>
+  </div>
+
+  <hr>
 
   <!-- カード整列 -->
   <div class="button-set border radius">
@@ -169,13 +179,19 @@
         },
         memo: null,
         sort,
+        filters: [
+          { name: 'None', value: '' },
+          { name: 'Grayscale', value: 'grayscale' },
+          { name: 'Green-blindness(♂:6% , ♀:0.4%)', value: 'greenBlindness' },
+          { name: 'Red-blindness (♂:2.5%)', value: 'redBlindness' },
+        ],
         cantUndo: true,
         cantRedo: true,
       }
     },
     computed: {
       textColor: ({ $bgColor }) => $bgColor.isDark() ? '#fff' : '#000',
-      bgColor: ({ $bgColor, $grayscale }) => $grayscale ? $bgColor.grayscale() : $bgColor,
+      bgColor: ({ $bgColor, $filter }) => $filter ? $bgColor[$filter]() : $bgColor,
       placeholder: ({ current }) => new Color(current.color).nearColorName(),
     },
     oncreate () {
@@ -399,6 +415,16 @@
   }
   .links a,.links a:visited,.links a:active  {
     color: inherit;
+  }
+
+  .filter-select select,
+  .filter-select button {
+    font-size: .8em;
+    opacity: .6;
+  }
+  .filter-select.active select,
+  .filter-select.active button {
+    opacity: 1;
   }
 
   .cantUndo>.fa-undo,

@@ -103,6 +103,26 @@ export default class Color extends color {
     return name
   }
   /**
+   * Green-blindness (6% of men, 0.4% of women)
+   * @see https://github.com/google/palette.js/blob/master/demo.js
+   * @returns {Color}
+   */
+  greenBlindness () {
+    const [r, g, b] = this.rgb().array().map((p) => p ** 2.2)
+    const R = Math.pow(0.02138 + 0.677 * g + 0.2802 * r, 1 / 2.2)
+    const B = Math.pow(0.02138 * (1 + g - r) + 0.9572 * b, 1 / 2.2) || 0
+    return new Color([R, R, B, this.valpha])
+  }
+  /**
+   * Red-blindness (2.5% of men)
+   */
+  redBlindness () {
+    const [r, g, b] = this.rgb().array().map((p) => p ** 2.2)
+    const R = Math.pow(0.003974 + 0.8806 * g + 0.1115 * r, 1 / 2.2)
+    const B = Math.pow(0.003974 * (1 - g + r) + 0.9921 * b, 1 / 2.2) || 0
+    return new Color([R, R, B, this.valpha])
+  }
+  /**
    * Alpha Blending in CSS
    *
    * <-back   layer   front->
