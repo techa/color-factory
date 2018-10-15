@@ -133,7 +133,11 @@
         // デフォルトイベントをキャンセル
         // これを書くことでコンテキストメニューが表示されなくなります
         e.preventDefault()
-        store.fire('menu_open', e, this, 'card')
+        store.fire('menu_open', {
+          event: e,
+          cardComponent: this,
+          mode: 'card',
+        })
       }, false)
     },
 

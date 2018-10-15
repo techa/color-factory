@@ -84,10 +84,11 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          store.fire('menu_open', e, {
-            name,
-            color: new Color(color)
-          }, 'tip')
+          store.fire('menu_open', {
+            event: e,
+            card: { name, color: new Color(color) },
+            mode: 'tip',
+          })
         }
       })
       colortips.addEventListener('dblclick', (e) => {

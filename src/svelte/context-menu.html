@@ -73,10 +73,10 @@
         store.fire('menu_close')
       }
 
-      store.on('menu_open', (e, cardComponent, mode) => {
+      store.on('menu_open', ({ event, cardComponent, card, mode }) => {
         menu.style.display = 'block'
-        let x = e.clientX
-        let y = e.clientY
+        let x = event.clientX
+        let y = event.clientY
         const rect = menu.getBoundingClientRect()
         if (window.innerWidth < rect.width + x) {
           x -= rect.width
@@ -90,7 +90,7 @@
         })
 
         // 'tip' or 'card'
-        const activeCard = mode === 'card' ? cardComponent.get().card : cardComponent
+        const activeCard = mode === 'card' ? cardComponent.get().card : card
         this.set({ mode, activeCard })
         this.cardComponent = cardComponent
 
