@@ -1,21 +1,24 @@
 import color from 'color'
 import xkcd from './constants/xkcd.json'
+import { hsl2zaa, zaa2hsl } from './zaa'
 
 Object.assign(color.prototype, {
   toString (model) {
     // console.log('model', model)
     const color = this.alpha(Math.round(this.valpha * 100) / 100)
     switch (model) {
+      case '#':
       case 'hex':
         return color.hex()
+      case '$':
       case 'zaa':
-        const [h, s, l] = color.hsl().round().array().map((a) => a / 10)
-        return '$' + h.toString(36) + s.toString(11) + l.toString(11)
+        return hsl2zaa(color.hsl().round().object())
       case 'rgb':
       case 'hsl':
         return color[model]().string(0)
       case 'prgb':
       case 'rgbp':
+      case 'rgb%':
       case '%':
         return color.percentString(0)
       case 'hsv':
@@ -54,15 +57,10 @@ export default class Color extends color {
     } else {
       // $zaa code
       const match = typeof param === 'string' && param.replace(/\s*/g, '').match(
-        /^\$([0-9a-z]\d)([0-9a]\d)([0-9a]\d)|\$([0-9a-z])([0-9a])([0-9a])$/i
+        /^\$([0-9a-z]\d(\d\d|a0){2,3}|[0-9a-z][0-9a]{2,3}?)$/i
       )
       if (match) {
-        const [h, s, l] = match[1] ? match.slice(1) : match.slice(4)
-        param = [
-          parseInt(h[0], 36) * 10 + parseInt(h[1] | 0, 10),
-          parseInt(s[0], 11) * 10 + parseInt(s[1] | 0, 10),
-          parseInt(l[0], 11) * 10 + parseInt(l[1] | 0, 10)
-        ]
+        param = zaa2hsl(param)
         model = 'hsl'
       }
     }
