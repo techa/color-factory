@@ -39,9 +39,9 @@
       textColor: ({ card, $bgColor, contrast }) => {
         const { color, textMode } = card
         if (textMode) {
-          return `color: ${(contrast < 4.5) ? ($bgColor.isDark() ? '#fff' : '#000') : color};`
+          return `color: ${(contrast < 4.5) ? $bgColor.textColor() : color};`
         }
-        return `color: ${color.isDark() ? '#fff' : '#000'};`
+        return `color: ${color.textColor()};`
       },
       cardStyle: ({ card, $filter }) => {
         const { width, height, top, left, color, textMode } = card
@@ -50,7 +50,7 @@
         const c2 = $filter ? color[$filter]() : color
         const colorstyle = textMode
           ? `background-color: transparent; color: ${c2};`
-          : `background-color: ${c2}; color: ${color.isDark() ? '#fff' : '#000'};`
+          : `background-color: ${c2}; color: ${color.textColor()};`
         return colorstyle + `width:${w}; height:${h};top:${top}px;left:${left}px;`
       },
       contrast: ({ card, $bgColor }) => round($bgColor.contrast(card.color), 1),

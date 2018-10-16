@@ -90,7 +90,7 @@
     },
     computed: {
       value: ({ color, model }) => color.toString(model),
-      textColor: ({ color, bgColor }) => bgColor.alphaBlending(color).isDark() ? '#fff' : '#000',
+      textColor: ({ color, bgColor }) => bgColor.alphaBlending(color).textColor(),
     },
     helpers: {
       modelStyler (_model, model, color, bgColor, textColor) {

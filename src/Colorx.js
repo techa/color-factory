@@ -179,6 +179,9 @@ export default class Color extends color {
     }
     return mostread
   }
+  textColor () {
+    return this.mostReadable('#fff', '#000')
+  }
 }
 
 Color.random = function () {
