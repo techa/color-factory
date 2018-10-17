@@ -42,11 +42,12 @@
         }
         return `color: ${color.textColor()};`
       },
-      cardStyle: ({ card, $filter }) => {
+      cardStyle: ({ card, $filterSwitch, $selectingFilter }) => {
         const { width, height, top, left, color, textMode } = card
         const w = width > 120 ? width + 'px' : 'auto'
         const h = height > 120 ? height + 'px' : 'auto'
-        const c2 = $filter ? color[$filter]() : color
+        const filter = $filterSwitch ? $selectingFilter : ''
+        const c2 = filter ? color[filter]() : color
         const colorstyle = textMode
           ? `background-color: transparent; color: ${c2};`
           : `background-color: ${c2}; color: ${color.textColor()};`

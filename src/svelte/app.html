@@ -184,7 +184,10 @@
       }
     },
     computed: {
-      bgColor: ({ $bgColor, $filter }) => $filter ? $bgColor[$filter]() : $bgColor,
+      bgColor: ({ $bgColor, $filterSwitch, $selectingFilter }) => {
+        const filter = $filterSwitch ? $selectingFilter : ''
+        return filter ? $bgColor[filter]() : $bgColor
+      },
       placeholder: ({ current }) => new Color(current.color).nearColorName(),
     },
     oncreate () {

@@ -28,12 +28,6 @@ class Store extends Histore {
   constructor () {
     super(...arguments)
 
-    this.compute(
-      'filter',
-      ['filterSwitch', 'selectingFilter'],
-      (filterSwitch, selectingFilter) => filterSwitch ? selectingFilter : ''
-    )
-
     this.on('state', ({ changed, current }) => {
       if (changed.cards) {
         for (let i = 0; i < current.cards.length; i++) {
