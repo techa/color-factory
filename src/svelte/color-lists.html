@@ -17,7 +17,6 @@
 </div>
 
 <script>
-  import store from '../store/store.js'
   import Color from '../Colorx.js'
   import WEBCOLOR      from '../constants/webcolor.json'
   import JISCOLOR_EN   from '../constants/jiscolor_en.json'
@@ -84,7 +83,7 @@
         const el = e.target
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
-          store.fire('menu_open', {
+          this.store.fire('menu_open', {
             event: e,
             card: { name, color: new Color(color) },
             mode: 'tip',
@@ -97,7 +96,7 @@
         if (el.classList.contains('tip')) {
           const [name, color] = el.title.split(' : ')
 
-          store.addCard({
+          this.store.addCard({
             name,
             color: new Color(color)
           })

@@ -47,7 +47,6 @@
 </div> -->
 
 <script>
-  import store from '../store/store.js'
   import { styler, copyTextToClipboard } from '../utils'
 
   export default {
@@ -70,10 +69,10 @@
       } = this.refs
 
       const menuHide = (e) => {
-        store.fire('menu_close')
+        this.store.fire('menu_close')
       }
 
-      store.on('menu_open', ({ event, cardComponent, card, mode }) => {
+      this.store.on('menu_open', ({ event, cardComponent, card, mode }) => {
         menu.style.display = 'block'
         let x = event.clientX
         let y = event.clientY
@@ -99,7 +98,7 @@
         document.addEventListener('click', menuHide)
       })
 
-      store.on('menu_close', (e) => {
+      this.store.on('menu_close', (e) => {
         menu.style.display = 'none'
         // submenu.style.display = 'none'
         this.set({ mode: false })
@@ -118,7 +117,7 @@
       //   })
       // },
       add () {
-        store.addCard(this.get().activeCard)
+        this.store.addCard(this.get().activeCard)
       },
       edit () {
         this.cardComponent.edit()
@@ -127,7 +126,7 @@
         const selects = this.root.selectable.selects
         // const howmany = selects.length
         if (selects.length) {
-          store.duplicateCard(selects.map((select) => select.index))
+          this.store.duplicateCard(selects.map((select) => select.index))
         }
         // // reselect
         // const {cards} = store.get()
@@ -139,13 +138,13 @@
       remove () {
         const selects = this.root.selectable.selects
         if (selects.length) {
-          store.removeCard(selects.map((select) => select.index))
+          this.store.removeCard(selects.map((select) => select.index))
         }
       },
       reverse () {
         const selects = this.root.selectable.selects
         if (selects.length) {
-          store.toggleTextmode(selects.map((select) => select.index))
+          this.store.toggleTextmode(selects.map((select) => select.index))
         }
       },
 

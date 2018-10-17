@@ -25,7 +25,6 @@
 <script>
   import { Movable, Resizable } from '../mouse'
   import { round } from '../utils.js'
-  import store from '../store/store.js'
 
   const colorsWidth = 320
 
@@ -64,6 +63,7 @@
       const cardEl = this.refs.card
       const box = cardEl.parentElement
       const { index } = this.get()
+      const store = this.store
 
       let cards
 
@@ -151,11 +151,11 @@
     methods: {
       reverse () {
         const { card } = this.get()
-        store.toggleTextmode([card.index])
+        this.store.toggleTextmode([card.index])
       },
       remove () {
         const { card } = this.get()
-        store.removeCard([card.index])
+        this.store.removeCard([card.index])
       },
       edit () {
         this.set({ edit: true })
@@ -171,7 +171,7 @@
 
         const editOff = (e, cb) => {
           if (title.textContent && title.textContent !== name) {
-            store.editCard(this.get().index, {
+            this.store.editCard(this.get().index, {
               name: title.textContent,
             })
           } else {

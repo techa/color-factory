@@ -132,7 +132,6 @@
 
 <script>
   import Color from '../Colorx.js'
-  import store from '../store/store.js'
   import { Selectable } from '../mouse'
 
   const sort = [
@@ -223,7 +222,7 @@
         return dirctionflg ? by : 1 - by
       }
       // card position init
-      store.cardPosition = (card) => {
+      this.store.cardPosition = (card) => {
         const rect = box.getBoundingClientRect()
         const { sortX, sortY } = this.store.get()
         const maxW = rect.width - cardSize - colorsWidth
@@ -258,7 +257,7 @@
           const { memo, current } = this.get()
 
           if (selects.length === 1) {
-            const { name, color } = store.get().cards[selects[0].index]
+            const { name, color } = this.store.get().cards[selects[0].index]
             this.set({ current: { name, color } })
             if (!memo) {
               this.set({ memo: current })
