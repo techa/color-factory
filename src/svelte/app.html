@@ -131,14 +131,6 @@
 {/if}
 
 <script>
-  import ColorPicker from '../color-picker/color-picker.html'
-
-  import ColorCard from './color-card.html'
-  import ColorLists from './color-lists.html'
-  import ContextMenu from './context-menu.html'
-
-  import SaveModal from './save-modal.html'
-
   import Color from '../Colorx.js'
   import store from '../store/store.js'
   import { Selectable } from '../mouse'
@@ -166,11 +158,11 @@
 
   export default {
     components: {
-      ColorPicker,
-      ColorCard,
-      ColorLists,
-      ContextMenu,
-      SaveModal,
+      ColorPicker: '../color-picker/color-picker.html',
+      ColorCard: './color-card.html',
+      ColorLists: './color-lists.html',
+      ContextMenu: './context-menu.html',
+      SaveModal: './save-modal.html',
     },
     data () {
       return {
