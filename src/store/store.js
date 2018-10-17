@@ -8,6 +8,7 @@ import { objectToUrl, searchToObject } from '../url.js'
 const globalSave = {
   pickermodel: 'hsl',
   filterSwitch: false,
+  sortZSwitch: false,
   selectingFilter: 'grayscale', // 'grayscale', 'greenBlindness', 'redBlindness'
   textvisible: true,
   cardViewModels: {

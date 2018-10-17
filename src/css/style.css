@@ -13,6 +13,15 @@ textarea, input, button { outline: none; }
   outline-style: none;
 }
 
+h1 > div,
+h2 > div,
+h3 > div,
+h4 > div,
+h5 > div,
+h6 > div {
+  float: right;
+}
+
 /*
 <ladel class="select-wrapper">
   <select>
@@ -89,7 +98,7 @@ textarea, input, button { outline: none; }
   background: #fff;
   color: black;
   border: solid 1px silver;
-  z-index: 100;
+  z-index: 100000;
 }
 .submenu {
   width: 100%;

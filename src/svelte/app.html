@@ -59,20 +59,26 @@
   <hr>
 
   <!-- カード整列 -->
-  <h5>Sort Card</h5>
+  <h5>Sort Card
+    <div>
+      <button class="sort-z" on:click="$set({sortZSwitch: !$sortZSwitch})" class:active="$sortZSwitch">z</button>
+    </div>
+  </h5>
   <div class="button-set border radius">
-    <div><button on:click="sortZindex('sortX')">X</button></div>
+    <div><button on:click="cardsPosition('sortX')">X</button></div>
     <label class="select-wrapper" style="flex: 1 1 auto;">
-      <select bind:value="$sortX" on:change="cardsPosition('sortX', this.value)">
+      <select class="sort-select" bind:value="$sortX" on:change="cardsPosition('sortX', this.value)" class:active="$sortXSwitch">
         {#each sort as {name, value}}
           <option {value}>{name}</option>
         {/each}
       </select>
     </label>
 
-    <div><button on:click="sortZindex('sortY')">Y</button></div>
+    <div><button on:click="swapSort()">⇔</button></div>
+
+    <div><button on:click="cardsPosition('sortY')">Y</button></div>
     <label class="select-wrapper" style="flex: 1 1 auto;">
-      <select bind:value="$sortY" on:change="cardsPosition('sortY', this.value)">
+      <select class="sort-select" bind:value="$sortY" on:change="cardsPosition('sortY', this.value)" class:active="$sortYSwitch">
         {#each sort as {name, value}}
           <option {value}>{name}</option>
         {/each}
@@ -135,7 +141,6 @@
   import { Selectable } from '../mouse'
 
   const sort = [
-    { name: '---', value: 'none' },
     { name: 'Random', value: 'random' },
     { name: 'Hue', value: 'hue' },
     { name: 'Hue(∠)', value: 'deg' },
@@ -145,13 +150,10 @@
     { name: 'V(HSV)', value: 'value' },
     { name: 'C(HCG)', value: 'chroma' },
     { name: 'G(HCG)', value: 'gray' },
-    { name: 'W(HWB)', value: 'white' },
-    { name: 'B(HWB)', value: 'wblack' },
     { name: 'C(CMYK)', value: 'cyan' },
     { name: 'M(CMYK)', value: 'magenta' },
     { name: 'Y(CMYK)', value: 'yellow' },
     { name: 'K(CMYK)', value: 'black' },
-    { name: 'Grayscale', value: 'grayscale' },
     { name: 'Contrast', value: 'contrast' },
   ]
 
@@ -205,14 +207,10 @@
         switch (sort) {
           case null:
           case undefined:
-          case 'none':
           case 'random':
             return Math.random()
           case 'deg':
             return (card.color.hue() - 90) * Math.PI / 180
-          case 'grayscale':
-            by = card.color.grayscale().lightness()
-            break
           case 'contrast':
             by = (this.store.get().bgColor[sort](card.color) - 1) / 20
             break
@@ -221,31 +219,35 @@
             by = card.color[sort]() / max
             break
         }
-        return dirctionflg ? by : 1 - by
+        return dirctionflg === 1 ? by : 1 - by
       }
       // card position init
       this.store.cardPosition = (card) => {
         const rect = box.getBoundingClientRect()
-        const { sortX, sortY } = this.store.get()
+        const { sortX, sortY, sortXSwitch, sortYSwitch } = this.store.get()
+
         const maxW = rect.width - cardSize - colorsWidth
         const maxH = rect.height - cardSize
 
-        if (sortX === 'deg' || sortY === 'deg') {
+        if ((sortX === 'deg' && sortXSwitch) || (sortY === 'deg' && sortYSwitch)) {
           // Circle
-          const deg = sortX === 'deg' ? byer(sortX, card) : byer(sortY, card)
-          const radius = sortY === 'deg' ? byer(sortX, card, true) : byer(sortY, card, true)
+          const xx = byer(sortX, card, sortXSwitch)
+          const xy = byer(sortY, card, sortYSwitch)
+          const deg = sortX === 'deg' ? xx : xy
+          const radius = sortY === 'deg' ? xx : xy
           const maxR = Math.min(maxW, maxH) / 2
           // console.log('deg', card.color.hsl(),  deg)
           card.left = Math.round(maxR * Math.cos(deg) * radius + maxR + colorsWidth)
           card.top = Math.round(maxR * Math.sin(deg) * radius + maxR)
         } else {
-          if (card.left == null || sortX !== 'none') {
-            card.left = Math.round((maxW) * byer(sortX, card) + colorsWidth)
+          if (sortXSwitch || card.left == null) {
+            card.left = Math.round((maxW) * byer(sortX, card, sortXSwitch) + colorsWidth)
           }
-          if (card.top == null || sortY !== 'none') {
-            card.top = Math.round((maxH) * byer(sortY, card))
+          if (sortYSwitch || card.top == null) {
+            card.top = Math.round((maxH) * byer(sortY, card, sortYSwitch))
           }
         }
+
         return card
       }
       // Selectable
@@ -319,16 +321,50 @@
               .sort((a, b) => a.index - b.index),
           })
         }
+        this.cardsPosition(sortXY, sort)
+      },
+
+      swapSort () {
+        const { sortX, sortY } = this.store.get()
+        this.store.set({ sortX: sortY, sortY: sortX })
+        this.cardsPosition()
       },
       cardsPosition (sortXY, value) {
-        if (sortXY && value) {
-          this.store.set({ [sortXY]: value })
+        if (sortXY) {
+          if (typeof value === 'string') {
+            this.store.set({
+              [sortXY]: value,
+              [sortXY + 'Switch']: 1,
+            })
+          } else {
+            this.store.set({
+              [sortXY + 'Switch']: (num) => (num % 2 + 1),
+            })
+          }
         }
-        const { cards } = this.store.get()
-        cards.forEach((card, i) => {
-          cards[i] = this.store.cardPosition(card)
+
+        const state = this.store.get()
+        const { cards, sortZSwitch, bgColor } = state
+        const sort = state[sortXY]
+        let result = cards
+
+        if (sortZSwitch && typeof bgColor[sort] === 'function') {
+          result = cards
+            .sort((a, b) => {
+              const colorA = a.color[sort]()
+              const colorB = b.color[sort]()
+              return colorA - colorB
+            })
+            .map((card, i) => {
+              card.zIndex = i
+              return card
+            })
+            .sort((a, b) => a.index - b.index)
+        }
+
+        this.store.set({
+          cards: result.map((card) => this.store.cardPosition(card))
         })
-        this.store.set({ cards })
         this.store.memo()
       },
       setBgColor (color) {
@@ -416,17 +452,20 @@
   }
 
   .filter-select select,
-  .filter-select button {
+  .filter-select button,
+  .sort-select {
     font-size: .8em;
     opacity: .6;
   }
   .filter-select.active select,
-  .filter-select.active button {
+  .filter-select.active button,
+  .sort-select.active,
+  .sort-z.active {
     opacity: 1;
   }
-
   .cantUndo>.fa-undo,
-  .cantRedo>.fa-redo {
+  .cantRedo>.fa-redo,
+  .sort-z {
     opacity: .6;
   }
 </style>

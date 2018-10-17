@@ -5,4 +5,6 @@ export default {
   bgColor: '#222222',
   sortX: 'deg',
   sortY: 'saturationv',
+  sortXSwitch: 1,
+  sortYSwitch: 1,
 }

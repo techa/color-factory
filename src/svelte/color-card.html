@@ -93,19 +93,35 @@
             el.style.top = scard.top + 'px'
           }
         },
-        stop: (e, { left, top }, el) => {
+        stop: (e, { left, top, vectorX, vectorY }, el) => {
           const selects = this.root.selectable.selects
           left = Math.max(colorsWidth, left)
 
-          store.set({ cards: (cards) => {
-            for (const scard of selects) {
-              const { index, left, top } = scard
-              const card = cards[index]
-              Object.assign(card, { left, top })
+          const state = {
+            cards: (cards) => {
+              for (const scard of selects) {
+                const { index, left, top } = scard
+                const card = cards[index]
+                Object.assign(card, { left, top })
+              }
+              return cards
             }
-            return cards
-          } })
-          store.set({ sortX: 'none', sortY: 'none' })
+          }
+
+          const xmove = Math.abs(vectorX) >= 1
+          const ymove = Math.abs(vectorY) >= 1
+          if (xmove) {
+            state.sortXSwitch = false
+          }
+          if (ymove) {
+            state.sortYSwitch = false
+          }
+          const { sortX, sortY } = store.get()
+          if ((sortX === 'deg' || sortY === 'deg') && (xmove || ymove)) {
+            state.sortXSwitch = false
+            state.sortYSwitch = false
+          }
+          store.set(state)
           store.memo()
         },
         click: (e, position, el) => {
