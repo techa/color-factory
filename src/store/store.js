@@ -72,6 +72,14 @@ class Store extends Histore {
     })
   }
 
+  setBgColor (color) {
+    this.set({ bgColor: (bgColor) => {
+      return color.alpha() < 1
+        ? bgColor.alphaBlending(color)
+        : color
+    } }, true)
+  }
+
   addCard (card) {
     this.set({ cards: (cards) => {
       card.color = new Color(card.color)

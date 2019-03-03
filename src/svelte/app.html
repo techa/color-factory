@@ -105,7 +105,7 @@
         title="Add Card: fill"
         style="color:{current.color.isDark()?'#fff':'#000'};background-color: {current.color};">➕</button>
     </div>
-    <div><button on:click="setBgColor(current.color)" title="set Background Color">BG</button></div>
+    <div><button on:click="$setBgColor(current.color)" title="set Background Color">BG</button></div>
   </div>
 
   <ColorPicker
@@ -113,7 +113,7 @@
     bgColor="{$bgColor}"
     model="{$pickermodel}"
     on:modelChange="$set({pickermodel: event})"
-    on:setBgColor="setBgColor(current.color)" />
+    on:setBgColor="$setBgColor(current.color)" />
   <hr>
   <ColorLists on:colorpick="set({current: event.current})" />
 
@@ -366,11 +366,6 @@
           cards: result.map((card) => this.store.cardPosition(card))
         })
         this.store.memo()
-      },
-      setBgColor (color) {
-        const { bgColor } = this.store.get()
-        const coloraplha1 = bgColor.alphaBlending(color)
-        this.store.set({ bgColor: coloraplha1 })
       },
       reverse () {
         const selects = this.selectable.selects

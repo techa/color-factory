@@ -1,6 +1,7 @@
 <div ref:menu class="context-menu">
   {#if mode == 'tip'}
     <p class="menuitem" on:click="add()">ADD CARD</p>
+    <p class="menuitem" on:click="$setBgColor(activeCard.color)">SET BACKGROUND</p>
   {:elseif mode == 'card'}
     <p class="menuitem" on:click="edit()">
       <i class="fas fa-edit fa-fw"></i>
