@@ -25,7 +25,11 @@
     <div class="submenu" on:mouseleave="set({showSubmenu: false})">
       <p class="menuitem" on:click="$set({textvisible: !$textvisible}, true)">
         <i class="fas fa-font fa-fw"></i>
-        Card Text Visible
+        Fill-Card Text Visible
+      </p>
+      <p class="menuitem" on:click="$set({textModeBackground: !$textModeBackground}, true)">
+        <i class="fas fa-font fa-fw"></i>
+        Text-Card Background
       </p>
       {#each Object.entries($cardViewModels) as [model, bool]}
       <p class="menuitem">

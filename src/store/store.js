@@ -10,6 +10,7 @@ const globalSave = {
   filterSwitch: false,
   sortZSwitch: false,
   selectingFilter: 'grayscale', // 'grayscale', 'greenBlindness', 'redBlindness'
+  textModeBackground: true,
   textvisible: true,
   cardViewModels: {
     hex: true,

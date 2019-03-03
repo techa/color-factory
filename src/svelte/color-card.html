@@ -42,14 +42,17 @@
         }
         return `color: ${color.textColor()};`
       },
-      cardStyle: ({ card, $filterSwitch, $selectingFilter }) => {
+      cardStyle: ({ card, $filterSwitch, $selectingFilter, $textModeBackground, $bgColor }) => {
         const { width, height, top, left, color, textMode } = card
         const w = width > 120 ? width + 'px' : 'auto'
         const h = height > 120 ? height + 'px' : 'auto'
         const filter = $filterSwitch ? $selectingFilter : ''
         const c2 = filter ? color[filter]() : color
+        const textModeBackground = $textModeBackground
+          ? filter ? $bgColor[filter]() : $bgColor
+          : 'transparent'
         const colorstyle = textMode
-          ? `background-color: transparent; color: ${c2};`
+          ? `background-color: ${textModeBackground}; color: ${c2};`
           : `background-color: ${c2}; color: ${color.textColor()};`
         return colorstyle + `width:${w}; height:${h};top:${top}px;left:${left}px;`
       },
