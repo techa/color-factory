@@ -87,8 +87,8 @@
       })
     },
     onupdate ({ changed, current }) {
+      this.setPosition(current.value)
       if (changed.value) {
-        this.setPosition(current.value)
         this.fire('change', current)
       }
     },
