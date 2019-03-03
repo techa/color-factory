@@ -3,16 +3,16 @@
     value="{color.hue()}" max="359" gradient="{hue}"
     on:change="set({ color: color.hue(event.value) })"/>
   <Slider ref:saturation
-    value="{color.saturationl()}" gradient="{saturation}"
+    value="{color.saturationl()}" gradient="{saturation}" reverse="true"
     on:change="set({ color: color.saturationl(event.value) })"/>
 
   <Spectrum ref:spectrum bind:color model="hsv" />
 
   <Slider ref:lightness
-    value="{color.lightness()}" gradient="{lightness}"
+    value="{color.lightness()}" gradient="{lightness}" reverse="true"
     on:change="set({ color: color.lightness(event.value) })"/>
   <Slider ref:alpha
-    value="{color.alpha() * 100}" gradient="{alpha}"
+    value="{color.alpha() * 100}" gradient="{alpha}" reverse="true"
     on:change="set({ color: color.alpha(event.value / 100) })"/>
 </div>
 

@@ -1,5 +1,5 @@
 <div ref:box class="slider alpha-check-bg {direction}"
-  style="background: linear-gradient({direction === 'vertical' ? '' : '0.25turn, '}{gradient});">
+  style="background: linear-gradient({turn}turn, {gradient});">
   <div ref:sliderHandle class="slider-handle {direction}"></div>
 </div>
 
@@ -61,6 +61,18 @@
         reverse: false,
         gradient: ['white', 'black'],
       }
+    },
+    computed: {
+      turn: ({ direction, reverse }) => {
+        let turn = 0
+        if (direction !== 'vertical') {
+          turn += 0.25
+        }
+        if (!reverse) {
+          turn += 0.5
+        }
+        return turn
+      },
     },
     oncreate () {
       // picker
