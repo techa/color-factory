@@ -9,6 +9,9 @@ const globalSave = {
   pickermodel: 'hsl',
   filterSwitch: false,
   sortZSwitch: false,
+  /**
+   * @type {'grayscale'|'greenBlindness'|'redBlindness'} Color Method Name
+   */
   selectingFilter: 'grayscale', // 'grayscale', 'greenBlindness', 'redBlindness'
   textModeBackground: true,
   textvisible: true,
