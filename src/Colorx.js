@@ -167,20 +167,24 @@ export default class Color extends color {
     if (lum1 > lum2) return (lum1 + 0.05) / (lum2 + 0.05)
     return (lum2 + 0.05) / (lum1 + 0.05)
   }
-  mostReadable (...colors) {
-    let mostlum = 0
-    let mostread
+  mostReadable (colors, opts = {}) {
+    let bestlum = 0
+    let bestColor
+    const { fallbackColors, min = 0 } = opts
     for (const color of colors) {
       const contrast = this.contrast(new Color(color))
-      if (mostlum < contrast) {
-        mostlum = contrast
-        mostread = color
+      if (bestlum < contrast) {
+        bestlum = contrast
+        bestColor = color
       }
     }
-    return mostread
+    if (bestlum >= min || !fallbackColors) {
+      return bestColor
+    }
+    return this.mostReadable(['#fff', '#000'], { min, fallbackColors: false })
   }
   textColor () {
-    return this.mostReadable('#fff', '#000')
+    return this.mostReadable(['#fff', '#000'])
   }
 }
 

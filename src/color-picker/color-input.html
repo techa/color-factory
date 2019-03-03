@@ -96,7 +96,7 @@
       modelStyler (_model, model, color, bgColor, textColor) {
         return model === _model
           ? `color: ${textColor}; background-color: ${color};`
-          : `color: ${bgColor.mostReadable('#ccc', '#333')}; background-color: transparent;`
+          : `color: ${bgColor.mostReadable(['#ccc', '#333'])}; background-color: transparent;`
       },
     },
     methods: {
