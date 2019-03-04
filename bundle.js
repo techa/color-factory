@@ -5830,6 +5830,8 @@
 	  bgColor: '#222222',
 	  sortX: 'deg',
 	  sortY: 'saturationv',
+	  sortXSwitch: 1,
+	  sortYSwitch: 1,
 	};
 
 	var fuji = {
@@ -5912,6 +5914,10 @@
 		return document.createElement(name);
 	}
 
+	function createSvgElement(name) {
+		return document.createElementNS('http://www.w3.org/2000/svg', name);
+	}
+
 	function createText(data) {
 		return document.createTextNode(data);
 	}
@@ -5971,6 +5977,10 @@
 	function selectValue(select) {
 		var selectedOption = select.querySelector(':checked') || select.options[0];
 		return selectedOption && selectedOption.__value;
+	}
+
+	function toggleClass(element, name, toggle) {
+		element.classList.toggle(name, !!toggle);
 	}
 
 	function getSpreadUpdate(levels, updates) {
@@ -6487,8 +6497,6 @@
 	  return saveList
 	}
 
-	const EVENTS = constructor._events = {};
-
 	class Histore extends Store {
 	  constructor (state, options) {
 	    const { globalStorageKey } = options;
@@ -6522,32 +6530,13 @@
 	    }, {});
 
 	    this._history = {
-	      oldstate: JSON.stringify(state),
+	      oldstate: this._historyState(state),
 	      undostock: [],
 	      redostock: [],
 	      memo: false,
 	    };
 
 	    this.on('update', this._memo.bind(this));
-	  }
-	  on (eventName, handler) {
-	    if (eventName === 'state' || eventName === 'update') {
-	      super.on(eventName, handler);
-	    } else {
-	      (EVENTS[eventName] = EVENTS[eventName] || []).push(handler);
-	    }
-	    return this
-	  }
-	  fire (eventName, ...args) {
-	    console.log('fire', eventName);
-	    if (eventName === 'state' || eventName === 'update') {
-	      super.fire(eventName, ...args);
-	    } else if (EVENTS[eventName]) {
-	      EVENTS[eventName].forEach((handler) => handler(...args));
-	    } else {
-	      console.error(`fire: ${eventName} is undefind`);
-	    }
-	    return this
 	  }
 	  set (newState, memo) {
 	    for (const key in newState) {
@@ -6557,6 +6546,9 @@
 	    }
 	    this._history.memo = memo;
 	    super.set(newState);
+	    if (!memo) {
+	      this.save();
+	    }
 	  }
 	  memo () {
 	    this._history.memo = true;
@@ -6674,7 +6666,7 @@
 
 
 	  _memo ({ changed, current, previous }) {
-	    const newstateJSON = JSON.stringify(current);
+	    const newstateJSON = this._historyState(current);
 	    const { oldstate, undostock, redostock, memo } = this._history;
 	    console.log('changed', newstateJSON !== oldstate);
 	    if (newstateJSON !== oldstate) {
@@ -6700,8 +6692,20 @@
 	      console.log('memo', memo);
 	    }
 	    this._history.memo = false;
-	    console.log('State', this.get());
+	    // console.log('State', this.get())
 	  }
+
+	  _historyState (target) {
+	    const { saveTypes } = this.options;
+	    const data = Object.keys(target).reduce((map, key) => {
+	      if (!saveTypes.global.includes(key)) {
+	        map[key] = target[key];
+	      }
+	      return map
+	    }, {});
+	    return JSON.stringify(data)
+	  }
+
 	  undo () {
 	    const history = this._history;
 	    if (history.undostock.length) {
@@ -6713,6 +6717,12 @@
 	    if (history.redostock.length) {
 	      this.set(JSON.parse(history.redostock.pop()), 'redo');
 	    }
+	  }
+	  undoCount () {
+	    return this._history.undostock.length
+	  }
+	  redoCount () {
+	    return this._history.redostock.length
 	  }
 	}
 
@@ -8679,23 +8689,464 @@
 
 	var color = Color;
 
-	var xkcd = [["AcidGreen",{"h":87,"s":99,"l":52}],["Adobe",{"h":18,"s":47,"l":51}],["Algae",{"h":134,"s":35,"l":50}],["AlgaeGreen",{"h":149,"s":71,"l":45}],["AlmostBlack",{"h":180,"s":30,"l":4}],["Amber",{"h":42,"s":99,"l":51}],["Amethyst",{"h":277,"s":43,"l":56}],["Apple",{"h":99,"s":58,"l":52}],["AppleGreen",{"h":91,"s":69,"l":48}],["Apricot",{"h":28,"s":100,"l":71}],["Aqua",{"h":171,"s":85,"l":50}],["AquaBlue",{"h":184,"s":98,"l":46}],["AquaGreen",{"h":157,"s":85,"l":48}],["AquaMarine",{"h":165,"s":80,"l":55}],["Aquamarine",{"h":169,"s":96,"l":43}],["ArmyGreen",{"h":75,"s":62,"l":23}],["Asparagus",{"h":97,"s":34,"l":50}],["Aubergine",{"h":310,"s":79,"l":13}],["Auburn",{"h":18,"s":99,"l":30}],["Avocado",{"h":76,"s":55,"l":45}],["AvocadoGreen",{"h":75,"s":67,"l":40}],["Azul",{"h":221,"s":84,"l":52}],["Azure",{"h":203,"s":95,"l":49}],["BabyBlue",{"h":211,"s":98,"l":82}],["BabyGreen",{"h":129,"s":100,"l":77}],["BabyPink",{"h":341,"s":100,"l":86}],["BabyPoo",{"h":50,"s":95,"l":34}],["BabyPoop",{"h":51,"s":100,"l":29}],["BabyPoopGreen",{"h":64,"s":94,"l":31}],["BabyPukeGreen",{"h":64,"s":94,"l":40}],["BabyPurple",{"h":271,"s":85,"l":79}],["BabyShitBrown",{"h":49,"s":86,"l":36}],["BabyShitGreen",{"h":67,"s":74,"l":34}],["Banana",{"h":60,"s":100,"l":75}],["BananaYellow",{"h":61,"s":99,"l":65}],["BarbiePink",{"h":329,"s":99,"l":64}],["BarfGreen",{"h":68,"s":98,"l":34}],["Barney",{"h":295,"s":73,"l":42}],["BarneyPurple",{"h":303,"s":95,"l":32}],["BattleshipGrey",{"h":201,"s":11,"l":47}],["Beige",{"h":49,"s":56,"l":78}],["Berry",{"h":334,"s":82,"l":33}],["Bile",{"h":64,"s":94,"l":39}],["Black",{"h":0,"s":0,"l":0}],["Bland",{"h":48,"s":18,"l":62}],["Blood",{"h":359,"s":100,"l":23}],["BloodOrange",{"h":17,"s":99,"l":50}],["BloodRed",{"h":359,"s":100,"l":30}],["Blue",{"h":164,"s":99,"l":38}],["Blue",{"h":223,"s":97,"l":44}],["Blue",{"h":204,"s":17,"l":47}],["Blue",{"h":261,"s":73,"l":47}],["BlueBlue",{"h":228,"s":71,"l":46}],["BlueGreen",{"h":170,"s":74,"l":28}],["BlueGrey",{"h":203,"s":19,"l":47}],["BluePurple",{"h":257,"s":67,"l":48}],["BlueViolet",{"h":263,"s":95,"l":47}],["BlueWithAHintOfPurple",{"h":250,"s":55,"l":51}],["Blueberry",{"h":244,"s":40,"l":42}],["Bluegreen",{"h":180,"s":98,"l":24}],["Bluegrey",{"h":200,"s":23,"l":61}],["BlueyGreen",{"h":155,"s":61,"l":43}],["BlueyGrey",{"h":205,"s":20,"l":61}],["BlueyPurple",{"h":255,"s":54,"l":52}],["Bluish",{"h":208,"s":64,"l":45}],["BluishGreen",{"h":160,"s":82,"l":36}],["BluishGrey",{"h":201,"s":14,"l":52}],["BluishPurple",{"h":258,"s":78,"l":57}],["Blurple",{"h":251,"s":59,"l":51}],["Blush",{"h":10,"s":79,"l":75}],["BlushPink",{"h":355,"s":98,"l":75}],["Booger",{"h":73,"s":50,"l":47}],["BoogerGreen",{"h":70,"s":97,"l":36}],["Bordeaux",{"h":339,"s":100,"l":24}],["BoringGreen",{"h":122,"s":34,"l":55}],["BottleGreen",{"h":121,"s":90,"l":15}],["Brick",{"h":9,"s":64,"l":38}],["BrickOrange",{"h":21,"s":91,"l":40}],["BrickRed",{"h":8,"s":97,"l":28}],["BrightAqua",{"h":176,"s":95,"l":51}],["BrightBlue",{"h":216,"s":99,"l":50}],["BrightCyan",{"h":180,"s":99,"l":63}],["BrightGreen",{"h":121,"s":100,"l":50}],["BrightLavender",{"h":279,"s":100,"l":69}],["BrightLightBlue",{"h":182,"s":98,"l":57}],["BrightLightGreen",{"h":131,"s":99,"l":59}],["BrightLilac",{"h":281,"s":95,"l":68}],["BrightLime",{"h":89,"s":98,"l":51}],["BrightLimeGreen",{"h":97,"s":99,"l":51}],["BrightMagenta",{"h":306,"s":100,"l":52}],["BrightOlive",{"h":70,"s":96,"l":37}],["BrightOrange",{"h":21,"s":100,"l":50}],["BrightPink",{"h":318,"s":99,"l":50}],["BrightPurple",{"h":285,"s":98,"l":50}],["BrightRed",{"h":357,"s":100,"l":50}],["BrightSeaGreen",{"h":159,"s":100,"l":51}],["BrightSkyBlue",{"h":192,"s":99,"l":50}],["BrightTeal",{"h":168,"s":99,"l":49}],["BrightTurquoise",{"h":179,"s":99,"l":53}],["BrightViolet",{"h":280,"s":98,"l":52}],["BrightYellow",{"h":60,"s":100,"l":50}],["BrightYellowGreen",{"h":83,"s":100,"l":50}],["BritishRacingGreen",{"h":127,"s":87,"l":15}],["Bronze",{"h":43,"s":100,"l":33}],["Brown",{"h":33,"s":100,"l":20}],["BrownGreen",{"h":57,"s":74,"l":25}],["BrownGrey",{"h":45,"s":15,"l":48}],["BrownOrange",{"h":34,"s":98,"l":37}],["BrownRed",{"h":16,"s":93,"l":30}],["BrownYellow",{"h":51,"s":95,"l":36}],["Brownish",{"h":19,"s":28,"l":48}],["BrownishGreen",{"h":62,"s":85,"l":23}],["BrownishGrey",{"h":37,"s":17,"l":45}],["BrownishOrange",{"h":30,"s":71,"l":47}],["BrownishPink",{"h":4,"s":37,"l":62}],["BrownishPurple",{"h":346,"s":28,"l":36}],["BrownishRed",{"h":9,"s":64,"l":38}],["BrownishYellow",{"h":52,"s":97,"l":40}],["BrownyGreen",{"h":58,"s":83,"l":24}],["BrownyOrange",{"h":32,"s":98,"l":40}],["Bruise",{"h":313,"s":33,"l":37}],["BubbleGumPink",{"h":332,"s":100,"l":71}],["Bubblegum",{"h":330,"s":100,"l":71}],["BubblegumPink",{"h":324,"s":98,"l":75}],["Buff",{"h":55,"s":98,"l":81}],["Burgundy",{"h":338,"s":100,"l":19}],["BurntOrange",{"h":24,"s":99,"l":38}],["BurntRed",{"h":12,"s":94,"l":32}],["BurntSiena",{"h":26,"s":97,"l":36}],["BurntSienna",{"h":23,"s":84,"l":37}],["BurntUmber",{"h":23,"s":84,"l":34}],["BurntYellow",{"h":48,"s":92,"l":44}],["Burple",{"h":258,"s":76,"l":54}],["Butter",{"h":60,"s":100,"l":75}],["ButterYellow",{"h":59,"s":100,"l":73}],["Butterscotch",{"h":35,"s":98,"l":64}],["CadetBlue",{"h":208,"s":32,"l":45}],["Camel",{"h":39,"s":49,"l":56}],["Camo",{"h":75,"s":29,"l":43}],["CamoGreen",{"h":78,"s":46,"l":27}],["CamouflageGreen",{"h":77,"s":67,"l":23}],["Canary",{"h":61,"s":100,"l":69}],["CanaryYellow",{"h":60,"s":100,"l":63}],["CandyPink",{"h":308,"s":100,"l":69}],["Caramel",{"h":37,"s":90,"l":36}],["Carmine",{"h":352,"s":97,"l":31}],["Carnation",{"h":350,"s":97,"l":73}],["CarnationPink",{"h":341,"s":100,"l":75}],["CarolinaBlue",{"h":216,"s":98,"l":77}],["Celadon",{"h":114,"s":95,"l":85}],["Celery",{"h":95,"s":96,"l":79}],["Cement",{"h":54,"s":10,"l":61}],["Cerise",{"h":335,"s":90,"l":46}],["Cerulean",{"h":202,"s":96,"l":42}],["CeruleanBlue",{"h":213,"s":96,"l":48}],["Charcoal",{"h":165,"s":4,"l":21}],["CharcoalGrey",{"h":190,"s":5,"l":25}],["Chartreuse",{"h":74,"s":94,"l":51}],["Cherry",{"h":345,"s":98,"l":41}],["CherryRed",{"h":350,"s":98,"l":49}],["Chestnut",{"h":20,"s":97,"l":23}],["Chocolate",{"h":26,"s":94,"l":12}],["ChocolateBrown",{"h":23,"s":100,"l":13}],["Cinnamon",{"h":26,"s":93,"l":35}],["Claret",{"h":346,"s":100,"l":20}],["Clay",{"h":15,"s":41,"l":51}],["ClayBrown",{"h":27,"s":49,"l":47}],["ClearBlue",{"h":216,"s":98,"l":57}],["CloudyBlue",{"h":211,"s":37,"l":76}],["Cobalt",{"h":218,"s":65,"l":34}],["CobaltBlue",{"h":237,"s":96,"l":33}],["Cocoa",{"h":25,"s":34,"l":39}],["Coffee",{"h":35,"s":37,"l":47}],["CoolBlue",{"h":208,"s":44,"l":50}],["CoolGreen",{"h":142,"s":57,"l":46}],["CoolGrey",{"h":191,"s":9,"l":62}],["Copper",{"h":26,"s":66,"l":43}],["Coral",{"h":3,"s":97,"l":65}],["CoralPink",{"h":359,"s":100,"l":69}],["Cornflower",{"h":234,"s":90,"l":69}],["CornflowerBlue",{"h":226,"s":63,"l":58}],["Cranberry",{"h":338,"s":100,"l":31}],["Cream",{"h":60,"s":100,"l":88}],["Creme",{"h":60,"s":100,"l":86}],["Crimson",{"h":354,"s":100,"l":27}],["Custard",{"h":59,"s":100,"l":74}],["Cyan",{"h":180,"s":100,"l":50}],["Dandelion",{"h":52,"s":99,"l":51}],["Dark",{"h":215,"s":29,"l":15}],["DarkAqua",{"h":181,"s":91,"l":22}],["DarkAquamarine",{"h":179,"s":98,"l":23}],["DarkBeige",{"h":40,"s":31,"l":53}],["DarkBlue",{"h":238,"s":100,"l":18}],["DarkBlueGreen",{"h":173,"s":100,"l":16}],["DarkBlueGrey",{"h":203,"s":43,"l":21}],["DarkBrown",{"h":31,"s":93,"l":11}],["DarkCoral",{"h":2,"s":57,"l":56}],["DarkCream",{"h":53,"s":100,"l":80}],["DarkCyan",{"h":181,"s":86,"l":29}],["DarkForestGreen",{"h":125,"s":100,"l":9}],["DarkFuchsia",{"h":327,"s":91,"l":32}],["DarkGold",{"h":48,"s":84,"l":39}],["DarkGrassGreen",{"h":95,"s":94,"l":26}],["DarkGreen",{"h":117,"s":100,"l":10}],["DarkGreenBlue",{"h":169,"s":52,"l":25}],["DarkGrey",{"h":180,"s":1,"l":21}],["DarkGreyBlue",{"h":205,"s":38,"l":26}],["DarkHotPink",{"h":332,"s":99,"l":43}],["DarkIndigo",{"h":258,"s":81,"l":18}],["DarkKhaki",{"h":50,"s":29,"l":47}],["DarkLavender",{"h":277,"s":19,"l":50}],["DarkLilac",{"h":290,"s":24,"l":54}],["DarkLime",{"h":77,"s":99,"l":36}],["DarkLimeGreen",{"h":80,"s":99,"l":37}],["DarkMagenta",{"h":326,"s":100,"l":29}],["DarkMaroon",{"h":352,"s":100,"l":12}],["DarkMauve",{"h":338,"s":28,"l":41}],["DarkMint",{"h":141,"s":49,"l":52}],["DarkMintGreen",{"h":151,"s":71,"l":44}],["DarkMustard",{"h":49,"s":94,"l":34}],["DarkNavy",{"h":235,"s":100,"l":10}],["DarkNavyBlue",{"h":237,"s":100,"l":9}],["DarkOlive",{"h":67,"s":94,"l":13}],["DarkOliveGreen",{"h":74,"s":93,"l":16}],["DarkOrange",{"h":24,"s":98,"l":39}],["DarkPastelGreen",{"h":121,"s":35,"l":51}],["DarkPeach",{"h":15,"s":66,"l":62}],["DarkPeriwinkle",{"h":244,"s":55,"l":60}],["DarkPink",{"h":342,"s":57,"l":53}],["DarkPlum",{"h":318,"s":97,"l":13}],["DarkPurple",{"h":290,"s":82,"l":13}],["DarkRed",{"h":0,"s":100,"l":26}],["DarkRose",{"h":348,"s":43,"l":50}],["DarkRoyalBlue",{"h":238,"s":96,"l":22}],["DarkSage",{"h":116,"s":21,"l":43}],["DarkSalmon",{"h":4,"s":52,"l":55}],["DarkSand",{"h":41,"s":31,"l":50}],["DarkSeaGreen",{"h":159,"s":78,"l":30}],["DarkSeafoam",{"h":156,"s":71,"l":42}],["DarkSeafoamGreen",{"h":150,"s":48,"l":46}],["DarkSkyBlue",{"h":212,"s":75,"l":58}],["DarkSlateBlue",{"h":204,"s":49,"l":25}],["DarkTan",{"h":37,"s":41,"l":49}],["DarkTaupe",{"h":32,"s":24,"l":40}],["DarkTeal",{"h":181,"s":97,"l":15}],["DarkTurquoise",{"h":179,"s":92,"l":19}],["DarkViolet",{"h":289,"s":97,"l":13}],["DarkYellow",{"h":51,"s":91,"l":44}],["DarkYellowGreen",{"h":72,"s":97,"l":28}],["Darkblue",{"h":238,"s":94,"l":20}],["Darkgreen",{"h":122,"s":87,"l":15}],["DarkishBlue",{"h":210,"s":98,"l":26}],["DarkishGreen",{"h":131,"s":51,"l":32}],["DarkishPink",{"h":338,"s":67,"l":56}],["DarkishPurple",{"h":301,"s":65,"l":28}],["DarkishRed",{"h":358,"s":97,"l":34}],["DeepAqua",{"h":184,"s":88,"l":26}],["DeepBlue",{"h":241,"s":97,"l":23}],["DeepBrown",{"h":2,"s":100,"l":13}],["DeepGreen",{"h":129,"s":96,"l":18}],["DeepLavender",{"h":272,"s":38,"l":54}],["DeepLilac",{"h":270,"s":37,"l":59}],["DeepMagenta",{"h":326,"s":98,"l":32}],["DeepOrange",{"h":21,"s":99,"l":43}],["DeepPink",{"h":331,"s":99,"l":40}],["DeepPurple",{"h":291,"s":97,"l":13}],["DeepRed",{"h":1,"s":100,"l":30}],["DeepRose",{"h":345,"s":53,"l":53}],["DeepSeaBlue",{"h":201,"s":98,"l":26}],["DeepSkyBlue",{"h":213,"s":94,"l":51}],["DeepTeal",{"h":183,"s":100,"l":18}],["DeepTurquoise",{"h":181,"s":98,"l":23}],["DeepViolet",{"h":301,"s":85,"l":15}],["Denim",{"h":210,"s":41,"l":39}],["DenimBlue",{"h":218,"s":42,"l":40}],["Desert",{"h":43,"s":51,"l":59}],["Diarrhea",{"h":49,"s":96,"l":32}],["Dirt",{"h":36,"s":33,"l":41}],["DirtBrown",{"h":36,"s":39,"l":37}],["DirtyBlue",{"h":197,"s":43,"l":43}],["DirtyGreen",{"h":78,"s":48,"l":33}],["DirtyOrange",{"h":35,"s":94,"l":40}],["DirtyPink",{"h":356,"s":43,"l":64}],["DirtyPurple",{"h":320,"s":22,"l":37}],["DirtyYellow",{"h":58,"s":91,"l":42}],["DodgerBlue",{"h":219,"s":97,"l":62}],["Drab",{"h":61,"s":32,"l":39}],["DrabGreen",{"h":89,"s":30,"l":45}],["DriedBlood",{"h":0,"s":97,"l":15}],["DuckEggBlue",{"h":173,"s":88,"l":87}],["DullBlue",{"h":208,"s":36,"l":45}],["DullBrown",{"h":35,"s":29,"l":41}],["DullGreen",{"h":104,"s":28,"l":52}],["DullOrange",{"h":29,"s":67,"l":54}],["DullPink",{"h":343,"s":48,"l":68}],["DullPurple",{"h":308,"s":19,"l":43}],["DullRed",{"h":0,"s":50,"l":49}],["DullTeal",{"h":166,"s":25,"l":50}],["DullYellow",{"h":53,"s":81,"l":65}],["Dusk",{"h":233,"s":25,"l":41}],["DuskBlue",{"h":214,"s":58,"l":35}],["DuskyBlue",{"h":221,"s":35,"l":43}],["DuskyPink",{"h":348,"s":45,"l":64}],["DuskyPurple",{"h":318,"s":20,"l":45}],["DuskyRose",{"h":352,"s":37,"l":57}],["Dust",{"h":38,"s":31,"l":56}],["DustyBlue",{"h":208,"s":34,"l":52}],["DustyGreen",{"h":117,"s":24,"l":56}],["DustyLavender",{"h":306,"s":19,"l":60}],["DustyOrange",{"h":24,"s":86,"l":58}],["DustyPink",{"h":352,"s":47,"l":69}],["DustyPurple",{"h":293,"s":17,"l":45}],["DustyRed",{"h":357,"s":45,"l":50}],["DustyRose",{"h":355,"s":38,"l":60}],["DustyTeal",{"h":170,"s":31,"l":43}],["Earth",{"h":23,"s":45,"l":44}],["EasterGreen",{"h":113,"s":97,"l":74}],["EasterPurple",{"h":274,"s":99,"l":72}],["Ecru",{"h":61,"s":100,"l":90}],["EggShell",{"h":57,"s":100,"l":88}],["Eggplant",{"h":304,"s":75,"l":13}],["EggplantPurple",{"h":302,"s":86,"l":14}],["Eggshell",{"h":60,"s":100,"l":92}],["EggshellBlue",{"h":172,"s":100,"l":88}],["ElectricBlue",{"h":222,"s":100,"l":51}],["ElectricGreen",{"h":115,"s":98,"l":52}],["ElectricLime",{"h":81,"s":100,"l":51}],["ElectricPink",{"h":327,"s":100,"l":51}],["ElectricPurple",{"h":277,"s":100,"l":57}],["Emerald",{"h":147,"s":99,"l":32}],["EmeraldGreen",{"h":132,"s":97,"l":28}],["Evergreen",{"h":154,"s":87,"l":15}],["FadedBlue",{"h":213,"s":39,"l":56}],["FadedGreen",{"h":113,"s":29,"l":58}],["FadedOrange",{"h":26,"s":84,"l":62}],["FadedPink",{"h":346,"s":50,"l":74}],["FadedPurple",{"h":289,"s":17,"l":52}],["FadedRed",{"h":358,"s":61,"l":56}],["FadedYellow",{"h":60,"s":100,"l":75}],["Fawn",{"h":37,"s":47,"l":65}],["Fern",{"h":107,"s":36,"l":49}],["FernGreen",{"h":107,"s":35,"l":41}],["FireEngineRed",{"h":0,"s":100,"l":50}],["FlatBlue",{"h":209,"s":47,"l":45}],["FlatGreen",{"h":99,"s":35,"l":46}],["FluorescentGreen",{"h":120,"s":100,"l":52}],["FluroGreen",{"h":118,"s":100,"l":50}],["FoamGreen",{"h":134,"s":96,"l":78}],["Forest",{"h":118,"s":81,"l":18}],["ForestGreen",{"h":126,"s":84,"l":15}],["ForrestGreen",{"h":105,"s":84,"l":15}],["FrenchBlue",{"h":217,"s":44,"l":47}],["FreshGreen",{"h":109,"s":64,"l":58}],["FrogGreen",{"h":93,"s":92,"l":38}],["Fuchsia",{"h":305,"s":90,"l":49}],["Gold",{"h":49,"s":90,"l":45}],["Golden",{"h":47,"s":98,"l":49}],["GoldenBrown",{"h":41,"s":99,"l":35}],["GoldenRod",{"h":45,"s":95,"l":50}],["GoldenYellow",{"h":46,"s":99,"l":54}],["Goldenrod",{"h":46,"s":96,"l":50}],["Grape",{"h":312,"s":35,"l":31}],["GrapePurple",{"h":310,"s":65,"l":22}],["Grapefruit",{"h":1,"s":98,"l":66}],["Grass",{"h":98,"s":59,"l":43}],["GrassGreen",{"h":98,"s":87,"l":33}],["GrassyGreen",{"h":96,"s":96,"l":31}],["Green",{"h":174,"s":82,"l":33}],["Green",{"h":77,"s":98,"l":62}],["Green",{"h":122,"s":79,"l":39}],["Green",{"h":105,"s":16,"l":56}],["GreenApple",{"h":100,"s":75,"l":49}],["GreenBlue",{"h":166,"s":94,"l":36}],["GreenBrown",{"h":56,"s":93,"l":17}],["GreenGrey",{"h":106,"s":14,"l":50}],["GreenTeal",{"h":158,"s":88,"l":38}],["GreenYellow",{"h":75,"s":100,"l":58}],["Greenblue",{"h":159,"s":70,"l":45}],["Greenish",{"h":144,"s":44,"l":45}],["GreenishBeige",{"h":65,"s":49,"l":65}],["GreenishBlue",{"h":178,"s":85,"l":29}],["GreenishBrown",{"h":54,"s":71,"l":24}],["GreenishCyan",{"h":160,"s":99,"l":58}],["GreenishGrey",{"h":104,"s":17,"l":62}],["GreenishTan",{"h":71,"s":44,"l":64}],["GreenishTeal",{"h":155,"s":59,"l":47}],["GreenishTurquoise",{"h":162,"s":100,"l":49}],["GreenishYellow",{"h":71,"s":98,"l":50}],["GreenyBlue",{"h":164,"s":46,"l":48}],["GreenyBrown",{"h":55,"s":89,"l":22}],["GreenyGrey",{"h":114,"s":17,"l":55}],["GreenyYellow",{"h":73,"s":94,"l":50}],["Grey",{"h":209,"s":20,"l":55}],["Grey",{"h":105,"s":2,"l":58}],["GreyBlue",{"h":206,"s":24,"l":53}],["GreyBrown",{"h":40,"s":21,"l":41}],["GreyGreen",{"h":113,"s":17,"l":53}],["GreyPink",{"h":347,"s":30,"l":66}],["GreyPurple",{"h":281,"s":12,"l":49}],["GreyTeal",{"h":163,"s":24,"l":49}],["Greyblue",{"h":199,"s":30,"l":59}],["Greyish",{"h":47,"s":10,"l":62}],["GreyishBlue",{"h":207,"s":25,"l":49}],["GreyishBrown",{"h":38,"s":21,"l":39}],["GreyishGreen",{"h":113,"s":19,"l":57}],["GreyishPink",{"h":353,"s":35,"l":67}],["GreyishPurple",{"h":283,"s":13,"l":51}],["GreyishTeal",{"h":162,"s":19,"l":53}],["GrossGreen",{"h":71,"s":79,"l":42}],["Gunmetal",{"h":195,"s":11,"l":36}],["Hazel",{"h":48,"s":71,"l":33}],["Heather",{"h":288,"s":19,"l":60}],["Heliotrope",{"h":290,"s":89,"l":64}],["HighlighterGreen",{"h":115,"s":98,"l":51}],["HospitalGreen",{"h":132,"s":59,"l":75}],["HotGreen",{"h":121,"s":100,"l":57}],["HotMagenta",{"h":311,"s":97,"l":49}],["HotPink",{"h":327,"s":100,"l":50}],["HotPurple",{"h":290,"s":100,"l":48}],["HunterGreen",{"h":117,"s":78,"l":14}],["Ice",{"h":173,"s":100,"l":92}],["IceBlue",{"h":179,"s":100,"l":92}],["IckyGreen",{"h":73,"s":67,"l":41}],["IndianRed",{"h":5,"s":94,"l":27}],["Indigo",{"h":265,"s":97,"l":26}],["IndigoBlue",{"h":253,"s":76,"l":39}],["Iris",{"h":246,"s":48,"l":56}],["IrishGreen",{"h":136,"s":99,"l":29}],["Ivory",{"h":60,"s":100,"l":90}],["Jade",{"h":158,"s":69,"l":39}],["JadeGreen",{"h":149,"s":61,"l":43}],["JungleGreen",{"h":150,"s":94,"l":26}],["KelleyGreen",{"h":142,"s":100,"l":29}],["KellyGreen",{"h":136,"s":98,"l":34}],["KermitGreen",{"h":89,"s":100,"l":35}],["KeyLime",{"h":94,"s":100,"l":72}],["Khaki",{"h":57,"s":30,"l":53}],["KhakiGreen",{"h":76,"s":40,"l":37}],["Kiwi",{"h":89,"s":84,"l":60}],["KiwiGreen",{"h":91,"s":76,"l":57}],["Lavender",{"h":270,"s":71,"l":78}],["LavenderBlue",{"h":242,"s":89,"l":75}],["LavenderPink",{"h":304,"s":56,"l":69}],["LawnGreen",{"h":94,"s":90,"l":34}],["Leaf",{"h":89,"s":53,"l":44}],["LeafGreen",{"h":88,"s":95,"l":34}],["LeafyGreen",{"h":109,"s":51,"l":47}],["Leather",{"h":32,"s":54,"l":44}],["Lemon",{"h":61,"s":100,"l":66}],["LemonGreen",{"h":78,"s":98,"l":49}],["LemonLime",{"h":78,"s":99,"l":58}],["LemonYellow",{"h":61,"s":100,"l":61}],["Lichen",{"h":100,"s":29,"l":60}],["LightAqua",{"h":161,"s":100,"l":77}],["LightAquamarine",{"h":155,"s":97,"l":74}],["LightBeige",{"h":59,"s":100,"l":86}],["LightBlue",{"h":206,"s":94,"l":79}],["LightBlueGreen",{"h":145,"s":94,"l":74}],["LightBlueGrey",{"h":215,"s":43,"l":80}],["LightBluishGreen",{"h":142,"s":97,"l":73}],["LightBrightGreen",{"h":123,"s":99,"l":66}],["LightBrown",{"h":32,"s":37,"l":50}],["LightBurgundy",{"h":345,"s":44,"l":46}],["LightCyan",{"h":178,"s":100,"l":84}],["LightEggplant",{"h":304,"s":33,"l":40}],["LightForestGreen",{"h":124,"s":29,"l":44}],["LightGold",{"h":48,"s":98,"l":68}],["LightGrassGreen",{"h":98,"s":90,"l":68}],["LightGreen",{"h":107,"s":91,"l":73}],["LightGreenBlue",{"h":147,"s":97,"l":66}],["LightGreenishBlue",{"h":153,"s":90,"l":68}],["LightGrey",{"h":100,"s":8,"l":85}],["LightGreyBlue",{"h":206,"s":39,"l":72}],["LightGreyGreen",{"h":99,"s":52,"l":76}],["LightIndigo",{"h":250,"s":55,"l":58}],["LightKhaki",{"h":69,"s":75,"l":79}],["LightLavendar",{"h":285,"s":97,"l":87}],["LightLavender",{"h":267,"s":97,"l":88}],["LightLightBlue",{"h":175,"s":100,"l":90}],["LightLightGreen",{"h":102,"s":100,"l":85}],["LightLilac",{"h":280,"s":100,"l":89}],["LightLime",{"h":93,"s":97,"l":71}],["LightLimeGreen",{"h":87,"s":100,"l":70}],["LightMagenta",{"h":301,"s":94,"l":68}],["LightMaroon",{"h":350,"s":38,"l":46}],["LightMauve",{"h":341,"s":28,"l":67}],["LightMint",{"h":124,"s":100,"l":86}],["LightMintGreen",{"h":128,"s":91,"l":82}],["LightMossGreen",{"h":85,"s":43,"l":62}],["LightMustard",{"h":46,"s":90,"l":67}],["LightNavy",{"h":208,"s":73,"l":30}],["LightNavyBlue",{"h":211,"s":49,"l":36}],["LightNeonGreen",{"h":122,"s":98,"l":65}],["LightOlive",{"h":73,"s":40,"l":58}],["LightOliveGreen",{"h":76,"s":43,"l":55}],["LightOrange",{"h":32,"s":98,"l":64}],["LightPastelGreen",{"h":111,"s":91,"l":82}],["LightPeaGreen",{"h":88,"s":98,"l":75}],["LightPeach",{"h":30,"s":100,"l":85}],["LightPeriwinkle",{"h":235,"s":91,"l":87}],["LightPink",{"h":342,"s":100,"l":91}],["LightPlum",{"h":322,"s":29,"l":48}],["LightPurple",{"h":274,"s":88,"l":72}],["LightRed",{"h":358,"s":100,"l":64}],["LightRose",{"h":354,"s":100,"l":89}],["LightRoyalBlue",{"h":243,"s":99,"l":59}],["LightSage",{"h":105,"s":63,"l":80}],["LightSalmon",{"h":12,"s":98,"l":79}],["LightSeaGreen",{"h":135,"s":84,"l":78}],["LightSeafoam",{"h":140,"s":98,"l":81}],["LightSeafoamGreen",{"h":130,"s":100,"l":83}],["LightSkyBlue",{"h":183,"s":100,"l":89}],["LightTan",{"h":50,"s":91,"l":83}],["LightTeal",{"h":155,"s":61,"l":73}],["LightTurquoise",{"h":160,"s":84,"l":73}],["LightUrple",{"h":270,"s":88,"l":70}],["LightViolet",{"h":268,"s":92,"l":85}],["LightYellow",{"h":60,"s":100,"l":74}],["LightYellowGreen",{"h":83,"s":97,"l":75}],["LightYellowishGreen",{"h":91,"s":100,"l":77}],["Lightblue",{"h":202,"s":87,"l":72}],["LighterGreen",{"h":113,"s":97,"l":69}],["LighterPurple",{"h":269,"s":88,"l":65}],["Lightgreen",{"h":122,"s":100,"l":73}],["LightishBlue",{"h":221,"s":98,"l":62}],["LightishGreen",{"h":120,"s":68,"l":63}],["LightishPurple",{"h":274,"s":75,"l":61}],["LightishRed",{"h":352,"s":99,"l":59}],["Lilac",{"h":269,"s":96,"l":81}],["Liliac",{"h":269,"s":97,"l":77}],["Lime",{"h":85,"s":100,"l":60}],["LimeGreen",{"h":88,"s":99,"l":51}],["LimeYellow",{"h":72,"s":99,"l":55}],["Lipstick",{"h":343,"s":81,"l":46}],["LipstickRed",{"h":346,"s":98,"l":38}],["MacaroniAndCheese",{"h":41,"s":85,"l":57}],["Magenta",{"h":323,"s":100,"l":38}],["Mahogany",{"h":1,"s":100,"l":15}],["Maize",{"h":47,"s":88,"l":64}],["Mango",{"h":35,"s":100,"l":58}],["Manilla",{"h":58,"s":100,"l":76}],["Marigold",{"h":45,"s":98,"l":51}],["Marine",{"h":213,"s":92,"l":20}],["MarineBlue",{"h":209,"s":98,"l":21}],["Maroon",{"h":340,"s":100,"l":20}],["Mauve",{"h":344,"s":27,"l":56}],["MediumBlue",{"h":212,"s":62,"l":45}],["MediumBrown",{"h":35,"s":75,"l":28}],["MediumGreen",{"h":128,"s":50,"l":45}],["MediumGrey",{"h":100,"s":1,"l":49}],["MediumPink",{"h":338,"s":86,"l":67}],["MediumPurple",{"h":297,"s":41,"l":45}],["Melon",{"h":12,"s":100,"l":67}],["Merlot",{"h":330,"s":100,"l":23}],["MetallicBlue",{"h":206,"s":29,"l":43}],["MidBlue",{"h":211,"s":64,"l":43}],["MidGreen",{"h":114,"s":40,"l":47}],["Midnight",{"h":243,"s":96,"l":9}],["MidnightBlue",{"h":242,"s":100,"l":10}],["MidnightPurple",{"h":283,"s":96,"l":11}],["MilitaryGreen",{"h":81,"s":33,"l":36}],["MilkChocolate",{"h":30,"s":62,"l":31}],["Mint",{"h":131,"s":98,"l":81}],["MintGreen",{"h":129,"s":100,"l":78}],["MintyGreen",{"h":149,"s":94,"l":51}],["Mocha",{"h":29,"s":32,"l":47}],["Moss",{"h":92,"s":27,"l":47}],["MossGreen",{"h":87,"s":43,"l":38}],["MossyGreen",{"h":84,"s":56,"l":35}],["Mud",{"h":46,"s":73,"l":26}],["MudBrown",{"h":41,"s":73,"l":22}],["MudGreen",{"h":64,"s":96,"l":20}],["MuddyBrown",{"h":45,"s":92,"l":28}],["MuddyGreen",{"h":74,"s":40,"l":33}],["MuddyYellow",{"h":54,"s":95,"l":38}],["Mulberry",{"h":330,"s":87,"l":31}],["MurkyGreen",{"h":68,"s":79,"l":27}],["Mushroom",{"h":26,"s":27,"l":63}],["Mustard",{"h":52,"s":99,"l":41}],["MustardBrown",{"h":44,"s":95,"l":35}],["MustardGreen",{"h":64,"s":96,"l":36}],["MustardYellow",{"h":54,"s":91,"l":43}],["MutedBlue",{"h":208,"s":46,"l":43}],["MutedGreen",{"h":110,"s":32,"l":47}],["MutedPink",{"h":344,"s":50,"l":64}],["MutedPurple",{"h":290,"s":19,"l":44}],["NastyGreen",{"h":94,"s":48,"l":47}],["Navy",{"h":220,"s":97,"l":12}],["NavyBlue",{"h":225,"s":100,"l":14}],["NavyGreen",{"h":85,"s":78,"l":18}],["NeonBlue",{"h":189,"s":100,"l":51}],["NeonGreen",{"h":120,"s":100,"l":52}],["NeonPink",{"h":324,"s":99,"l":50}],["NeonPurple",{"h":283,"s":99,"l":54}],["NeonRed",{"h":348,"s":100,"l":51}],["NeonYellow",{"h":71,"s":100,"l":51}],["NiceBlue",{"h":200,"s":83,"l":38}],["NightBlue",{"h":241,"s":92,"l":15}],["Ocean",{"h":190,"s":99,"l":29}],["OceanBlue",{"h":197,"s":96,"l":31}],["OceanGreen",{"h":155,"s":43,"l":42}],["Ocher",{"h":48,"s":88,"l":40}],["Ochre",{"h":45,"s":95,"l":38}],["Ocre",{"h":47,"s":96,"l":40}],["OffBlue",{"h":209,"s":35,"l":51}],["OffGreen",{"h":102,"s":33,"l":48}],["OffWhite",{"h":60,"s":100,"l":95}],["OffYellow",{"h":61,"s":88,"l":60}],["OldPink",{"h":350,"s":41,"l":63}],["OldRose",{"h":352,"s":40,"l":64}],["Olive",{"h":64,"s":79,"l":26}],["OliveBrown",{"h":50,"s":94,"l":20}],["OliveDrab",{"h":66,"s":40,"l":33}],["OliveGreen",{"h":70,"s":94,"l":25}],["OliveYellow",{"h":56,"s":91,"l":40}],["Orange",{"h":27,"s":95,"l":50}],["OrangeBrown",{"h":32,"s":100,"l":37}],["OrangePink",{"h":10,"s":100,"l":66}],["OrangeRed",{"h":9,"s":98,"l":55}],["OrangeYellow",{"h":41,"s":100,"l":50}],["Orangeish",{"h":23,"s":98,"l":64}],["Orangered",{"h":13,"s":99,"l":53}],["OrangeyBrown",{"h":32,"s":98,"l":35}],["OrangeyRed",{"h":8,"s":96,"l":56}],["OrangeyYellow",{"h":42,"s":98,"l":54}],["Orangish",{"h":19,"s":97,"l":64}],["OrangishBrown",{"h":32,"s":97,"l":35}],["OrangishRed",{"h":12,"s":96,"l":49}],["Orchid",{"h":303,"s":43,"l":62}],["Pale",{"h":52,"s":100,"l":91}],["PaleAqua",{"h":163,"s":100,"l":86}],["PaleBlue",{"h":180,"s":96,"l":91}],["PaleBrown",{"h":31,"s":30,"l":56}],["PaleCyan",{"h":176,"s":100,"l":86}],["PaleGold",{"h":47,"s":97,"l":71}],["PaleGreen",{"h":105,"s":95,"l":85}],["PaleGrey",{"h":240,"s":33,"l":99}],["PaleLavender",{"h":280,"s":96,"l":90}],["PaleLightGreen",{"h":105,"s":94,"l":79}],["PaleLilac",{"h":269,"s":100,"l":90}],["PaleLime",{"h":87,"s":97,"l":72}],["PaleLimeGreen",{"h":90,"s":100,"l":70}],["PaleMagenta",{"h":323,"s":58,"l":62}],["PaleMauve",{"h":303,"s":96,"l":91}],["PaleOlive",{"h":75,"s":42,"l":65}],["PaleOliveGreen",{"h":83,"s":49,"l":65}],["PaleOrange",{"h":29,"s":100,"l":67}],["PalePeach",{"h":41,"s":100,"l":84}],["PalePink",{"h":344,"s":100,"l":91}],["PalePurple",{"h":274,"s":44,"l":70}],["PaleRed",{"h":3,"s":65,"l":58}],["PaleRose",{"h":356,"s":94,"l":87}],["PaleSalmon",{"h":14,"s":100,"l":80}],["PaleSkyBlue",{"h":187,"s":97,"l":87}],["PaleTeal",{"h":159,"s":41,"l":65}],["PaleTurquoise",{"h":153,"s":91,"l":82}],["PaleViolet",{"h":265,"s":88,"l":83}],["PaleYellow",{"h":60,"s":100,"l":76}],["Parchment",{"h":58,"s":98,"l":84}],["PastelBlue",{"h":221,"s":98,"l":82}],["PastelGreen",{"h":108,"s":100,"l":81}],["PastelOrange",{"h":24,"s":100,"l":65}],["PastelPink",{"h":343,"s":100,"l":86}],["PastelPurple",{"h":267,"s":100,"l":81}],["PastelRed",{"h":1,"s":65,"l":60}],["PastelYellow",{"h":60,"s":100,"l":72}],["Pea",{"h":70,"s":71,"l":44}],["PeaGreen",{"h":71,"s":81,"l":37}],["PeaSoup",{"h":63,"s":99,"l":30}],["PeaSoupGreen",{"h":68,"s":76,"l":37}],["Peach",{"h":24,"s":100,"l":74}],["PeachyPink",{"h":8,"s":100,"l":77}],["PeacockBlue",{"h":199,"s":99,"l":29}],["Pear",{"h":78,"s":92,"l":67}],["Periwinkle",{"h":246,"s":98,"l":75}],["PeriwinkleBlue",{"h":234,"s":93,"l":77}],["Perrywinkle",{"h":242,"s":65,"l":73}],["Petrol",{"h":186,"s":100,"l":21}],["PigPink",{"h":344,"s":65,"l":73}],["Pine",{"h":131,"s":37,"l":27}],["PineGreen",{"h":139,"s":76,"l":16}],["Pink",{"h":330,"s":100,"l":75}],["Pink",{"h":298,"s":74,"l":51}],["PinkPurple",{"h":300,"s":67,"l":58}],["PinkRed",{"h":342,"s":96,"l":49}],["Pinkish",{"h":349,"s":55,"l":62}],["PinkishBrown",{"h":13,"s":34,"l":54}],["PinkishGrey",{"h":6,"s":22,"l":72}],["PinkishOrange",{"h":13,"s":100,"l":65}],["PinkishPurple",{"h":300,"s":64,"l":56}],["PinkishRed",{"h":345,"s":91,"l":50}],["PinkishTan",{"h":17,"s":53,"l":68}],["Pinky",{"h":342,"s":95,"l":76}],["PinkyPurple",{"h":305,"s":54,"l":54}],["PinkyRed",{"h":351,"s":97,"l":57}],["PissYellow",{"h":58,"s":80,"l":48}],["Pistachio",{"h":91,"s":92,"l":76}],["Plum",{"h":319,"s":71,"l":20}],["PlumPurple",{"h":298,"s":88,"l":17}],["PoisonGreen",{"h":109,"s":98,"l":54}],["Poo",{"h":48,"s":96,"l":29}],["PooBrown",{"h":42,"s":99,"l":27}],["Poop",{"h":44,"s":100,"l":25}],["PoopBrown",{"h":44,"s":98,"l":24}],["PoopGreen",{"h":66,"s":100,"l":24}],["PowderBlue",{"h":214,"s":93,"l":84}],["PowderPink",{"h":337,"s":100,"l":85}],["PrimaryBlue",{"h":241,"s":97,"l":50}],["PrussianBlue",{"h":205,"s":100,"l":23}],["Puce",{"h":32,"s":34,"l":48}],["Puke",{"h":60,"s":98,"l":33}],["PukeBrown",{"h":48,"s":92,"l":30}],["PukeGreen",{"h":67,"s":92,"l":35}],["PukeYellow",{"h":59,"s":87,"l":41}],["Pumpkin",{"h":32,"s":99,"l":44}],["PumpkinOrange",{"h":29,"s":97,"l":51}],["PureBlue",{"h":240,"s":98,"l":45}],["Purple",{"h":286,"s":68,"l":36}],["Purple",{"h":262,"s":95,"l":48}],["Purple",{"h":302,"s":87,"l":53}],["PurpleBlue",{"h":257,"s":81,"l":55}],["PurpleBrown",{"h":353,"s":28,"l":32}],["PurpleGrey",{"h":303,"s":9,"l":48}],["PurplePink",{"h":303,"s":72,"l":56}],["PurpleRed",{"h":332,"s":99,"l":30}],["Purpleish",{"h":310,"s":28,"l":47}],["PurpleishBlue",{"h":251,"s":85,"l":59}],["PurpleishPink",{"h":310,"s":69,"l":59}],["Purpley",{"h":261,"s":72,"l":62}],["PurpleyBlue",{"h":254,"s":79,"l":55}],["PurpleyGrey",{"h":300,"s":9,"l":54}],["PurpleyPink",{"h":306,"s":56,"l":51}],["Purplish",{"h":308,"s":26,"l":46}],["PurplishBlue",{"h":258,"s":95,"l":55}],["PurplishBrown",{"h":353,"s":24,"l":34}],["PurplishGrey",{"h":287,"s":10,"l":45}],["PurplishPink",{"h":317,"s":54,"l":59}],["PurplishRed",{"h":335,"s":94,"l":35}],["Purply",{"h":286,"s":48,"l":47}],["PurplyBlue",{"h":262,"s":86,"l":52}],["PurplyPink",{"h":305,"s":80,"l":70}],["Putty",{"h":42,"s":29,"l":64}],["RacingGreen",{"h":119,"s":100,"l":14}],["RadioactiveGreen",{"h":116,"s":96,"l":55}],["Raspberry",{"h":335,"s":99,"l":35}],["RawSienna",{"h":38,"s":100,"l":30}],["RawUmber",{"h":32,"s":90,"l":35}],["ReallyLightBlue",{"h":180,"s":100,"l":92}],["Red",{"h":0,"s":100,"l":45}],["RedBrown",{"h":12,"s":73,"l":32}],["RedOrange",{"h":13,"s":98,"l":51}],["RedPink",{"h":348,"s":95,"l":57}],["RedPurple",{"h":329,"s":90,"l":27}],["RedViolet",{"h":321,"s":99,"l":31}],["RedWine",{"h":338,"s":100,"l":27}],["Reddish",{"h":1,"s":53,"l":51}],["ReddishBrown",{"h":17,"s":85,"l":27}],["ReddishGrey",{"h":7,"s":17,"l":52}],["ReddishOrange",{"h":12,"s":94,"l":54}],["ReddishPink",{"h":349,"s":99,"l":58}],["ReddishPurple",{"h":328,"s":88,"l":30}],["ReddyBrown",{"h":6,"s":91,"l":23}],["RichBlue",{"h":234,"s":98,"l":49}],["RichPurple",{"h":314,"s":100,"l":22}],["Robin'sEgg",{"h":187,"s":97,"l":71}],["Robin'sEggBlue",{"h":186,"s":89,"l":79}],["RobinEggBlue",{"h":187,"s":98,"l":77}],["Rosa",{"h":345,"s":98,"l":76}],["Rose",{"h":350,"s":53,"l":60}],["RosePink",{"h":350,"s":88,"l":75}],["RoseRed",{"h":341,"s":99,"l":37}],["RosyPink",{"h":344,"s":89,"l":69}],["Rouge",{"h":345,"s":81,"l":37}],["Royal",{"h":235,"s":85,"l":31}],["RoyalBlue",{"h":240,"s":95,"l":34}],["RoyalPurple",{"h":281,"s":100,"l":22}],["Ruby",{"h":339,"s":99,"l":40}],["Russet",{"h":20,"s":94,"l":33}],["Rust",{"h":19,"s":90,"l":35}],["RustBrown",{"h":20,"s":96,"l":28}],["RustOrange",{"h":25,"s":92,"l":40}],["RustRed",{"h":13,"s":95,"l":34}],["RustyOrange",{"h":24,"s":92,"l":42}],["RustyRed",{"h":13,"s":86,"l":37}],["Saffron",{"h":41,"s":99,"l":52}],["Sage",{"h":100,"s":27,"l":57}],["SageGreen",{"h":104,"s":28,"l":59}],["Salmon",{"h":5,"s":100,"l":71}],["SalmonPink",{"h":0,"s":98,"l":74}],["Sand",{"h":47,"s":65,"l":67}],["SandBrown",{"h":39,"s":51,"l":59}],["SandYellow",{"h":49,"s":96,"l":69}],["Sandstone",{"h":41,"s":44,"l":62}],["Sandy",{"h":48,"s":81,"l":71}],["SandyBrown",{"h":42,"s":46,"l":57}],["SandyYellow",{"h":53,"s":97,"l":72}],["SapGreen",{"h":84,"s":74,"l":31}],["Sapphire",{"h":230,"s":68,"l":40}],["Scarlet",{"h":352,"s":99,"l":37}],["Sea",{"h":175,"s":44,"l":42}],["SeaBlue",{"h":194,"s":95,"l":30}],["SeaGreen",{"h":148,"s":97,"l":66}],["Seafoam",{"h":142,"s":91,"l":74}],["SeafoamBlue",{"h":162,"s":49,"l":65}],["SeafoamGreen",{"h":143,"s":91,"l":73}],["Seaweed",{"h":152,"s":79,"l":46}],["SeaweedGreen",{"h":147,"s":53,"l":44}],["Sepia",{"h":28,"s":56,"l":38}],["Shamrock",{"h":145,"s":99,"l":35}],["ShamrockGreen",{"h":144,"s":98,"l":38}],["Shit",{"h":45,"s":100,"l":25}],["ShitBrown",{"h":42,"s":94,"l":25}],["ShitGreen",{"h":65,"s":100,"l":25}],["ShockingPink",{"h":322,"s":99,"l":50}],["SickGreen",{"h":72,"s":62,"l":45}],["SicklyGreen",{"h":72,"s":73,"l":40}],["SicklyYellow",{"h":66,"s":78,"l":53}],["Sienna",{"h":24,"s":70,"l":39}],["Silver",{"h":150,"s":4,"l":78}],["Sky",{"h":205,"s":95,"l":75}],["SkyBlue",{"h":209,"s":97,"l":73}],["Slate",{"h":204,"s":17,"l":38}],["SlateBlue",{"h":208,"s":25,"l":48}],["SlateGreen",{"h":132,"s":17,"l":47}],["SlateGrey",{"h":204,"s":10,"l":39}],["SlimeGreen",{"h":75,"s":96,"l":41}],["Snot",{"h":65,"s":87,"l":39}],["SnotGreen",{"h":71,"s":100,"l":38}],["SoftBlue",{"h":224,"s":76,"l":65}],["SoftGreen",{"h":125,"s":40,"l":60}],["SoftPink",{"h":348,"s":95,"l":84}],["SoftPurple",{"h":287,"s":32,"l":57}],["Spearmint",{"h":144,"s":94,"l":55}],["SpringGreen",{"h":95,"s":92,"l":71}],["Spruce",{"h":152,"s":81,"l":21}],["Squash",{"h":41,"s":89,"l":52}],["Steel",{"h":208,"s":14,"l":52}],["SteelBlue",{"h":207,"s":26,"l":48}],["SteelGrey",{"h":198,"s":11,"l":49}],["Stone",{"h":47,"s":19,"l":60}],["StormyBlue",{"h":206,"s":32,"l":46}],["Straw",{"h":57,"s":96,"l":73}],["Strawberry",{"h":353,"s":96,"l":57}],["StrongBlue",{"h":241,"s":95,"l":50}],["StrongPink",{"h":329,"s":100,"l":51}],["SunYellow",{"h":51,"s":100,"l":57}],["Sunflower",{"h":45,"s":100,"l":54}],["SunflowerYellow",{"h":51,"s":100,"l":51}],["SunnyYellow",{"h":58,"s":100,"l":55}],["SunshineYellow",{"h":59,"s":100,"l":61}],["Swamp",{"h":81,"s":39,"l":37}],["SwampGreen",{"h":68,"s":100,"l":26}],["Tan",{"h":41,"s":52,"l":63}],["TanBrown",{"h":32,"s":38,"l":48}],["TanGreen",{"h":76,"s":38,"l":59}],["Tangerine",{"h":34,"s":100,"l":52}],["Taupe",{"h":35,"s":29,"l":62}],["Tea",{"h":140,"s":29,"l":53}],["TeaGreen",{"h":102,"s":86,"l":81}],["Teal",{"h":175,"s":97,"l":29}],["TealBlue",{"h":189,"s":99,"l":31}],["TealGreen",{"h":155,"s":63,"l":39}],["Tealish",{"h":172,"s":68,"l":44}],["TealishGreen",{"h":150,"s":90,"l":45}],["TerraCotta",{"h":17,"s":57,"l":51}],["Terracota",{"h":16,"s":57,"l":53}],["Terracotta",{"h":16,"s":56,"l":52}],["TiffanyBlue",{"h":168,"s":82,"l":72}],["Tomato",{"h":8,"s":86,"l":54}],["TomatoRed",{"h":11,"s":99,"l":46}],["Topaz",{"h":176,"s":82,"l":40}],["Toupe",{"h":38,"s":40,"l":64}],["ToxicGreen",{"h":102,"s":73,"l":52}],["TreeGreen",{"h":110,"s":67,"l":30}],["TrueBlue",{"h":236,"s":99,"l":40}],["TrueGreen",{"h":118,"s":95,"l":30}],["Turquoise",{"h":173,"s":94,"l":39}],["TurquoiseBlue",{"h":186,"s":94,"l":40}],["TurquoiseGreen",{"h":153,"s":97,"l":49}],["TurtleGreen",{"h":98,"s":43,"l":52}],["Twilight",{"h":237,"s":28,"l":43}],["TwilightBlue",{"h":209,"s":85,"l":26}],["UglyBlue",{"h":204,"s":48,"l":37}],["UglyBrown",{"h":54,"s":95,"l":25}],["UglyGreen",{"h":72,"s":96,"l":30}],["UglyPink",{"h":350,"s":47,"l":63}],["UglyPurple",{"h":302,"s":43,"l":45}],["UglyYellow",{"h":56,"s":99,"l":41}],["Ultramarine",{"h":251,"s":100,"l":35}],["UltramarineBlue",{"h":245,"s":96,"l":44}],["Umber",{"h":34,"s":100,"l":35}],["Velvet",{"h":320,"s":87,"l":25}],["Vermillion",{"h":10,"s":91,"l":50}],["VeryDarkBlue",{"h":239,"s":100,"l":10}],["VeryDarkBrown",{"h":4,"s":100,"l":6}],["VeryDarkGreen",{"h":116,"s":88,"l":10}],["VeryDarkPurple",{"h":288,"s":96,"l":10}],["VeryLightBlue",{"h":180,"s":100,"l":92}],["VeryLightBrown",{"h":38,"s":48,"l":67}],["VeryLightGreen",{"h":102,"s":100,"l":87}],["VeryLightPink",{"h":9,"s":100,"l":97}],["VeryLightPurple",{"h":292,"s":88,"l":90}],["VeryPaleBlue",{"h":179,"s":100,"l":92}],["VeryPaleGreen",{"h":102,"s":94,"l":86}],["VibrantBlue",{"h":227,"s":98,"l":49}],["VibrantGreen",{"h":119,"s":93,"l":45}],["VibrantPurple",{"h":287,"s":97,"l":44}],["Violet",{"h":278,"s":89,"l":49}],["VioletBlue",{"h":262,"s":91,"l":41}],["VioletPink",{"h":300,"s":96,"l":68}],["VioletRed",{"h":329,"s":100,"l":32}],["Viridian",{"h":158,"s":66,"l":34}],["VividBlue",{"h":234,"s":100,"l":54}],["VividGreen",{"h":112,"s":87,"l":50}],["VividPurple",{"h":277,"s":100,"l":49}],["Vomit",{"h":61,"s":77,"l":36}],["VomitGreen",{"h":69,"s":96,"l":32}],["VomitYellow",{"h":58,"s":89,"l":41}],["WarmBlue",{"h":235,"s":67,"l":58}],["WarmBrown",{"h":31,"s":97,"l":30}],["WarmGrey",{"h":19,"s":8,"l":55}],["WarmPink",{"h":344,"s":95,"l":66}],["WarmPurple",{"h":303,"s":53,"l":38}],["WashedOutGreen",{"h":103,"s":80,"l":81}],["WaterBlue",{"h":202,"s":87,"l":43}],["Watermelon",{"h":354,"s":98,"l":63}],["WeirdGreen",{"h":144,"s":77,"l":56}],["Wheat",{"h":46,"s":94,"l":74}],["White",{"h":0,"s":0,"l":100}],["WindowsBlue",{"h":211,"s":55,"l":48}],["Wine",{"h":331,"s":98,"l":25}],["WineRed",{"h":344,"s":95,"l":25}],["Wintergreen",{"h":148,"s":95,"l":55}],["Wisteria",{"h":277,"s":36,"l":63}],["Yellow",{"h":68,"s":93,"l":42}],["Yellow",{"h":60,"s":100,"l":54}],["YellowBrown",{"h":49,"s":100,"l":36}],["YellowGreen",{"h":77,"s":96,"l":58}],["YellowOchre",{"h":46,"s":94,"l":41}],["YellowOrange",{"h":42,"s":99,"l":50}],["YellowTan",{"h":48,"s":100,"l":72}],["Yellowgreen",{"h":76,"s":95,"l":52}],["Yellowish",{"h":55,"s":94,"l":69}],["YellowishBrown",{"h":47,"s":99,"l":31}],["YellowishGreen",{"h":74,"s":82,"l":48}],["YellowishOrange",{"h":39,"s":100,"l":53}],["YellowishTan",{"h":60,"s":95,"l":75}],["YellowyBrown",{"h":47,"s":87,"l":36}],["YellowyGreen",{"h":75,"s":88,"l":55}]]
-	;
+	var nearestColor = createCommonjsModule(function (module) {
+	(function(context) {
+
+	  /**
+	   * Defines an available color.
+	   *
+	   * @typedef {Object} ColorSpec
+	   * @property {string=} name A name for the color, e.g., 'red'
+	   * @property {string} source The hex-based color string, e.g., '#FF0'
+	   * @property {RGB} rgb The {@link RGB} color values
+	   */
+
+	  /**
+	   * Describes a matched color.
+	   *
+	   * @typedef {Object} ColorMatch
+	   * @property {string} name The name of the matched color, e.g., 'red'
+	   * @property {string} value The hex-based color string, e.g., '#FF0'
+	   * @property {RGB} rgb The {@link RGB} color values.
+	   */
+
+	  /**
+	   * Provides the RGB breakdown of a color.
+	   *
+	   * @typedef {Object} RGB
+	   * @property {number} r The red component, from 0 to 255
+	   * @property {number} g The green component, from 0 to 255
+	   * @property {number} b The blue component, from 0 to 255
+	   */
+
+	  /**
+	   * Gets the nearest color, from the given list of {@link ColorSpec} objects
+	   * (which defaults to {@link nearestColor.DEFAULT_COLORS}).
+	   *
+	   * Probably you wouldn't call this method directly. Instead you'd get a custom
+	   * color matcher by calling {@link nearestColor.from}.
+	   *
+	   * @public
+	   * @param {RGB|string} needle Either an {@link RGB} color or a hex-based
+	   *     string representing one, e.g., '#FF0'
+	   * @param {Array.<ColorSpec>=} colors An optional list of available colors
+	   *     (defaults to {@link nearestColor.DEFAULT_COLORS})
+	   * @return {ColorMatch|string} If the colors in the provided list had names,
+	   *     then a {@link ColorMatch} object with the name and (hex) value of the
+	   *     nearest color from the list. Otherwise, simply the hex value.
+	   *
+	   * @example
+	   * nearestColor({ r: 200, g: 50, b: 50 }); // => '#f00'
+	   * nearestColor('#f11');                   // => '#f00'
+	   * nearestColor('#f88');                   // => '#f80'
+	   * nearestColor('#ffe');                   // => '#ff0'
+	   * nearestColor('#efe');                   // => '#ff0'
+	   * nearestColor('#abc');                   // => '#808'
+	   * nearestColor('red');                    // => '#f00'
+	   * nearestColor('foo');                    // => throws
+	   */
+	  function nearestColor(needle, colors) {
+	    needle = parseColor(needle);
+
+	    if (!needle) {
+	      return null;
+	    }
+
+	    var distanceSq,
+	        minDistanceSq = Infinity,
+	        rgb,
+	        value;
+
+	    colors || (colors = nearestColor.DEFAULT_COLORS);
+
+	    for (var i = 0; i < colors.length; ++i) {
+	      rgb = colors[i].rgb;
+
+	      distanceSq = (
+	        Math.pow(needle.r - rgb.r, 2) +
+	        Math.pow(needle.g - rgb.g, 2) +
+	        Math.pow(needle.b - rgb.b, 2)
+	      );
+
+	      if (distanceSq < minDistanceSq) {
+	        minDistanceSq = distanceSq;
+	        value = colors[i];
+	      }
+	    }
+
+	    if (value.name) {
+	      return {
+	        name: value.name,
+	        value: value.source,
+	        rgb: value.rgb,
+	        distance: Math.sqrt(minDistanceSq)
+	      };
+	    }
+
+	    return value.source;
+	  }
+
+	  /**
+	   * Provides a matcher to find the nearest color based on the provided list of
+	   * available colors.
+	   *
+	   * @public
+	   * @param {Array.<string>|Object} availableColors An array of hex-based color
+	   *     strings, or an object mapping color *names* to hex values.
+	   * @return {function(string):ColorMatch|string} A function with the same
+	   *     behavior as {@link nearestColor}, but with the list of colors
+	   *     predefined.
+	   *
+	   * @example
+	   * var colors = {
+	   *   'maroon': '#800',
+	   *   'light yellow': { r: 255, g: 255, b: 51 },
+	   *   'pale blue': '#def',
+	   *   'white': 'fff'
+	   * };
+	   *
+	   * var bgColors = [
+	   *   '#eee',
+	   *   '#444'
+	   * ];
+	   *
+	   * var invalidColors = {
+	   *   'invalid': 'foo'
+	   * };
+	   *
+	   * var getColor = nearestColor.from(colors);
+	   * var getBGColor = getColor.from(bgColors);
+	   * var getAnyColor = nearestColor.from(colors).or(bgColors);
+	   *
+	   * getColor('ffe');
+	   * // => { name: 'white', value: 'fff', rgb: { r: 255, g: 255, b: 255 }, distance: 17}
+	   *
+	   * getColor('#f00');
+	   * // => { name: 'maroon', value: '#800', rgb: { r: 136, g: 0, b: 0 }, distance: 119}
+	   *
+	   * getColor('#ff0');
+	   * // => { name: 'light yellow', value: '#ffff33', rgb: { r: 255, g: 255, b: 51 }, distance: 51}
+	   *
+	   * getBGColor('#fff'); // => '#eee'
+	   * getBGColor('#000'); // => '#444'
+	   *
+	   * getAnyColor('#f00');
+	   * // => { name: 'maroon', value: '#800', rgb: { r: 136, g: 0, b: 0 }, distance: 119}
+	   *
+	   * getAnyColor('#888'); // => '#444'
+	   *
+	   * nearestColor.from(invalidColors); // => throws
+	   */
+	  nearestColor.from = function from(availableColors) {
+	    var colors = mapColors(availableColors),
+	        nearestColorBase = nearestColor;
+
+	    var matcher = function nearestColor(hex) {
+	      return nearestColorBase(hex, colors);
+	    };
+
+	    // Keep the 'from' method, to support changing the list of available colors
+	    // multiple times without needing to keep a reference to the original
+	    // nearestColor function.
+	    matcher.from = from;
+
+	    // Also provide a way to combine multiple color lists.
+	    matcher.or = function or(alternateColors) {
+	      var extendedColors = colors.concat(mapColors(alternateColors));
+	      return nearestColor.from(extendedColors);
+	    };
+
+	    return matcher;
+	  };
+
+	  /**
+	   * Given either an array or object of colors, returns an array of
+	   * {@link ColorSpec} objects (with {@link RGB} values).
+	   *
+	   * @private
+	   * @param {Array.<string>|Object} colors An array of hex-based color strings, or
+	   *     an object mapping color *names* to hex values.
+	   * @return {Array.<ColorSpec>} An array of {@link ColorSpec} objects
+	   *     representing the same colors passed in.
+	   */
+	  function mapColors(colors) {
+	    if (colors instanceof Array) {
+	      return colors.map(function(color) {
+	        return createColorSpec(color);
+	      });
+	    }
+
+	    return Object.keys(colors).map(function(name) {
+	      return createColorSpec(colors[name], name);
+	    });
+	  }
+	  /**
+	   * Parses a color from a string.
+	   *
+	   * @private
+	   * @param {RGB|string} source
+	   * @return {RGB}
+	   *
+	   * @example
+	   * parseColor({ r: 3, g: 22, b: 111 }); // => { r: 3, g: 22, b: 111 }
+	   * parseColor('#f00');                  // => { r: 255, g: 0, b: 0 }
+	   * parseColor('#04fbc8');               // => { r: 4, g: 251, b: 200 }
+	   * parseColor('#FF0');                  // => { r: 255, g: 255, b: 0 }
+	   * parseColor('rgb(3, 10, 100)');       // => { r: 3, g: 10, b: 100 }
+	   * parseColor('rgb(50%, 0%, 50%)');     // => { r: 128, g: 0, b: 128 }
+	   * parseColor('aqua');                  // => { r: 0, g: 255, b: 255 }
+	   * parseColor('fff');                   // => { r: 255, g: 255, b: 255 }
+	   * parseColor('foo');                   // => throws
+	   */
+	  function parseColor(source) {
+	    var red, green, blue;
+
+	    if (typeof source === 'object') {
+	      return source;
+	    }
+
+	    if (source in nearestColor.STANDARD_COLORS) {
+	      return parseColor(nearestColor.STANDARD_COLORS[source]);
+	    }
+
+	    var hexMatch = source.match(/^#?((?:[0-9a-f]{3}){1,2})$/i);
+	    if (hexMatch) {
+	      hexMatch = hexMatch[1];
+
+	      if (hexMatch.length === 3) {
+	        hexMatch = [
+	          hexMatch.charAt(0) + hexMatch.charAt(0),
+	          hexMatch.charAt(1) + hexMatch.charAt(1),
+	          hexMatch.charAt(2) + hexMatch.charAt(2)
+	        ];
+
+	      } else {
+	        hexMatch = [
+	          hexMatch.substring(0, 2),
+	          hexMatch.substring(2, 4),
+	          hexMatch.substring(4, 6)
+	        ];
+	      }
+
+	      red = parseInt(hexMatch[0], 16);
+	      green = parseInt(hexMatch[1], 16);
+	      blue = parseInt(hexMatch[2], 16);
+
+	      return { r: red, g: green, b: blue };
+	    }
+
+	    var rgbMatch = source.match(/^rgb\(\s*(\d{1,3}%?),\s*(\d{1,3}%?),\s*(\d{1,3}%?)\s*\)$/i);
+	    if (rgbMatch) {
+	      red = parseComponentValue(rgbMatch[1]);
+	      green = parseComponentValue(rgbMatch[2]);
+	      blue = parseComponentValue(rgbMatch[3]);
+
+	      return { r: red, g: green, b: blue };
+	    }
+
+	    throw Error('"' + source + '" is not a valid color');
+	  }
+
+	  /**
+	   * Creates a {@link ColorSpec} from either a string or an {@link RGB}.
+	   *
+	   * @private
+	   * @param {string|RGB} input
+	   * @param {string=} name
+	   * @return {ColorSpec}
+	   *
+	   * @example
+	   * createColorSpec('#800'); // => {
+	   *   source: '#800',
+	   *   rgb: { r: 136, g: 0, b: 0 }
+	   * }
+	   *
+	   * createColorSpec('#800', 'maroon'); // => {
+	   *   name: 'maroon',
+	   *   source: '#800',
+	   *   rgb: { r: 136, g: 0, b: 0 }
+	   * }
+	   */
+	  function createColorSpec(input, name) {
+	    var color = {};
+
+	    if (name) {
+	      color.name = name;
+	    }
+
+	    if (typeof input === 'string') {
+	      color.source = input;
+	      color.rgb = parseColor(input);
+
+	    } else if (typeof input === 'object') {
+	      // This is for if/when we're concatenating lists of colors.
+	      if (input.source) {
+	        return createColorSpec(input.source, input.name);
+	      }
+
+	      color.rgb = input;
+	      color.source = rgbToHex(input);
+	    }
+
+	    return color;
+	  }
+
+	  /**
+	   * Parses a value between 0-255 from a string.
+	   *
+	   * @private
+	   * @param {string} string
+	   * @return {number}
+	   *
+	   * @example
+	   * parseComponentValue('100');  // => 100
+	   * parseComponentValue('100%'); // => 255
+	   * parseComponentValue('50%');  // => 128
+	   */
+	  function parseComponentValue(string) {
+	    if (string.charAt(string.length - 1) === '%') {
+	      return Math.round(parseInt(string, 10) * 255 / 100);
+	    }
+
+	    return Number(string);
+	  }
+
+	  /**
+	   * Converts an {@link RGB} color to its hex representation.
+	   *
+	   * @private
+	   * @param {RGB} rgb
+	   * @return {string}
+	   *
+	   * @example
+	   * rgbToHex({ r: 255, g: 128, b: 0 }); // => '#ff8000'
+	   */
+	  function rgbToHex(rgb) {
+	    return '#' + leadingZero(rgb.r.toString(16)) +
+	      leadingZero(rgb.g.toString(16)) + leadingZero(rgb.b.toString(16));
+	  }
+
+	  /**
+	   * Puts a 0 in front of a numeric string if it's only one digit. Otherwise
+	   * nothing (just returns the value passed in).
+	   *
+	   * @private
+	   * @param {string} value
+	   * @return
+	   *
+	   * @example
+	   * leadingZero('1');  // => '01'
+	   * leadingZero('12'); // => '12'
+	   */
+	  function leadingZero(value) {
+	    if (value.length === 1) {
+	      value = '0' + value;
+	    }
+	    return value;
+	  }
+
+	  /**
+	   * A map from the names of standard CSS colors to their hex values.
+	   */
+	  nearestColor.STANDARD_COLORS = {
+	    aqua: '#0ff',
+	    black: '#000',
+	    blue: '#00f',
+	    fuchsia: '#f0f',
+	    gray: '#808080',
+	    green: '#008000',
+	    lime: '#0f0',
+	    maroon: '#800000',
+	    navy: '#000080',
+	    olive: '#808000',
+	    orange: '#ffa500',
+	    purple: '#800080',
+	    red: '#f00',
+	    silver: '#c0c0c0',
+	    teal: '#008080',
+	    white: '#fff',
+	    yellow: '#ff0'
+	  };
+
+	  /**
+	   * Default colors. Comprises the colors of the rainbow (good ol' ROY G. BIV).
+	   * This list will be used for calls to {@nearestColor} that don't specify a list
+	   * of available colors to match.
+	   */
+	  nearestColor.DEFAULT_COLORS = mapColors([
+	    '#f00', // r
+	    '#f80', // o
+	    '#ff0', // y
+	    '#0f0', // g
+	    '#00f', // b
+	    '#008', // i
+	    '#808'  // v
+	  ]);
+
+	  nearestColor.VERSION = '0.4.4';
+
+	  if (module && module.exports) {
+	    module.exports = nearestColor;
+	  } else {
+	    context.nearestColor = nearestColor;
+	  }
+
+	}(commonjsGlobal));
+	});
+
+	function hsl2zaa ({ h, s, l }) {
+	  let str = '$';
+	  const length6 = (h % 10 + s % 10 + l % 10);
+	  str += (h / 10 | 0).toString(36);
+	  if (length6) {
+	    str += (h % 10);
+	  }
+	  str += (s / 10 | 0).toString(11);
+	  if (length6) {
+	    str += (s % 10);
+	  }
+	  str += (l / 10 | 0).toString(11);
+	  if (length6) {
+	    str += (l % 10);
+	  }
+	  return str
+	}
+	/**
+	 * /^\$([0-9a-z]\d(\d\d|a0){2,3}|[0-9a-z][0-9a]{2,3}?)$/i
+	 *
+	 * @param {string} str
+	 */
+	function zaa2hsl (str) {
+	  if (str[0] === '$') {
+	    str = str.slice(1);
+	  }
+	  if (str.length === 3) {
+	    str = `${str[0]}0${str[1]}0${str[2]}0`;
+	  }
+	  return {
+	    h: parseInt(str[0], 36) * 10 + parseInt(str[1], 10) | 0,
+	    s: parseInt(str[2], 11) * 10 + parseInt(str[3], 10) | 0,
+	    l: parseInt(str[4], 11) * 10 + parseInt(str[5], 10) | 0,
+	  }
+	}
 
 	Object.assign(color.prototype, {
 	  toString (model) {
 	    // console.log('model', model)
 	    const color$$1 = this.alpha(Math.round(this.valpha * 100) / 100);
 	    switch (model) {
+	      case '#':
 	      case 'hex':
 	        return color$$1.hex()
+	      case '$':
 	      case 'zaa':
-	        const [h, s, l] = color$$1.hsl().round().array().map((a) => a / 10);
-	        return '$' + h.toString(36) + s.toString(11) + l.toString(11)
+	        return hsl2zaa(color$$1.hsl().round().object())
 	      case 'rgb':
 	      case 'hsl':
 	        return color$$1[model]().string(0)
 	      case 'prgb':
+	      case 'rgbp':
+	      case 'rgb%':
 	      case '%':
 	        return color$$1.percentString(0)
 	      case 'hsv':
@@ -8721,6 +9172,11 @@
 	  },
 	});
 
+	/**
+	 * @export
+	 * @class Color
+	 * @extends {color} https://github.com/Qix-/color/blob/master/index.js
+	 */
 	class Color$1 extends color {
 	  constructor (param, model) {
 	    const match = typeof param === 'string' && param.replace(/\s*/g, '').match(
@@ -8734,15 +9190,10 @@
 	    } else {
 	      // $zaa code
 	      const match = typeof param === 'string' && param.replace(/\s*/g, '').match(
-	        /^\$([0-9a-z]\d)([0-9a]\d)([0-9a]\d)|\$([0-9a-z])([0-9a])([0-9a])$/i
+	        /^\$([0-9a-z]\d(\d\d|a0){2,3}|[0-9a-z][0-9a]{2,3}?)$/i
 	      );
 	      if (match) {
-	        const [h, s, l] = match[1] ? match.slice(1) : match.slice(4);
-	        param = [
-	          parseInt(h[0], 36) * 10 + parseInt(h[1] | 0, 10),
-	          parseInt(s[0], 11) * 10 + parseInt(s[1] | 0, 10),
-	          parseInt(l[0], 11) * 10 + parseInt(l[1] | 0, 10)
-	        ];
+	        param = zaa2hsl(param);
 	        model = 'hsl';
 	      }
 	    }
@@ -8754,35 +9205,43 @@
 	    }
 	    return this.hex() // this[this.model]().round(2).object()
 	  }
-	  nearColorName () {
-	    const hsl = this.hsl().alpha(1).object();
-	    let difference = 50;
-	    let name = '';
-	    xkcd.forEach(([_name, _hsl]) => {
-	      let diff = 0;
-	      // gray
-	      if (hsl.s < 5) {
-	        diff += Math.abs(hsl.s - _hsl.s);
-	        if (diff < 5) {
-	          diff += Math.abs(hsl.l - _hsl.l);
-	          if (diff < difference) {
-	            difference = diff;
-	            name = _name;
-	          }
-	          return
-	        }
-	        diff = 0;
-	      }
-
-	      for (const key in hsl) {
-	        diff += Math.abs(hsl[key] - _hsl[key]);
-	      }
-	      if (diff < difference) {
-	        difference = diff;
-	        name = _name;
-	      }
-	    });
-	    return name
+	  nearestColorName () {
+	    if (!Color$1.nearestColor) {
+	      Color$1.nearestColor = fetch('https://api.color.pizza/v1/') // eslint-disable-line
+	        .then((response) => {
+	          return response.json()
+	        })
+	        .then((data) => {
+	          const colors = data.colors.reduce((map, { name, hex }) => {
+	            map[name] = hex;
+	            return map
+	          }, {});
+	          return nearestColor.from(colors)
+	        });
+	    }
+	    return Color$1.nearestColor.then((nc) => {
+	      return nc(this.hex()).name
+	    })
+	  }
+	  /**
+	   * Green-blindness (6% of men, 0.4% of women)
+	   * @see https://github.com/google/palette.js/blob/master/demo.js
+	   * @returns {Color}
+	   */
+	  greenBlindness () {
+	    const [r, g, b] = this.rgb().array().map((p) => p ** 2.2);
+	    const R = Math.pow(0.02138 + 0.677 * g + 0.2802 * r, 1 / 2.2);
+	    const B = Math.pow(0.02138 * (1 + g - r) + 0.9572 * b, 1 / 2.2) || 0;
+	    return new Color$1([R, R, B, this.valpha])
+	  }
+	  /**
+	   * Red-blindness (2.5% of men)
+	   */
+	  redBlindness () {
+	    const [r, g, b] = this.rgb().array().map((p) => p ** 2.2);
+	    const R = Math.pow(0.003974 + 0.8806 * g + 0.1115 * r, 1 / 2.2);
+	    const B = Math.pow(0.003974 * (1 - g + r) + 0.9921 * b, 1 / 2.2) || 0;
+	    return new Color$1([R, R, B, this.valpha])
 	  }
 	  /**
 	   * Alpha Blending in CSS
@@ -8824,17 +9283,35 @@
 	    if (lum1 > lum2) return (lum1 + 0.05) / (lum2 + 0.05)
 	    return (lum2 + 0.05) / (lum1 + 0.05)
 	  }
-	  mostReadable (...colors) {
-	    let mostlum = 0;
-	    let mostread;
+	  level (color2) {
+	    let contrastRatio = this.contrast(color2);
+	    if (contrastRatio >= 7) {
+	      return 'AAA'
+	    }
+	    if (contrastRatio >= 4.5) {
+	      return 'AA'
+	    }
+
+	    return (contrastRatio >= 3) ? 'A' : ''
+	  }
+	  mostReadable (colors, opts = {}) {
+	    let bestlum = 0;
+	    let bestColor;
+	    const { fallbackColors, min = 0 } = opts;
 	    for (const color$$1 of colors) {
 	      const contrast = this.contrast(new Color$1(color$$1));
-	      if (mostlum < contrast) {
-	        mostlum = contrast;
-	        mostread = color$$1;
+	      if (bestlum < contrast) {
+	        bestlum = contrast;
+	        bestColor = color$$1;
 	      }
 	    }
-	    return mostread
+	    if (bestlum >= min || !fallbackColors) {
+	      return bestColor
+	    }
+	    return this.mostReadable(['#fff', '#000'], { min, fallbackColors: false })
+	  }
+	  textColor () {
+	    return this.mostReadable(['#fff', '#000'])
 	  }
 	}
 
@@ -11700,12 +12177,20 @@
 
 	const globalSave = {
 	  pickermodel: 'hsl',
-	  grayscale: false,
+	  filterSwitch: false,
+	  sortZSwitch: false,
+	  /**
+	   * @type {'grayscale'|'greenBlindness'|'redBlindness'} Color Method Name
+	   */
+	  selectingFilter: 'grayscale', // 'grayscale', 'greenBlindness', 'redBlindness'
+	  textModeBackground: true,
 	  textvisible: true,
 	  cardViewModels: {
 	    hex: true,
 	    rgb: false,
+	    rgbp: false,
 	    hsl: true,
+	    zaa: false,
 	    hsv: false,
 	    hcg: false,
 	    hwb: false,
@@ -11714,7 +12199,151 @@
 	  },
 	};
 
-	const store = new Histore(
+	class Store$1 extends Histore {
+	  constructor () {
+	    super(...arguments);
+
+	    this.on('state', ({ changed, current }) => {
+	      if (changed.cards) {
+	        for (let i = 0; i < current.cards.length; i++) {
+	          const card = current.cards[i];
+	          if (!(card.color instanceof Color$1)) {
+	            card.color = new Color$1(card.color);
+	          }
+	          card.index = i;
+	          card.zIndex = card.zIndex == null ? i : card.zIndex;
+	        }
+	      }
+	      if (current.bgColor && !(current.bgColor instanceof Color$1)) {
+	        current.bgColor = new Color$1(current.bgColor);
+	      }
+	    });
+
+	    this.add('palette', defaultpalette.paletteName, defaultpalette);
+	    this.add('palette', fuji.paletteName, fuji);
+
+	    const query = searchToObject();
+	    if (query.data) {
+	      const key = query.data.paletteName || 'Imported palette';
+	      query.data.paletteName = key;
+	      this.set(query.data);
+	    } else {
+	      try {
+	        this.load('palette', '');
+	      } catch (error) {
+	        this.load('palette', defaultpalette.paletteName);
+	      }
+	    }
+
+	    const keys = Object.keys(defaultpalette);
+	    this.on('update', ({ changed, current }) => {
+	      if (changed) {
+	        objectToUrl(keys.reduce((obj, key) => {
+	          obj[key] = current[key];
+	          return obj
+	        }, {}));
+	      }
+	    });
+	  }
+
+	  setBgColor (color) {
+	    this.set({ bgColor: (bgColor) => {
+	      return color.alpha() < 1
+	        ? bgColor.alphaBlending(color)
+	        : color
+	    } }, true);
+	  }
+
+	  addCard (card) {
+	    this.set({ cards: (cards) => {
+	      card.color = new Color$1(card.color);
+	      card.zIndex = cards.length;
+	      card.index = cards.length;
+	      return [...cards, this.cardPosition(card)]
+	    } });
+	    this.memo();
+	  }
+
+	  editCard (index, param) {
+	    this.set({ cards: (cards) => {
+	      const card = cards[index];
+	      Object.assign(card, param);
+	      return cards
+	    } });
+	    this.memo();
+	  }
+	  /**
+	   *
+	   *
+	   * @param {array} indexs
+	   * @memberof Store
+	   */
+	  duplicateCard (indexs) {
+	    this.set({ cards: (cards) => {
+	      const newCards = indexs.map((index, i) => {
+	        const card = Object.assign({}, cards[index]);
+	        card.color = new Color$1(card.color);
+	        card.zIndex = cards.length + i;
+	        card.index = cards.length + i;
+	        card.left += 30;
+	        card.top += 30;
+	        return this.cardPosition(card)
+	      });
+	      return cards.concat(newCards)
+	    } });
+	    this.memo();
+	  }
+
+	  toggleTextmode (indexs, bool) {
+	    this.set({ cards: (cards) => {
+	      indexs.map((index) => {
+	        const card = cards[index];
+	        card.textMode = typeof bool === 'boolean' ? bool : !card.textMode;
+	      });
+	      return cards
+	    } });
+	    this.memo();
+	  }
+
+	  /**
+	   * [5,2,1,4,7][3,6]
+	   * [4,2,1,3,5]
+	   *
+	   * [5,2,1,4,7,12][3,6,8,9,10,11]
+	   * [4,2,1,3,5,6]
+	   */
+	  removeCard (indexs) {
+	    this.set({ cards: (cards) => {
+	      const zIndexs = indexs.map((i) => cards[i].zIndex);
+	      return cards.reduce((newcards, card, i) => {
+	        if (!~indexs.indexOf(i)) {
+	          card.index = newcards.length;
+	          card.zIndex -= zIndexs.reduce((num, zIndex) => num + (card.zIndex > zIndex), 0);
+	          newcards.push(card);
+	        }
+	        return newcards
+	      }, [])
+	    } });
+	    this.memo();
+	  }
+
+	  cardForward (index) {
+	    this.set({ cards: (cards) => {
+	      const currIndex = +cards[index].zIndex;
+	      cards.forEach((card, i) => {
+	        if (i === index) {
+	          card.zIndex = cards.length - 1;
+	        } else if (card.zIndex > currIndex) {
+	          --card.zIndex;
+	        }
+	      });
+	      return cards
+	    } });
+	  }
+	}
+
+
+	const store = new Store$1(
 	  Object.assign({}, globalSave, defaultpalette),
 	  {
 	    globalStorageKey: '$color-factory',
@@ -11742,667 +12371,6 @@
 	    ],
 	  }
 	);
-
-	store.on('state', ({ changed, current }) => {
-	  if (changed.cards) {
-	    for (let i = 0; i < current.cards.length; i++) {
-	      const card = current.cards[i];
-	      if (!(card.color instanceof Color$1)) {
-	        card.color = new Color$1(card.color);
-	      }
-	      card.index = i;
-	      card.zIndex = card.zIndex == null ? i : card.zIndex;
-	    }
-	  }
-	  if (current.bgColor && !(current.bgColor instanceof Color$1)) {
-	    current.bgColor = new Color$1(current.bgColor);
-	  }
-	});
-
-	store.add('palette', defaultpalette.paletteName, defaultpalette);
-	store.add('palette', fuji.paletteName, fuji);
-
-	const query = searchToObject();
-	if (query.data) {
-	  const key = query.data.paletteName || 'Imported palette';
-	  query.data.paletteName = key;
-	  store.set(query.data, true);
-	} else {
-	  try {
-	    store.load('palette', '');
-	  } catch (error) {
-	    store.load('palette', defaultpalette.paletteName);
-	  }
-	}
-
-	const keys$2 = Object.keys(defaultpalette);
-	store.on('update', ({ changed, current }) => {
-	  if (changed) {
-	    objectToUrl(keys$2.reduce((obj, key) => {
-	      obj[key] = current[key];
-	      return obj
-	    }, {}));
-	  }
-	});
-
-	// Events
-	store.on('cards.ADD_CARD', (card) => {
-	  store.set({ cards: (cards) => {
-	    card.color = new Color$1(card.color);
-	    card.zIndex = cards.length;
-	    card.index = cards.length;
-	    return [...cards, store.cardPosition(card)]
-	  } });
-	  store.memo();
-	});
-
-	store.on('cards.EDIT_CARD', (index, param) => {
-	  store.set({ cards: (cards) => {
-	    const card = cards[index];
-	    Object.assign(card, param);
-	    return cards
-	  } });
-	});
-	// @params {array} indexs
-	store.on('cards.DUPLICATE_CARD', (indexs) => {
-	  store.set({ cards: (cards) => {
-	    const newCards = indexs.map((index, i) => {
-	      const card = Object.assign({}, cards[index]);
-	      card.color = new Color$1(card.color);
-	      card.zIndex = cards.length + i;
-	      card.index = cards.length + i;
-	      card.left += 30;
-	      card.top += 30;
-	      return store.cardPosition(card)
-	    });
-	    return cards.concat(newCards)
-	  } });
-	  store.memo();
-	});
-	// @params {array} indexs
-	store.on('cards.TOGGLE_TEXTMODE', (indexs, bool) => {
-	  store.set({ cards: (cards) => {
-	    indexs.map((index) => {
-	      const card = cards[index];
-	      card.textMode = typeof bool === 'boolean' ? bool : !card.textMode;
-	    });
-	    return cards
-	  } });
-	  store.memo();
-	});
-
-	// @params {array} indexs
-	/**
-	 * [5,2,1,4,7][3,6]
-	 * [4,2,1,3,5]
-	 *
-	 * [5,2,1,4,7,12][3,6,8,9,10,11]
-	 * [4,2,1,3,5,6]
-	 */
-	store.on('cards.REMOVE_CARD', (indexs) => {
-	  store.set({ cards: (cards) => {
-	    const zIndexs = indexs.map((i) => cards[i].zIndex);
-	    return cards.reduce((newcards, card, i) => {
-	      if (!~indexs.indexOf(i)) {
-	        card.index = newcards.length;
-	        card.zIndex -= zIndexs.reduce((num, zIndex) => num + (card.zIndex > zIndex), 0);
-	        newcards.push(card);
-	      }
-	      return newcards
-	    }, [])
-	  } });
-	  store.memo();
-	});
-
-	store.on('cards.CARD_FORWARD', (index) => {
-	  store.set({ cards: (cards) => {
-	    const currIndex = +cards[index].zIndex;
-	    cards.forEach((card, i) => {
-	      if (i === index) {
-	        card.zIndex = cards.length - 1;
-	      } else if (card.zIndex > currIndex) {
-	        --card.zIndex;
-	      }
-	    });
-	    return cards
-	  } });
-	});
-
-	function round (num, digit) {
-	  return Number(num.toFixed(digit))
-	}
-
-	const numStylekey = ['width', 'height', 'top', 'left'];
-	function styler (dom, data) {
-	  if (dom[0] === void 0) {
-	    dom = [dom];
-	  }
-	  dom.forEach((el) => {
-	    const style = el.style;
-	    for (let key in data) {
-	      const val = data[key];
-	      if (typeof val === 'number' && numStylekey.indexOf(key) !== -1) {
-	        style[key] = val + 'px';
-	      } else if (val != null) {
-	        style[key] = val;
-	      }
-	    }
-	  });
-	}
-
-	/**
-	 * クリップボードコピー関数
-	 *
-	 * @export
-	 * @param {string} textVal
-	 * @returns {boolean}
-	 */
-	function copyTextToClipboard (textVal) {
-	  // テキストエリアを用意する
-	  const copyFrom = document.createElement('textarea');
-	  // テキストエリアへ値をセット
-	  copyFrom.textContent = textVal;
-
-	  // bodyタグの要素を取得
-	  const bodyElm = document.getElementsByTagName('body')[0];
-	  // 子要素にテキストエリアを配置
-	  bodyElm.appendChild(copyFrom);
-
-	  // テキストエリアの値を選択
-	  copyFrom.select();
-	  // コピーコマンド発行
-	  const retVal = document.execCommand('copy');
-	  // 追加テキストエリアを削除
-	  bodyElm.removeChild(copyFrom);
-
-	  return retVal
-	}
-
-	/* src\color-picker\color-input.html generated by Svelte v2.13.5 */
-
-	function caretIndex (event, color) {
-	  const { value, selectionStart } = event.target;
-	  const index = value[0] === '#'
-	    ? Math.floor((selectionStart - 1) / 2)
-	    // count ',' before selectionStart
-	    : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1;
-	  return ((value[0] === '#' || color.alpha() === 1) && index === 3) || index === 4 ? -1 : index
-	}
-
-	function value({ color, model }) {
-		return color.toString(model);
-	}
-
-	function textColor({ color, bgColor }) {
-		return bgColor.alphaBlending(color).isDark() ? '#fff' : '#000';
-	}
-
-	function data$1() {
-	  return {
-	    phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
-	    color: new Color$1('#050'),
-	    bgColor: '',
-	    models: ['hex', 'rgb', '%', 'hsl', 'hsv', 'xyz', 'lab', 'cmyk'],
-	    model: 'rgb',
-	  }
-	}
-	function updown(node, callback) {
-	  function onkeydown (event) {
-	    let time;
-	    if (/Arrow(Up|Down)/.test(event.key)) {
-	      callback(event);
-	      time = setTimeout(() => {
-	        clearTimeout(time);
-	        time = setInterval(() => callback(event), 100);
-	      }, 300);
-	    }
-	    function onkeyup (e) {
-	      clearInterval(time);
-	      time = null;
-	      node.removeEventListener('keyup', onkeyup, false);
-	    }
-
-	    node.addEventListener('keyup', onkeyup, false);
-	  }
-
-	  node.addEventListener('keydown', onkeydown, false);
-
-	  return {
-	    teardown () {
-	      node.removeEventListener('keydown', onkeydown, false);
-	    }
-	  }
-	}
-	function modelStyler(_model, model, color, bgColor, textColor) {
-	  return model === _model
-	    ? `color: ${textColor}; background-color: ${color};`
-	    : `color: ${bgColor.mostReadable('#ccc', '#333')}; background-color: transparent;`
-	}
-	var methods = {
-	  randomColor () {
-	    this.set({ color: Color$1.random() });
-	  },
-	  keydown (event) {
-	    const value = event.target.value;
-	    const color = new Color$1(value);
-	    if (/^#?([a-f\d]{3})$/i.test(value) && event.key === 'Enter') {
-	      this.set({ color, model: 'hex' });
-	    }
-	  },
-	  input (event) {
-	    const value = event.target.value;
-	    if (!event.target.value) return
-
-	    let color;
-	    try {
-	      color = new Color$1(value);
-	    } catch (error) {
-	      return
-	    }
-	    if (/^#?([a-f\d]{3})$/i.test(value)) return
-	    const model = /^#?([a-f\d]{6})$/i.test(value) ? 'hex' : color.model;
-	    this.set({ color, model });
-	  },
-	  updown (event) {
-	    const { value, selectionStart, selectionEnd } = event.target;
-	    const numbercheckReg = /-?(?:0?\.)?\d{1,3}/g;
-	    if (
-	      selectionStart !== selectionEnd &&
-	      !numbercheckReg.test(value.substring(selectionStart, selectionEnd))
-	    ) {
-	      return
-	    }
-
-	    const { model, models } = this.get();
-	    let color;
-	    try {
-	      color = new Color$1(value);
-	    } catch (error) {
-	      try {
-	        const arr = value.match(/.*?\(([-\d.%, ]*)\)/)[1].split(',');
-	        color = new Color$1(arr.map((v) => {
-	          v = v.trim();
-	          if (v.slice(-1) === '%') {
-	            v = parseFloat(v) / 100;
-	          } else {
-	            v = parseFloat(v);
-	          }
-	          return v
-	        }), model);
-	      } catch (error) {
-	        return
-	      }
-	    }
-
-	    const index = caretIndex(event, color);
-
-	    if (index === -1) {
-	      const arrow = event.type === 'keydown'
-	        ? (event.key === 'ArrowUp' ? 1 : -1)
-	        : event.deltaY < 0 ? 1 : -1;
-
-	      let findex = models.indexOf(model) + arrow;
-
-	      if (findex < 0) {
-	        findex = models.length + findex;
-	      } else if (findex >= models.length) {
-	        findex -= models.length;
-	      }
-	      this.set({ model: models[findex] });
-	    } else {
-	      const arrow = event.type === 'keydown'
-	        ? (event.key === 'ArrowUp' ? 1 : -1) * (event.shiftKey ? 10 : 1)
-	        : event.deltaY < 0 ? 10 : -10;
-
-	      let param = model === '%' ? color.unitArray() : color[model]().array();
-
-	      if (index === 3) {
-	        // alpla
-	        color = color.alpha(color.alpha() + arrow / 100);
-	      } else {
-	        // not alpla
-	        switch (model) {
-	          case '%':
-	            const val = (param[index] + arrow / 100) * 255;
-	            param = color.rgb().array();
-	            param[index] = val;
-	            color = new Color$1(param, 'rgb');
-	            break
-	          default:
-	            param[index] += arrow;
-	            color = new Color$1(param, model);
-	            break
-	        }
-	      }
-	      this.set({ color });
-	      if (model !== 'hex') {
-	        let result;
-	        for (let i = -1; i < index; i++) {
-	          result = numbercheckReg.exec(value);
-	        }
-	        event.target.selectionStart = result.index;
-	        event.target.selectionEnd = result.index + result[0].length;
-	      }
-	    }
-	  },
-	};
-
-	const file = "src\\color-picker\\color-input.html";
-
-	function create_main_fragment(component, ctx) {
-		var if_block_anchor;
-
-		function select_block_type(ctx) {
-			if (ctx.phone) return create_if_block;
-			return create_if_block_1;
-		}
-
-		var current_block_type = select_block_type(ctx);
-		var if_block = current_block_type(component, ctx);
-
-		return {
-			c: function create() {
-				if_block.c();
-				if_block_anchor = createComment();
-			},
-
-			m: function mount(target, anchor) {
-				if_block.m(target, anchor);
-				insert(target, if_block_anchor, anchor);
-			},
-
-			p: function update(changed, ctx) {
-				if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
-					if_block.p(changed, ctx);
-				} else {
-					if_block.d(1);
-					if_block = current_block_type(component, ctx);
-					if_block.c();
-					if_block.m(if_block_anchor.parentNode, if_block_anchor);
-				}
-			},
-
-			d: function destroy$$1(detach) {
-				if_block.d(detach);
-				if (detach) {
-					detachNode(if_block_anchor);
-				}
-			}
-		};
-	}
-
-	// (5:4) {#each models as _model}
-	function create_each_block(component, ctx) {
-		var div, button, text_value = ctx._model.toUpperCase(), text, button_style_value;
-
-		return {
-			c: function create() {
-				div = createElement("div");
-				button = createElement("button");
-				text = createText(text_value);
-				button._svelte = { component, ctx };
-
-				addListener(button, "click", click_handler);
-				button.style.cssText = button_style_value = modelStyler(ctx._model, ctx.model, ctx.color, ctx.bgColor, ctx.textColor);
-				button.className = "svelte-qzhqz5";
-				addLoc(button, file, 6, 6, 128);
-				addLoc(div, file, 5, 4, 115);
-			},
-
-			m: function mount(target, anchor) {
-				insert(target, div, anchor);
-				append(div, button);
-				append(button, text);
-			},
-
-			p: function update(changed, _ctx) {
-				ctx = _ctx;
-				if ((changed.models) && text_value !== (text_value = ctx._model.toUpperCase())) {
-					setData(text, text_value);
-				}
-
-				button._svelte.ctx = ctx;
-				if ((changed.models || changed.model || changed.color || changed.bgColor || changed.textColor) && button_style_value !== (button_style_value = modelStyler(ctx._model, ctx.model, ctx.color, ctx.bgColor, ctx.textColor))) {
-					button.style.cssText = button_style_value;
-				}
-			},
-
-			d: function destroy$$1(detach) {
-				if (detach) {
-					detachNode(div);
-				}
-
-				removeListener(button, "click", click_handler);
-			}
-		};
-	}
-
-	// (1:0) {#if phone}
-	function create_if_block(component, ctx) {
-		var input;
-
-		return {
-			c: function create() {
-				input = createElement("input");
-				setAttribute(input, "type", "color");
-				addLoc(input, file, 1, 2, 15);
-			},
-
-			m: function mount(target, anchor) {
-				insert(target, input, anchor);
-			},
-
-			p: noop,
-
-			d: function destroy$$1(detach) {
-				if (detach) {
-					detachNode(input);
-				}
-			}
-		};
-	}
-
-	// (3:0) {:else}
-	function create_if_block_1(component, ctx) {
-		var div, text_1, div_1, input, updown_handler, text_2, button, text_3;
-
-		var each_value = ctx.models;
-
-		var each_blocks = [];
-
-		for (var i = 0; i < each_value.length; i += 1) {
-			each_blocks[i] = create_each_block(component, get_each_context(ctx, each_value, i));
-		}
-
-		function input_handler(event) {
-			component.input(event);
-		}
-
-		function wheel_handler(event) {
-			component.updown(event);
-		}
-
-		function keydown_handler(event) {
-			component.keydown(event);
-		}
-
-		function click_handler_1(event) {
-			component.randomColor();
-		}
-
-		return {
-			c: function create() {
-				div = createElement("div");
-
-				for (var i = 0; i < each_blocks.length; i += 1) {
-					each_blocks[i].c();
-				}
-
-				text_1 = createText("\r\n  ");
-				div_1 = createElement("div");
-				input = createElement("input");
-				text_2 = createText("\r\n    ");
-				button = createElement("button");
-				text_3 = createText("!");
-				div.className = "models button-set svelte-qzhqz5";
-				addLoc(div, file, 3, 2, 48);
-				addListener(input, "input", input_handler);
-
-				updown_handler = updown.call(component, input, function(event) {
-					component.updown(event);
-				});
-
-				addListener(input, "wheel", wheel_handler);
-				addListener(input, "keydown", keydown_handler);
-				input.className = "color-text svelte-qzhqz5";
-				setStyle(input, "color", ctx.textColor);
-				setStyle(input, "background-color", ctx.color.rgb());
-				input.value = ctx.value;
-				input.spellcheck = "";
-				input.placeholder = "keypress: ↑↓";
-				addLoc(input, file, 13, 4, 353);
-				addListener(button, "click", click_handler_1);
-				button.className = "random-color svelte-qzhqz5";
-				button.title = "Random Color";
-				setStyle(button, "color", ctx.color.hex());
-				setStyle(button, "background-color", ctx.textColor);
-				addLoc(button, file, 22, 4, 654);
-				div_1.className = "input-wrapper svelte-qzhqz5";
-				addLoc(div_1, file, 12, 2, 320);
-			},
-
-			m: function mount(target, anchor) {
-				insert(target, div, anchor);
-
-				for (var i = 0; i < each_blocks.length; i += 1) {
-					each_blocks[i].m(div, null);
-				}
-
-				insert(target, text_1, anchor);
-				insert(target, div_1, anchor);
-				append(div_1, input);
-				append(div_1, text_2);
-				append(div_1, button);
-				append(button, text_3);
-			},
-
-			p: function update(changed, ctx) {
-				if (changed.models || changed.model || changed.color || changed.bgColor || changed.textColor) {
-					each_value = ctx.models;
-
-					for (var i = 0; i < each_value.length; i += 1) {
-						const child_ctx = get_each_context(ctx, each_value, i);
-
-						if (each_blocks[i]) {
-							each_blocks[i].p(changed, child_ctx);
-						} else {
-							each_blocks[i] = create_each_block(component, child_ctx);
-							each_blocks[i].c();
-							each_blocks[i].m(div, null);
-						}
-					}
-
-					for (; i < each_blocks.length; i += 1) {
-						each_blocks[i].d(1);
-					}
-					each_blocks.length = each_value.length;
-				}
-
-				if (changed.textColor) {
-					setStyle(input, "color", ctx.textColor);
-				}
-
-				if (changed.color) {
-					setStyle(input, "background-color", ctx.color.rgb());
-				}
-
-				if (changed.value) {
-					input.value = ctx.value;
-				}
-
-				if (changed.color) {
-					setStyle(button, "color", ctx.color.hex());
-				}
-
-				if (changed.textColor) {
-					setStyle(button, "background-color", ctx.textColor);
-				}
-			},
-
-			d: function destroy$$1(detach) {
-				if (detach) {
-					detachNode(div);
-				}
-
-				destroyEach(each_blocks, detach);
-
-				if (detach) {
-					detachNode(text_1);
-					detachNode(div_1);
-				}
-
-				removeListener(input, "input", input_handler);
-				updown_handler.destroy();
-				removeListener(input, "wheel", wheel_handler);
-				removeListener(input, "keydown", keydown_handler);
-				removeListener(button, "click", click_handler_1);
-			}
-		};
-	}
-
-	function get_each_context(ctx, list, i) {
-		const child_ctx = Object.create(ctx);
-		child_ctx._model = list[i];
-		child_ctx.each_value = list;
-		child_ctx._model_index = i;
-		return child_ctx;
-	}
-
-	function click_handler(event) {
-		const { component, ctx } = this._svelte;
-
-		component.set({model: ctx._model});
-	}
-
-	function Color_input(options) {
-		this._debugName = '<Color_input>';
-		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
-		init(this, options);
-		this._state = assign(data$1(), options.data);
-		this._recompute({ color: 1, model: 1, bgColor: 1 }, this._state);
-		if (!('color' in this._state)) console.warn("<Color_input> was created without expected data property 'color'");
-		if (!('model' in this._state)) console.warn("<Color_input> was created without expected data property 'model'");
-		if (!('bgColor' in this._state)) console.warn("<Color_input> was created without expected data property 'bgColor'");
-		if (!('phone' in this._state)) console.warn("<Color_input> was created without expected data property 'phone'");
-		if (!('models' in this._state)) console.warn("<Color_input> was created without expected data property 'models'");
-		this._intro = true;
-
-		this._fragment = create_main_fragment(this, this._state);
-
-		if (options.target) {
-			if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
-			this._fragment.c();
-			this._mount(options.target, options.anchor);
-		}
-	}
-
-	assign(Color_input.prototype, protoDev);
-	assign(Color_input.prototype, methods);
-
-	Color_input.prototype._checkReadOnly = function _checkReadOnly(newState) {
-		if ('value' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_input>: Cannot set read-only property 'value'");
-		if ('textColor' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_input>: Cannot set read-only property 'textColor'");
-	};
-
-	Color_input.prototype._recompute = function _recompute(changed, state) {
-		if (changed.color || changed.model) {
-			if (this._differs(state.value, (state.value = value(state)))) changed.value = true;
-		}
-
-		if (changed.color || changed.bgColor) {
-			if (this._differs(state.textColor, (state.textColor = textColor(state)))) changed.textColor = true;
-		}
-	};
 
 	/**
 	 * constructor PositionManager
@@ -13031,6 +12999,548 @@
 	  }
 	}
 
+	function round (num, digit) {
+	  return Number(num.toFixed(digit))
+	}
+
+	const numStylekey = ['width', 'height', 'top', 'left'];
+	function styler (dom, data) {
+	  if (dom[0] === void 0) {
+	    dom = [dom];
+	  }
+	  dom.forEach((el) => {
+	    const style = el.style;
+	    for (let key in data) {
+	      const val = data[key];
+	      if (typeof val === 'number' && numStylekey.indexOf(key) !== -1) {
+	        style[key] = val + 'px';
+	      } else if (val != null) {
+	        style[key] = val;
+	      }
+	    }
+	  });
+	}
+
+	/**
+	 * クリップボードコピー関数
+	 *
+	 * @export
+	 * @param {string} textVal
+	 * @returns {boolean}
+	 */
+	function copyTextToClipboard (textVal) {
+	  // テキストエリアを用意する
+	  const copyFrom = document.createElement('textarea');
+	  // テキストエリアへ値をセット
+	  copyFrom.textContent = textVal;
+
+	  // bodyタグの要素を取得
+	  const bodyElm = document.getElementsByTagName('body')[0];
+	  // 子要素にテキストエリアを配置
+	  bodyElm.appendChild(copyFrom);
+
+	  // テキストエリアの値を選択
+	  copyFrom.select();
+	  // コピーコマンド発行
+	  const retVal = document.execCommand('copy');
+	  // 追加テキストエリアを削除
+	  bodyElm.removeChild(copyFrom);
+
+	  return retVal
+	}
+
+	/* src\color-picker\color-input.html generated by Svelte v2.13.5 */
+
+	function caretIndex (event, color) {
+	  const { value, selectionStart } = event.target;
+	  const index = value[0] === '#'
+	    ? Math.floor((selectionStart - 1) / 2)
+	    // count ',' before selectionStart
+	    : value.substring(0, selectionStart).replace(/[^,()]/g, '').length - 1;
+	  return ((value[0] === '#' || color.alpha() === 1) && index === 3) || index === 4 ? -1 : index
+	}
+
+	function value({ color, model }) {
+		return color.toString(model);
+	}
+
+	function textColor({ color, bgColor }) {
+		return bgColor.alphaBlending(color).textColor();
+	}
+
+	function data$1() {
+	  return {
+	    phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
+	    color: new Color$1('#050'),
+	    bgColor: '',
+	    models: ['#', 'rgb', '%', 'hsl', '$', 'hsv', 'xyz', 'lab', 'cmyk'],
+	    model: 'rgb',
+	  }
+	}
+	function updown(node, callback) {
+	  function onkeydown (event) {
+	    let time;
+	    if (/Arrow(Up|Down)/.test(event.key)) {
+	      callback(event);
+	      time = setTimeout(() => {
+	        clearTimeout(time);
+	        time = setInterval(() => callback(event), 100);
+	      }, 300);
+	    }
+	    function onkeyup (e) {
+	      clearInterval(time);
+	      time = null;
+	      node.removeEventListener('keyup', onkeyup, false);
+	    }
+
+	    node.addEventListener('keyup', onkeyup, false);
+	  }
+
+	  node.addEventListener('keydown', onkeydown, false);
+
+	  return {
+	    teardown () {
+	      node.removeEventListener('keydown', onkeydown, false);
+	    }
+	  }
+	}
+	function modelStyler(_model, model, color, bgColor, textColor) {
+	  return model === _model
+	    ? `color: ${textColor}; background-color: ${color};`
+	    : `color: ${bgColor.mostReadable(['#ccc', '#333'])}; background-color: transparent;`
+	}
+	var methods = {
+	  randomColor () {
+	    this.set({ color: Color$1.random() });
+	  },
+	  keydown (event) {
+	    const value = event.target.value;
+	    if (event.key === 'Enter') {
+	      let color;
+	      try {
+	        color = new Color$1(value);
+	      } catch (error) {
+	        return
+	      }
+	      const model = /^#/i.test(value) ? '#' : /^\$/i.test(value) ? '$' : color.model;
+	      this.set({ color, model });
+	    }
+	  },
+	  input (event) {
+	    const value = event.target.value;
+	    if (!event.target.value) return
+	    if (/^#/i.test(value)) return
+	    if (/^\$/i.test(value)) return
+
+	    let color;
+	    try {
+	      color = new Color$1(value);
+	    } catch (error) {
+	      return
+	    }
+	    this.set({ color, model: color.model });
+	  },
+	  updown (event) {
+	    const { value, selectionStart, selectionEnd } = event.target;
+	    const numbercheckReg = /-?(?:0?\.)?\d{1,3}/g;
+	    if (
+	      selectionStart !== selectionEnd &&
+	      !numbercheckReg.test(value.substring(selectionStart, selectionEnd))
+	    ) {
+	      return
+	    }
+
+	    const { model, models } = this.get();
+	    let color;
+	    try {
+	      color = new Color$1(value);
+	    } catch (error) {
+	      try {
+	        const arr = value.match(/.*?\(([-\d.%, ]*)\)/)[1].split(',');
+	        color = new Color$1(arr.map((v) => {
+	          v = v.trim();
+	          if (v.slice(-1) === '%') {
+	            v = parseFloat(v) / 100;
+	          } else {
+	            v = parseFloat(v);
+	          }
+	          return v
+	        }), model);
+	      } catch (error) {
+	        return
+	      }
+	    }
+
+	    const index = caretIndex(event, color);
+
+	    if (index === -1) {
+	      const arrow = event.type === 'keydown'
+	        ? (event.key === 'ArrowUp' ? 1 : -1)
+	        : event.deltaY < 0 ? 1 : -1;
+
+	      let findex = models.indexOf(model) + arrow;
+
+	      if (findex < 0) {
+	        findex = models.length + findex;
+	      } else if (findex >= models.length) {
+	        findex -= models.length;
+	      }
+	      this.set({ model: models[findex] });
+	    } else {
+	      const arrow = event.type === 'keydown'
+	        ? (event.key === 'ArrowUp' ? 1 : -1) * (event.shiftKey ? 10 : 1)
+	        : event.deltaY < 0 ? 10 : -10;
+
+	      let param = model === '%' ? color.unitArray() : color[model]().array();
+
+	      if (index === 3) {
+	        // alpla
+	        color = color.alpha(color.alpha() + arrow / 100);
+	      } else {
+	        // not alpla
+	        switch (model) {
+	          case '%':
+	            const val = (param[index] + arrow / 100) * 255;
+	            param = color.rgb().array();
+	            param[index] = val;
+	            color = new Color$1(param, 'rgb');
+	            break
+	          default:
+	            param[index] += arrow;
+	            color = new Color$1(param, model);
+	            break
+	        }
+	      }
+	      this.set({ color });
+	      if (model !== '#') {
+	        let result;
+	        for (let i = -1; i < index; i++) {
+	          result = numbercheckReg.exec(value);
+	        }
+	        event.target.selectionStart = result.index;
+	        event.target.selectionEnd = result.index + result[0].length;
+	      }
+	    }
+	  },
+	};
+
+	const file = "src\\color-picker\\color-input.html";
+
+	function create_main_fragment(component, ctx) {
+		var if_block_anchor;
+
+		function select_block_type(ctx) {
+			if (ctx.phone) return create_if_block;
+			return create_if_block_1;
+		}
+
+		var current_block_type = select_block_type(ctx);
+		var if_block = current_block_type(component, ctx);
+
+		return {
+			c: function create() {
+				if_block.c();
+				if_block_anchor = createComment();
+			},
+
+			m: function mount(target, anchor) {
+				if_block.m(target, anchor);
+				insert(target, if_block_anchor, anchor);
+			},
+
+			p: function update(changed, ctx) {
+				if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
+					if_block.p(changed, ctx);
+				} else {
+					if_block.d(1);
+					if_block = current_block_type(component, ctx);
+					if_block.c();
+					if_block.m(if_block_anchor.parentNode, if_block_anchor);
+				}
+			},
+
+			d: function destroy$$1(detach) {
+				if_block.d(detach);
+				if (detach) {
+					detachNode(if_block_anchor);
+				}
+			}
+		};
+	}
+
+	// (5:4) {#each models as _model}
+	function create_each_block(component, ctx) {
+		var div, button, text_value = ctx._model.toUpperCase(), text, button_style_value;
+
+		return {
+			c: function create() {
+				div = createElement("div");
+				button = createElement("button");
+				text = createText(text_value);
+				button._svelte = { component, ctx };
+
+				addListener(button, "click", click_handler);
+				button.style.cssText = button_style_value = modelStyler(ctx._model, ctx.model, ctx.color, ctx.bgColor, ctx.textColor);
+				button.className = "svelte-xtt6go";
+				addLoc(button, file, 6, 6, 122);
+				addLoc(div, file, 5, 4, 110);
+			},
+
+			m: function mount(target, anchor) {
+				insert(target, div, anchor);
+				append(div, button);
+				append(button, text);
+			},
+
+			p: function update(changed, _ctx) {
+				ctx = _ctx;
+				if ((changed.models) && text_value !== (text_value = ctx._model.toUpperCase())) {
+					setData(text, text_value);
+				}
+
+				button._svelte.ctx = ctx;
+				if ((changed.models || changed.model || changed.color || changed.bgColor || changed.textColor) && button_style_value !== (button_style_value = modelStyler(ctx._model, ctx.model, ctx.color, ctx.bgColor, ctx.textColor))) {
+					button.style.cssText = button_style_value;
+				}
+			},
+
+			d: function destroy$$1(detach) {
+				if (detach) {
+					detachNode(div);
+				}
+
+				removeListener(button, "click", click_handler);
+			}
+		};
+	}
+
+	// (1:0) {#if phone}
+	function create_if_block(component, ctx) {
+		var input;
+
+		return {
+			c: function create() {
+				input = createElement("input");
+				setAttribute(input, "type", "color");
+				addLoc(input, file, 1, 2, 14);
+			},
+
+			m: function mount(target, anchor) {
+				insert(target, input, anchor);
+			},
+
+			p: noop,
+
+			d: function destroy$$1(detach) {
+				if (detach) {
+					detachNode(input);
+				}
+			}
+		};
+	}
+
+	// (3:0) {:else}
+	function create_if_block_1(component, ctx) {
+		var div, text_1, div_1, input, updown_handler, text_2, button, text_3;
+
+		var each_value = ctx.models;
+
+		var each_blocks = [];
+
+		for (var i = 0; i < each_value.length; i += 1) {
+			each_blocks[i] = create_each_block(component, get_each_context(ctx, each_value, i));
+		}
+
+		function input_handler(event) {
+			component.input(event);
+		}
+
+		function wheel_handler(event) {
+			component.updown(event);
+		}
+
+		function keydown_handler(event) {
+			component.keydown(event);
+		}
+
+		function click_handler_1(event) {
+			component.randomColor();
+		}
+
+		return {
+			c: function create() {
+				div = createElement("div");
+
+				for (var i = 0; i < each_blocks.length; i += 1) {
+					each_blocks[i].c();
+				}
+
+				text_1 = createText("\n  ");
+				div_1 = createElement("div");
+				input = createElement("input");
+				text_2 = createText("\n    ");
+				button = createElement("button");
+				text_3 = createText("!");
+				div.className = "models button-set svelte-xtt6go";
+				addLoc(div, file, 3, 2, 45);
+				addListener(input, "input", input_handler);
+
+				updown_handler = updown.call(component, input, function(event) {
+					component.updown(event);
+				});
+
+				addListener(input, "wheel", wheel_handler);
+				addListener(input, "keydown", keydown_handler);
+				input.className = "color-text svelte-xtt6go";
+				setStyle(input, "color", ctx.textColor);
+				setStyle(input, "background-color", ctx.color.rgb());
+				input.value = ctx.value;
+				input.spellcheck = "";
+				input.placeholder = "keypress: ↑↓";
+				addLoc(input, file, 13, 4, 340);
+				addListener(button, "click", click_handler_1);
+				button.className = "random-color svelte-xtt6go";
+				button.title = "Random Color";
+				setStyle(button, "color", ctx.color.hex());
+				setStyle(button, "background-color", ctx.textColor);
+				addLoc(button, file, 22, 4, 632);
+				div_1.className = "input-wrapper svelte-xtt6go";
+				addLoc(div_1, file, 12, 2, 308);
+			},
+
+			m: function mount(target, anchor) {
+				insert(target, div, anchor);
+
+				for (var i = 0; i < each_blocks.length; i += 1) {
+					each_blocks[i].m(div, null);
+				}
+
+				insert(target, text_1, anchor);
+				insert(target, div_1, anchor);
+				append(div_1, input);
+				append(div_1, text_2);
+				append(div_1, button);
+				append(button, text_3);
+			},
+
+			p: function update(changed, ctx) {
+				if (changed.models || changed.model || changed.color || changed.bgColor || changed.textColor) {
+					each_value = ctx.models;
+
+					for (var i = 0; i < each_value.length; i += 1) {
+						const child_ctx = get_each_context(ctx, each_value, i);
+
+						if (each_blocks[i]) {
+							each_blocks[i].p(changed, child_ctx);
+						} else {
+							each_blocks[i] = create_each_block(component, child_ctx);
+							each_blocks[i].c();
+							each_blocks[i].m(div, null);
+						}
+					}
+
+					for (; i < each_blocks.length; i += 1) {
+						each_blocks[i].d(1);
+					}
+					each_blocks.length = each_value.length;
+				}
+
+				if (changed.textColor) {
+					setStyle(input, "color", ctx.textColor);
+				}
+
+				if (changed.color) {
+					setStyle(input, "background-color", ctx.color.rgb());
+				}
+
+				if (changed.value) {
+					input.value = ctx.value;
+				}
+
+				if (changed.color) {
+					setStyle(button, "color", ctx.color.hex());
+				}
+
+				if (changed.textColor) {
+					setStyle(button, "background-color", ctx.textColor);
+				}
+			},
+
+			d: function destroy$$1(detach) {
+				if (detach) {
+					detachNode(div);
+				}
+
+				destroyEach(each_blocks, detach);
+
+				if (detach) {
+					detachNode(text_1);
+					detachNode(div_1);
+				}
+
+				removeListener(input, "input", input_handler);
+				updown_handler.destroy();
+				removeListener(input, "wheel", wheel_handler);
+				removeListener(input, "keydown", keydown_handler);
+				removeListener(button, "click", click_handler_1);
+			}
+		};
+	}
+
+	function get_each_context(ctx, list, i) {
+		const child_ctx = Object.create(ctx);
+		child_ctx._model = list[i];
+		child_ctx.each_value = list;
+		child_ctx._model_index = i;
+		return child_ctx;
+	}
+
+	function click_handler(event) {
+		const { component, ctx } = this._svelte;
+
+		component.set({model: ctx._model});
+	}
+
+	function Color_input(options) {
+		this._debugName = '<Color_input>';
+		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
+		init(this, options);
+		this._state = assign(data$1(), options.data);
+		this._recompute({ color: 1, model: 1, bgColor: 1 }, this._state);
+		if (!('color' in this._state)) console.warn("<Color_input> was created without expected data property 'color'");
+		if (!('model' in this._state)) console.warn("<Color_input> was created without expected data property 'model'");
+		if (!('bgColor' in this._state)) console.warn("<Color_input> was created without expected data property 'bgColor'");
+		if (!('phone' in this._state)) console.warn("<Color_input> was created without expected data property 'phone'");
+		if (!('models' in this._state)) console.warn("<Color_input> was created without expected data property 'models'");
+		this._intro = true;
+
+		this._fragment = create_main_fragment(this, this._state);
+
+		if (options.target) {
+			if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+			this._fragment.c();
+			this._mount(options.target, options.anchor);
+		}
+	}
+
+	assign(Color_input.prototype, protoDev);
+	assign(Color_input.prototype, methods);
+
+	Color_input.prototype._checkReadOnly = function _checkReadOnly(newState) {
+		if ('value' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_input>: Cannot set read-only property 'value'");
+		if ('textColor' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_input>: Cannot set read-only property 'textColor'");
+	};
+
+	Color_input.prototype._recompute = function _recompute(changed, state) {
+		if (changed.color || changed.model) {
+			if (this._differs(state.value, (state.value = value(state)))) changed.value = true;
+		}
+
+		if (changed.color || changed.bgColor) {
+			if (this._differs(state.textColor, (state.textColor = textColor(state)))) changed.textColor = true;
+		}
+	};
+
 	/* src\color-picker\spectrum.html generated by Svelte v2.13.5 */
 
 	function data$2() {
@@ -13150,153 +13660,325 @@
 	Spectrum.prototype._checkReadOnly = function _checkReadOnly(newState) {
 	};
 
-	/* src\color-picker\slider.html generated by Svelte v2.13.5 */
+	/* src\color-picker\wheel.html generated by Svelte v2.13.5 */
+
+	function center({ size }) {
+		return size / 2;
+	}
+
+	function radius({ center, strokeWidth }) {
+		return center - strokeWidth;
+	}
 
 	function data$3() {
 	  return {
-	    size: 0,
+	    color: '',
 	    rect: { width: 0, height: 0 },
-	    direction: 'vertical',
-	    value: 50,
-	    min: 0,
-	    max: 100,
-	    step: 1,
-	    reverse: false
+	    size: 150,
+	    strokeWidth: 10,
+	    paths: [],
+	    swatchs: [],
+	    swatchNum: 6,
 	  }
 	}
 	var methods$2 = {
-	  setValue (position) {
-	    const { max, min, direction } = this.get();
-	    const side = direction === 'vertical' ? 'percentTop' : 'percentLeft';
-	    let per = position[side] / 100;
-	    if (this.get().reverse) {
-	      per = 1 - per;
-	    }
-	    this.set({
-	      value: (max - min) * per + min
-	    });
+	  positionRd (r, deg) {
+	    const d = (deg - 90) / 180 * Math.PI;
+	    const { center } = this.get();
+	    return [
+	      Math.floor((center + r * Math.cos(d)) * 100) / 100,
+	      Math.floor((center + r * Math.sin(d)) * 100) / 100,
+	    ]
 	  },
-	  setPosition (value) {
-	    const { size, max, min, direction } = this.get();
-	    const side = direction === 'vertical' ? 'top' : 'left';
-	    let per = value / (max - min);
-	    if (this.get().reverse) {
-	      per = 1 - per;
-	    }
-	    this.refs.sliderHandle.style[side] = per * (size - 6) + 3 + 'px';
+	  positionTest (position) {
+	    const { center, radius } = this.get();
+	    const x = center - position.x,
+	          y = center - position.y,
+	          r = Math.hypot(x, y);
+	    return radius <= r && r <= center
 	  },
-	  draw (beginColor, endColor) {
-	    const cxt = this.refs.slider.getContext('2d');
-	    const { size, direction, reverse } = this.get();
-	    cxt.clearRect(0, 0, size, size);
+	  setColor (position) {
+	    const { center, color } = this.get();
+	    const x = center - position.x,
+	          y = center - position.y;
 
-	    const grd = direction === 'vertical'
-	      ? cxt.createLinearGradient(0, 0, 0, size)
-	      : cxt.createLinearGradient(0, 0, size, 0);
+	    const hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90;
 
-	    const [begin, end] = reverse ? [1, 0] : [0, 1];
+	    this.set({ color: color.hue(hue < 0 ? 360 + hue : hue) });
+	  },
+	  setPosition (hue) {
+	    const { strokeWidth, radius, center } = this.get();
+	    const [mx, my] = this.positionRd(radius + strokeWidth / 2, hue);
+	    this.refs.handle.style.left = mx + this.refs.wheel.clientWidth / 2 - center + 'px';
+	    this.refs.handle.style.top = my + this.refs.wheel.clientHeight / 2 - center + 'px';
+	  },
+	  next () {
+	    let { swatchNum } = this.get();
+	    ++swatchNum;
+	    if (swatchNum > 8) {
+	      swatchNum = 5;
+	    }
+	    this.set({ swatchNum });
+	  },
+	  arcs (val, tone) {
+	    const { center, radius, color } = this.get();
+	    const result = [];
+	    const pdeg = 360 / val;
+	    const pdeg2 = pdeg / 2 + (tone ? -2 : 0.5);
+	    const strokeAjust = tone ? 14 : 0;
+	    const r = radius - strokeAjust;
+	    const c = center - strokeAjust;
 
-	    if (beginColor === 'hue') {
-	      // hue gradient bar
-	      const len = 12;
-	      for (let i = 0; i <= len; i++) {
-	        grd.addColorStop(1 / len * i, `hsl(${360 / len * i}, 100%, 50%)`);
+	    for (let i = 0; i < val; i++) {
+	      let hue = i * pdeg;
+	      if (tone) {
+	        hue += color.hue();
 	      }
-	    } else {
-	      grd.addColorStop(begin, beginColor + '');
-	      grd.addColorStop(end, endColor + '');
-	    }
+	      let pathd = '';
+	      pathd += 'M' + this.positionRd(r, hue - pdeg2);
+	      pathd += `A${r},${r} 0 0,1` + this.positionRd(r, hue + pdeg2);
+	      pathd += 'L' + this.positionRd(c, hue + pdeg2);
+	      pathd += `A${c},${c} 0 0,0` + this.positionRd(c, hue - pdeg2);
+	      pathd += 'z';
 
-	    cxt.fillStyle = grd;
-	    cxt.fillRect(0, 0, size, size);
-	  }
+	      result[i] = {
+	        d: pathd,
+	        fill: tone
+	          ? `hsl(${hue}, ${color.saturationl()}%, ${color.lightness()}%)`
+	          : `hsl(${hue}, 100%, 50%)`,
+	        stroke: 'none',
+	        hue,
+	      };
+	    }
+	    return result
+	  },
+	  // draw () {
+	  //   const { center, radius } = this.get()
+
+	  //   const canvas = this.refs.canvas
+	  //   const cxt = canvas.getContext('2d')
+	  //   cxt.clearRect(0, 0, canvas.width, canvas.height)
+
+	  //   for (let i = 0; i < 360; i++) {
+	  //     cxt.beginPath()
+
+	  //     cxt.fillStyle = `hsl(${i}, 100%, 50%)`
+
+	  //     cxt.moveTo(...this.positionRd(radius, i))
+	  //     cxt.lineTo(...this.positionRd(center - 1, i))
+	  //     cxt.lineTo(...this.positionRd(center - 1, i + 1.5))
+	  //     cxt.lineTo(...this.positionRd(radius, i + 1.5))
+	  //     cxt.closePath()
+	  //     cxt.fill()
+	  //   }
+	  // }
 	};
 
 	function oncreate$1() {
+	  const size = Math.min(
+	    this.refs.wheel.clientWidth,
+	    this.refs.wheel.clientHeight
+	  );
 	  const rect = {
-	    width: this.refs.box.clientWidth,
-	    height: this.refs.box.clientHeight,
+	    width: this.refs.wheel.clientWidth,
+	    height: this.refs.wheel.clientHeight,
 	  };
-	  console.log('rect', rect);
-	  this.set({ rect });
-	  if (rect.width > rect.height) {
-	    this.set({
-	      direction: 'horizontal'
-	    });
-	  }
 	  this.set({
-	    size: Math.max(rect.width, rect.height)
+	    rect,
+	    size,
 	  });
-
-	  this.draw('hue');
+	  this.set({
+	    // canvas init
+	    paths: this.arcs(120),
+	    swatchs: this.arcs(6, true),
+	  });
+	  // this.draw()
 
 	  // picker
-	  new MousePosition(this.refs.slider, { // eslint-disable-line no-new
-	    // handle: this.refs.sliderHandle,
+	  return new MousePosition(this.refs.svg, {
 	    start: (e, position) => {
-	      this.setValue(position);
+	      if (this.positionTest(position)) {
+	        this.setColor(position);
+	      }
 	    },
 	    drag: (e, position) => {
-	      this.setValue(position);
+	      this.setColor(position);
 	    },
-	  });
+	  })
 	}
 	function onupdate$1({ changed, current }) {
-	  if (changed.value) {
-	    this.setPosition(current.value);
+	  if (changed.color || changed.swatchNum) {
+	    this.setPosition(current.color.hue());
+	    this.set({
+	      swatchs: this.arcs(current.swatchNum, true),
+	    });
 	  }
 	}
-	const file$2 = "src\\color-picker\\slider.html";
+	const file$2 = "src\\color-picker\\wheel.html";
 
 	function create_main_fragment$2(component, ctx) {
-		var div, canvas, text, div_1, div_1_class_value, div_class_value;
+		var div, div_1, text, svg, each_anchor, circle, circle_r_value, text_1, text_2;
 
-		var canvas_levels = [
-			{ class: "slider-canvas svelte-1qjgv7z" },
-			ctx.rect
-		];
+		var each_value = ctx.paths;
 
-		var canvas_data = {};
-		for (var i = 0; i < canvas_levels.length; i += 1) {
-			canvas_data = assign(canvas_data, canvas_levels[i]);
+		var each_blocks = [];
+
+		for (var i = 0; i < each_value.length; i += 1) {
+			each_blocks[i] = create_each_block$1(component, get_each_context$1(ctx, each_value, i));
+		}
+
+		var each_value_1 = ctx.swatchs;
+
+		var each_1_blocks = [];
+
+		for (var i = 0; i < each_value_1.length; i += 1) {
+			each_1_blocks[i] = create_each_block_1(component, get_each_1_context(ctx, each_value_1, i));
+		}
+
+		function click_handler_1(event) {
+			component.next();
 		}
 
 		return {
 			c: function create() {
 				div = createElement("div");
-				canvas = createElement("canvas");
-				text = createText("\r\n  ");
 				div_1 = createElement("div");
-				setAttributes(canvas, canvas_data);
-				addLoc(canvas, file$2, 1, 2, 59);
-				div_1.className = div_1_class_value = "slider-handle " + ctx.direction + " svelte-1qjgv7z";
-				addLoc(div_1, file$2, 2, 2, 124);
-				div.className = div_class_value = "slider alpha-check-bg " + ctx.direction + " svelte-1qjgv7z";
+				text = createText("\n  ");
+				svg = createSvgElement("svg");
+
+				for (var i = 0; i < each_blocks.length; i += 1) {
+					each_blocks[i].c();
+				}
+
+				each_anchor = createComment();
+
+				for (var i = 0; i < each_1_blocks.length; i += 1) {
+					each_1_blocks[i].c();
+				}
+
+				circle = createSvgElement("circle");
+				text_1 = createSvgElement("text");
+				text_2 = createText(ctx.swatchNum);
+				div_1.className = "color-handle svelte-ya0xgy";
+				addLoc(div_1, file$2, 2, 2, 120);
+				addListener(circle, "click", click_handler_1);
+				setAttribute(circle, "cx", ctx.center);
+				setAttribute(circle, "cy", ctx.center);
+				setAttribute(circle, "r", circle_r_value = ctx.radius-18);
+				setAttribute(circle, "fill", "transparent");
+				addLoc(circle, file$2, 10, 4, 396);
+				setAttribute(text_1, "x", ctx.center);
+				setAttribute(text_1, "y", ctx.center);
+				setAttribute(text_1, "text-anchor", "middle");
+				setAttribute(text_1, "dominant-baseline", "middle");
+				setAttribute(text_1, "alignment-baseline", "middle");
+				setStyle(text_1, "fill", ctx.color);
+				setStyle(text_1, "font-size", "" + (ctx.radius-12) + "px");
+				setAttribute(text_1, "class", "center-text svelte-ya0xgy");
+				addLoc(text_1, file$2, 11, 4, 491);
+				setAttribute(svg, "width", ctx.size);
+				setAttribute(svg, "height", ctx.size);
+				addLoc(svg, file$2, 3, 2, 166);
+				div.className = "wheel svelte-ya0xgy";
 				addLoc(div, file$2, 0, 0, 0);
 			},
 
 			m: function mount(target, anchor) {
 				insert(target, div, anchor);
-				append(div, canvas);
-				component.refs.slider = canvas;
-				append(div, text);
 				append(div, div_1);
-				component.refs.sliderHandle = div_1;
-				component.refs.box = div;
+				component.refs.handle = div_1;
+				append(div, text);
+				append(div, svg);
+
+				for (var i = 0; i < each_blocks.length; i += 1) {
+					each_blocks[i].m(svg, null);
+				}
+
+				append(svg, each_anchor);
+
+				for (var i = 0; i < each_1_blocks.length; i += 1) {
+					each_1_blocks[i].m(svg, null);
+				}
+
+				append(svg, circle);
+				append(svg, text_1);
+				append(text_1, text_2);
+				component.refs.svg = svg;
+				component.refs.wheel = div;
 			},
 
 			p: function update(changed, ctx) {
-				setAttributes(canvas, getSpreadUpdate(canvas_levels, [
-					{ class: "slider-canvas svelte-1qjgv7z" },
-					(changed.rect) && ctx.rect
-				]));
+				if (changed.paths) {
+					each_value = ctx.paths;
 
-				if ((changed.direction) && div_1_class_value !== (div_1_class_value = "slider-handle " + ctx.direction + " svelte-1qjgv7z")) {
-					div_1.className = div_1_class_value;
+					for (var i = 0; i < each_value.length; i += 1) {
+						const child_ctx = get_each_context$1(ctx, each_value, i);
+
+						if (each_blocks[i]) {
+							each_blocks[i].p(changed, child_ctx);
+						} else {
+							each_blocks[i] = create_each_block$1(component, child_ctx);
+							each_blocks[i].c();
+							each_blocks[i].m(svg, each_anchor);
+						}
+					}
+
+					for (; i < each_blocks.length; i += 1) {
+						each_blocks[i].d(1);
+					}
+					each_blocks.length = each_value.length;
 				}
 
-				if ((changed.direction) && div_class_value !== (div_class_value = "slider alpha-check-bg " + ctx.direction + " svelte-1qjgv7z")) {
-					div.className = div_class_value;
+				if (changed.swatchs || changed.color) {
+					each_value_1 = ctx.swatchs;
+
+					for (var i = 0; i < each_value_1.length; i += 1) {
+						const child_ctx = get_each_1_context(ctx, each_value_1, i);
+
+						if (each_1_blocks[i]) {
+							each_1_blocks[i].p(changed, child_ctx);
+						} else {
+							each_1_blocks[i] = create_each_block_1(component, child_ctx);
+							each_1_blocks[i].c();
+							each_1_blocks[i].m(svg, circle);
+						}
+					}
+
+					for (; i < each_1_blocks.length; i += 1) {
+						each_1_blocks[i].d(1);
+					}
+					each_1_blocks.length = each_value_1.length;
+				}
+
+				if (changed.center) {
+					setAttribute(circle, "cx", ctx.center);
+					setAttribute(circle, "cy", ctx.center);
+				}
+
+				if ((changed.radius) && circle_r_value !== (circle_r_value = ctx.radius-18)) {
+					setAttribute(circle, "r", circle_r_value);
+				}
+
+				if (changed.swatchNum) {
+					setData(text_2, ctx.swatchNum);
+				}
+
+				if (changed.center) {
+					setAttribute(text_1, "x", ctx.center);
+					setAttribute(text_1, "y", ctx.center);
+				}
+
+				if (changed.color) {
+					setStyle(text_1, "fill", ctx.color);
+				}
+
+				if (changed.radius) {
+					setStyle(text_1, "font-size", "" + (ctx.radius-12) + "px");
+				}
+
+				if (changed.size) {
+					setAttribute(svg, "width", ctx.size);
+					setAttribute(svg, "height", ctx.size);
 				}
 			},
 
@@ -13305,21 +13987,144 @@
 					detachNode(div);
 				}
 
-				if (component.refs.slider === canvas) component.refs.slider = null;
-				if (component.refs.sliderHandle === div_1) component.refs.sliderHandle = null;
-				if (component.refs.box === div) component.refs.box = null;
+				if (component.refs.handle === div_1) component.refs.handle = null;
+
+				destroyEach(each_blocks, detach);
+
+				destroyEach(each_1_blocks, detach);
+
+				removeListener(circle, "click", click_handler_1);
+				if (component.refs.svg === svg) component.refs.svg = null;
+				if (component.refs.wheel === div) component.refs.wheel = null;
 			}
 		};
 	}
 
-	function Slider(options) {
-		this._debugName = '<Slider>';
+	// (5:4) {#each paths as path}
+	function create_each_block$1(component, ctx) {
+		var path;
+
+		var path_levels = [
+			ctx.path,
+			{ class: "svelte-ya0xgy" }
+		];
+
+		var path_data = {};
+		for (var i = 0; i < path_levels.length; i += 1) {
+			path_data = assign(path_data, path_levels[i]);
+		}
+
+		return {
+			c: function create() {
+				path = createSvgElement("path");
+				setAttributes(path, path_data);
+				addLoc(path, file$2, 5, 6, 239);
+			},
+
+			m: function mount(target, anchor) {
+				insert(target, path, anchor);
+			},
+
+			p: function update(changed, ctx) {
+				setAttributes(path, getSpreadUpdate(path_levels, [
+					(changed.paths) && ctx.path,
+					{ class: "svelte-ya0xgy" }
+				]));
+			},
+
+			d: function destroy$$1(detach) {
+				if (detach) {
+					detachNode(path);
+				}
+			}
+		};
+	}
+
+	// (8:4) {#each swatchs as path}
+	function create_each_block_1(component, ctx) {
+		var path;
+
+		var path_levels = [
+			ctx.path,
+			{ class: "svelte-ya0xgy" }
+		];
+
+		var path_data = {};
+		for (var i = 0; i < path_levels.length; i += 1) {
+			path_data = assign(path_data, path_levels[i]);
+		}
+
+		return {
+			c: function create() {
+				path = createSvgElement("path");
+				path._svelte = { component, ctx };
+
+				addListener(path, "click", click_handler$1);
+				setAttributes(path, path_data);
+				addLoc(path, file$2, 8, 6, 309);
+			},
+
+			m: function mount(target, anchor) {
+				insert(target, path, anchor);
+			},
+
+			p: function update(changed, _ctx) {
+				ctx = _ctx;
+				path._svelte.ctx = ctx;
+
+				setAttributes(path, getSpreadUpdate(path_levels, [
+					(changed.swatchs) && ctx.path,
+					{ class: "svelte-ya0xgy" }
+				]));
+			},
+
+			d: function destroy$$1(detach) {
+				if (detach) {
+					detachNode(path);
+				}
+
+				removeListener(path, "click", click_handler$1);
+			}
+		};
+	}
+
+	function get_each_context$1(ctx, list, i) {
+		const child_ctx = Object.create(ctx);
+		child_ctx.path = list[i];
+		child_ctx.each_value = list;
+		child_ctx.path_index = i;
+		return child_ctx;
+	}
+
+	function get_each_1_context(ctx, list, i) {
+		const child_ctx = Object.create(ctx);
+		child_ctx.path = list[i];
+		child_ctx.each_value_1 = list;
+		child_ctx.path_index_1 = i;
+		return child_ctx;
+	}
+
+	function click_handler$1(event) {
+		const { component, ctx } = this._svelte;
+
+		component.set({ color: ctx.color.hue(ctx.path.hue) });
+	}
+
+	function Wheel(options) {
+		this._debugName = '<Wheel>';
 		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 		init(this, options);
 		this.refs = {};
 		this._state = assign(data$3(), options.data);
-		if (!('direction' in this._state)) console.warn("<Slider> was created without expected data property 'direction'");
-		if (!('rect' in this._state)) console.warn("<Slider> was created without expected data property 'rect'");
+		this._recompute({ size: 1, center: 1, strokeWidth: 1 }, this._state);
+		if (!('size' in this._state)) console.warn("<Wheel> was created without expected data property 'size'");
+
+		if (!('strokeWidth' in this._state)) console.warn("<Wheel> was created without expected data property 'strokeWidth'");
+		if (!('paths' in this._state)) console.warn("<Wheel> was created without expected data property 'paths'");
+		if (!('swatchs' in this._state)) console.warn("<Wheel> was created without expected data property 'swatchs'");
+		if (!('color' in this._state)) console.warn("<Wheel> was created without expected data property 'color'");
+
+		if (!('swatchNum' in this._state)) console.warn("<Wheel> was created without expected data property 'swatchNum'");
 		this._intro = true;
 		this._handlers.update = [onupdate$1];
 
@@ -13339,56 +14144,234 @@
 		}
 	}
 
-	assign(Slider.prototype, protoDev);
-	assign(Slider.prototype, methods$2);
+	assign(Wheel.prototype, protoDev);
+	assign(Wheel.prototype, methods$2);
 
-	Slider.prototype._checkReadOnly = function _checkReadOnly(newState) {
+	Wheel.prototype._checkReadOnly = function _checkReadOnly(newState) {
+		if ('center' in newState && !this._updatingReadonlyProperty) throw new Error("<Wheel>: Cannot set read-only property 'center'");
+		if ('radius' in newState && !this._updatingReadonlyProperty) throw new Error("<Wheel>: Cannot set read-only property 'radius'");
 	};
 
-	/* src\color-picker\hsv-picker.html generated by Svelte v2.13.5 */
+	Wheel.prototype._recompute = function _recompute(changed, state) {
+		if (changed.size) {
+			if (this._differs(state.center, (state.center = center(state)))) changed.center = true;
+		}
 
-	function textColor$1({ color }) {
-		return color.isDark() ? '#fff' : '#000';
+		if (changed.center || changed.strokeWidth) {
+			if (this._differs(state.radius, (state.radius = radius(state)))) changed.radius = true;
+		}
+	};
+
+	/* src\color-picker\slider.html generated by Svelte v2.13.5 */
+
+	function turn({ direction, reverse }) {
+	  let turn = 0;
+	  if (direction !== 'vertical') {
+	    turn -= 0.25;
+	  }
+	  if (!reverse) {
+	    turn += 0.5;
+	  }
+	  return turn
 	}
 
 	function data$4() {
 	  return {
-	    color: '#000',
+	    direction: 'vertical',
+	    value: 50,
+	    min: 0,
+	    max: 100,
+	    step: 1,
+	    reverse: false,
+	    gradient: ['white', 'black'],
 	  }
 	}
+	var methods$3 = {
+	  setValue (position) {
+	    const { max, min, direction } = this.get();
+	    const side = direction === 'vertical' ? 'percentTop' : 'percentLeft';
+	    let per = position[side] / 100;
+	    if (this.get().reverse) {
+	      per = 1 - per;
+	    }
+	    this.set({
+	      value: (max - min) * per + min
+	    });
+	  },
+	  setPosition (value) {
+	    const { max, min, direction } = this.get();
+	    const size = this.refs.box[direction === 'vertical' ? 'clientHeight' : 'clientWidth'];
+	    const side = direction === 'vertical' ? 'top' : 'left';
+	    let per = value / (max - min);
+	    if (this.get().reverse) {
+	      per = 1 - per;
+	    }
+	    this.refs.sliderHandle.style[side] = per * (size - 6) + 3 + 'px';
+	  },
+	};
+
 	function oncreate$2() {
-	  this.refs.hue.on('state', ({ changed, current, previous }) => {
-	    if (changed.value) {
-	      const { color } = this.get();
-	      this.set({ color: color.hue(current.value) });
-	    }
-	  });
-	  this.refs.alpha.on('state', ({ changed, current, previous }) => {
-	    if (changed.value) {
-	      const { color } = this.get();
-	      this.set({ color: color.alpha(current.value / 100) });
-	    }
+	  // picker
+	  new MousePosition(this.refs.box, { // eslint-disable-line no-new
+	    // handle: this.refs.sliderHandle,
+	    start: (e, position) => {
+	      this.setValue(position);
+	    },
+	    drag: (e, position) => {
+	      this.setValue(position);
+	    },
 	  });
 	}
 	function onupdate$2({ changed, current }) {
-	  if (changed.color) {
-	    const alphaColor = (alpha) => current.color.hsv().alpha(alpha).string();
-	    this.refs.alpha.draw(alphaColor(0), alphaColor(1));
+	  this.setPosition(current.value);
+	  if (changed.value) {
+	    this.fire('change', current);
 	  }
 	}
-	const file$3 = "src\\color-picker\\hsv-picker.html";
+	const file$3 = "src\\color-picker\\slider.html";
 
 	function create_main_fragment$3(component, ctx) {
-		var div, text, spectrum_updating = {}, text_1;
+		var div, div_1, div_1_class_value, div_class_value;
 
-		var slider_initial_data = { value: ctx.color.hue(), max: "359" };
-		var slider = new Slider({
-			root: component.root,
-			store: component.store,
-			data: slider_initial_data
+		return {
+			c: function create() {
+				div = createElement("div");
+				div_1 = createElement("div");
+				div_1.className = div_1_class_value = "slider-handle " + ctx.direction + " svelte-nb4zjo";
+				addLoc(div_1, file$3, 2, 2, 121);
+				div.className = div_class_value = "slider alpha-check-bg " + ctx.direction + " svelte-nb4zjo";
+				setStyle(div, "background", "linear-gradient(" + ctx.turn + "turn, " + ctx.gradient + ")");
+				addLoc(div, file$3, 0, 0, 0);
+			},
+
+			m: function mount(target, anchor) {
+				insert(target, div, anchor);
+				append(div, div_1);
+				component.refs.sliderHandle = div_1;
+				component.refs.box = div;
+			},
+
+			p: function update(changed, ctx) {
+				if ((changed.direction) && div_1_class_value !== (div_1_class_value = "slider-handle " + ctx.direction + " svelte-nb4zjo")) {
+					div_1.className = div_1_class_value;
+				}
+
+				if ((changed.direction) && div_class_value !== (div_class_value = "slider alpha-check-bg " + ctx.direction + " svelte-nb4zjo")) {
+					div.className = div_class_value;
+				}
+
+				if (changed.turn || changed.gradient) {
+					setStyle(div, "background", "linear-gradient(" + ctx.turn + "turn, " + ctx.gradient + ")");
+				}
+			},
+
+			d: function destroy$$1(detach) {
+				if (detach) {
+					detachNode(div);
+				}
+
+				if (component.refs.sliderHandle === div_1) component.refs.sliderHandle = null;
+				if (component.refs.box === div) component.refs.box = null;
+			}
+		};
+	}
+
+	function Slider(options) {
+		this._debugName = '<Slider>';
+		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
+		init(this, options);
+		this.refs = {};
+		this._state = assign(data$4(), options.data);
+		this._recompute({ direction: 1, reverse: 1 }, this._state);
+		if (!('direction' in this._state)) console.warn("<Slider> was created without expected data property 'direction'");
+		if (!('reverse' in this._state)) console.warn("<Slider> was created without expected data property 'reverse'");
+
+		if (!('gradient' in this._state)) console.warn("<Slider> was created without expected data property 'gradient'");
+		this._intro = true;
+		this._handlers.update = [onupdate$2];
+
+		this._fragment = create_main_fragment$3(this, this._state);
+
+		this.root._oncreate.push(() => {
+			oncreate$2.call(this);
+			this.fire("update", { changed: assignTrue({}, this._state), current: this._state });
 		});
 
-		component.refs.hue = slider;
+		if (options.target) {
+			if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+			this._fragment.c();
+			this._mount(options.target, options.anchor);
+
+			flush(this);
+		}
+	}
+
+	assign(Slider.prototype, protoDev);
+	assign(Slider.prototype, methods$3);
+
+	Slider.prototype._checkReadOnly = function _checkReadOnly(newState) {
+		if ('turn' in newState && !this._updatingReadonlyProperty) throw new Error("<Slider>: Cannot set read-only property 'turn'");
+	};
+
+	Slider.prototype._recompute = function _recompute(changed, state) {
+		if (changed.direction || changed.reverse) {
+			if (this._differs(state.turn, (state.turn = turn(state)))) changed.turn = true;
+		}
+	};
+
+	/* src\color-picker\hsv-picker.html generated by Svelte v2.13.5 */
+
+	function saturation({ color }) {
+		return [
+	  color.alpha(1).saturationl(0),
+	  color.alpha(1).saturationl(100)
+	];
+	}
+
+	function lightness({ color }) {
+		return [
+	  color.alpha(1).lightness(0),
+	  color.alpha(1).lightness(50),
+	  color.alpha(1).lightness(100)
+	];
+	}
+
+	function alpha({ color }) {
+		return [color.alpha(0), color.alpha(1)];
+	}
+
+	function data$5() {
+	  return {
+	    color: '#000',
+	  }
+	}
+	const file$4 = "src\\color-picker\\hsv-picker.html";
+
+	function create_main_fragment$4(component, ctx) {
+		var div, wheel_updating = {}, text, spectrum_updating = {}, text_1, text_2, text_3;
+
+		var wheel_initial_data = {};
+		if (ctx.color  !== void 0) {
+			wheel_initial_data.color = ctx.color ;
+			wheel_updating.color = true;
+		}
+		var wheel = new Wheel({
+			root: component.root,
+			store: component.store,
+			data: wheel_initial_data,
+			_bind(changed, childState) {
+				var newState = {};
+				if (!wheel_updating.color && changed.color) {
+					newState.color = childState.color;
+				}
+				component._set(newState);
+				wheel_updating = {};
+			}
+		});
+
+		component.root._beforecreate.push(() => {
+			wheel._bind({ color: 1 }, wheel.get());
+		});
 
 		var spectrum_initial_data = { model: "hsv" };
 		if (ctx.color  !== void 0) {
@@ -13413,41 +14396,97 @@
 			spectrum._bind({ color: 1 }, spectrum.get());
 		});
 
-		var slider_1_initial_data = { value: ctx.color.alpha() * 100 };
+		component.refs.spectrum = spectrum;
+
+		var slider_initial_data = {
+		 	value: ctx.color.saturationl(),
+		 	gradient: ctx.saturation,
+		 	reverse: "true"
+		 };
+		var slider = new Slider({
+			root: component.root,
+			store: component.store,
+			data: slider_initial_data
+		});
+
+		slider.on("change", function(event) {
+			component.set({ color: ctx.color.saturationl(event.value) });
+		});
+
+		component.refs.saturation = slider;
+
+		var slider_1_initial_data = {
+		 	value: ctx.color.lightness(),
+		 	gradient: ctx.lightness,
+		 	reverse: "true"
+		 };
 		var slider_1 = new Slider({
 			root: component.root,
 			store: component.store,
 			data: slider_1_initial_data
 		});
 
-		component.refs.alpha = slider_1;
+		slider_1.on("change", function(event) {
+			component.set({ color: ctx.color.lightness(event.value) });
+		});
+
+		component.refs.lightness = slider_1;
+
+		var slider_2_initial_data = {
+		 	value: ctx.color.alpha() * 100,
+		 	gradient: ctx.alpha,
+		 	reverse: "true"
+		 };
+		var slider_2 = new Slider({
+			root: component.root,
+			store: component.store,
+			data: slider_2_initial_data
+		});
+
+		slider_2.on("change", function(event) {
+			component.set({ color: ctx.color.alpha(event.value / 100) });
+		});
+
+		component.refs.alpha = slider_2;
 
 		return {
 			c: function create() {
 				div = createElement("div");
-				slider._fragment.c();
-				text = createText("\r\n  ");
+				wheel._fragment.c();
+				text = createText("\n  ");
 				spectrum._fragment.c();
-				text_1 = createText("\r\n  ");
+				text_1 = createText("\n\n  ");
+				slider._fragment.c();
+				text_2 = createText("\n  ");
 				slider_1._fragment.c();
-				div.className = "hsv-picker svelte-1pwgigk";
-				addLoc(div, file$3, 0, 0, 0);
+				text_3 = createText("\n  ");
+				slider_2._fragment.c();
+				div.className = "hsv-picker svelte-5iazto";
+				addLoc(div, file$4, 0, 0, 0);
 			},
 
 			m: function mount(target, anchor) {
 				insert(target, div, anchor);
-				slider._mount(div, null);
+				wheel._mount(div, null);
 				append(div, text);
 				spectrum._mount(div, null);
 				append(div, text_1);
+				slider._mount(div, null);
+				append(div, text_2);
 				slider_1._mount(div, null);
+				append(div, text_3);
+				slider_2._mount(div, null);
 			},
 
 			p: function update(changed, _ctx) {
 				ctx = _ctx;
-				var slider_changes = {};
-				if (changed.color) slider_changes.value = ctx.color.hue();
-				slider._set(slider_changes);
+				var wheel_changes = {};
+				if (!wheel_updating.color && changed.color) {
+					wheel_changes.color = ctx.color ;
+					wheel_updating.color = ctx.color  !== void 0;
+				}
+				wheel._set(wheel_changes);
+				wheel_updating = {};
 
 				var spectrum_changes = {};
 				if (!spectrum_updating.color && changed.color) {
@@ -13457,9 +14496,20 @@
 				spectrum._set(spectrum_changes);
 				spectrum_updating = {};
 
+				var slider_changes = {};
+				if (changed.color) slider_changes.value = ctx.color.saturationl();
+				if (changed.saturation) slider_changes.gradient = ctx.saturation;
+				slider._set(slider_changes);
+
 				var slider_1_changes = {};
-				if (changed.color) slider_1_changes.value = ctx.color.alpha() * 100;
+				if (changed.color) slider_1_changes.value = ctx.color.lightness();
+				if (changed.lightness) slider_1_changes.gradient = ctx.lightness;
 				slider_1._set(slider_1_changes);
+
+				var slider_2_changes = {};
+				if (changed.color) slider_2_changes.value = ctx.color.alpha() * 100;
+				if (changed.alpha) slider_2_changes.gradient = ctx.alpha;
+				slider_2._set(slider_2_changes);
 			},
 
 			d: function destroy$$1(detach) {
@@ -13467,11 +14517,15 @@
 					detachNode(div);
 				}
 
-				slider.destroy();
-				if (component.refs.hue === slider) component.refs.hue = null;
+				wheel.destroy();
 				spectrum.destroy();
+				if (component.refs.spectrum === spectrum) component.refs.spectrum = null;
+				slider.destroy();
+				if (component.refs.saturation === slider) component.refs.saturation = null;
 				slider_1.destroy();
-				if (component.refs.alpha === slider_1) component.refs.alpha = null;
+				if (component.refs.lightness === slider_1) component.refs.lightness = null;
+				slider_2.destroy();
+				if (component.refs.alpha === slider_2) component.refs.alpha = null;
 			}
 		};
 	}
@@ -13481,18 +14535,12 @@
 		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 		init(this, options);
 		this.refs = {};
-		this._state = assign(data$4(), options.data);
+		this._state = assign(data$5(), options.data);
 		this._recompute({ color: 1 }, this._state);
 		if (!('color' in this._state)) console.warn("<Hsv_picker> was created without expected data property 'color'");
 		this._intro = true;
-		this._handlers.update = [onupdate$2];
 
-		this._fragment = create_main_fragment$3(this, this._state);
-
-		this.root._oncreate.push(() => {
-			oncreate$2.call(this);
-			this.fire("update", { changed: assignTrue({}, this._state), current: this._state });
-		});
+		this._fragment = create_main_fragment$4(this, this._state);
 
 		if (options.target) {
 			if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -13506,55 +14554,60 @@
 	assign(Hsv_picker.prototype, protoDev);
 
 	Hsv_picker.prototype._checkReadOnly = function _checkReadOnly(newState) {
-		if ('textColor' in newState && !this._updatingReadonlyProperty) throw new Error("<Hsv_picker>: Cannot set read-only property 'textColor'");
+		if ('saturation' in newState && !this._updatingReadonlyProperty) throw new Error("<Hsv_picker>: Cannot set read-only property 'saturation'");
+		if ('lightness' in newState && !this._updatingReadonlyProperty) throw new Error("<Hsv_picker>: Cannot set read-only property 'lightness'");
+		if ('alpha' in newState && !this._updatingReadonlyProperty) throw new Error("<Hsv_picker>: Cannot set read-only property 'alpha'");
 	};
 
 	Hsv_picker.prototype._recompute = function _recompute(changed, state) {
 		if (changed.color) {
-			if (this._differs(state.textColor, (state.textColor = textColor$1(state)))) changed.textColor = true;
+			if (this._differs(state.saturation, (state.saturation = saturation(state)))) changed.saturation = true;
+			if (this._differs(state.lightness, (state.lightness = lightness(state)))) changed.lightness = true;
+			if (this._differs(state.alpha, (state.alpha = alpha(state)))) changed.alpha = true;
 		}
 	};
 
 	/* src\color-picker\blender.html generated by Svelte v2.13.5 */
 
-	function data$5() {
+	function data$6() {
 	  return {
 	    rect: { width: 0, height: 0 },
-	    color1: '#000',
-	    color2: '#fff',
+	    color1: new Color$1('#000'),
+	    color2: new Color$1('#fff'),
 	    direction: 'horizontal', // vertical
 	  }
 	}
-	var methods$3 = {
+	var methods$4 = {
 	  getColor (position) {
-	    const { width } = this.get().rect;
-	    const x = Math.max(0, Math.min(position.x, width - 1));
-	    const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data;
-	    const color = new Color$1({ r, g, b });
+	    const { color1, color2, direction } = this.get();
+	    const percent = direction === 'horizontal'
+	      ? position.percentLeft
+	      : position.percentTop;
+	    const color = new Color$1(color1.mix(color2, percent / 100));
 
-	    this.refs.handle.style.left = x + 'px';
-	    this.refs.handle.style.backgroundColor = color.isDark() ? '#fff' : '#000';
+	    this.refs.handle.style.left = percent + '%';
+	    this.refs.handle.style.backgroundColor = color.textColor();
 	    return color
 	  },
-	  draw () {
-	    const { direction, color1, color2 } = this.get();
-	    const canvas = this.refs.canvas;
-	    const cxt = canvas.getContext('2d');
-	    const [w, h] = [canvas.width, canvas.height];
-	    cxt.clearRect(0, 0, w, h);
+	  // draw () {
+	  //   const { direction, color1, color2 } = this.get()
+	  //   const canvas = this.refs.canvas
+	  //   const cxt = canvas.getContext('2d')
+	  //   const [w, h] = [canvas.width, canvas.height]
+	  //   cxt.clearRect(0, 0, w, h)
 
-	    const grd = direction === 'vertical'
-	      ? cxt.createLinearGradient(0, 0, 0, h)
-	      : cxt.createLinearGradient(0, 0, w, 0);
+	  //   const grd = direction === 'vertical'
+	  //     ? cxt.createLinearGradient(0, 0, 0, h)
+	  //     : cxt.createLinearGradient(0, 0, w, 0)
 
-	    grd.addColorStop(0.02, new Color$1(color1).rgb().string());
-	    grd.addColorStop(0.98, new Color$1(color2).rgb().string());
+	  //   grd.addColorStop(0.02, new Color(color1).rgb().string())
+	  //   grd.addColorStop(0.98, new Color(color2).rgb().string())
 
-	    cxt.fillStyle = grd;
-	    cxt.fillRect(0, 0, w, h);
+	  //   cxt.fillStyle = grd
+	  //   cxt.fillRect(0, 0, w, h)
 
-	    this.getColor({ x: w / 2 });
-	  }
+	  //   this.getColor({ x: w / 2 })
+	  // }
 	};
 
 	function oncreate$3() {
@@ -13573,34 +14626,25 @@
 	      this.set({ color: this.getColor(position) });
 	    },
 	  });
+	  // this.draw()
 	}
 	function onupdate$3({ changed, current }) {
 	  if (changed.color1) {
 	    this.refs.color1.style.backgroundColor = current.color1.toString();
-	    this.draw();
+	    // this.draw()
 	  }
 	  if (changed.color2) {
 	    this.refs.color2.style.backgroundColor = current.color2.toString();
-	    this.draw();
+	    // this.draw()
 	  }
 	}
-	const file$4 = "src\\color-picker\\blender.html";
+	const file$5 = "src\\color-picker\\blender.html";
 
-	function create_main_fragment$4(component, ctx) {
-		var div, div_1, text, div_2, canvas, text_1, div_3, div_3_class_value, text_3, div_4;
+	function create_main_fragment$5(component, ctx) {
+		var div, div_1, text, div_2, div_3, div_3_class_value, div_2_class_value, text_2, div_4;
 
 		function click_handler(event) {
 			component.set({color1: ctx.color});
-		}
-
-		var canvas_levels = [
-			{ class: "blender-canvas svelte-5950l5" },
-			ctx.rect
-		];
-
-		var canvas_data = {};
-		for (var i = 0; i < canvas_levels.length; i += 1) {
-			canvas_data = assign(canvas_data, canvas_levels[i]);
 		}
 
 		function click_handler_1(event) {
@@ -13613,25 +14657,22 @@
 				div_1 = createElement("div");
 				text = createText("\n  ");
 				div_2 = createElement("div");
-				canvas = createElement("canvas");
-				text_1 = createText("\n    ");
 				div_3 = createElement("div");
-				text_3 = createText("\n  ");
+				text_2 = createText("\n  ");
 				div_4 = createElement("div");
 				addListener(div_1, "click", click_handler);
-				div_1.className = "blender-btn color1 svelte-5950l5";
-				addLoc(div_1, file$4, 1, 2, 24);
-				setAttributes(canvas, canvas_data);
-				addLoc(canvas, file$4, 3, 4, 153);
-				div_3.className = div_3_class_value = "blender-handle " + ctx.direction + " svelte-5950l5";
-				addLoc(div_3, file$4, 4, 4, 220);
-				div_2.className = "blender-slider svelte-5950l5";
-				addLoc(div_2, file$4, 2, 2, 108);
+				div_1.className = "blender-btn color1 svelte-17vtgg7";
+				addLoc(div_1, file$5, 1, 2, 24);
+				div_3.className = div_3_class_value = "blender-handle " + ctx.direction + " svelte-17vtgg7";
+				addLoc(div_3, file$5, 5, 4, 344);
+				div_2.className = div_2_class_value = "blender-slider " + ctx.direction + " svelte-17vtgg7";
+				setStyle(div_2, "background", "linear-gradient(" + (ctx.direction==='horizontal'?0.25:0.75) + "turn, " + ctx.color1 + ", " + ctx.color2 + ")");
+				addLoc(div_2, file$5, 2, 2, 108);
 				addListener(div_4, "click", click_handler_1);
-				div_4.className = "blender-btn color2 svelte-5950l5";
-				addLoc(div_4, file$4, 6, 2, 289);
-				div.className = "blender svelte-5950l5";
-				addLoc(div, file$4, 0, 0, 0);
+				div_4.className = "blender-btn color2 svelte-17vtgg7";
+				addLoc(div_4, file$5, 7, 2, 413);
+				div.className = "blender svelte-17vtgg7";
+				addLoc(div, file$5, 0, 0, 0);
 			},
 
 			m: function mount(target, anchor) {
@@ -13640,26 +14681,26 @@
 				component.refs.color1 = div_1;
 				append(div, text);
 				append(div, div_2);
-				append(div_2, canvas);
-				component.refs.canvas = canvas;
-				append(div_2, text_1);
 				append(div_2, div_3);
 				component.refs.handle = div_3;
 				component.refs.blender = div_2;
-				append(div, text_3);
+				append(div, text_2);
 				append(div, div_4);
 				component.refs.color2 = div_4;
 			},
 
 			p: function update(changed, _ctx) {
 				ctx = _ctx;
-				setAttributes(canvas, getSpreadUpdate(canvas_levels, [
-					{ class: "blender-canvas svelte-5950l5" },
-					(changed.rect) && ctx.rect
-				]));
-
-				if ((changed.direction) && div_3_class_value !== (div_3_class_value = "blender-handle " + ctx.direction + " svelte-5950l5")) {
+				if ((changed.direction) && div_3_class_value !== (div_3_class_value = "blender-handle " + ctx.direction + " svelte-17vtgg7")) {
 					div_3.className = div_3_class_value;
+				}
+
+				if ((changed.direction) && div_2_class_value !== (div_2_class_value = "blender-slider " + ctx.direction + " svelte-17vtgg7")) {
+					div_2.className = div_2_class_value;
+				}
+
+				if (changed.direction || changed.color1 || changed.color2) {
+					setStyle(div_2, "background", "linear-gradient(" + (ctx.direction==='horizontal'?0.25:0.75) + "turn, " + ctx.color1 + ", " + ctx.color2 + ")");
 				}
 			},
 
@@ -13670,7 +14711,6 @@
 
 				removeListener(div_1, "click", click_handler);
 				if (component.refs.color1 === div_1) component.refs.color1 = null;
-				if (component.refs.canvas === canvas) component.refs.canvas = null;
 				if (component.refs.handle === div_3) component.refs.handle = null;
 				if (component.refs.blender === div_2) component.refs.blender = null;
 				removeListener(div_4, "click", click_handler_1);
@@ -13684,14 +14724,15 @@
 		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 		init(this, options);
 		this.refs = {};
-		this._state = assign(data$5(), options.data);
+		this._state = assign(data$6(), options.data);
 		if (!('color' in this._state)) console.warn("<Blender> was created without expected data property 'color'");
-		if (!('rect' in this._state)) console.warn("<Blender> was created without expected data property 'rect'");
 		if (!('direction' in this._state)) console.warn("<Blender> was created without expected data property 'direction'");
+		if (!('color1' in this._state)) console.warn("<Blender> was created without expected data property 'color1'");
+		if (!('color2' in this._state)) console.warn("<Blender> was created without expected data property 'color2'");
 		this._intro = true;
 		this._handlers.update = [onupdate$3];
 
-		this._fragment = create_main_fragment$4(this, this._state);
+		this._fragment = create_main_fragment$5(this, this._state);
 
 		this.root._oncreate.push(() => {
 			oncreate$3.call(this);
@@ -13708,7 +14749,7 @@
 	}
 
 	assign(Blender.prototype, protoDev);
-	assign(Blender.prototype, methods$3);
+	assign(Blender.prototype, methods$4);
 
 	Blender.prototype._checkReadOnly = function _checkReadOnly(newState) {
 	};
@@ -13719,14 +14760,14 @@
 		return round(bgColor.contrast(color), 1);
 	}
 
-	function data$6() {
+	function data$7() {
 	  return {
 	    color: '',
 	    bgColor: '',
 	    model: 'hex',
 	  }
 	}
-	var methods$4 = {
+	var methods$5 = {
 	  alphaBlending () {
 	    const { color, bgColor } = this.get();
 	    this.set({
@@ -13740,10 +14781,10 @@
 	};
 
 	function onstate({ changed, current }) {
-	  if (changed.color) {
+	  if (changed.color && !(current.color instanceof Color$1)) {
 	    this.set({ color: new Color$1(current.color) });
 	  }
-	  if (changed.bgColor) {
+	  if (changed.bgColor && !(current.bgColor instanceof Color$1)) {
 	    this.set({ bgColor: new Color$1(current.bgColor) });
 	  }
 
@@ -13751,9 +14792,9 @@
 	    this.fire('modelChange', current.model);
 	  }
 	}
-	const file$5 = "src\\color-picker\\color-picker.html";
+	const file$6 = "src\\color-picker\\color-picker.html";
 
-	function create_main_fragment$5(component, ctx) {
+	function create_main_fragment$6(component, ctx) {
 		var div, colorinput_updating = {}, text, div_1, hsvpicker_updating = {}, text_2, div_2, div_3, button, text_3, button_class_value, text_6, div_4, blender_updating = {}, text_8, div_5, button_1, text_9;
 
 		var colorinput_initial_data = { bgColor: ctx.bgColor };
@@ -13845,42 +14886,41 @@
 			c: function create() {
 				div = createElement("div");
 				colorinput._fragment.c();
-				text = createText("\r\n  ");
+				text = createText("\n  ");
 				div_1 = createElement("div");
 				hsvpicker._fragment.c();
-				text_2 = createText("\r\n  ");
+				text_2 = createText("\n  ");
 				div_2 = createElement("div");
 				div_3 = createElement("div");
 				button = createElement("button");
 				text_3 = createText(ctx.contrast);
-				text_6 = createText("\r\n    ");
+				text_6 = createText("\n    ");
 				div_4 = createElement("div");
 				blender._fragment.c();
-				text_8 = createText("\r\n    ");
+				text_8 = createText("\n    ");
 				div_5 = createElement("div");
 				button_1 = createElement("button");
 				text_9 = createText("a=1");
-				div_1.className = "picker-body svelte-1nih27n";
-				addLoc(div_1, file$5, 2, 2, 80);
+				div_1.className = "picker-body svelte-10fjnva";
+				addLoc(div_1, file$6, 2, 2, 78);
 				addListener(button, "click", click_handler);
-				button.className = button_class_value = "contrast " + ctx.bgColor.level(ctx.color) + " svelte-1nih27n";
-				setStyle(button, "color", ctx.color);
-				addLoc(button, file$5, 7, 6, 270);
-				div_3.className = "button svelte-1nih27n";
+				button.className = button_class_value = "contrast " + ctx.bgColor.level(ctx.color) + " svelte-10fjnva";
+				addLoc(button, file$6, 7, 6, 263);
+				div_3.className = "button svelte-10fjnva";
 				div_3.title = "Click: set BG-color. Display: Readable Score(1~21).";
-				addLoc(div_3, file$5, 6, 4, 182);
-				div_4.className = "blender-wrapper svelte-1nih27n";
-				addLoc(div_4, file$5, 11, 4, 420);
+				addLoc(div_3, file$6, 6, 4, 176);
+				div_4.className = "blender-wrapper svelte-10fjnva";
+				addLoc(div_4, file$6, 11, 4, 386);
 				addListener(button_1, "click", click_handler_1);
-				button_1.className = "svelte-1nih27n";
-				addLoc(button_1, file$5, 15, 6, 559);
-				div_5.className = "button svelte-1nih27n";
+				button_1.className = "svelte-10fjnva";
+				addLoc(button_1, file$6, 15, 6, 521);
+				div_5.className = "button svelte-10fjnva";
 				div_5.title = "Alpha Blending by BG-color";
-				addLoc(div_5, file$5, 14, 4, 496);
-				div_2.className = "picker-footer svelte-1nih27n";
-				addLoc(div_2, file$5, 5, 2, 149);
-				div.className = "color-picker svelte-1nih27n";
-				addLoc(div, file$5, 0, 0, 0);
+				addLoc(div_5, file$6, 14, 4, 459);
+				div_2.className = "picker-footer svelte-10fjnva";
+				addLoc(div_2, file$6, 5, 2, 144);
+				div.className = "color-picker svelte-10fjnva";
+				addLoc(div, file$6, 0, 0, 0);
 			},
 
 			m: function mount(target, anchor) {
@@ -13930,12 +14970,8 @@
 					setData(text_3, ctx.contrast);
 				}
 
-				if ((changed.bgColor || changed.color) && button_class_value !== (button_class_value = "contrast " + ctx.bgColor.level(ctx.color) + " svelte-1nih27n")) {
+				if ((changed.bgColor || changed.color) && button_class_value !== (button_class_value = "contrast " + ctx.bgColor.level(ctx.color) + " svelte-10fjnva")) {
 					button.className = button_class_value;
-				}
-
-				if (changed.color) {
-					setStyle(button, "color", ctx.color);
 				}
 
 				var blender_changes = {};
@@ -13965,7 +15001,7 @@
 		this._debugName = '<Color_picker>';
 		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 		init(this, options);
-		this._state = assign(data$6(), options.data);
+		this._state = assign(data$7(), options.data);
 		this._recompute({ color: 1, bgColor: 1 }, this._state);
 		if (!('color' in this._state)) console.warn("<Color_picker> was created without expected data property 'color'");
 		if (!('bgColor' in this._state)) console.warn("<Color_picker> was created without expected data property 'bgColor'");
@@ -13976,7 +15012,7 @@
 
 		onstate.call(this, { changed: assignTrue({}, this._state), current: this._state });
 
-		this._fragment = create_main_fragment$5(this, this._state);
+		this._fragment = create_main_fragment$6(this, this._state);
 
 		this.root._oncreate.push(() => {
 			this.fire("update", { changed: assignTrue({}, this._state), current: this._state });
@@ -13992,7 +15028,7 @@
 	}
 
 	assign(Color_picker.prototype, protoDev);
-	assign(Color_picker.prototype, methods$4);
+	assign(Color_picker.prototype, methods$5);
 
 	Color_picker.prototype._checkReadOnly = function _checkReadOnly(newState) {
 		if ('contrast' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_picker>: Cannot set read-only property 'contrast'");
@@ -14008,22 +15044,26 @@
 
 	const colorsWidth = 320;
 
-	function textColor$2({ card, $bgColor, contrast }) {
+	function textColor$1({ card, $bgColor, contrast }) {
 	  const { color, textMode } = card;
 	  if (textMode) {
-	    return `color: ${(contrast < 4.5) ? ($bgColor.isDark() ? '#fff' : '#000') : color};`
+	    return `color: ${(contrast < 4.5) ? $bgColor.textColor() : color};`
 	  }
-	  return `color: ${color.isDark() ? '#fff' : '#000'};`
+	  return `color: ${color.textColor()};`
 	}
 
-	function cardStyle({ card, $grayscale }) {
+	function cardStyle({ card, $filterSwitch, $selectingFilter, $textModeBackground, $bgColor }) {
 	  const { width, height, top, left, color, textMode } = card;
 	  const w = width > 120 ? width + 'px' : 'auto';
 	  const h = height > 120 ? height + 'px' : 'auto';
-	  const c2 = $grayscale ? color.grayscale() : color;
+	  const filter = $filterSwitch ? $selectingFilter : '';
+	  const c2 = filter ? color[filter]() : color;
+	  const textModeBackground = $textModeBackground
+	    ? filter ? $bgColor[filter]() : $bgColor
+	    : 'transparent';
 	  const colorstyle = textMode
-	    ? `background-color: transparent; color: ${c2};`
-	    : `background-color: ${c2}; color: ${color.isDark() ? '#fff' : '#000'};`;
+	    ? `background-color: ${textModeBackground}; color: ${c2};`
+	    : `background-color: ${c2}; color: ${color.textColor()};`;
 	  return colorstyle + `width:${w}; height:${h};top:${top}px;left:${left}px;`
 	}
 
@@ -14035,19 +15075,19 @@
 		return Object.entries($cardViewModels).filter(([, value]) => value);
 	}
 
-	function data$7() {
+	function data$8() {
 	  return {
 	    edit: false,
 	  }
 	}
-	var methods$5 = {
+	var methods$6 = {
 	  reverse () {
 	    const { card } = this.get();
-	    store.fire('cards.TOGGLE_TEXTMODE', [card.index]);
+	    this.store.toggleTextmode([card.index]);
 	  },
 	  remove () {
 	    const { card } = this.get();
-	    store.fire('cards.REMOVE_CARD', [card.index]);
+	    this.store.removeCard([card.index]);
 	  },
 	  edit () {
 	    this.set({ edit: true });
@@ -14063,10 +15103,9 @@
 
 	    const editOff = (e, cb) => {
 	      if (title.textContent && title.textContent !== name) {
-	        store.fire('cards.EDIT_CARD', this.get().index, {
+	        this.store.editCard(this.get().index, {
 	          name: title.textContent,
 	        });
-	        store.memo();
 	      } else {
 	        title.textContent = name;
 	      }
@@ -14106,6 +15145,7 @@
 	  const cardEl = this.refs.card;
 	  const box = cardEl.parentElement;
 	  const { index } = this.get();
+	  const store = this.store;
 
 	  let cards;
 
@@ -14118,7 +15158,7 @@
 
 	      // 右クリック以外のとき
 	      if (!(e.which === 3 || e.button === 2)) {
-	        store.fire('cards.CARD_FORWARD', index);
+	        store.cardForward(index);
 	        cards = store.get().cards;
 	      }
 	    },
@@ -14134,22 +15174,39 @@
 	        el.style.top = scard.top + 'px';
 	      }
 	    },
-	    stop: (e, { left, top }, el) => {
+	    stop: (e, { left, top, vectorX, vectorY }, el) => {
 	      const selects = this.root.selectable.selects;
 	      left = Math.max(colorsWidth, left);
 
-	      store.set({ cards: (cards) => {
-	        for (const scard of selects) {
-	          const { index, left, top } = scard;
-	          const card = cards[index];
-	          Object.assign(card, { left, top });
+	      const state = {
+	        cards: (cards) => {
+	          for (const scard of selects) {
+	            const { index, left, top } = scard;
+	            const card = cards[index];
+	            Object.assign(card, { left, top });
+	          }
+	          return cards
 	        }
-	        return cards
-	      } });
-	      store.set({ sortX: 'none', sortY: 'none' });
+	      };
+
+	      const xmove = Math.abs(vectorX) >= 1;
+	      const ymove = Math.abs(vectorY) >= 1;
+	      if (xmove) {
+	        state.sortXSwitch = false;
+	      }
+	      if (ymove) {
+	        state.sortYSwitch = false;
+	      }
+	      const { sortX, sortY } = store.get();
+	      if ((sortX === 'deg' || sortY === 'deg') && (xmove || ymove)) {
+	        state.sortXSwitch = false;
+	        state.sortYSwitch = false;
+	      }
+	      store.set(state);
 	      store.memo();
 	    },
 	    click: (e, position, el) => {
+	      console.log('card', this.get().card);
 	      store.memo();
 	    },
 	  });
@@ -14163,8 +15220,7 @@
 	    stop: (e) => {
 	      e.stopPropagation();
 	      const { width, height } = cardEl.getBoundingClientRect();
-	      store.fire('cards.EDIT_CARD', index, { width, height });
-	      store.memo();
+	      store.editCard(index, { width, height });
 	    },
 	  });
 
@@ -14176,7 +15232,11 @@
 	    // デフォルトイベントをキャンセル
 	    // これを書くことでコンテキストメニューが表示されなくなります
 	    e.preventDefault();
-	    store.fire('menu_open', e, this, 'card');
+	    store.fire('menu_open', {
+	      event: e,
+	      cardComponent: this,
+	      mode: 'card',
+	    });
 	  }, false);
 	}
 	function onupdate$4({ changed, current }) {
@@ -14184,9 +15244,9 @@
 	    this.movable.toggle(!current.edit);
 	  }
 	}
-	const file$6 = "src\\svelte\\color-card.html";
+	const file$7 = "src\\svelte\\color-card.html";
 
-	function create_main_fragment$6(component, ctx) {
+	function create_main_fragment$7(component, ctx) {
 		var div, div_1, h3, text_value = ctx.card.name, text, text_1, div_1_class_value, text_3, span, i, text_5, span_1, i_1, text_7, div_2, div_style_value;
 
 		var each_value = ctx.modelsEntries;
@@ -14194,7 +15254,7 @@
 		var each_blocks = [];
 
 		for (var i_2 = 0; i_2 < each_value.length; i_2 += 1) {
-			each_blocks[i_2] = create_each_block$1(component, get_each_context$1(ctx, each_value, i_2));
+			each_blocks[i_2] = create_each_block$2(component, get_each_context$2(ctx, each_value, i_2));
 		}
 
 		function click_handler(event) {
@@ -14211,42 +15271,42 @@
 				div_1 = createElement("div");
 				h3 = createElement("h3");
 				text = createText(text_value);
-				text_1 = createText("\r\n    ");
+				text_1 = createText("\n    ");
 
 				for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
 					each_blocks[i_2].c();
 				}
 
-				text_3 = createText("\r\n  ");
+				text_3 = createText("\n  ");
 				span = createElement("span");
 				i = createElement("i");
-				text_5 = createText("\r\n  ");
+				text_5 = createText("\n  ");
 				span_1 = createElement("span");
 				i_1 = createElement("i");
-				text_7 = createText("\r\n  ");
+				text_7 = createText("\n  ");
 				div_2 = createElement("div");
-				h3.className = "card_title svelte-mv8r9f";
+				h3.className = "card_title svelte-pjl41q";
 				h3.contentEditable = ctx.edit;
-				addLoc(h3, file$6, 4, 4, 180);
-				div_1.className = div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-mv8r9f";
-				addLoc(div_1, file$6, 3, 2, 99);
+				addLoc(h3, file$7, 4, 4, 176);
+				div_1.className = div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-pjl41q";
+				addLoc(div_1, file$7, 3, 2, 96);
 				i.className = "fas fa-sync fa-fw";
-				addLoc(i, file$6, 14, 4, 537);
+				addLoc(i, file$7, 14, 4, 523);
 				addListener(span, "click", click_handler);
-				span.className = "icon card-reverse svelte-mv8r9f";
+				span.className = "icon card-reverse svelte-pjl41q";
 				span.style.cssText = ctx.textColor;
-				addLoc(span, file$6, 13, 2, 458);
+				addLoc(span, file$7, 13, 2, 445);
 				i_1.className = "fas fa-times fa-fw";
-				addLoc(i_1, file$6, 18, 4, 679);
+				addLoc(i_1, file$7, 18, 4, 661);
 				addListener(span_1, "click", click_handler_1);
-				span_1.className = "icon card-delete svelte-mv8r9f";
+				span_1.className = "icon card-delete svelte-pjl41q";
 				span_1.style.cssText = ctx.textColor;
-				addLoc(span_1, file$6, 17, 2, 602);
-				div_2.className = "icon resize-handle svelte-mv8r9f";
-				addLoc(div_2, file$6, 21, 2, 745);
-				div.className = "card animated bounceIn svelte-mv8r9f";
+				addLoc(span_1, file$7, 17, 2, 585);
+				div_2.className = "icon resize-handle svelte-pjl41q";
+				addLoc(div_2, file$7, 21, 2, 724);
+				div.className = "card animated bounceIn svelte-pjl41q";
 				div.style.cssText = div_style_value = "" + ctx.cardStyle + " z-index: " + ctx.card.zIndex + ";";
-				addLoc(div, file$6, 0, 0, 0);
+				addLoc(div, file$7, 0, 0, 0);
 			},
 
 			m: function mount(target, anchor) {
@@ -14286,12 +15346,12 @@
 					each_value = ctx.modelsEntries;
 
 					for (var i_2 = 0; i_2 < each_value.length; i_2 += 1) {
-						const child_ctx = get_each_context$1(ctx, each_value, i_2);
+						const child_ctx = get_each_context$2(ctx, each_value, i_2);
 
 						if (each_blocks[i_2]) {
 							each_blocks[i_2].p(changed, child_ctx);
 						} else {
-							each_blocks[i_2] = create_each_block$1(component, child_ctx);
+							each_blocks[i_2] = create_each_block$2(component, child_ctx);
 							each_blocks[i_2].c();
 							each_blocks[i_2].m(div_1, null);
 						}
@@ -14303,7 +15363,7 @@
 					each_blocks.length = each_value.length;
 				}
 
-				if ((changed.$textvisible || changed.card) && div_1_class_value !== (div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-mv8r9f")) {
+				if ((changed.$textvisible || changed.card) && div_1_class_value !== (div_1_class_value = "cardtext " + ((ctx.$textvisible || ctx.card.textMode)? '': 'textvisible') + " svelte-pjl41q")) {
 					div_1.className = div_1_class_value;
 				}
 
@@ -14335,7 +15395,7 @@
 	}
 
 	// (6:4) {#each modelsEntries as [key, value]}
-	function create_each_block$1(component, ctx) {
+	function create_each_block$2(component, ctx) {
 		var if_block_anchor;
 
 		function select_block_type(ctx) {
@@ -14385,7 +15445,7 @@
 			c: function create() {
 				div = createElement("div");
 				text = createText(ctx.contrast);
-				addLoc(div, file$6, 7, 6, 337);
+				addLoc(div, file$7, 7, 6, 330);
 			},
 
 			m: function mount(target, anchor) {
@@ -14415,7 +15475,7 @@
 			c: function create() {
 				div = createElement("div");
 				text = createText(text_value);
-				addLoc(div, file$6, 9, 6, 381);
+				addLoc(div, file$7, 9, 6, 372);
 			},
 
 			m: function mount(target, anchor) {
@@ -14437,7 +15497,7 @@
 		};
 	}
 
-	function get_each_context$1(ctx, list, i) {
+	function get_each_context$2(ctx, list, i) {
 		const child_ctx = Object.create(ctx);
 		child_ctx.key = list[i][0];
 		child_ctx.value = list[i][1];
@@ -14451,13 +15511,15 @@
 		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 		init(this, options);
 		this.refs = {};
-		this._state = assign(assign(this.store._init(["bgColor","grayscale","cardViewModels","textvisible"]), data$7()), options.data);
-		this.store._add(this, ["bgColor","grayscale","cardViewModels","textvisible"]);
-		this._recompute({ card: 1, $bgColor: 1, contrast: 1, $grayscale: 1, $cardViewModels: 1 }, this._state);
+		this._state = assign(assign(this.store._init(["bgColor","filterSwitch","selectingFilter","textModeBackground","cardViewModels","textvisible"]), data$8()), options.data);
+		this.store._add(this, ["bgColor","filterSwitch","selectingFilter","textModeBackground","cardViewModels","textvisible"]);
+		this._recompute({ card: 1, $bgColor: 1, contrast: 1, $filterSwitch: 1, $selectingFilter: 1, $textModeBackground: 1, $cardViewModels: 1 }, this._state);
 		if (!('card' in this._state)) console.warn("<Color_card> was created without expected data property 'card'");
 		if (!('$bgColor' in this._state)) console.warn("<Color_card> was created without expected data property '$bgColor'");
 
-		if (!('$grayscale' in this._state)) console.warn("<Color_card> was created without expected data property '$grayscale'");
+		if (!('$filterSwitch' in this._state)) console.warn("<Color_card> was created without expected data property '$filterSwitch'");
+		if (!('$selectingFilter' in this._state)) console.warn("<Color_card> was created without expected data property '$selectingFilter'");
+		if (!('$textModeBackground' in this._state)) console.warn("<Color_card> was created without expected data property '$textModeBackground'");
 		if (!('$cardViewModels' in this._state)) console.warn("<Color_card> was created without expected data property '$cardViewModels'");
 
 		if (!('$textvisible' in this._state)) console.warn("<Color_card> was created without expected data property '$textvisible'");
@@ -14467,7 +15529,7 @@
 
 		this._handlers.destroy = [removeFromStore];
 
-		this._fragment = create_main_fragment$6(this, this._state);
+		this._fragment = create_main_fragment$7(this, this._state);
 
 		this.root._oncreate.push(() => {
 			oncreate$4.call(this);
@@ -14484,7 +15546,7 @@
 	}
 
 	assign(Color_card.prototype, protoDev);
-	assign(Color_card.prototype, methods$5);
+	assign(Color_card.prototype, methods$6);
 
 	Color_card.prototype._checkReadOnly = function _checkReadOnly(newState) {
 		if ('contrast' in newState && !this._updatingReadonlyProperty) throw new Error("<Color_card>: Cannot set read-only property 'contrast'");
@@ -14499,10 +15561,10 @@
 		}
 
 		if (changed.card || changed.$bgColor || changed.contrast) {
-			if (this._differs(state.textColor, (state.textColor = textColor$2(state)))) changed.textColor = true;
+			if (this._differs(state.textColor, (state.textColor = textColor$1(state)))) changed.textColor = true;
 		}
 
-		if (changed.card || changed.$grayscale) {
+		if (changed.card || changed.$filterSwitch || changed.$selectingFilter || changed.$textModeBackground || changed.$bgColor) {
 			if (this._differs(state.cardStyle, (state.cardStyle = cardStyle(state)))) changed.cardStyle = true;
 		}
 
@@ -24907,7 +25969,7 @@
 		return colorlists[colorlistsIndex].list;
 	}
 
-	function data$8() {
+	function data$9() {
 	  return {
 	    colorlists: [
 	      { name: 'Web Color',
@@ -24957,10 +26019,11 @@
 	    const el = e.target;
 	    if (el.classList.contains('tip')) {
 	      const [name, color] = el.title.split(' : ');
-	      store.fire('menu_open', e, {
-	        name,
-	        color: new Color$1(color)
-	      }, 'tip');
+	      this.store.fire('menu_open', {
+	        event: e,
+	        card: { name, color: new Color$1(color) },
+	        mode: 'tip',
+	      });
 	    }
 	  });
 	  colortips.addEventListener('dblclick', (e) => {
@@ -24969,7 +26032,7 @@
 	    if (el.classList.contains('tip')) {
 	      const [name, color] = el.title.split(' : ');
 
-	      store.fire('cards.ADD_CARD', {
+	      this.store.addCard({
 	        name,
 	        color: new Color$1(color)
 	      });
@@ -24989,9 +26052,9 @@
 	  }))
 	}
 
-	const file$7 = "src\\svelte\\color-lists.html";
+	const file$8 = "src\\svelte\\color-lists.html";
 
-	function create_main_fragment$7(component, ctx) {
+	function create_main_fragment$8(component, ctx) {
 		var div, select, text_1, div_1, div_2, div_3;
 
 		var each_value = ctx.colorlists;
@@ -24999,7 +26062,7 @@
 		var each_blocks = [];
 
 		for (var i = 0; i < each_value.length; i += 1) {
-			each_blocks[i] = create_each_block$2(component, get_each_context$2(ctx, each_value, i));
+			each_blocks[i] = create_each_block$3(component, get_each_context$3(ctx, each_value, i));
 		}
 
 		function change_handler(event) {
@@ -25011,7 +26074,7 @@
 		var each_1_blocks = [];
 
 		for (var i = 0; i < each_value_1.length; i += 1) {
-			each_1_blocks[i] = create_each_block_1(component, get_each_1_context(ctx, each_value_1, i));
+			each_1_blocks[i] = create_each_block_1$1(component, get_each_1_context$1(ctx, each_value_1, i));
 		}
 
 		return {
@@ -25023,7 +26086,7 @@
 					each_blocks[i].c();
 				}
 
-				text_1 = createText("\r\n\r\n");
+				text_1 = createText("\n\n");
 				div_1 = createElement("div");
 				div_2 = createElement("div");
 				div_3 = createElement("div");
@@ -25032,18 +26095,18 @@
 					each_1_blocks[i].c();
 				}
 				addListener(select, "change", change_handler);
-				select.className = "svelte-z7pkpf";
-				addLoc(select, file$7, 1, 2, 48);
+				select.className = "svelte-nyzeoa";
+				addLoc(select, file$8, 1, 2, 47);
 				div.id = "colorlists";
-				div.className = "select-wrapper svelte-z7pkpf";
-				addLoc(div, file$7, 0, 0, 0);
-				div_3.className = "scrollbar-content svelte-z7pkpf";
-				addLoc(div_3, file$7, 10, 4, 327);
-				div_2.className = "scrollbar-body svelte-z7pkpf";
-				addLoc(div_2, file$7, 9, 2, 293);
-				div_1.className = "colortips scrollbar-wrapper svelte-z7pkpf";
+				div.className = "select-wrapper svelte-nyzeoa";
+				addLoc(div, file$8, 0, 0, 0);
+				div_3.className = "scrollbar-content svelte-nyzeoa";
+				addLoc(div_3, file$8, 10, 4, 317);
+				div_2.className = "scrollbar-body svelte-nyzeoa";
+				addLoc(div_2, file$8, 9, 2, 284);
+				div_1.className = "colortips scrollbar-wrapper svelte-nyzeoa";
 				setStyle(div_1, "flex", "1");
-				addLoc(div_1, file$7, 8, 0, 231);
+				addLoc(div_1, file$8, 8, 0, 223);
 			},
 
 			m: function mount(target, anchor) {
@@ -25071,12 +26134,12 @@
 					each_value = ctx.colorlists;
 
 					for (var i = 0; i < each_value.length; i += 1) {
-						const child_ctx = get_each_context$2(ctx, each_value, i);
+						const child_ctx = get_each_context$3(ctx, each_value, i);
 
 						if (each_blocks[i]) {
 							each_blocks[i].p(changed, child_ctx);
 						} else {
-							each_blocks[i] = create_each_block$2(component, child_ctx);
+							each_blocks[i] = create_each_block$3(component, child_ctx);
 							each_blocks[i].c();
 							each_blocks[i].m(select, null);
 						}
@@ -25092,12 +26155,12 @@
 					each_value_1 = ctx.list;
 
 					for (var i = 0; i < each_value_1.length; i += 1) {
-						const child_ctx = get_each_1_context(ctx, each_value_1, i);
+						const child_ctx = get_each_1_context$1(ctx, each_value_1, i);
 
 						if (each_1_blocks[i]) {
 							each_1_blocks[i].p(changed, child_ctx);
 						} else {
-							each_1_blocks[i] = create_each_block_1(component, child_ctx);
+							each_1_blocks[i] = create_each_block_1$1(component, child_ctx);
 							each_1_blocks[i].c();
 							each_1_blocks[i].m(div_3, null);
 						}
@@ -25131,7 +26194,7 @@
 	}
 
 	// (3:4) {#each colorlists as data, index}
-	function create_each_block$2(component, ctx) {
+	function create_each_block$3(component, ctx) {
 		var option, text_value = ctx.data.name, text;
 
 		return {
@@ -25140,8 +26203,8 @@
 				text = createText(text_value);
 				option.__value = ctx.index;
 				option.value = option.__value;
-				option.className = "svelte-z7pkpf";
-				addLoc(option, file$7, 3, 6, 151);
+				option.className = "svelte-nyzeoa";
+				addLoc(option, file$8, 3, 6, 148);
 			},
 
 			m: function mount(target, anchor) {
@@ -25164,16 +26227,16 @@
 	}
 
 	// (12:6) {#each list as {name, color}
-	function create_each_block_1(component, ctx) {
+	function create_each_block_1$1(component, ctx) {
 		var div, div_title_value;
 
 		return {
 			c: function create() {
 				div = createElement("div");
-				div.className = "tip svelte-z7pkpf";
+				div.className = "tip svelte-nyzeoa";
 				div.title = div_title_value = ctx.name+' : '+ctx.color;
 				setStyle(div, "background-color", ctx.color);
-				addLoc(div, file$7, 12, 8, 420);
+				addLoc(div, file$8, 12, 8, 408);
 			},
 
 			m: function mount(target, anchor) {
@@ -25198,7 +26261,7 @@
 		};
 	}
 
-	function get_each_context$2(ctx, list, i) {
+	function get_each_context$3(ctx, list, i) {
 		const child_ctx = Object.create(ctx);
 		child_ctx.data = list[i];
 		child_ctx.each_value = list;
@@ -25206,7 +26269,7 @@
 		return child_ctx;
 	}
 
-	function get_each_1_context(ctx, list, i) {
+	function get_each_1_context$1(ctx, list, i) {
 		const child_ctx = Object.create(ctx);
 		child_ctx.name = list[i].name;
 		child_ctx.color = list[i].color;
@@ -25220,13 +26283,13 @@
 		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 		init(this, options);
 		this.refs = {};
-		this._state = assign(data$8(), options.data);
+		this._state = assign(data$9(), options.data);
 		this._recompute({ colorlists: 1, colorlistsIndex: 1 }, this._state);
 		if (!('colorlists' in this._state)) console.warn("<Color_lists> was created without expected data property 'colorlists'");
 		if (!('colorlistsIndex' in this._state)) console.warn("<Color_lists> was created without expected data property 'colorlistsIndex'");
 		this._intro = true;
 
-		this._fragment = create_main_fragment$7(this, this._state);
+		this._fragment = create_main_fragment$8(this, this._state);
 
 		this.root._oncreate.push(() => {
 			oncreate$5.call(this);
@@ -25260,7 +26323,7 @@
 		return Object.entries($cardViewModels);
 	}
 
-	function data$9() {
+	function data$a() {
 	  return {
 	    mode: false,
 	    activeCard: null,
@@ -25268,7 +26331,7 @@
 	    sizes: [120, 240, 360],
 	  }
 	}
-	var methods$6 = {
+	var methods$7 = {
 	  // submenuVisible (el) {
 	  //   const {submenu} = this.refs
 	  //   submenu.style.display = 'block'
@@ -25279,7 +26342,7 @@
 	  //   })
 	  // },
 	  add () {
-	    store.fire('cards.ADD_CARD', this.get().activeCard);
+	    this.store.addCard(this.get().activeCard);
 	  },
 	  edit () {
 	    this.cardComponent.edit();
@@ -25288,11 +26351,11 @@
 	    const selects = this.root.selectable.selects;
 	    // const howmany = selects.length
 	    if (selects.length) {
-	      store.fire('cards.DUPLICATE_CARD', selects.map((select) => select.index));
+	      this.store.duplicateCard(selects.map((select) => select.index));
 	    }
-	    // // reselect
-	    // const {cards} = store.get()
+	    // reselect
 	    // this.root.selectable.reset()
+	    // const { cards } = this.store.get()
 	    // for (let i = cards.length - 1; i >= cards.length - howmany; i--) {
 	    //   this.root.selectable.select(i)
 	    // }
@@ -25300,13 +26363,13 @@
 	  remove () {
 	    const selects = this.root.selectable.selects;
 	    if (selects.length) {
-	      store.fire('cards.REMOVE_CARD', selects.map((select) => select.index));
+	      this.store.removeCard(selects.map((select) => select.index));
 	    }
 	  },
 	  reverse () {
 	    const selects = this.root.selectable.selects;
 	    if (selects.length) {
-	      store.fire('cards.TOGGLE_TEXTMODE', selects.map((select) => select.index));
+	      this.store.toggleTextmode(selects.map((select) => select.index));
 	    }
 	  },
 
@@ -25328,13 +26391,13 @@
 	  } = this.refs;
 
 	  const menuHide = (e) => {
-	    store.fire('menu_close');
+	    this.store.fire('menu_close');
 	  };
 
-	  store.on('menu_open', (e, cardComponent, mode) => {
+	  this.store.on('menu_open', ({ event, cardComponent, card, mode }) => {
 	    menu.style.display = 'block';
-	    let x = e.clientX;
-	    let y = e.clientY;
+	    let x = event.clientX;
+	    let y = event.clientY;
 	    const rect = menu.getBoundingClientRect();
 	    if (window.innerWidth < rect.width + x) {
 	      x -= rect.width;
@@ -25348,7 +26411,7 @@
 	    });
 
 	    // 'tip' or 'card'
-	    const activeCard = mode === 'card' ? cardComponent.get().card : cardComponent;
+	    const activeCard = mode === 'card' ? cardComponent.get().card : card;
 	    this.set({ mode, activeCard });
 	    this.cardComponent = cardComponent;
 
@@ -25357,7 +26420,7 @@
 	    document.addEventListener('click', menuHide);
 	  });
 
-	  store.on('menu_close', (e) => {
+	  this.store.on('menu_close', (e) => {
 	    menu.style.display = 'none';
 	    // submenu.style.display = 'none'
 	    this.set({ mode: false });
@@ -25365,9 +26428,9 @@
 	    document.removeEventListener('click', menuHide);
 	  });
 	}
-	const file$8 = "src\\svelte\\context-menu.html";
+	const file$9 = "src\\svelte\\context-menu.html";
 
-	function create_main_fragment$8(component, ctx) {
+	function create_main_fragment$9(component, ctx) {
 		var div, text, hr, text_1;
 
 		function select_block_type(ctx) {
@@ -25385,13 +26448,13 @@
 			c: function create() {
 				div = createElement("div");
 				if (if_block) if_block.c();
-				text = createText("\r\n  ");
+				text = createText("\n  ");
 				hr = createElement("hr");
-				text_1 = createText("\r\n  ");
+				text_1 = createText("\n  ");
 				if (if_block_2) if_block_2.c();
-				addLoc(hr, file$8, 27, 2, 772);
+				addLoc(hr, file$9, 28, 2, 829);
 				div.className = "context-menu";
-				addLoc(div, file$8, 0, 0, 0);
+				addLoc(div, file$9, 0, 0, 0);
 			},
 
 			m: function mount(target, anchor) {
@@ -25405,7 +26468,9 @@
 			},
 
 			p: function update(changed, ctx) {
-				if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+				if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
+					if_block.p(changed, ctx);
+				} else {
 					if (if_block) if_block.d(1);
 					if_block = current_block_type && current_block_type(component, ctx);
 					if (if_block) if_block.c();
@@ -25440,24 +26505,42 @@
 
 	// (2:2) {#if mode == 'tip'}
 	function create_if_block$2(component, ctx) {
-		var p, text;
+		var p, text, text_1, p_1, text_2;
 
 		function click_handler(event) {
 			component.add();
+		}
+
+		function click_handler_1(event) {
+			component.store.setBgColor(ctx.activeCard.color);
 		}
 
 		return {
 			c: function create() {
 				p = createElement("p");
 				text = createText("ADD CARD");
+				text_1 = createText("\n    ");
+				p_1 = createElement("p");
+				text_2 = createText("SET BACKGROUND");
 				addListener(p, "click", click_handler);
 				p.className = "menuitem";
-				addLoc(p, file$8, 2, 4, 64);
+				addLoc(p, file$9, 2, 4, 62);
+				addListener(p_1, "click", click_handler_1);
+				p_1.className = "menuitem";
+				addLoc(p_1, file$9, 3, 4, 116);
 			},
 
 			m: function mount(target, anchor) {
 				insert(target, p, anchor);
 				append(p, text);
+				insert(target, text_1, anchor);
+				insert(target, p_1, anchor);
+				append(p_1, text_2);
+			},
+
+			p: function update(changed, _ctx) {
+				ctx = _ctx;
+
 			},
 
 			d: function destroy$$1(detach) {
@@ -25466,11 +26549,17 @@
 				}
 
 				removeListener(p, "click", click_handler);
+				if (detach) {
+					detachNode(text_1);
+					detachNode(p_1);
+				}
+
+				removeListener(p_1, "click", click_handler_1);
 			}
 		};
 	}
 
-	// (4:26) 
+	// (5:26) 
 	function create_if_block_1$2(component, ctx) {
 		var p, i, text, text_1, p_1, i_1, text_2, text_3, p_2, i_2, text_4, text_5, p_3, i_3, text_6;
 
@@ -25494,39 +26583,39 @@
 			c: function create() {
 				p = createElement("p");
 				i = createElement("i");
-				text = createText("\r\n      RENAME");
-				text_1 = createText("\r\n    ");
+				text = createText("\n      RENAME");
+				text_1 = createText("\n    ");
 				p_1 = createElement("p");
 				i_1 = createElement("i");
-				text_2 = createText("\r\n      DUPLICATE");
-				text_3 = createText("\r\n    ");
+				text_2 = createText("\n      DUPLICATE");
+				text_3 = createText("\n    ");
 				p_2 = createElement("p");
 				i_2 = createElement("i");
-				text_4 = createText("\r\n      FILL/TEXT");
-				text_5 = createText("\r\n    ");
+				text_4 = createText("\n      FILL/TEXT");
+				text_5 = createText("\n    ");
 				p_3 = createElement("p");
 				i_3 = createElement("i");
-				text_6 = createText("\r\n      DELETE");
+				text_6 = createText("\n      DELETE");
 				i.className = "fas fa-edit fa-fw";
-				addLoc(i, file$8, 5, 6, 193);
+				addLoc(i, file$9, 6, 6, 272);
 				addListener(p, "click", click_handler);
 				p.className = "menuitem";
-				addLoc(p, file$8, 4, 4, 147);
+				addLoc(p, file$9, 5, 4, 227);
 				i_1.className = "fas fa-copy fa-fw";
-				addLoc(i_1, file$8, 9, 6, 307);
+				addLoc(i_1, file$9, 10, 6, 382);
 				addListener(p_1, "click", click_handler_1);
 				p_1.className = "menuitem";
-				addLoc(p_1, file$8, 8, 4, 256);
+				addLoc(p_1, file$9, 9, 4, 332);
 				i_2.className = "fas fa-sync fa-fw";
-				addLoc(i_2, file$8, 13, 6, 422);
+				addLoc(i_2, file$9, 14, 6, 493);
 				addListener(p_2, "click", click_handler_2);
 				p_2.className = "menuitem";
-				addLoc(p_2, file$8, 12, 4, 373);
+				addLoc(p_2, file$9, 13, 4, 445);
 				i_3.className = "fas fa-times fa-fw";
-				addLoc(i_3, file$8, 17, 6, 536);
+				addLoc(i_3, file$9, 18, 6, 603);
 				addListener(p_3, "click", click_handler_3);
 				p_3.className = "menuitem";
-				addLoc(p_3, file$8, 16, 4, 488);
+				addLoc(p_3, file$9, 17, 4, 556);
 			},
 
 			m: function mount(target, anchor) {
@@ -25546,6 +26635,8 @@
 				append(p_3, i_3);
 				append(p_3, text_6);
 			},
+
+			p: noop,
 
 			d: function destroy$$1(detach) {
 				if (detach) {
@@ -25575,8 +26666,8 @@
 		};
 	}
 
-	// (30:4) {#each copys as model}
-	function create_each_block$3(component, ctx) {
+	// (31:4) {#each copys as model}
+	function create_each_block$4(component, ctx) {
 		var p, text, text_1_value = ctx.activeCard.color[ctx.model](), text_1;
 
 		return {
@@ -25586,9 +26677,9 @@
 				text_1 = createText(text_1_value);
 				p._svelte = { component, ctx };
 
-				addListener(p, "click", click_handler$1);
+				addListener(p, "click", click_handler$2);
 				p.className = "menuitem";
-				addLoc(p, file$8, 30, 6, 832);
+				addLoc(p, file$9, 31, 6, 886);
 			},
 
 			m: function mount(target, anchor) {
@@ -25611,12 +26702,12 @@
 					detachNode(p);
 				}
 
-				removeListener(p, "click", click_handler$1);
+				removeListener(p, "click", click_handler$2);
 			}
 		};
 	}
 
-	// (29:2) {#if activeCard}
+	// (30:2) {#if activeCard}
 	function create_if_block_2(component, ctx) {
 		var each_anchor;
 
@@ -25625,7 +26716,7 @@
 		var each_blocks = [];
 
 		for (var i = 0; i < each_value.length; i += 1) {
-			each_blocks[i] = create_each_block$3(component, get_each_context$3(ctx, each_value, i));
+			each_blocks[i] = create_each_block$4(component, get_each_context$4(ctx, each_value, i));
 		}
 
 		return {
@@ -25650,12 +26741,12 @@
 					each_value = ctx.copys;
 
 					for (var i = 0; i < each_value.length; i += 1) {
-						const child_ctx = get_each_context$3(ctx, each_value, i);
+						const child_ctx = get_each_context$4(ctx, each_value, i);
 
 						if (each_blocks[i]) {
 							each_blocks[i].p(changed, child_ctx);
 						} else {
-							each_blocks[i] = create_each_block$3(component, child_ctx);
+							each_blocks[i] = create_each_block$4(component, child_ctx);
 							each_blocks[i].c();
 							each_blocks[i].m(each_anchor.parentNode, each_anchor);
 						}
@@ -25678,7 +26769,7 @@
 		};
 	}
 
-	function get_each_context$3(ctx, list, i) {
+	function get_each_context$4(ctx, list, i) {
 		const child_ctx = Object.create(ctx);
 		child_ctx.model = list[i];
 		child_ctx.each_value = list;
@@ -25686,7 +26777,7 @@
 		return child_ctx;
 	}
 
-	function click_handler$1(event) {
+	function click_handler$2(event) {
 		const { component, ctx } = this._svelte;
 
 		component.copyColor(ctx.model);
@@ -25697,7 +26788,7 @@
 		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 		init(this, options);
 		this.refs = {};
-		this._state = assign(assign(this.store._init(["cardViewModels"]), data$9()), options.data);
+		this._state = assign(assign(this.store._init(["cardViewModels"]), data$a()), options.data);
 		this.store._add(this, ["cardViewModels"]);
 		this._recompute({ $cardViewModels: 1 }, this._state);
 		if (!('$cardViewModels' in this._state)) console.warn("<Context_menu> was created without expected data property '$cardViewModels'");
@@ -25708,7 +26799,7 @@
 
 		this._handlers.destroy = [removeFromStore];
 
-		this._fragment = create_main_fragment$8(this, this._state);
+		this._fragment = create_main_fragment$9(this, this._state);
 
 		this.root._oncreate.push(() => {
 			oncreate$6.call(this);
@@ -25725,7 +26816,7 @@
 	}
 
 	assign(Context_menu.prototype, protoDev);
-	assign(Context_menu.prototype, methods$6);
+	assign(Context_menu.prototype, methods$7);
 
 	Context_menu.prototype._checkReadOnly = function _checkReadOnly(newState) {
 		if ('modelsEntries' in newState && !this._updatingReadonlyProperty) throw new Error("<Context_menu>: Cannot set read-only property 'modelsEntries'");
@@ -25739,9 +26830,9 @@
 
 	/* src\svelte\modal.html generated by Svelte v2.13.5 */
 
-	const file$9 = "src\\svelte\\modal.html";
+	const file$a = "src\\svelte\\modal.html";
 
-	function create_main_fragment$9(component, ctx) {
+	function create_main_fragment$a(component, ctx) {
 		var div, text, div_1, slot_content_header = component._slotted.header, slot_content_header_after, text_1, button, text_2, text_3, hr, text_4, slot_content_default = component._slotted.default, slot_content_default_before;
 
 		function click_handler(event) {
@@ -25765,13 +26856,13 @@
 				text_4 = createText("\r\n  ");
 				addListener(div, "click", click_handler);
 				div.className = "modal-background svelte-1tnlq1e";
-				addLoc(div, file$9, 0, 0, 0);
+				addLoc(div, file$a, 0, 0, 0);
 				addListener(button, "click", click_handler_1);
 				button.className = "close-btn svelte-1tnlq1e";
-				addLoc(button, file$9, 4, 2, 119);
-				addLoc(hr, file$9, 5, 2, 185);
+				addLoc(button, file$a, 4, 2, 119);
+				addLoc(hr, file$a, 5, 2, 185);
 				div_1.className = "modal svelte-1tnlq1e";
-				addLoc(div_1, file$9, 2, 0, 65);
+				addLoc(div_1, file$a, 2, 0, 65);
 			},
 
 			m: function mount(target, anchor) {
@@ -25832,7 +26923,7 @@
 
 		this._slotted = options.slots || {};
 
-		this._fragment = create_main_fragment$9(this, this._state);
+		this._fragment = create_main_fragment$a(this, this._state);
 
 		if (options.target) {
 			if (options.hydrate) throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -25863,13 +26954,13 @@
 		return list.some(({ paletteName }) => paletteName === value);
 	}
 
-	function data$a() {
+	function data$b() {
 	  return {
 	    list: [],
 	    value: '',
 	  }
 	}
-	var methods$7 = {
+	var methods$8 = {
 	  getList () {
 	    return this.store.dataList('palette').map(({ paletteName, cards }) => {
 	      const palette = colorlist(cards);
@@ -25915,9 +27006,9 @@
 	    list: this.getList(),
 	  });
 	}
-	const file$a = "src\\svelte\\save-modal.html";
+	const file$b = "src\\svelte\\save-modal.html";
 
-	function create_main_fragment$a(component, ctx) {
+	function create_main_fragment$b(component, ctx) {
 		var text, h3, text_1, text_2, text_3, hr, text_4, div, div_1, text_5, text_6, input, input_updating = false, text_7, button, text_8, i, text_11;
 
 		var each_value = ctx.list;
@@ -25925,7 +27016,7 @@
 		var each_blocks = [];
 
 		for (var i_1 = 0; i_1 < each_value.length; i_1 += 1) {
-			each_blocks[i_1] = create_each_block$4(component, get_each_context$4(ctx, each_value, i_1));
+			each_blocks[i_1] = create_each_block$5(component, get_each_context$5(ctx, each_value, i_1));
 		}
 
 		function input_input_handler() {
@@ -25958,48 +27049,48 @@
 
 		return {
 			c: function create() {
-				text = createText("\r\n  ");
+				text = createText("\n  ");
 				h3 = createElement("h3");
 				text_1 = createText("Save & Load");
-				text_2 = createText("\r\n\r\n  ");
+				text_2 = createText("\n\n  ");
 
 				for (var i_1 = 0; i_1 < each_blocks.length; i_1 += 1) {
 					each_blocks[i_1].c();
 				}
 
-				text_3 = createText("\r\n\r\n  ");
+				text_3 = createText("\n\n  ");
 				hr = createElement("hr");
-				text_4 = createText("\r\n\r\n  ");
+				text_4 = createText("\n\n  ");
 				div = createElement("div");
 				div_1 = createElement("div");
 				text_5 = createText("Save as:");
-				text_6 = createText("\r\n    ");
+				text_6 = createText("\n    ");
 				input = createElement("input");
-				text_7 = createText("\r\n    ");
+				text_7 = createText("\n    ");
 				button = createElement("button");
 				if_block.c();
-				text_8 = createText("\r\n      ");
+				text_8 = createText("\n      ");
 				i = createElement("i");
-				text_11 = createText("\r\n");
+				text_11 = createText("\n");
 				modal._fragment.c();
 				setAttribute(h3, "slot", "header");
-				addLoc(h3, file$a, 1, 2, 36);
-				addLoc(hr, file$a, 27, 2, 791);
-				div_1.className = "svelte-vuh5st";
-				addLoc(div_1, file$a, 30, 4, 838);
+				addLoc(h3, file$b, 1, 2, 35);
+				addLoc(hr, file$b, 27, 2, 764);
+				div_1.className = "svelte-1d6gs0k";
+				addLoc(div_1, file$b, 30, 4, 808);
 				addListener(input, "input", input_input_handler);
 				input.placeholder = "Palette Name";
 				setStyle(input, "flex", "1");
-				input.className = "svelte-vuh5st";
-				addLoc(input, file$a, 31, 4, 863);
+				input.className = "svelte-1d6gs0k";
+				addLoc(input, file$b, 31, 4, 832);
 				i.className = "fa fa-plus-square";
-				addLoc(i, file$a, 38, 6, 1129);
+				addLoc(i, file$b, 38, 6, 1091);
 				addListener(button, "click", click_handler_3);
 				setStyle(button, "background-color", (ctx.listContains?'aquamarine':'dodgerblue'));
-				button.className = "svelte-vuh5st";
-				addLoc(button, file$a, 32, 4, 931);
-				div.className = "footer button-set svelte-vuh5st";
-				addLoc(div, file$a, 29, 2, 801);
+				button.className = "svelte-1d6gs0k";
+				addLoc(button, file$b, 32, 4, 899);
+				div.className = "footer button-set svelte-1d6gs0k";
+				addLoc(div, file$b, 29, 2, 772);
 			},
 
 			m: function mount(target, anchor) {
@@ -26038,12 +27129,12 @@
 					each_value = ctx.list;
 
 					for (var i_1 = 0; i_1 < each_value.length; i_1 += 1) {
-						const child_ctx = get_each_context$4(ctx, each_value, i_1);
+						const child_ctx = get_each_context$5(ctx, each_value, i_1);
 
 						if (each_blocks[i_1]) {
 							each_blocks[i_1].p(changed, child_ctx);
 						} else {
-							each_blocks[i_1] = create_each_block$4(component, child_ctx);
+							each_blocks[i_1] = create_each_block$5(component, child_ctx);
 							each_blocks[i_1].c();
 							each_blocks[i_1].m(text_3.parentNode, text_3);
 						}
@@ -26081,7 +27172,7 @@
 	}
 
 	// (4:2) {#each list as {paletteName, palette, cardsLength}
-	function create_each_block$4(component, ctx) {
+	function create_each_block$5(component, ctx) {
 		var div, div_1, text_value = ctx.paletteName, text, text_2, div_2, text_4, div_3, text_5_value = ctx.palette.length, text_5, text_7, div_4, text_8_value = ctx.cardsLength, text_8, text_10, div_5, button, i, div_class_value;
 
 		var each_value_1 = ctx.palette;
@@ -26089,7 +27180,7 @@
 		var each_blocks = [];
 
 		for (var i_1 = 0; i_1 < each_value_1.length; i_1 += 1) {
-			each_blocks[i_1] = create_each_block_1$1(component, get_each_context_1(ctx, each_value_1, i_1));
+			each_blocks[i_1] = create_each_block_1$2(component, get_each_context_1(ctx, each_value_1, i_1));
 		}
 
 		return {
@@ -26097,50 +27188,50 @@
 				div = createElement("div");
 				div_1 = createElement("div");
 				text = createText(text_value);
-				text_2 = createText("\r\n    ");
+				text_2 = createText("\n    ");
 				div_2 = createElement("div");
 
 				for (var i_1 = 0; i_1 < each_blocks.length; i_1 += 1) {
 					each_blocks[i_1].c();
 				}
 
-				text_4 = createText("\r\n    ");
+				text_4 = createText("\n    ");
 				div_3 = createElement("div");
 				text_5 = createText(text_5_value);
-				text_7 = createText("\r\n    ");
+				text_7 = createText("\n    ");
 				div_4 = createElement("div");
 				text_8 = createText(text_8_value);
-				text_10 = createText("\r\n    ");
+				text_10 = createText("\n    ");
 				div_5 = createElement("div");
 				button = createElement("button");
 				i = createElement("i");
 				div_1._svelte = { component, ctx };
 
-				addListener(div_1, "click", click_handler$2);
-				div_1.className = "name svelte-vuh5st";
-				addLoc(div_1, file$a, 5, 4, 219);
+				addListener(div_1, "click", click_handler$3);
+				div_1.className = "name svelte-1d6gs0k";
+				addLoc(div_1, file$b, 5, 4, 214);
 
 				div_2._svelte = { component, ctx };
 
 				addListener(div_2, "click", click_handler_1);
-				div_2.className = "palette button-set svelte-vuh5st";
-				addLoc(div_2, file$a, 8, 4, 305);
-				div_3.className = "color-num svelte-vuh5st";
-				addLoc(div_3, file$a, 13, 4, 499);
-				div_4.className = "color-num svelte-vuh5st";
-				addLoc(div_4, file$a, 16, 4, 564);
+				div_2.className = "palette button-set svelte-1d6gs0k";
+				addLoc(div_2, file$b, 8, 4, 297);
+				div_3.className = "color-num svelte-1d6gs0k";
+				addLoc(div_3, file$b, 13, 4, 486);
+				div_4.className = "color-num svelte-1d6gs0k";
+				addLoc(div_4, file$b, 16, 4, 548);
 				i.className = "fa fa-minus-square";
-				addLoc(i, file$a, 21, 8, 701);
+				addLoc(i, file$b, 21, 8, 680);
 
 				button._svelte = { component, ctx };
 
 				addListener(button, "click", click_handler_2);
-				button.className = "svelte-vuh5st";
-				addLoc(button, file$a, 20, 6, 652);
-				div_5.className = "btns svelte-vuh5st";
-				addLoc(div_5, file$a, 19, 4, 626);
-				div.className = div_class_value = "listitem button-set " + (ctx.paletteName == ctx.$paletteName ? 'active':'') + " svelte-vuh5st";
-				addLoc(div, file$a, 4, 2, 136);
+				button.className = "svelte-1d6gs0k";
+				addLoc(button, file$b, 20, 6, 632);
+				div_5.className = "btns svelte-1d6gs0k";
+				addLoc(div_5, file$b, 19, 4, 607);
+				div.className = div_class_value = "listitem button-set " + (ctx.paletteName == ctx.$paletteName ? 'active':'') + " svelte-1d6gs0k";
+				addLoc(div, file$b, 4, 2, 132);
 			},
 
 			m: function mount(target, anchor) {
@@ -26183,7 +27274,7 @@
 						if (each_blocks[i_1]) {
 							each_blocks[i_1].p(changed, child_ctx);
 						} else {
-							each_blocks[i_1] = create_each_block_1$1(component, child_ctx);
+							each_blocks[i_1] = create_each_block_1$2(component, child_ctx);
 							each_blocks[i_1].c();
 							each_blocks[i_1].m(div_2, null);
 						}
@@ -26205,7 +27296,7 @@
 				}
 
 				button._svelte.ctx = ctx;
-				if ((changed.list || changed.$paletteName) && div_class_value !== (div_class_value = "listitem button-set " + (ctx.paletteName == ctx.$paletteName ? 'active':'') + " svelte-vuh5st")) {
+				if ((changed.list || changed.$paletteName) && div_class_value !== (div_class_value = "listitem button-set " + (ctx.paletteName == ctx.$paletteName ? 'active':'') + " svelte-1d6gs0k")) {
 					div.className = div_class_value;
 				}
 			},
@@ -26215,7 +27306,7 @@
 					detachNode(div);
 				}
 
-				removeListener(div_1, "click", click_handler$2);
+				removeListener(div_1, "click", click_handler$3);
 
 				destroyEach(each_blocks, detach);
 
@@ -26226,15 +27317,15 @@
 	}
 
 	// (10:6) {#each palette as color}
-	function create_each_block_1$1(component, ctx) {
+	function create_each_block_1$2(component, ctx) {
 		var div;
 
 		return {
 			c: function create() {
 				div = createElement("div");
-				div.className = "tip svelte-vuh5st";
+				div.className = "tip svelte-1d6gs0k";
 				setStyle(div, "background-color", ctx.color);
-				addLoc(div, file$a, 10, 8, 408);
+				addLoc(div, file$b, 10, 8, 398);
 			},
 
 			m: function mount(target, anchor) {
@@ -26297,7 +27388,7 @@
 		};
 	}
 
-	function get_each_context$4(ctx, list, i) {
+	function get_each_context$5(ctx, list, i) {
 		const child_ctx = Object.create(ctx);
 		child_ctx.paletteName = list[i].paletteName;
 		child_ctx.palette = list[i].palette;
@@ -26307,7 +27398,7 @@
 		return child_ctx;
 	}
 
-	function click_handler$2(event) {
+	function click_handler$3(event) {
 		const { component, ctx } = this._svelte;
 
 		component.load(ctx.paletteName);
@@ -26337,7 +27428,7 @@
 		this._debugName = '<Save_modal>';
 		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 		init(this, options);
-		this._state = assign(assign(this.store._init(["paletteName"]), data$a()), options.data);
+		this._state = assign(assign(this.store._init(["paletteName"]), data$b()), options.data);
 		this.store._add(this, ["paletteName"]);
 		this._recompute({ list: 1, value: 1 }, this._state);
 		if (!('list' in this._state)) console.warn("<Save_modal> was created without expected data property 'list'");
@@ -26347,7 +27438,7 @@
 
 		this._handlers.destroy = [removeFromStore];
 
-		this._fragment = create_main_fragment$a(this, this._state);
+		this._fragment = create_main_fragment$b(this, this._state);
 
 		this.root._oncreate.push(() => {
 			oncreate$7.call(this);
@@ -26364,7 +27455,7 @@
 	}
 
 	assign(Save_modal.prototype, protoDev);
-	assign(Save_modal.prototype, methods$7);
+	assign(Save_modal.prototype, methods$8);
 
 	Save_modal.prototype._checkReadOnly = function _checkReadOnly(newState) {
 		if ('listContains' in newState && !this._updatingReadonlyProperty) throw new Error("<Save_modal>: Cannot set read-only property 'listContains'");
@@ -26379,7 +27470,6 @@
 	/* src\svelte\app.html generated by Svelte v2.13.5 */
 
 	const sort = [
-	  { name: '---', value: 'none' },
 	  { name: 'Random', value: 'random' },
 	  { name: 'Hue', value: 'hue' },
 	  { name: 'Hue(∠)', value: 'deg' },
@@ -26387,31 +27477,21 @@
 	  { name: 'L(HSL)', value: 'lightness' },
 	  { name: 'S(HSV)', value: 'saturationv' },
 	  { name: 'V(HSV)', value: 'value' },
-	  { name: 'C(HCG)', value: 'chroma' },
-	  { name: 'G(HCG)', value: 'gray' },
-	  { name: 'W(HWB)', value: 'white' },
-	  { name: 'B(HWB)', value: 'wblack' },
+	  // { name: 'C(HCG)', value: 'chroma' },
+	  // { name: 'G(HCG)', value: 'gray' },
 	  { name: 'C(CMYK)', value: 'cyan' },
 	  { name: 'M(CMYK)', value: 'magenta' },
 	  { name: 'Y(CMYK)', value: 'yellow' },
 	  { name: 'K(CMYK)', value: 'black' },
-	  { name: 'Grayscale', value: 'grayscale' },
 	  { name: 'Contrast', value: 'contrast' },
 	];
 
-	function textColor$3({ $bgColor }) {
-		return $bgColor.isDark() ? '#fff' : '#000';
+	function bgColor({ $bgColor, $filterSwitch, $selectingFilter }) {
+	  const filter = $filterSwitch ? $selectingFilter : '';
+	  return filter ? $bgColor[filter]() : $bgColor
 	}
 
-	function bgColor({ $bgColor, $grayscale }) {
-		return $grayscale ? $bgColor.grayscale() : $bgColor;
-	}
-
-	function placeholder({ current }) {
-		return new Color$1(current.color).nearColorName();
-	}
-
-	function data$b() {
+	function data$c() {
 	  return {
 	    showSubmenu: false,
 	    showModal: false,
@@ -26421,18 +27501,30 @@
 	    },
 	    memo: null,
 	    sort,
+	    filters: [
+	      { name: 'Grayscale', value: 'grayscale' },
+	      { name: 'Green-blindness(♂:6% ♀:0.4%)', value: 'greenBlindness' },
+	      { name: 'Red-blindness (♂:2.5%)', value: 'redBlindness' },
+	    ],
+	    cantUndo: true,
+	    cantRedo: true,
 	  }
 	}
-	var methods$8 = {
-	  history () {
-	    console.log('');
+	var methods$9 = {
+	  focus (el) {
+	    // const placeholder = this.refs.placeholder.placeholder
+	    if (!el.value) {
+	      el.value = el.placeholder;
+	      el.selectionStart = 0;
+	      el.selectionEnd = el.placeholder.length;
+	    }
 	  },
 	  addCard (current, textMode) {
 	    const { name, color } = current;
 	    if (!name) {
-	      current.name = `(${new Color$1(color).nearColorName()})`;
+	      current.name = `(${this.refs.name.placeholder})`;
 	    }
-	    this.store.fire('cards.ADD_CARD', Object.assign({ textMode }, current));
+	    this.store.addCard(Object.assign({ textMode }, current));
 	    this.set({ current: { name: '', color } });
 	  },
 	  sortZindex (sortXY) {
@@ -26454,33 +27546,62 @@
 	          .sort((a, b) => a.index - b.index),
 	      });
 	    }
+	    this.cardsPosition(sortXY, sort);
+	  },
+
+	  swapSort () {
+	    const { sortX, sortY } = this.store.get();
+	    this.store.set({ sortX: sortY, sortY: sortX });
+	    this.cardsPosition();
 	  },
 	  cardsPosition (sortXY, value) {
-	    if (sortXY && value) {
-	      this.store.set({ [sortXY]: value });
+	    if (sortXY) {
+	      if (typeof value === 'string') {
+	        this.store.set({
+	          [sortXY]: value,
+	          [sortXY + 'Switch']: 1,
+	        });
+	      } else {
+	        this.store.set({
+	          [sortXY + 'Switch']: (num) => (num % 2 + 1),
+	        });
+	      }
 	    }
-	    const { cards } = this.store.get();
-	    cards.forEach((card, i) => {
-	      cards[i] = this.store.cardPosition(card);
+
+	    const state = this.store.get();
+	    const { cards, sortZSwitch, bgColor } = state;
+	    const sort = state[sortXY];
+	    let result = cards;
+
+	    if (sortZSwitch && typeof bgColor[sort] === 'function') {
+	      result = cards
+	        .sort((a, b) => {
+	          const colorA = a.color[sort]();
+	          const colorB = b.color[sort]();
+	          return colorA - colorB
+	        })
+	        .map((card, i) => {
+	          card.zIndex = i;
+	          return card
+	        })
+	        .sort((a, b) => a.index - b.index);
+	    }
+
+	    this.store.set({
+	      cards: result.map((card) => this.store.cardPosition(card, true))
 	    });
-	    this.store.set({ cards });
 	    this.store.memo();
-	  },
-	  setBgColor (color) {
-	    const { bgColor } = this.store.get();
-	    const coloraplha1 = bgColor.alphaBlending(color);
-	    this.store.set({ bgColor: coloraplha1 });
 	  },
 	  reverse () {
 	    const selects = this.selectable.selects;
 	    const cards = selects.length ? selects : this.store.get().cards;
 	    const indexs = cards.map((card) => card.index);
-	    store.fire('cards.TOGGLE_TEXTMODE', indexs);
+	    this.store.toggleTextmode(indexs);
 	  },
 	  remove () {
 	    const selects = this.selectable.selects;
 	    if (selects.length) {
-	      store.fire('cards.REMOVE_CARD', selects.map((select) => select.index));
+	      this.store.removeCard(selects.map((select) => select.index));
 	    } else {
 	      this.store.set({ cards: [] });
 	      this.store.memo();
@@ -26494,13 +27615,6 @@
 	};
 
 	function oncreate$8() {
-	  this.refs.name.addEventListener('focus', function (e) {
-	    if (!this.value) {
-	      this.value = this.placeholder;
-	      this.selectionStart = 0;
-	      this.selectionEnd = this.placeholder.length;
-	    }
-	  });
 	  const box = this.refs.box;
 	  const cardSize = 120;
 	  const colorsWidth = 320;
@@ -26509,14 +27623,10 @@
 	    switch (sort) {
 	      case null:
 	      case undefined:
-	      case 'none':
 	      case 'random':
 	        return Math.random()
 	      case 'deg':
 	        return (card.color.hue() - 90) * Math.PI / 180
-	      case 'grayscale':
-	        by = card.color.grayscale().lightness();
-	        break
 	      case 'contrast':
 	        by = (this.store.get().bgColor[sort](card.color) - 1) / 20;
 	        break
@@ -26525,29 +27635,30 @@
 	        by = card.color[sort]() / max;
 	        break
 	    }
-	    return dirctionflg ? by : 1 - by
+	    return dirctionflg === 1 ? by : 1 - by
 	  };
 	  // card position init
-	  store.cardPosition = (card) => {
+	  this.store.cardPosition = (card, sortflg) => {
 	    const rect = box.getBoundingClientRect();
-	    const { sortX, sortY } = this.store.get();
+	    const { sortX, sortY, sortXSwitch, sortYSwitch } = this.store.get();
+
 	    const maxW = rect.width - cardSize - colorsWidth;
 	    const maxH = rect.height - cardSize;
 
-	    if (sortX === 'deg' || sortY === 'deg') {
+	    if (sortflg || card.left == null || card.top == null) {
+	      if ((sortX === 'deg') || (sortY === 'deg')) {
 	      // Circle
-	      const deg = sortX === 'deg' ? byer(sortX, card) : byer(sortY, card);
-	      const radius = sortY === 'deg' ? byer(sortX, card, true) : byer(sortY, card, true);
-	      const maxR = Math.min(maxW, maxH) / 2;
-	      // console.log('deg', card.color.hsl(),  deg)
-	      card.left = Math.round(maxR * Math.cos(deg) * radius + maxR + colorsWidth);
-	      card.top = Math.round(maxR * Math.sin(deg) * radius + maxR);
-	    } else {
-	      if (card.left == null || sortX !== 'none') {
-	        card.left = Math.round((maxW) * byer(sortX, card) + colorsWidth);
-	      }
-	      if (card.top == null || sortY !== 'none') {
-	        card.top = Math.round((maxH) * byer(sortY, card));
+	        const xx = byer(sortX, card, sortXSwitch);
+	        const xy = byer(sortY, card, sortYSwitch);
+	        const deg = sortX === 'deg' ? xx : xy;
+	        const radius = sortY === 'deg' ? xx : xy;
+	        const maxR = Math.min(maxW, maxH) / 2;
+	        // console.log('deg', card.color.hsl(),  deg)
+	        card.left = Math.round(maxR * Math.cos(deg) * radius + maxR + colorsWidth);
+	        card.top = Math.round(maxR * Math.sin(deg) * radius + maxR);
+	      } else {
+	        card.left = Math.round((maxW) * byer(sortX, card, sortXSwitch) + colorsWidth);
+	        card.top = Math.round((maxH) * byer(sortY, card, sortYSwitch));
 	      }
 	    }
 	    return card
@@ -26563,8 +27674,9 @@
 	      const { memo, current } = this.get();
 
 	      if (selects.length === 1) {
-	        const { name, color } = store.get().cards[selects[0].index];
-	        this.set({ current: { name, color } });
+	        const { name, color } = this.store.get().cards[selects[0].index];
+	        const nearestColorName = name.match(/^\((.*?)\)$/i);
+	        this.set({ current: { name: nearestColorName ? '' : name, color } });
 	        if (!memo) {
 	          this.set({ memo: current });
 	        }
@@ -26576,18 +27688,38 @@
 	    },
 	  });
 
+	  this.store.on('update', () => {
+	    this.set({
+	      cantUndo: !this.store.undoCount(),
+	      cantRedo: !this.store.redoCount(),
+	    });
+	  });
+
 	  this.store.on('selectAll', () => {
 	    this.selectable.selectAll();
 	  });
 	  this.store.on('delete', () => {
 	    this.remove();
 	  });
-	  this.cardsPosition();
-	}
-	const file$b = "src\\svelte\\app.html";
 
-	function create_main_fragment$b(component, ctx) {
-		var div, div_1, button, i, text_1, button_1, i_1, text_3, button_2, i_2, text_5, button_3, i_3, text_7, button_4, i_4, text_9, button_5, i_5, text_11, text_13, div_2, div_3, button_6, text_14, text_15, ladel, select, select_updating = false, text_17, div_4, button_7, text_18, text_19, ladel_1, select_1, select_1_updating = false, text_22, hr, text_23, div_5, div_6, input, input_updating = false, text_25, div_7, button_8, text_26, text_28, div_8, button_9, text_29, text_31, div_9, button_10, text_32, text_34, colorpicker_updating = {}, text_35, hr_1, text_36, text_37, div_10, text_38, a, i_6, text_41, div_11, text_43, text_44, if_block_1_anchor;
+	  // cardsPosition
+	  this.store.set({
+	    cards: (cards) => cards.map((card) => this.store.cardPosition(card)),
+	  });
+	}
+	function onstate$1({ changed, current }) {
+	  if (changed.current) {
+	    new Color$1(current.current.color).nearestColorName().then((name) => {
+	      this.refs.name.placeholder = name;
+	    }).catch(() => {
+	      this.refs.name.placeholder = 'Card Name';
+	    });
+	  }
+	}
+	const file$c = "src\\svelte\\app.html";
+
+	function create_main_fragment$c(component, ctx) {
+		var div, div_1, button, i, text_1, button_1, i_1, text_3, button_2, i_2, text_5, button_3, i_3, text_7, button_4, i_4, text_9, button_5, i_5, text_11, text_13, div_2, div_3, button_6, i_6, text_15, label, select, select_updating = false, text_18, hr, text_19, h5, text_20, div_4, button_7, text_21, text_24, div_5, div_6, button_8, text_25, text_26, label_1, select_1, select_1_updating = false, text_28, div_7, button_9, text_29, text_30, div_8, button_10, text_31, text_32, label_2, select_2, select_2_updating = false, text_35, hr_1, text_36, h5_1, text_37, text_38, div_9, div_10, input, input_updating = false, text_40, div_11, button_11, text_41, text_43, div_12, button_12, text_44, text_46, div_13, button_13, text_47, text_49, colorpicker_updating = {}, text_50, hr_2, text_51, text_52, div_14, text_53, a, i_7, text_56, div_15, text_58, text_59, if_block_1_anchor;
 
 		function click_handler(event) {
 			component.set({ showModal: true });
@@ -26616,46 +27748,76 @@
 		var if_block = (ctx.showSubmenu) && create_if_block$4(component, ctx);
 
 		function click_handler_6(event) {
-			component.sortZindex('sortX');
+			component.store.set({filterSwitch: !ctx.$filterSwitch});
 		}
 
-		var each_value_1 = ctx.sort;
+		var each_value_1 = ctx.filters;
 
 		var each_blocks = [];
 
-		for (var i_7 = 0; i_7 < each_value_1.length; i_7 += 1) {
-			each_blocks[i_7] = create_each_block_1$2(component, get_each_context_1$1(ctx, each_value_1, i_7));
+		for (var i_8 = 0; i_8 < each_value_1.length; i_8 += 1) {
+			each_blocks[i_8] = create_each_block_1$3(component, get_each_context_1$1(ctx, each_value_1, i_8));
 		}
 
 		function select_change_handler() {
 			select_updating = true;
-			component.store.set({ sortX: selectValue(select) });
+			component.store.set({ selectingFilter: selectValue(select) });
 			select_updating = false;
 		}
 
 		function change_handler(event) {
-			component.cardsPosition('sortX', this.value);
+			component.store.set({filterSwitch: true});
 		}
 
 		function click_handler_7(event) {
-			component.sortZindex('sortY');
+			component.store.set({sortZSwitch: !ctx.$sortZSwitch});
+		}
+
+		function click_handler_8(event) {
+			component.cardsPosition('sortX');
 		}
 
 		var each_value_2 = ctx.sort;
 
 		var each_1_blocks = [];
 
-		for (var i_7 = 0; i_7 < each_value_2.length; i_7 += 1) {
-			each_1_blocks[i_7] = create_each_block_2(component, get_each_1_context$1(ctx, each_value_2, i_7));
+		for (var i_8 = 0; i_8 < each_value_2.length; i_8 += 1) {
+			each_1_blocks[i_8] = create_each_block_2(component, get_each_1_context$2(ctx, each_value_2, i_8));
 		}
 
 		function select_1_change_handler() {
 			select_1_updating = true;
-			component.store.set({ sortY: selectValue(select_1) });
+			component.store.set({ sortX: selectValue(select_1) });
 			select_1_updating = false;
 		}
 
 		function change_handler_1(event) {
+			component.cardsPosition('sortX', this.value);
+		}
+
+		function click_handler_9(event) {
+			component.swapSort();
+		}
+
+		function click_handler_10(event) {
+			component.cardsPosition('sortY');
+		}
+
+		var each_value_3 = ctx.sort;
+
+		var each_2_blocks = [];
+
+		for (var i_8 = 0; i_8 < each_value_3.length; i_8 += 1) {
+			each_2_blocks[i_8] = create_each_block_3(component, get_each_2_context(ctx, each_value_3, i_8));
+		}
+
+		function select_2_change_handler() {
+			select_2_updating = true;
+			component.store.set({ sortY: selectValue(select_2) });
+			select_2_updating = false;
+		}
+
+		function change_handler_2(event) {
 			component.cardsPosition('sortY', this.value);
 		}
 
@@ -26666,16 +27828,20 @@
 			input_updating = false;
 		}
 
-		function click_handler_8(event) {
+		function focus_handler(event) {
+			component.focus(this);
+		}
+
+		function click_handler_11(event) {
 			component.addCard(ctx.current, true);
 		}
 
-		function click_handler_9(event) {
+		function click_handler_12(event) {
 			component.addCard(ctx.current);
 		}
 
-		function click_handler_10(event) {
-			component.setBgColor(ctx.current.color);
+		function click_handler_13(event) {
+			component.store.setBgColor(ctx.current.color);
 		}
 
 		var colorpicker_initial_data = {
@@ -26706,10 +27872,10 @@
 		});
 
 		colorpicker.on("modelChange", function(event) {
-			component.store.set({pickermodel: event}, true);
+			component.store.set({pickermodel: event});
 		});
 		colorpicker.on("setBgColor", function(event) {
-			component.setBgColor(ctx.current.color);
+			component.store.setBgColor(ctx.current.color);
 		});
 
 		var colorlists = new Color_lists({
@@ -26725,12 +27891,12 @@
 			component.set({showSubmenu: false});
 		}
 
-		var each_value_3 = ctx.$cards;
+		var each_value_4 = ctx.$cards;
 
-		var each_2_blocks = [];
+		var each_3_blocks = [];
 
-		for (var i_7 = 0; i_7 < each_value_3.length; i_7 += 1) {
-			each_2_blocks[i_7] = create_each_block_3(component, get_each_2_context(ctx, each_value_3, i_7));
+		for (var i_8 = 0; i_8 < each_value_4.length; i_8 += 1) {
+			each_3_blocks[i_8] = create_each_block_4(component, get_each_3_context(ctx, each_value_4, i_8));
 		}
 
 		var contextmenu = new Context_menu({
@@ -26738,7 +27904,7 @@
 			store: component.store
 		});
 
-		var if_block_1 = (ctx.showModal) && create_if_block_1$4(component, ctx);
+		var if_block_1 = (ctx.showModal) && create_if_block_5(component, ctx);
 
 		return {
 			c: function create() {
@@ -26746,194 +27912,261 @@
 				div_1 = createElement("div");
 				button = createElement("button");
 				i = createElement("i");
-				text_1 = createText("\r\n    ");
+				text_1 = createText("\n    ");
 				button_1 = createElement("button");
 				i_1 = createElement("i");
-				text_3 = createText("\r\n    ");
+				text_3 = createText("\n    ");
 				button_2 = createElement("button");
 				i_2 = createElement("i");
-				text_5 = createText("\r\n    ");
+				text_5 = createText("\n    ");
 				button_3 = createElement("button");
 				i_3 = createElement("i");
-				text_7 = createText("\r\n    ");
+				text_7 = createText("\n    ");
 				button_4 = createElement("button");
 				i_4 = createElement("i");
-				text_9 = createText("\r\n    ");
+				text_9 = createText("\n    ");
 				button_5 = createElement("button");
 				i_5 = createElement("i");
-				text_11 = createText("\r\n    ");
+				text_11 = createText("\n    ");
 				if (if_block) if_block.c();
-				text_13 = createText("\r\n\r\n  \r\n  ");
+				text_13 = createText("\n\n  ");
 				div_2 = createElement("div");
 				div_3 = createElement("div");
 				button_6 = createElement("button");
-				text_14 = createText("X");
-				text_15 = createText("\r\n    ");
-				ladel = createElement("ladel");
+				i_6 = createElement("i");
+				text_15 = createText("\n    ");
+				label = createElement("label");
 				select = createElement("select");
 
-				for (var i_7 = 0; i_7 < each_blocks.length; i_7 += 1) {
-					each_blocks[i_7].c();
+				for (var i_8 = 0; i_8 < each_blocks.length; i_8 += 1) {
+					each_blocks[i_8].c();
 				}
 
-				text_17 = createText("\r\n\r\n    ");
+				text_18 = createText("\n\n  ");
+				hr = createElement("hr");
+				text_19 = createText("\n\n  \n  ");
+				h5 = createElement("h5");
+				text_20 = createText("Sort Cards\n    ");
 				div_4 = createElement("div");
 				button_7 = createElement("button");
-				text_18 = createText("Y");
-				text_19 = createText("\r\n    ");
-				ladel_1 = createElement("ladel");
-				select_1 = createElement("select");
-
-				for (var i_7 = 0; i_7 < each_1_blocks.length; i_7 += 1) {
-					each_1_blocks[i_7].c();
-				}
-
-				text_22 = createText("\r\n\r\n  ");
-				hr = createElement("hr");
-				text_23 = createText("\r\n\r\n  ");
+				text_21 = createText("z");
+				text_24 = createText("\n  ");
 				div_5 = createElement("div");
 				div_6 = createElement("div");
-				input = createElement("input");
-				text_25 = createText("\r\n    ");
-				div_7 = createElement("div");
 				button_8 = createElement("button");
-				text_26 = createText("➕");
-				text_28 = createText("\r\n    ");
-				div_8 = createElement("div");
-				button_9 = createElement("button");
-				text_29 = createText("➕");
-				text_31 = createText("\r\n    ");
-				div_9 = createElement("div");
-				button_10 = createElement("button");
-				text_32 = createText("BG");
-				text_34 = createText("\r\n\r\n  ");
-				colorpicker._fragment.c();
-				text_35 = createText("\r\n  ");
-				hr_1 = createElement("hr");
-				text_36 = createText("\r\n  ");
-				colorlists._fragment.c();
-				text_37 = createText("\r\n\r\n\r\n  ");
-				div_10 = createElement("div");
-				text_38 = createText("2018 © techa\r\n    ");
-				a = createElement("a");
-				i_6 = createElement("i");
-				text_41 = createText("\r\n\r\n");
-				div_11 = createElement("div");
+				text_25 = createText("X");
+				text_26 = createText("\n    ");
+				label_1 = createElement("label");
+				select_1 = createElement("select");
 
-				for (var i_7 = 0; i_7 < each_2_blocks.length; i_7 += 1) {
-					each_2_blocks[i_7].c();
+				for (var i_8 = 0; i_8 < each_1_blocks.length; i_8 += 1) {
+					each_1_blocks[i_8].c();
 				}
 
-				text_43 = createText("\r\n\r\n");
+				text_28 = createText("\n\n    ");
+				div_7 = createElement("div");
+				button_9 = createElement("button");
+				text_29 = createText("⇔");
+				text_30 = createText("\n\n    ");
+				div_8 = createElement("div");
+				button_10 = createElement("button");
+				text_31 = createText("Y");
+				text_32 = createText("\n    ");
+				label_2 = createElement("label");
+				select_2 = createElement("select");
+
+				for (var i_8 = 0; i_8 < each_2_blocks.length; i_8 += 1) {
+					each_2_blocks[i_8].c();
+				}
+
+				text_35 = createText("\n\n  ");
+				hr_1 = createElement("hr");
+				text_36 = createText("\n\n  ");
+				h5_1 = createElement("h5");
+				text_37 = createText("Add Card");
+				text_38 = createText("\n  ");
+				div_9 = createElement("div");
+				div_10 = createElement("div");
+				input = createElement("input");
+				text_40 = createText("\n    ");
+				div_11 = createElement("div");
+				button_11 = createElement("button");
+				text_41 = createText("➕");
+				text_43 = createText("\n    ");
+				div_12 = createElement("div");
+				button_12 = createElement("button");
+				text_44 = createText("➕");
+				text_46 = createText("\n    ");
+				div_13 = createElement("div");
+				button_13 = createElement("button");
+				text_47 = createText("BG");
+				text_49 = createText("\n\n  ");
+				colorpicker._fragment.c();
+				text_50 = createText("\n  ");
+				hr_2 = createElement("hr");
+				text_51 = createText("\n  ");
+				colorlists._fragment.c();
+				text_52 = createText("\n\n\n  ");
+				div_14 = createElement("div");
+				text_53 = createText("2018 © techa\n    ");
+				a = createElement("a");
+				i_7 = createElement("i");
+				text_56 = createText("\n\n");
+				div_15 = createElement("div");
+
+				for (var i_8 = 0; i_8 < each_3_blocks.length; i_8 += 1) {
+					each_3_blocks[i_8].c();
+				}
+
+				text_58 = createText("\n\n");
 				contextmenu._fragment.c();
-				text_44 = createText("\r\n\r\n");
+				text_59 = createText("\n\n");
 				if (if_block_1) if_block_1.c();
 				if_block_1_anchor = createComment();
 				i.className = "fas fa-hdd";
-				addLoc(i, file$b, 3, 6, 199);
+				addLoc(i, file$c, 4, 6, 209);
 				addListener(button, "click", click_handler);
 				button.title = "Save & Load";
-				addLoc(button, file$b, 2, 4, 123);
-				i_1.className = "fas fa-undo";
-				addLoc(i_1, file$b, 6, 6, 302);
+				addLoc(button, file$c, 3, 4, 134);
+				i_1.className = "fas fa-undo svelte-923aea";
+				addLoc(i_1, file$c, 7, 6, 324);
 				addListener(button_1, "click", click_handler_1);
 				button_1.title = "Undo: ctrl+z";
-				addLoc(button_1, file$b, 5, 4, 246);
-				i_2.className = "fas fa-redo";
-				addLoc(i_2, file$b, 10, 6, 431);
+				button_1.className = "svelte-923aea";
+				toggleClass(button_1, "cantUndo", ctx.cantUndo);
+				addLoc(button_1, file$c, 6, 4, 254);
+				i_2.className = "fas fa-redo svelte-923aea";
+				addLoc(i_2, file$c, 11, 6, 464);
 				addListener(button_2, "click", click_handler_2);
 				button_2.title = "Redo: ctrl+shift+z";
-				addLoc(button_2, file$b, 9, 4, 369);
+				button_2.className = "svelte-923aea";
+				toggleClass(button_2, "cantRedo", ctx.cantRedo);
+				addLoc(button_2, file$c, 10, 4, 388);
 				i_3.className = "fas fa-eye";
-				addLoc(i_3, file$b, 14, 6, 592);
+				addLoc(i_3, file$c, 15, 6, 621);
 				addListener(button_3, "click", click_handler_3);
 				button_3.title = "Card Color Models Visible";
-				addLoc(button_3, file$b, 13, 4, 498);
+				addLoc(button_3, file$c, 14, 4, 528);
 				i_4.className = "fas fa-sync fa-fw";
-				addLoc(i_4, file$b, 17, 6, 692);
+				addLoc(i_4, file$c, 18, 6, 718);
 				addListener(button_4, "click", click_handler_4);
 				button_4.title = "Reverse";
-				addLoc(button_4, file$b, 16, 4, 639);
+				addLoc(button_4, file$c, 17, 4, 666);
 				i_5.className = "fas fa-trash";
-				addLoc(i_5, file$b, 20, 6, 797);
+				addLoc(i_5, file$c, 21, 6, 820);
 				addListener(button_5, "click", click_handler_5);
 				button_5.title = "Delete";
-				addLoc(button_5, file$b, 19, 4, 746);
-				div_1.className = "tool-box svelte-1afgjyw";
-				addLoc(div_1, file$b, 1, 2, 95);
+				addLoc(button_5, file$c, 20, 4, 770);
+				div_1.className = "tool-box svelte-923aea";
+				addLoc(div_1, file$c, 2, 2, 107);
+				i_6.className = "fas fa-filter fa-fw";
+				addLoc(i_6, file$c, 51, 6, 1836);
 				addListener(button_6, "click", click_handler_6);
-				addLoc(button_6, file$b, 47, 9, 1650);
-				addLoc(div_3, file$b, 47, 4, 1645);
+				button_6.className = "svelte-923aea";
+				addLoc(button_6, file$c, 50, 9, 1773);
+				addLoc(div_3, file$c, 50, 4, 1768);
 				addListener(select, "change", select_change_handler);
-				if (!('$sortX' in ctx)) component.root._beforecreate.push(select_change_handler);
+				if (!('$selectingFilter' in ctx)) component.root._beforecreate.push(select_change_handler);
 				addListener(select, "change", change_handler);
-				addLoc(select, file$b, 49, 6, 1773);
-				ladel.className = "select-wrapper";
-				setStyle(ladel, "flex", "1 1 auto");
-				addLoc(ladel, file$b, 48, 4, 1711);
+				select.className = "svelte-923aea";
+				addLoc(select, file$c, 54, 6, 1957);
+				label.className = "select-wrapper";
+				setStyle(label, "flex", "1 1 auto");
+				addLoc(label, file$c, 53, 4, 1896);
+				div_2.className = "filter-select button-set border radius svelte-923aea";
+				toggleClass(div_2, "active", ctx.$filterSwitch);
+				addLoc(div_2, file$c, 49, 2, 1682);
+				hr.className = "svelte-923aea";
+				addLoc(hr, file$c, 62, 2, 2175);
 				addListener(button_7, "click", click_handler_7);
-				addLoc(button_7, file$b, 56, 9, 1991);
-				addLoc(div_4, file$b, 56, 4, 1986);
-				addListener(select_1, "change", select_1_change_handler);
-				if (!('$sortY' in ctx)) component.root._beforecreate.push(select_1_change_handler);
-				addListener(select_1, "change", change_handler_1);
-				addLoc(select_1, file$b, 58, 6, 2114);
-				ladel_1.className = "select-wrapper";
-				setStyle(ladel_1, "flex", "1 1 auto");
-				addLoc(ladel_1, file$b, 57, 4, 2052);
-				div_2.className = "button-set border radius svelte-1afgjyw";
-				addLoc(div_2, file$b, 46, 2, 1601);
-				hr.className = "svelte-1afgjyw";
-				addLoc(hr, file$b, 66, 2, 2335);
-				addListener(input, "input", input_input_handler);
-				input.placeholder = ctx.placeholder;
-				setStyle(input, "color", ctx.textColor);
-				input.className = "svelte-1afgjyw";
-				addLoc(input, file$b, 70, 6, 2420);
-				div_6.className = "svelte-1afgjyw";
-				addLoc(div_6, file$b, 69, 4, 2407);
+				button_7.className = "sort-z svelte-923aea";
+				toggleClass(button_7, "active", ctx.$sortZSwitch);
+				addLoc(button_7, file$c, 67, 6, 2231);
+				addLoc(div_4, file$c, 66, 4, 2219);
+				h5.className = "svelte-923aea";
+				addLoc(h5, file$c, 65, 2, 2200);
 				addListener(button_8, "click", click_handler_8);
-				button_8.title = "Add Card: text";
-				setStyle(button_8, "color", ctx.current.color);
-				button_8.className = "svelte-1afgjyw";
-				addLoc(button_8, file$b, 73, 6, 2535);
-				div_7.className = "svelte-1afgjyw";
-				addLoc(div_7, file$b, 72, 4, 2522);
+				addLoc(button_8, file$c, 71, 9, 2408);
+				addLoc(div_6, file$c, 71, 4, 2403);
+				addListener(select_1, "change", select_1_change_handler);
+				if (!('$sortX' in ctx)) component.root._beforecreate.push(select_1_change_handler);
+				addListener(select_1, "change", change_handler_1);
+				select_1.className = "sort-select svelte-923aea";
+				toggleClass(select_1, "active", ctx.$sortXSwitch);
+				addLoc(select_1, file$c, 73, 6, 2532);
+				label_1.className = "select-wrapper";
+				setStyle(label_1, "flex", "1 1 auto");
+				addLoc(label_1, file$c, 72, 4, 2471);
 				addListener(button_9, "click", click_handler_9);
-				button_9.title = "Add Card: fill";
-				setStyle(button_9, "color", (ctx.current.color.isDark()?'#fff':'#000'));
-				setStyle(button_9, "background-color", ctx.current.color);
-				button_9.className = "svelte-1afgjyw";
-				addLoc(button_9, file$b, 79, 6, 2700);
-				div_8.className = "svelte-1afgjyw";
-				addLoc(div_8, file$b, 78, 4, 2687);
+				addLoc(button_9, file$c, 82, 9, 2840);
+				addLoc(div_7, file$c, 82, 4, 2835);
 				addListener(button_10, "click", click_handler_10);
-				button_10.title = "set Background Color";
-				button_10.className = "svelte-1afgjyw";
-				addLoc(button_10, file$b, 84, 9, 2907);
-				div_9.className = "svelte-1afgjyw";
-				addLoc(div_9, file$b, 84, 4, 2902);
-				div_5.className = "top-input-wrapper button-set border radius svelte-1afgjyw";
-				addLoc(div_5, file$b, 68, 2, 2345);
-				hr_1.className = "svelte-1afgjyw";
-				addLoc(hr_1, file$b, 93, 2, 3221);
-				i_6.className = "fab fa-github fa-fw";
-				addLoc(i_6, file$b, 99, 53, 3421);
+				addLoc(button_10, file$c, 84, 9, 2897);
+				addLoc(div_8, file$c, 84, 4, 2892);
+				addListener(select_2, "change", select_2_change_handler);
+				if (!('$sortY' in ctx)) component.root._beforecreate.push(select_2_change_handler);
+				addListener(select_2, "change", change_handler_2);
+				select_2.className = "sort-select svelte-923aea";
+				toggleClass(select_2, "active", ctx.$sortYSwitch);
+				addLoc(select_2, file$c, 86, 6, 3021);
+				label_2.className = "select-wrapper";
+				setStyle(label_2, "flex", "1 1 auto");
+				addLoc(label_2, file$c, 85, 4, 2960);
+				div_5.className = "button-set border radius svelte-923aea";
+				addLoc(div_5, file$c, 70, 2, 2360);
+				hr_1.className = "svelte-923aea";
+				addLoc(hr_1, file$c, 96, 2, 3331);
+				h5_1.className = "svelte-923aea";
+				addLoc(h5_1, file$c, 98, 2, 3339);
+				addListener(input, "input", input_input_handler);
+				addListener(input, "focus", focus_handler);
+				setStyle(input, "--placeholder", ctx.current.color);
+				input.placeholder = "Loading...";
+				input.className = "svelte-923aea";
+				addLoc(input, file$c, 101, 6, 3432);
+				div_10.className = "svelte-923aea";
+				addLoc(div_10, file$c, 100, 4, 3420);
+				addListener(button_11, "click", click_handler_11);
+				button_11.title = "Add Card: text";
+				setStyle(button_11, "color", ctx.current.color);
+				button_11.className = "svelte-923aea";
+				addLoc(button_11, file$c, 108, 6, 3622);
+				div_11.className = "svelte-923aea";
+				addLoc(div_11, file$c, 107, 4, 3610);
+				addListener(button_12, "click", click_handler_12);
+				button_12.title = "Add Card: fill";
+				setStyle(button_12, "color", (ctx.current.color.isDark()?'#fff':'#000'));
+				setStyle(button_12, "background-color", ctx.current.color);
+				button_12.className = "svelte-923aea";
+				addLoc(button_12, file$c, 114, 6, 3781);
+				div_12.className = "svelte-923aea";
+				addLoc(div_12, file$c, 113, 4, 3769);
+				addListener(button_13, "click", click_handler_13);
+				button_13.title = "set Background Color";
+				button_13.className = "svelte-923aea";
+				addLoc(button_13, file$c, 119, 9, 3983);
+				div_13.className = "svelte-923aea";
+				addLoc(div_13, file$c, 119, 4, 3978);
+				div_9.className = "top-input-wrapper button-set border radius svelte-923aea";
+				addLoc(div_9, file$c, 99, 2, 3359);
+				hr_2.className = "svelte-923aea";
+				addLoc(hr_2, file$c, 128, 2, 4284);
+				i_7.className = "fab fa-github fa-fw";
+				addLoc(i_7, file$c, 134, 53, 4450);
 				a.href = "https://github.com/techa/color-factory";
-				a.className = "svelte-1afgjyw";
-				addLoc(a, file$b, 99, 4, 3372);
-				div_10.className = "links svelte-1afgjyw";
-				setStyle(div_10, "color", ctx.textColor);
-				addLoc(div_10, file$b, 97, 2, 3296);
+				a.className = "svelte-923aea";
+				addLoc(a, file$c, 134, 4, 4401);
+				div_14.className = "links svelte-923aea";
+				addLoc(div_14, file$c, 132, 2, 4355);
 				addListener(div, "mouseleave", mouseleave_handler);
 				div.id = "controller";
-				setStyle(div, "color", ctx.textColor);
-				div.className = "svelte-1afgjyw";
-				addLoc(div, file$b, 0, 0, 0);
-				div_11.id = "box";
-				setStyle(div_11, "background-color", ctx.bgColor);
-				div_11.className = "svelte-1afgjyw";
-				addLoc(div_11, file$b, 103, 0, 3482);
+				setStyle(div, "color", ctx.$bgColor.textColor());
+				div.className = "svelte-923aea";
+				addLoc(div, file$c, 0, 0, 0);
+				div_15.id = "box";
+				setStyle(div_15, "background-color", ctx.bgColor);
+				div_15.className = "svelte-923aea";
+				addLoc(div_15, file$c, 138, 0, 4507);
 			},
 
 			m: function mount(target, anchor) {
@@ -26962,81 +28195,119 @@
 				append(div, div_2);
 				append(div_2, div_3);
 				append(div_3, button_6);
-				append(button_6, text_14);
+				append(button_6, i_6);
 				append(div_2, text_15);
-				append(div_2, ladel);
-				append(ladel, select);
+				append(div_2, label);
+				append(label, select);
 
-				for (var i_7 = 0; i_7 < each_blocks.length; i_7 += 1) {
-					each_blocks[i_7].m(select, null);
+				for (var i_8 = 0; i_8 < each_blocks.length; i_8 += 1) {
+					each_blocks[i_8].m(select, null);
 				}
 
-				selectOption(select, ctx.$sortX);
+				selectOption(select, ctx.$selectingFilter);
 
-				append(div_2, text_17);
-				append(div_2, div_4);
-				append(div_4, button_7);
-				append(button_7, text_18);
-				append(div_2, text_19);
-				append(div_2, ladel_1);
-				append(ladel_1, select_1);
-
-				for (var i_7 = 0; i_7 < each_1_blocks.length; i_7 += 1) {
-					each_1_blocks[i_7].m(select_1, null);
-				}
-
-				selectOption(select_1, ctx.$sortY);
-
-				append(div, text_22);
+				append(div, text_18);
 				append(div, hr);
-				append(div, text_23);
+				append(div, text_19);
+				append(div, h5);
+				append(h5, text_20);
+				append(h5, div_4);
+				append(div_4, button_7);
+				append(button_7, text_21);
+				append(div, text_24);
 				append(div, div_5);
 				append(div_5, div_6);
-				append(div_6, input);
+				append(div_6, button_8);
+				append(button_8, text_25);
+				append(div_5, text_26);
+				append(div_5, label_1);
+				append(label_1, select_1);
+
+				for (var i_8 = 0; i_8 < each_1_blocks.length; i_8 += 1) {
+					each_1_blocks[i_8].m(select_1, null);
+				}
+
+				selectOption(select_1, ctx.$sortX);
+
+				append(div_5, text_28);
+				append(div_5, div_7);
+				append(div_7, button_9);
+				append(button_9, text_29);
+				append(div_5, text_30);
+				append(div_5, div_8);
+				append(div_8, button_10);
+				append(button_10, text_31);
+				append(div_5, text_32);
+				append(div_5, label_2);
+				append(label_2, select_2);
+
+				for (var i_8 = 0; i_8 < each_2_blocks.length; i_8 += 1) {
+					each_2_blocks[i_8].m(select_2, null);
+				}
+
+				selectOption(select_2, ctx.$sortY);
+
+				append(div, text_35);
+				append(div, hr_1);
+				append(div, text_36);
+				append(div, h5_1);
+				append(h5_1, text_37);
+				append(div, text_38);
+				append(div, div_9);
+				append(div_9, div_10);
+				append(div_10, input);
 				component.refs.name = input;
 
 				input.value = ctx.current.name;
 
-				append(div_5, text_25);
-				append(div_5, div_7);
-				append(div_7, button_8);
-				append(button_8, text_26);
-				append(div_5, text_28);
-				append(div_5, div_8);
-				append(div_8, button_9);
-				append(button_9, text_29);
-				append(div_5, text_31);
-				append(div_5, div_9);
-				append(div_9, button_10);
-				append(button_10, text_32);
-				append(div, text_34);
+				append(div_9, text_40);
+				append(div_9, div_11);
+				append(div_11, button_11);
+				append(button_11, text_41);
+				append(div_9, text_43);
+				append(div_9, div_12);
+				append(div_12, button_12);
+				append(button_12, text_44);
+				append(div_9, text_46);
+				append(div_9, div_13);
+				append(div_13, button_13);
+				append(button_13, text_47);
+				append(div, text_49);
 				colorpicker._mount(div, null);
-				append(div, text_35);
-				append(div, hr_1);
-				append(div, text_36);
+				append(div, text_50);
+				append(div, hr_2);
+				append(div, text_51);
 				colorlists._mount(div, null);
-				append(div, text_37);
-				append(div, div_10);
-				append(div_10, text_38);
-				append(div_10, a);
-				append(a, i_6);
-				insert(target, text_41, anchor);
-				insert(target, div_11, anchor);
+				append(div, text_52);
+				append(div, div_14);
+				append(div_14, text_53);
+				append(div_14, a);
+				append(a, i_7);
+				insert(target, text_56, anchor);
+				insert(target, div_15, anchor);
 
-				for (var i_7 = 0; i_7 < each_2_blocks.length; i_7 += 1) {
-					each_2_blocks[i_7].m(div_11, null);
+				for (var i_8 = 0; i_8 < each_3_blocks.length; i_8 += 1) {
+					each_3_blocks[i_8].m(div_15, null);
 				}
 
-				component.refs.box = div_11;
-				insert(target, text_43, anchor);
+				component.refs.box = div_15;
+				insert(target, text_58, anchor);
 				contextmenu._mount(target, anchor);
-				insert(target, text_44, anchor);
+				insert(target, text_59, anchor);
 				if (if_block_1) if_block_1.m(target, anchor);
 				insert(target, if_block_1_anchor, anchor);
 			},
 
 			p: function update(changed, _ctx) {
 				ctx = _ctx;
+				if (changed.cantUndo) {
+					toggleClass(button_1, "cantUndo", ctx.cantUndo);
+				}
+
+				if (changed.cantRedo) {
+					toggleClass(button_2, "cantRedo", ctx.cantRedo);
+				}
+
 				if (ctx.showSubmenu) {
 					if (if_block) {
 						if_block.p(changed, ctx);
@@ -27050,64 +28321,94 @@
 					if_block = null;
 				}
 
-				if (changed.sort) {
-					each_value_1 = ctx.sort;
+				if (changed.filters) {
+					each_value_1 = ctx.filters;
 
-					for (var i_7 = 0; i_7 < each_value_1.length; i_7 += 1) {
-						const child_ctx = get_each_context_1$1(ctx, each_value_1, i_7);
+					for (var i_8 = 0; i_8 < each_value_1.length; i_8 += 1) {
+						const child_ctx = get_each_context_1$1(ctx, each_value_1, i_8);
 
-						if (each_blocks[i_7]) {
-							each_blocks[i_7].p(changed, child_ctx);
+						if (each_blocks[i_8]) {
+							each_blocks[i_8].p(changed, child_ctx);
 						} else {
-							each_blocks[i_7] = create_each_block_1$2(component, child_ctx);
-							each_blocks[i_7].c();
-							each_blocks[i_7].m(select, null);
+							each_blocks[i_8] = create_each_block_1$3(component, child_ctx);
+							each_blocks[i_8].c();
+							each_blocks[i_8].m(select, null);
 						}
 					}
 
-					for (; i_7 < each_blocks.length; i_7 += 1) {
-						each_blocks[i_7].d(1);
+					for (; i_8 < each_blocks.length; i_8 += 1) {
+						each_blocks[i_8].d(1);
 					}
 					each_blocks.length = each_value_1.length;
 				}
 
-				if (!select_updating && changed.$sortX) selectOption(select, ctx.$sortX);
+				if (!select_updating && changed.$selectingFilter) selectOption(select, ctx.$selectingFilter);
+				if (changed.$filterSwitch) {
+					toggleClass(div_2, "active", ctx.$filterSwitch);
+				}
 
-				if (changed.sort) {
+				if (changed.$sortZSwitch) {
+					toggleClass(button_7, "active", ctx.$sortZSwitch);
+				}
+
+				if (changed.$sortY || changed.sort) {
 					each_value_2 = ctx.sort;
 
-					for (var i_7 = 0; i_7 < each_value_2.length; i_7 += 1) {
-						const child_ctx = get_each_1_context$1(ctx, each_value_2, i_7);
+					for (var i_8 = 0; i_8 < each_value_2.length; i_8 += 1) {
+						const child_ctx = get_each_1_context$2(ctx, each_value_2, i_8);
 
-						if (each_1_blocks[i_7]) {
-							each_1_blocks[i_7].p(changed, child_ctx);
+						if (each_1_blocks[i_8]) {
+							each_1_blocks[i_8].p(changed, child_ctx);
 						} else {
-							each_1_blocks[i_7] = create_each_block_2(component, child_ctx);
-							each_1_blocks[i_7].c();
-							each_1_blocks[i_7].m(select_1, null);
+							each_1_blocks[i_8] = create_each_block_2(component, child_ctx);
+							each_1_blocks[i_8].c();
+							each_1_blocks[i_8].m(select_1, null);
 						}
 					}
 
-					for (; i_7 < each_1_blocks.length; i_7 += 1) {
-						each_1_blocks[i_7].d(1);
+					for (; i_8 < each_1_blocks.length; i_8 += 1) {
+						each_1_blocks[i_8].d(1);
 					}
 					each_1_blocks.length = each_value_2.length;
 				}
 
-				if (!select_1_updating && changed.$sortY) selectOption(select_1, ctx.$sortY);
+				if (!select_1_updating && changed.$sortX) selectOption(select_1, ctx.$sortX);
+				if (changed.$sortXSwitch) {
+					toggleClass(select_1, "active", ctx.$sortXSwitch);
+				}
+
+				if (changed.$sortX || changed.sort) {
+					each_value_3 = ctx.sort;
+
+					for (var i_8 = 0; i_8 < each_value_3.length; i_8 += 1) {
+						const child_ctx = get_each_2_context(ctx, each_value_3, i_8);
+
+						if (each_2_blocks[i_8]) {
+							each_2_blocks[i_8].p(changed, child_ctx);
+						} else {
+							each_2_blocks[i_8] = create_each_block_3(component, child_ctx);
+							each_2_blocks[i_8].c();
+							each_2_blocks[i_8].m(select_2, null);
+						}
+					}
+
+					for (; i_8 < each_2_blocks.length; i_8 += 1) {
+						each_2_blocks[i_8].d(1);
+					}
+					each_2_blocks.length = each_value_3.length;
+				}
+
+				if (!select_2_updating && changed.$sortY) selectOption(select_2, ctx.$sortY);
+				if (changed.$sortYSwitch) {
+					toggleClass(select_2, "active", ctx.$sortYSwitch);
+				}
+
 				if (!input_updating && changed.current) input.value = ctx.current.name;
-				if (changed.placeholder) {
-					input.placeholder = ctx.placeholder;
-				}
-
-				if (changed.textColor) {
-					setStyle(input, "color", ctx.textColor);
-				}
-
 				if (changed.current) {
-					setStyle(button_8, "color", ctx.current.color);
-					setStyle(button_9, "color", (ctx.current.color.isDark()?'#fff':'#000'));
-					setStyle(button_9, "background-color", ctx.current.color);
+					setStyle(input, "--placeholder", ctx.current.color);
+					setStyle(button_11, "color", ctx.current.color);
+					setStyle(button_12, "color", (ctx.current.color.isDark()?'#fff':'#000'));
+					setStyle(button_12, "background-color", ctx.current.color);
 				}
 
 				var colorpicker_changes = {};
@@ -27120,39 +28421,38 @@
 				colorpicker._set(colorpicker_changes);
 				colorpicker_updating = {};
 
-				if (changed.textColor) {
-					setStyle(div_10, "color", ctx.textColor);
-					setStyle(div, "color", ctx.textColor);
+				if (changed.$bgColor) {
+					setStyle(div, "color", ctx.$bgColor.textColor());
 				}
 
 				if (changed.$cards) {
-					each_value_3 = ctx.$cards;
+					each_value_4 = ctx.$cards;
 
-					for (var i_7 = 0; i_7 < each_value_3.length; i_7 += 1) {
-						const child_ctx = get_each_2_context(ctx, each_value_3, i_7);
+					for (var i_8 = 0; i_8 < each_value_4.length; i_8 += 1) {
+						const child_ctx = get_each_3_context(ctx, each_value_4, i_8);
 
-						if (each_2_blocks[i_7]) {
-							each_2_blocks[i_7].p(changed, child_ctx);
+						if (each_3_blocks[i_8]) {
+							each_3_blocks[i_8].p(changed, child_ctx);
 						} else {
-							each_2_blocks[i_7] = create_each_block_3(component, child_ctx);
-							each_2_blocks[i_7].c();
-							each_2_blocks[i_7].m(div_11, null);
+							each_3_blocks[i_8] = create_each_block_4(component, child_ctx);
+							each_3_blocks[i_8].c();
+							each_3_blocks[i_8].m(div_15, null);
 						}
 					}
 
-					for (; i_7 < each_2_blocks.length; i_7 += 1) {
-						each_2_blocks[i_7].d(1);
+					for (; i_8 < each_3_blocks.length; i_8 += 1) {
+						each_3_blocks[i_8].d(1);
 					}
-					each_2_blocks.length = each_value_3.length;
+					each_3_blocks.length = each_value_4.length;
 				}
 
 				if (changed.bgColor) {
-					setStyle(div_11, "background-color", ctx.bgColor);
+					setStyle(div_15, "background-color", ctx.bgColor);
 				}
 
 				if (ctx.showModal) {
 					if (!if_block_1) {
-						if_block_1 = create_if_block_1$4(component, ctx);
+						if_block_1 = create_if_block_5(component, ctx);
 						if_block_1.c();
 						if_block_1.m(if_block_1_anchor.parentNode, if_block_1_anchor);
 					}
@@ -27181,34 +28481,43 @@
 				removeListener(select, "change", select_change_handler);
 				removeListener(select, "change", change_handler);
 				removeListener(button_7, "click", click_handler_7);
+				removeListener(button_8, "click", click_handler_8);
 
 				destroyEach(each_1_blocks, detach);
 
 				removeListener(select_1, "change", select_1_change_handler);
 				removeListener(select_1, "change", change_handler_1);
-				removeListener(input, "input", input_input_handler);
-				if (component.refs.name === input) component.refs.name = null;
-				removeListener(button_8, "click", click_handler_8);
 				removeListener(button_9, "click", click_handler_9);
 				removeListener(button_10, "click", click_handler_10);
+
+				destroyEach(each_2_blocks, detach);
+
+				removeListener(select_2, "change", select_2_change_handler);
+				removeListener(select_2, "change", change_handler_2);
+				removeListener(input, "input", input_input_handler);
+				removeListener(input, "focus", focus_handler);
+				if (component.refs.name === input) component.refs.name = null;
+				removeListener(button_11, "click", click_handler_11);
+				removeListener(button_12, "click", click_handler_12);
+				removeListener(button_13, "click", click_handler_13);
 				colorpicker.destroy();
 				colorlists.destroy();
 				removeListener(div, "mouseleave", mouseleave_handler);
 				if (detach) {
-					detachNode(text_41);
-					detachNode(div_11);
+					detachNode(text_56);
+					detachNode(div_15);
 				}
 
-				destroyEach(each_2_blocks, detach);
+				destroyEach(each_3_blocks, detach);
 
-				if (component.refs.box === div_11) component.refs.box = null;
+				if (component.refs.box === div_15) component.refs.box = null;
 				if (detach) {
-					detachNode(text_43);
+					detachNode(text_58);
 				}
 
 				contextmenu.destroy(detach);
 				if (detach) {
-					detachNode(text_44);
+					detachNode(text_59);
 				}
 
 				if (if_block_1) if_block_1.d(detach);
@@ -27220,25 +28529,34 @@
 	}
 
 	// (34:6) {#each Object.entries($cardViewModels) as [model, bool]}
-	function create_each_block$5(component, ctx) {
-		var p, label, input, input_checked_value, text, text_1_value = ctx.model.toUpperCase(), text_1;
+	function create_each_block$6(component, ctx) {
+		var p, label, input, input_checked_value, text;
+
+		function select_block_type(ctx) {
+			if ((ctx.model=='rgbp')) return create_if_block_1$4;
+			return create_if_block_2$1;
+		}
+
+		var current_block_type = select_block_type(ctx);
+		var if_block = current_block_type(component, ctx);
 
 		return {
 			c: function create() {
 				p = createElement("p");
 				label = createElement("label");
 				input = createElement("input");
-				text = createText("\r\n          ");
-				text_1 = createText(text_1_value);
+				text = createText("\n          ");
+				if_block.c();
 				input._svelte = { component, ctx };
 
-				addListener(input, "click", click_handler$3);
+				addListener(input, "click", click_handler$4);
 				setAttribute(input, "type", "checkbox");
 				input.checked = input_checked_value = ctx.bool;
-				addLoc(input, file$b, 36, 10, 1386);
-				addLoc(label, file$b, 35, 8, 1367);
+				input.className = "svelte-923aea";
+				addLoc(input, file$c, 36, 10, 1407);
+				addLoc(label, file$c, 35, 8, 1389);
 				p.className = "menuitem";
-				addLoc(p, file$b, 34, 6, 1337);
+				addLoc(p, file$c, 34, 6, 1360);
 			},
 
 			m: function mount(target, anchor) {
@@ -27246,7 +28564,7 @@
 				append(p, label);
 				append(label, input);
 				append(label, text);
-				append(label, text_1);
+				if_block.m(label, null);
 			},
 
 			p: function update(changed, _ctx) {
@@ -27256,8 +28574,13 @@
 					input.checked = input_checked_value;
 				}
 
-				if ((changed.Object || changed.$cardViewModels) && text_1_value !== (text_1_value = ctx.model.toUpperCase())) {
-					setData(text_1, text_1_value);
+				if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
+					if_block.p(changed, ctx);
+				} else {
+					if_block.d(1);
+					if_block = current_block_type(component, ctx);
+					if_block.c();
+					if_block.m(label, null);
 				}
 			},
 
@@ -27266,21 +28589,72 @@
 					detachNode(p);
 				}
 
-				removeListener(input, "click", click_handler$3);
+				removeListener(input, "click", click_handler$4);
+				if_block.d();
 			}
 		};
 	}
 
-	// (23:4) {#if showSubmenu}
+	// (38:10) {#if (model=='rgbp')}
+	function create_if_block_1$4(component, ctx) {
+		var text;
+
+		return {
+			c: function create() {
+				text = createText("RGB(%)");
+			},
+
+			m: function mount(target, anchor) {
+				insert(target, text, anchor);
+			},
+
+			p: noop,
+
+			d: function destroy$$1(detach) {
+				if (detach) {
+					detachNode(text);
+				}
+			}
+		};
+	}
+
+	// (40:10) {:else}
+	function create_if_block_2$1(component, ctx) {
+		var text_value = ctx.model.toUpperCase(), text;
+
+		return {
+			c: function create() {
+				text = createText(text_value);
+			},
+
+			m: function mount(target, anchor) {
+				insert(target, text, anchor);
+			},
+
+			p: function update(changed, ctx) {
+				if ((changed.Object || changed.$cardViewModels) && text_value !== (text_value = ctx.model.toUpperCase())) {
+					setData(text, text_value);
+				}
+			},
+
+			d: function destroy$$1(detach) {
+				if (detach) {
+					detachNode(text);
+				}
+			}
+		};
+	}
+
+	// (24:4) {#if showSubmenu}
 	function create_if_block$4(component, ctx) {
-		var div, p, i, text, text_1, p_1, i_1, text_2, text_3, hr, text_4;
+		var div, p, i, text, text_1, p_1, i_1, text_2, text_3;
 
 		function click_handler(event) {
-			component.store.set({grayscale: !ctx.$grayscale}, true);
+			component.store.set({textvisible: !ctx.$textvisible}, true);
 		}
 
 		function click_handler_1(event) {
-			component.store.set({textvisible: !ctx.$textvisible}, true);
+			component.store.set({textModeBackground: !ctx.$textModeBackground}, true);
 		}
 
 		var each_value = ctx.Object.entries(ctx.$cardViewModels);
@@ -27288,7 +28662,7 @@
 		var each_blocks = [];
 
 		for (var i_2 = 0; i_2 < each_value.length; i_2 += 1) {
-			each_blocks[i_2] = create_each_block$5(component, get_each_context$5(ctx, each_value, i_2));
+			each_blocks[i_2] = create_each_block$6(component, get_each_context$6(ctx, each_value, i_2));
 		}
 
 		function mouseleave_handler(event) {
@@ -27300,33 +28674,29 @@
 				div = createElement("div");
 				p = createElement("p");
 				i = createElement("i");
-				text = createText("\r\n        Filter Grayscale");
-				text_1 = createText("\r\n      ");
+				text = createText("\n        Fill-Card Text Visible");
+				text_1 = createText("\n      ");
 				p_1 = createElement("p");
 				i_1 = createElement("i");
-				text_2 = createText("\r\n        Card Text Visible");
-				text_3 = createText("\r\n      ");
-				hr = createElement("hr");
-				text_4 = createText("\r\n      ");
+				text_2 = createText("\n        Text-Card Background");
+				text_3 = createText("\n      ");
 
 				for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
 					each_blocks[i_2].c();
 				}
-				i.className = "fas fa-filter fa-fw";
-				addLoc(i, file$b, 25, 8, 1018);
+				i.className = "fas fa-font fa-fw";
+				addLoc(i, file$c, 26, 8, 1040);
 				addListener(p, "click", click_handler);
 				p.className = "menuitem";
-				addLoc(p, file$b, 24, 6, 940);
+				addLoc(p, file$c, 25, 6, 959);
 				i_1.className = "fas fa-font fa-fw";
-				addLoc(i_1, file$b, 29, 8, 1181);
+				addLoc(i_1, file$c, 30, 8, 1217);
 				addListener(p_1, "click", click_handler_1);
 				p_1.className = "menuitem";
-				addLoc(p_1, file$b, 28, 6, 1099);
-				hr.className = "svelte-1afgjyw";
-				addLoc(hr, file$b, 32, 6, 1261);
+				addLoc(p_1, file$c, 29, 6, 1122);
 				addListener(div, "mouseleave", mouseleave_handler);
 				div.className = "submenu";
-				addLoc(div, file$b, 23, 4, 869);
+				addLoc(div, file$c, 24, 4, 889);
 			},
 
 			m: function mount(target, anchor) {
@@ -27339,8 +28709,6 @@
 				append(p_1, i_1);
 				append(p_1, text_2);
 				append(div, text_3);
-				append(div, hr);
-				append(div, text_4);
 
 				for (var i_2 = 0; i_2 < each_blocks.length; i_2 += 1) {
 					each_blocks[i_2].m(div, null);
@@ -27353,12 +28721,12 @@
 					each_value = ctx.Object.entries(ctx.$cardViewModels);
 
 					for (var i_2 = 0; i_2 < each_value.length; i_2 += 1) {
-						const child_ctx = get_each_context$5(ctx, each_value, i_2);
+						const child_ctx = get_each_context$6(ctx, each_value, i_2);
 
 						if (each_blocks[i_2]) {
 							each_blocks[i_2].p(changed, child_ctx);
 						} else {
-							each_blocks[i_2] = create_each_block$5(component, child_ctx);
+							each_blocks[i_2] = create_each_block$6(component, child_ctx);
 							each_blocks[i_2].c();
 							each_blocks[i_2].m(div, null);
 						}
@@ -27386,8 +28754,8 @@
 		};
 	}
 
-	// (51:8) {#each sort as {name, value}}
-	function create_each_block_1$2(component, ctx) {
+	// (56:8) {#each filters as {name, value}}
+	function create_each_block_1$3(component, ctx) {
 		var option, text_value = ctx.name, text, option_value_value;
 
 		return {
@@ -27396,8 +28764,8 @@
 				text = createText(text_value);
 				option.__value = option_value_value = ctx.value;
 				option.value = option.__value;
-				option.className = "svelte-1afgjyw";
-				addLoc(option, file$b, 51, 10, 1899);
+				option.className = "svelte-923aea";
+				addLoc(option, file$c, 56, 10, 2086);
 			},
 
 			m: function mount(target, anchor) {
@@ -27406,11 +28774,11 @@
 			},
 
 			p: function update(changed, ctx) {
-				if ((changed.sort) && text_value !== (text_value = ctx.name)) {
+				if ((changed.filters) && text_value !== (text_value = ctx.name)) {
 					setData(text, text_value);
 				}
 
-				if ((changed.sort) && option_value_value !== (option_value_value = ctx.value)) {
+				if ((changed.filters) && option_value_value !== (option_value_value = ctx.value)) {
 					option.__value = option_value_value;
 				}
 
@@ -27425,8 +28793,49 @@
 		};
 	}
 
-	// (60:8) {#each sort as {name, value}}
+	// (75:8) {#each sort as {name, value}}
 	function create_each_block_2(component, ctx) {
+		var if_block_anchor;
+
+		var if_block = (ctx.$sortY !== ctx.value) && create_if_block_3(component, ctx);
+
+		return {
+			c: function create() {
+				if (if_block) if_block.c();
+				if_block_anchor = createComment();
+			},
+
+			m: function mount(target, anchor) {
+				if (if_block) if_block.m(target, anchor);
+				insert(target, if_block_anchor, anchor);
+			},
+
+			p: function update(changed, ctx) {
+				if (ctx.$sortY !== ctx.value) {
+					if (if_block) {
+						if_block.p(changed, ctx);
+					} else {
+						if_block = create_if_block_3(component, ctx);
+						if_block.c();
+						if_block.m(if_block_anchor.parentNode, if_block_anchor);
+					}
+				} else if (if_block) {
+					if_block.d(1);
+					if_block = null;
+				}
+			},
+
+			d: function destroy$$1(detach) {
+				if (if_block) if_block.d(detach);
+				if (detach) {
+					detachNode(if_block_anchor);
+				}
+			}
+		};
+	}
+
+	// (76:10) {#if $sortY !== value}
+	function create_if_block_3(component, ctx) {
 		var option, text_value = ctx.name, text, option_value_value;
 
 		return {
@@ -27435,8 +28844,8 @@
 				text = createText(text_value);
 				option.__value = option_value_value = ctx.value;
 				option.value = option.__value;
-				option.className = "svelte-1afgjyw";
-				addLoc(option, file$b, 60, 10, 2240);
+				option.className = "svelte-923aea";
+				addLoc(option, file$c, 76, 10, 2737);
 			},
 
 			m: function mount(target, anchor) {
@@ -27464,8 +28873,88 @@
 		};
 	}
 
-	// (105:2) {#each $cards as card, index}
+	// (88:8) {#each sort as {name, value}}
 	function create_each_block_3(component, ctx) {
+		var if_block_anchor;
+
+		var if_block = (ctx.$sortX !== ctx.value) && create_if_block_4(component, ctx);
+
+		return {
+			c: function create() {
+				if (if_block) if_block.c();
+				if_block_anchor = createComment();
+			},
+
+			m: function mount(target, anchor) {
+				if (if_block) if_block.m(target, anchor);
+				insert(target, if_block_anchor, anchor);
+			},
+
+			p: function update(changed, ctx) {
+				if (ctx.$sortX !== ctx.value) {
+					if (if_block) {
+						if_block.p(changed, ctx);
+					} else {
+						if_block = create_if_block_4(component, ctx);
+						if_block.c();
+						if_block.m(if_block_anchor.parentNode, if_block_anchor);
+					}
+				} else if (if_block) {
+					if_block.d(1);
+					if_block = null;
+				}
+			},
+
+			d: function destroy$$1(detach) {
+				if (if_block) if_block.d(detach);
+				if (detach) {
+					detachNode(if_block_anchor);
+				}
+			}
+		};
+	}
+
+	// (89:10) {#if $sortX !== value}
+	function create_if_block_4(component, ctx) {
+		var option, text_value = ctx.name, text, option_value_value;
+
+		return {
+			c: function create() {
+				option = createElement("option");
+				text = createText(text_value);
+				option.__value = option_value_value = ctx.value;
+				option.value = option.__value;
+				option.className = "svelte-923aea";
+				addLoc(option, file$c, 89, 10, 3226);
+			},
+
+			m: function mount(target, anchor) {
+				insert(target, option, anchor);
+				append(option, text);
+			},
+
+			p: function update(changed, ctx) {
+				if ((changed.sort) && text_value !== (text_value = ctx.name)) {
+					setData(text, text_value);
+				}
+
+				if ((changed.sort) && option_value_value !== (option_value_value = ctx.value)) {
+					option.__value = option_value_value;
+				}
+
+				option.value = option.__value;
+			},
+
+			d: function destroy$$1(detach) {
+				if (detach) {
+					detachNode(option);
+				}
+			}
+		};
+	}
+
+	// (140:2) {#each $cards as card, index}
+	function create_each_block_4(component, ctx) {
 
 		var colorcard_initial_data = {
 		 	card: ctx.card,
@@ -27498,8 +28987,8 @@
 		};
 	}
 
-	// (112:0) {#if showModal}
-	function create_if_block_1$4(component, ctx) {
+	// (147:0) {#if showModal}
+	function create_if_block_5(component, ctx) {
 
 		var savemodal = new Save_modal({
 			root: component.root,
@@ -27525,7 +29014,7 @@
 		};
 	}
 
-	function get_each_context$5(ctx, list, i) {
+	function get_each_context$6(ctx, list, i) {
 		const child_ctx = Object.create(ctx);
 		child_ctx.model = list[i][0];
 		child_ctx.bool = list[i][1];
@@ -27534,7 +29023,7 @@
 		return child_ctx;
 	}
 
-	function click_handler$3(event) {
+	function click_handler$4(event) {
 		const { component, ctx } = this._svelte;
 
 		component.viewModelChenge(ctx.model, ctx.bool);
@@ -27549,7 +29038,7 @@
 		return child_ctx;
 	}
 
-	function get_each_1_context$1(ctx, list, i) {
+	function get_each_1_context$2(ctx, list, i) {
 		const child_ctx = Object.create(ctx);
 		child_ctx.name = list[i].name;
 		child_ctx.value = list[i].value;
@@ -27560,8 +29049,17 @@
 
 	function get_each_2_context(ctx, list, i) {
 		const child_ctx = Object.create(ctx);
-		child_ctx.card = list[i];
+		child_ctx.name = list[i].name;
+		child_ctx.value = list[i].value;
 		child_ctx.each_value_3 = list;
+		child_ctx.each_index_3 = i;
+		return child_ctx;
+	}
+
+	function get_each_3_context(ctx, list, i) {
+		const child_ctx = Object.create(ctx);
+		child_ctx.card = list[i];
+		child_ctx.each_value_4 = list;
 		child_ctx.index = i;
 		return child_ctx;
 	}
@@ -27571,30 +29069,38 @@
 		if (!options || (!options.target && !options.root)) throw new Error("'target' is a required option");
 		init(this, options);
 		this.refs = {};
-		this._state = assign(assign(assign({ Object : Object }, this.store._init(["bgColor","grayscale","textvisible","cardViewModels","sortX","sortY","pickermodel","cards"])), data$b()), options.data);
-		this.store._add(this, ["bgColor","grayscale","textvisible","cardViewModels","sortX","sortY","pickermodel","cards"]);
-		this._recompute({ $bgColor: 1, $grayscale: 1, current: 1 }, this._state);
+		this._state = assign(assign(assign({ Object : Object }, this.store._init(["bgColor","filterSwitch","selectingFilter","textvisible","textModeBackground","cardViewModels","sortZSwitch","sortX","sortXSwitch","sortY","sortYSwitch","pickermodel","cards"])), data$c()), options.data);
+		this.store._add(this, ["bgColor","filterSwitch","selectingFilter","textvisible","textModeBackground","cardViewModels","sortZSwitch","sortX","sortXSwitch","sortY","sortYSwitch","pickermodel","cards"]);
+		this._recompute({ $bgColor: 1, $filterSwitch: 1, $selectingFilter: 1 }, this._state);
 		if (!('$bgColor' in this._state)) console.warn("<App> was created without expected data property '$bgColor'");
-		if (!('$grayscale' in this._state)) console.warn("<App> was created without expected data property '$grayscale'");
-		if (!('current' in this._state)) console.warn("<App> was created without expected data property 'current'");
-
+		if (!('$filterSwitch' in this._state)) console.warn("<App> was created without expected data property '$filterSwitch'");
+		if (!('$selectingFilter' in this._state)) console.warn("<App> was created without expected data property '$selectingFilter'");
 		if (!('showSubmenu' in this._state)) console.warn("<App> was created without expected data property 'showSubmenu'");
 		if (!('$textvisible' in this._state)) console.warn("<App> was created without expected data property '$textvisible'");
+		if (!('$textModeBackground' in this._state)) console.warn("<App> was created without expected data property '$textModeBackground'");
 
 		if (!('$cardViewModels' in this._state)) console.warn("<App> was created without expected data property '$cardViewModels'");
+		if (!('filters' in this._state)) console.warn("<App> was created without expected data property 'filters'");
+		if (!('$sortZSwitch' in this._state)) console.warn("<App> was created without expected data property '$sortZSwitch'");
 		if (!('$sortX' in this._state)) console.warn("<App> was created without expected data property '$sortX'");
+		if (!('$sortXSwitch' in this._state)) console.warn("<App> was created without expected data property '$sortXSwitch'");
 		if (!('sort' in this._state)) console.warn("<App> was created without expected data property 'sort'");
 		if (!('$sortY' in this._state)) console.warn("<App> was created without expected data property '$sortY'");
-
+		if (!('$sortYSwitch' in this._state)) console.warn("<App> was created without expected data property '$sortYSwitch'");
+		if (!('current' in this._state)) console.warn("<App> was created without expected data property 'current'");
 		if (!('$pickermodel' in this._state)) console.warn("<App> was created without expected data property '$pickermodel'");
 
 		if (!('$cards' in this._state)) console.warn("<App> was created without expected data property '$cards'");
 		if (!('showModal' in this._state)) console.warn("<App> was created without expected data property 'showModal'");
 		this._intro = true;
 
+		this._handlers.state = [onstate$1];
+
 		this._handlers.destroy = [removeFromStore];
 
-		this._fragment = create_main_fragment$b(this, this._state);
+		onstate$1.call(this, { changed: assignTrue({}, this._state), current: this._state });
+
+		this._fragment = create_main_fragment$c(this, this._state);
 
 		this.root._oncreate.push(() => {
 			oncreate$8.call(this);
@@ -27611,25 +29117,15 @@
 	}
 
 	assign(App.prototype, protoDev);
-	assign(App.prototype, methods$8);
+	assign(App.prototype, methods$9);
 
 	App.prototype._checkReadOnly = function _checkReadOnly(newState) {
-		if ('textColor' in newState && !this._updatingReadonlyProperty) throw new Error("<App>: Cannot set read-only property 'textColor'");
 		if ('bgColor' in newState && !this._updatingReadonlyProperty) throw new Error("<App>: Cannot set read-only property 'bgColor'");
-		if ('placeholder' in newState && !this._updatingReadonlyProperty) throw new Error("<App>: Cannot set read-only property 'placeholder'");
 	};
 
 	App.prototype._recompute = function _recompute(changed, state) {
-		if (changed.$bgColor) {
-			if (this._differs(state.textColor, (state.textColor = textColor$3(state)))) changed.textColor = true;
-		}
-
-		if (changed.$bgColor || changed.$grayscale) {
+		if (changed.$bgColor || changed.$filterSwitch || changed.$selectingFilter) {
 			if (this._differs(state.bgColor, (state.bgColor = bgColor(state)))) changed.bgColor = true;
-		}
-
-		if (changed.current) {
-			if (this._differs(state.placeholder, (state.placeholder = placeholder(state)))) changed.placeholder = true;
 		}
 	};
 
