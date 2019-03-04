@@ -63,7 +63,7 @@
   <hr>
 
   <!-- カード整列 -->
-  <h5>Sort Card
+  <h5>Sort Cards
     <div>
       <button class="sort-z" on:click="$set({sortZSwitch: !$sortZSwitch})" class:active="$sortZSwitch">z</button>
     </div>
@@ -73,7 +73,9 @@
     <label class="select-wrapper" style="flex: 1 1 auto;">
       <select class="sort-select" bind:value="$sortX" on:change="cardsPosition('sortX', this.value)" class:active="$sortXSwitch">
         {#each sort as {name, value}}
+          {#if $sortY !== value}
           <option {value}>{name}</option>
+          {/if}
         {/each}
       </select>
     </label>
@@ -84,7 +86,9 @@
     <label class="select-wrapper" style="flex: 1 1 auto;">
       <select class="sort-select" bind:value="$sortY" on:change="cardsPosition('sortY', this.value)" class:active="$sortYSwitch">
         {#each sort as {name, value}}
+          {#if $sortX !== value}
           <option {value}>{name}</option>
+          {/if}
         {/each}
       </select>
     </label>
@@ -156,8 +160,8 @@
     { name: 'L(HSL)', value: 'lightness' },
     { name: 'S(HSV)', value: 'saturationv' },
     { name: 'V(HSV)', value: 'value' },
-    { name: 'C(HCG)', value: 'chroma' },
-    { name: 'G(HCG)', value: 'gray' },
+    // { name: 'C(HCG)', value: 'chroma' },
+    // { name: 'G(HCG)', value: 'gray' },
     { name: 'C(CMYK)', value: 'cyan' },
     { name: 'M(CMYK)', value: 'magenta' },
     { name: 'Y(CMYK)', value: 'yellow' },
@@ -222,32 +226,29 @@
         return dirctionflg === 1 ? by : 1 - by
       }
       // card position init
-      this.store.cardPosition = (card) => {
+      this.store.cardPosition = (card, sortflg) => {
         const rect = box.getBoundingClientRect()
         const { sortX, sortY, sortXSwitch, sortYSwitch } = this.store.get()
 
         const maxW = rect.width - cardSize - colorsWidth
         const maxH = rect.height - cardSize
 
-        if ((sortX === 'deg' && sortXSwitch) || (sortY === 'deg' && sortYSwitch)) {
+        if (sortflg || card.left == null || card.top == null) {
+          if ((sortX === 'deg') || (sortY === 'deg')) {
           // Circle
-          const xx = byer(sortX, card, sortXSwitch)
-          const xy = byer(sortY, card, sortYSwitch)
-          const deg = sortX === 'deg' ? xx : xy
-          const radius = sortY === 'deg' ? xx : xy
-          const maxR = Math.min(maxW, maxH) / 2
-          // console.log('deg', card.color.hsl(),  deg)
-          card.left = Math.round(maxR * Math.cos(deg) * radius + maxR + colorsWidth)
-          card.top = Math.round(maxR * Math.sin(deg) * radius + maxR)
-        } else {
-          if (sortXSwitch || card.left == null) {
+            const xx = byer(sortX, card, sortXSwitch)
+            const xy = byer(sortY, card, sortYSwitch)
+            const deg = sortX === 'deg' ? xx : xy
+            const radius = sortY === 'deg' ? xx : xy
+            const maxR = Math.min(maxW, maxH) / 2
+            // console.log('deg', card.color.hsl(),  deg)
+            card.left = Math.round(maxR * Math.cos(deg) * radius + maxR + colorsWidth)
+            card.top = Math.round(maxR * Math.sin(deg) * radius + maxR)
+          } else {
             card.left = Math.round((maxW) * byer(sortX, card, sortXSwitch) + colorsWidth)
-          }
-          if (sortYSwitch || card.top == null) {
             card.top = Math.round((maxH) * byer(sortY, card, sortYSwitch))
           }
         }
-
         return card
       }
       // Selectable
@@ -287,7 +288,11 @@
       this.store.on('delete', () => {
         this.remove()
       })
-      this.cardsPosition()
+
+      // cardsPosition
+      this.store.set({
+        cards: (cards) => cards.map((card) => this.store.cardPosition(card)),
+      })
     },
 
     onstate ({ changed, current }) {
@@ -377,7 +382,7 @@
         }
 
         this.store.set({
-          cards: result.map((card) => this.store.cardPosition(card))
+          cards: result.map((card) => this.store.cardPosition(card, true))
         })
         this.store.memo()
       },

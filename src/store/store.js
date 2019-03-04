@@ -89,7 +89,7 @@ class Store extends Histore {
       card.color = new Color(card.color)
       card.zIndex = cards.length
       card.index = cards.length
-      return [...cards, store.cardPosition(card)]
+      return [...cards, this.cardPosition(card)]
     } })
     this.memo()
   }
