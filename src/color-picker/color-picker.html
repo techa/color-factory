@@ -98,10 +98,10 @@
       contrast: ({ color, bgColor }) => round(bgColor.contrast(color), 1),
     },
     onstate ({ changed, current }) {
-      if (changed.color) {
+      if (changed.color && !(current.color instanceof Color)) {
         this.set({ color: new Color(current.color) })
       }
-      if (changed.bgColor) {
+      if (changed.bgColor && !(current.bgColor instanceof Color)) {
         this.set({ bgColor: new Color(current.bgColor) })
       }
 
