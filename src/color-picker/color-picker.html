@@ -5,7 +5,7 @@
   </div>
   <div class="picker-footer">
     <div class="button" title="Click: set BG-color. Display: Readable Score(1~21).">
-      <button class="contrast {bgColor.level(color)}" style="color:{color};" on:click="setBgColor()">
+      <button class="contrast {bgColor.level(color)}" on:click="setBgColor()">
         {contrast}
       </button>
     </div>
@@ -45,17 +45,26 @@
   }
   .picker-footer > :first-child,
   .picker-footer > :last-child {
-    flex: 0 1 30px;
+    flex: 0 1 48px;
   }
   .picker-footer button {
-    width: 30px;
+    width: 48px;
+    height: 100%;
     padding: 0;
+    border: 1px solid;
+  }
+  .contrast {
+    text-decoration: line-through;
+  }
+  .contrast.A {
+    text-decoration: none;
   }
   .contrast.AA {
-    border-bottom: 1px solid;
+    text-decoration: underline;
   }
   .contrast.AAA {
-    border: 1px solid;
+    text-decoration: underline;
+    font-weight: bolder;
   }
   .alpha-check-bg {
     /* 市松模様 */

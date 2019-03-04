@@ -155,6 +155,17 @@ export default class Color extends color {
     if (lum1 > lum2) return (lum1 + 0.05) / (lum2 + 0.05)
     return (lum2 + 0.05) / (lum1 + 0.05)
   }
+  level (color2) {
+    let contrastRatio = this.contrast(color2)
+    if (contrastRatio >= 7) {
+      return 'AAA'
+    }
+    if (contrastRatio >= 4.5) {
+      return 'AA'
+    }
+
+    return (contrastRatio >= 3) ? 'A' : ''
+  }
   mostReadable (colors, opts = {}) {
     let bestlum = 0
     let bestColor
