@@ -14,7 +14,7 @@ Color Factory
         * color models
     * sortable: hue, hue(circle), saturationl, lightness, saturationv, value, chroma, gray, contrast
 * Color cards
-    * auto color name: Source: [XKCD Color Names](https://xkcd.com/color/rgb/)
+    * auto color name: Source: [color-names](https://github.com/meodai/color-names)
     * selectable
     * movable
     * Right click on Card!

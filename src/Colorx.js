@@ -1,5 +1,5 @@
 import color from 'color'
-import xkcd from './constants/xkcd.json'
+import nearestColor from 'nearest-color'
 import { hsl2zaa, zaa2hsl } from './zaa'
 
 Object.assign(color.prototype, {
@@ -77,35 +77,23 @@ export default class Color extends color {
     }
     return this.hex() // this[this.model]().round(2).object()
   }
-  nearColorName () {
-    const hsl = this.hsl().alpha(1).object()
-    let difference = 50
-    let name = ''
-    xkcd.forEach(([_name, _hsl]) => {
-      let diff = 0
-      // gray
-      if (hsl.s < 5) {
-        diff += Math.abs(hsl.s - _hsl.s)
-        if (diff < 5) {
-          diff += Math.abs(hsl.l - _hsl.l)
-          if (diff < difference) {
-            difference = diff
-            name = _name
-          }
-          return
-        }
-        diff = 0
-      }
-
-      for (const key in hsl) {
-        diff += Math.abs(hsl[key] - _hsl[key])
-      }
-      if (diff < difference) {
-        difference = diff
-        name = _name
-      }
+  nearestColorName () {
+    if (!Color.nearestColor) {
+      Color.nearestColor = fetch('https://api.color.pizza/v1/') // eslint-disable-line
+        .then((response) => {
+          return response.json()
+        })
+        .then((data) => {
+          const colors = data.colors.reduce((map, { name, hex }) => {
+            map[name] = hex
+            return map
+          }, {})
+          return nearestColor.from(colors)
+        })
+    }
+    return Color.nearestColor.then((nc) => {
+      return nc(this.hex()).name
     })
-    return name
   }
   /**
    * Green-blindness (6% of men, 0.4% of women)

@@ -95,7 +95,7 @@
   <h5>Add Card</h5>
   <div class="top-input-wrapper button-set border radius">
     <div>
-      <input ref:name bind:value="current.name" {placeholder}>
+      <input ref:name bind:value="current.name" on:focus="focus(this)" placeholder="Loading...">
     </div>
     <div>
       <button
@@ -193,16 +193,8 @@
         const filter = $filterSwitch ? $selectingFilter : ''
         return filter ? $bgColor[filter]() : $bgColor
       },
-      placeholder: ({ current }) => new Color(current.color).nearColorName(),
     },
     oncreate () {
-      this.refs.name.addEventListener('focus', function (e) {
-        if (!this.value) {
-          this.value = this.placeholder
-          this.selectionStart = 0
-          this.selectionEnd = this.placeholder.length
-        }
-      })
       const box = this.refs.box
       const cardSize = 120
       const colorsWidth = 320
@@ -294,9 +286,23 @@
       this.cardsPosition()
     },
 
+    onstate ({ changed, current }) {
+      if (changed.current) {
+        new Color(current.current.color).nearestColorName().then((name) => {
+          this.refs.name.placeholder = name
+        }).catch(() => {
+          this.refs.name.placeholder = 'Card Name'
+        })
+      }
+    },
     methods: {
-      history () {
-        console.log('')
+      focus (el) {
+        // const placeholder = this.refs.placeholder.placeholder
+        if (!el.value) {
+          el.value = el.placeholder
+          el.selectionStart = 0
+          el.selectionEnd = el.placeholder.length
+        }
       },
       addCard (current, textMode) {
         const { name, color } = current
