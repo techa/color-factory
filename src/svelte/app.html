@@ -263,7 +263,8 @@
 
           if (selects.length === 1) {
             const { name, color } = this.store.get().cards[selects[0].index]
-            this.set({ current: { name, color } })
+            const nearestColorName = name.match(/^\((.*?)\)$/i)
+            this.set({ current: { name: nearestColorName ? '' : name, color } })
             if (!memo) {
               this.set({ memo: current })
             }
