@@ -1,7 +1,8 @@
 <div class="blender">
   <div ref:color1 on:click="set({color1: color})" class="blender-btn color1"></div>
-  <div ref:blender class="blender-slider">
-    <canvas ref:canvas class="blender-canvas" {...rect} ></canvas>
+  <div ref:blender class="blender-slider {direction}"
+    style="background: linear-gradient({direction==='horizontal'?0.25:0.75}turn, {color1}, {color2});">
+    <!-- <canvas ref:canvas class="blender-canvas" {...rect} ></canvas> -->
     <div ref:handle class="blender-handle {direction}"></div>
   </div>
   <div ref:color2 on:click="set({color2: color})" class="blender-btn color2"></div>
@@ -9,6 +10,7 @@
 
 <style>
   .blender {
+    width: 100%;
     height: 100%;
     display: flex;
     align-items: stretch;
@@ -18,7 +20,7 @@
   .blender-slider {
     position: relative;
     height: inherit;
-    flex: 2 1 auto;
+    flex: auto;
     margin: 0 2px;
     background-color: #fff;
     background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),
@@ -26,6 +28,12 @@
     background-size: 8px 8px;
     background-position:0 0, 4px 4px;
     background-repeat: repeat;
+  }
+  .blender-slider.vertical {
+    cursor: row-resize;
+  }
+  .blender-slider.horizontal {
+    cursor: col-resize;
   }
   .blender-canvas {
     vertical-align: baseline;
@@ -35,7 +43,6 @@
     width: inherit;
     height: inherit;
     flex: 0 1 20px;
-    border: 1px solid #888888;
   }
   .blender-handle {
     position: absolute;
@@ -65,8 +72,8 @@
     data () {
       return {
         rect: { width: 0, height: 0 },
-        color1: '#000',
-        color2: '#fff',
+        color1: new Color('#000'),
+        color2: new Color('#fff'),
         direction: 'horizontal', // vertical
       }
     },
@@ -86,47 +93,49 @@
           this.set({ color: this.getColor(position) })
         },
       })
+      // this.draw()
     },
     onupdate ({ changed, current }) {
       if (changed.color1) {
         this.refs.color1.style.backgroundColor = current.color1.toString()
-        this.draw()
+        // this.draw()
       }
       if (changed.color2) {
         this.refs.color2.style.backgroundColor = current.color2.toString()
-        this.draw()
+        // this.draw()
       }
     },
     methods: {
       getColor (position) {
-        const { width } = this.get().rect
-        const x = Math.max(0, Math.min(position.x, width - 1))
-        const [r, g, b] = this.refs.canvas.getContext('2d').getImageData(x, 0, 1, 1).data
-        const color = new Color({ r, g, b })
+        const { color1, color2, direction } = this.get()
+        const percent = direction === 'horizontal'
+          ? position.percentLeft
+          : position.percentTop
+        const color = new Color(color1.mix(color2, percent / 100))
 
-        this.refs.handle.style.left = x + 'px'
+        this.refs.handle.style.left = percent + '%'
         this.refs.handle.style.backgroundColor = color.textColor()
         return color
       },
-      draw () {
-        const { direction, color1, color2 } = this.get()
-        const canvas = this.refs.canvas
-        const cxt = canvas.getContext('2d')
-        const [w, h] = [canvas.width, canvas.height]
-        cxt.clearRect(0, 0, w, h)
+      // draw () {
+      //   const { direction, color1, color2 } = this.get()
+      //   const canvas = this.refs.canvas
+      //   const cxt = canvas.getContext('2d')
+      //   const [w, h] = [canvas.width, canvas.height]
+      //   cxt.clearRect(0, 0, w, h)
 
-        const grd = direction === 'vertical'
-          ? cxt.createLinearGradient(0, 0, 0, h)
-          : cxt.createLinearGradient(0, 0, w, 0)
+      //   const grd = direction === 'vertical'
+      //     ? cxt.createLinearGradient(0, 0, 0, h)
+      //     : cxt.createLinearGradient(0, 0, w, 0)
 
-        grd.addColorStop(0.02, new Color(color1).rgb().string())
-        grd.addColorStop(0.98, new Color(color2).rgb().string())
+      //   grd.addColorStop(0.02, new Color(color1).rgb().string())
+      //   grd.addColorStop(0.98, new Color(color2).rgb().string())
 
-        cxt.fillStyle = grd
-        cxt.fillRect(0, 0, w, h)
+      //   cxt.fillStyle = grd
+      //   cxt.fillRect(0, 0, w, h)
 
-        this.getColor({ x: w / 2 })
-      }
+      //   this.getColor({ x: w / 2 })
+      // }
     }
   }
 </script>
