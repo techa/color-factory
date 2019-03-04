@@ -53,11 +53,11 @@ export default {
           },
         ],
       ],
-      plugins: [
-        '@babel/plugin-external-helpers',
-      ],
-      // https://github.com/rollup/rollup-plugin-babel#configuring-babel
-      externalHelpers: true,
+      // plugins: [
+      //   '@babel/plugin-external-helpers',
+      // ],
+      // // https://github.com/rollup/rollup-plugin-babel#configuring-babel
+      // externalHelpers: true,
     })),
     (production && terser({
       compress: {
