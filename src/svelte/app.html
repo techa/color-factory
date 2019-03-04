@@ -95,7 +95,11 @@
   <h5>Add Card</h5>
   <div class="top-input-wrapper button-set border radius">
     <div>
-      <input ref:name bind:value="current.name" on:focus="focus(this)" placeholder="Loading...">
+      <input ref:name
+        bind:value="current.name"
+        on:focus="focus(this)"
+        style="--placeholder: {current.color};"
+        placeholder="Loading...">
     </div>
     <div>
       <button
@@ -472,5 +476,10 @@
   .cantRedo>.fa-redo,
   .sort-z {
     opacity: .6;
+  }
+  input::placeholder {
+    --placeholder: inherit;
+    color: var(--placeholder);
+    opacity: 1;
   }
 </style>
