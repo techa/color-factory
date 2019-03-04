@@ -311,7 +311,7 @@
       addCard (current, textMode) {
         const { name, color } = current
         if (!name) {
-          current.name = `(${new Color(color).nearColorName()})`
+          current.name = `(${this.refs.name.placeholder})`
         }
         this.store.addCard(Object.assign({ textMode }, current))
         this.set({ current: { name: '', color } })
