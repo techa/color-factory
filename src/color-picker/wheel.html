@@ -1,10 +1,50 @@
-<div class="wheel">
-  <canvas ref:canvas class="wheel-canvas" width={size} height={size}></canvas>
+<div ref:wheel class="wheel">
+  <!-- <canvas ref:canvas class="wheel-canvas" width={size} height={size}></canvas> -->
   <div ref:handle class="color-handle"></div>
+  <svg ref:svg width={size} height={size}>
+    {#each paths as path}
+      <path {...path}></path>
+    {/each}
+    {#each swatchs as path}
+      <path {...path} on:click="set({ color: color.hue(path.hue) })"></path>
+    {/each}
+    <circle cx="{center}" cy="{center}" r="{radius-18}" fill="transparent" on:click="next()"/>
+    <text x="{center}" y="{center}" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle"
+      style="fill:{color};font-size:{(radius-12)}px;" class="center-text">{swatchNum}</text>
+  </svg>
 </div>
+
 <style>
   .wheel {
     position: relative;
+    /* width: 100%;
+    height: 100%; */
+  }
+  .center-text {
+    font-weight: bold;
+    pointer-events: none;
+  }
+  .color-handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px;
+    top: 0;
+    left: 0;
+    border: 1px solid black;
+    border-radius: 5px;
+    text-align: left;
+    pointer-events: none;
+  }
+  .color-handle::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    top: 0;
+    left: 0;
+    border: 1px solid white;
+    border-radius: 4px;
   }
 </style>
 
@@ -14,26 +54,49 @@
   export default {
     data () {
       return {
+        color: '',
+        rect: { width: 0, height: 0 },
         size: 150,
         strokeWidth: 10,
-        hue: 0
+        paths: [],
+        swatchs: [],
+        swatchNum: 6,
       }
     },
     computed: {
       center: ({ size }) => size / 2,
       radius: ({ center, strokeWidth }) => center - strokeWidth,
     },
-    onstate ({ changed, current }) {
-      if (changed.hue) {
-        this.setPosition(current.hue)
+    onupdate ({ changed, current }) {
+      if (changed.color || changed.swatchNum) {
+        this.setPosition(current.color.hue())
+        this.set({
+          swatchs: this.arcs(current.swatchNum, true),
+        })
       }
     },
     oncreate () {
-      // canvas init
-      this.draw()
+      const size = Math.min(
+        this.refs.wheel.clientWidth,
+        this.refs.wheel.clientHeight
+      )
+      const rect = {
+        width: this.refs.wheel.clientWidth,
+        height: this.refs.wheel.clientHeight,
+      }
+      this.set({
+        rect,
+        size,
+      })
+      this.set({
+        // canvas init
+        paths: this.arcs(120),
+        swatchs: this.arcs(6, true),
+      })
+      // this.draw()
 
       // picker
-      return new MousePosition(this.refs.canvas, {
+      return new MousePosition(this.refs.svg, {
         start: (e, position) => {
           if (this.positionTest(position)) {
             this.setColor(position)
@@ -61,42 +124,80 @@
         return radius <= r && r <= center
       },
       setColor (position) {
-        const { center } = this.get()
+        const { center, color } = this.get()
         const x = center - position.x,
               y = center - position.y
 
         const hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90
 
-        this.set({
-          hue: hue < 0 ? 360 + hue : hue
-        })
+        this.set({ color: color.hue(hue < 0 ? 360 + hue : hue) })
       },
       setPosition (hue) {
-        const { strokeWidth, radius } = this.get()
+        const { strokeWidth, radius, center } = this.get()
         const [mx, my] = this.positionRd(radius + strokeWidth / 2, hue)
-        this.refs.handle.style.left = mx + 'px'
-        this.refs.handle.style.top = my  + 'px'
+        this.refs.handle.style.left = mx + this.refs.wheel.clientWidth / 2 - center + 'px'
+        this.refs.handle.style.top = my + this.refs.wheel.clientHeight / 2 - center + 'px'
       },
-      draw () {
-        const { center, radius } = this.get()
-
-        const canvas = this.refs.canvas
-        const cxt = canvas.getContext('2d')
-        cxt.clearRect(0, 0, canvas.width, canvas.height)
-
-        for (let i = 0; i < 360; i++) {
-          cxt.beginPath()
-
-          cxt.fillStyle = `hsl(${i}, 100%, 50%)`
-
-          cxt.moveTo(...this.positionRd(radius, i))
-          cxt.lineTo(...this.positionRd(center - 1, i))
-          cxt.lineTo(...this.positionRd(center - 1, i + 1.5))
-          cxt.lineTo(...this.positionRd(radius, i + 1.5))
-          cxt.closePath()
-          cxt.fill()
+      next () {
+        let { swatchNum } = this.get()
+        ++swatchNum
+        if (swatchNum > 8) {
+          swatchNum = 5
         }
-      }
+        this.set({ swatchNum })
+      },
+      arcs (val, tone) {
+        const { center, radius, color } = this.get()
+        const result = []
+        const pdeg = 360 / val
+        const pdeg2 = pdeg / 2 + (tone ? -2 : 0.5)
+        const strokeAjust = tone ? 14 : 0
+        const r = radius - strokeAjust
+        const c = center - strokeAjust
+
+        for (let i = 0; i < val; i++) {
+          let hue = i * pdeg
+          if (tone) {
+            hue += color.hue()
+          }
+          let pathd = ''
+          pathd += 'M' + this.positionRd(r, hue - pdeg2)
+          pathd += `A${r},${r} 0 0,1` + this.positionRd(r, hue + pdeg2)
+          pathd += 'L' + this.positionRd(c, hue + pdeg2)
+          pathd += `A${c},${c} 0 0,0` + this.positionRd(c, hue - pdeg2)
+          pathd += 'z'
+
+          result[i] = {
+            d: pathd,
+            fill: tone
+              ? `hsl(${hue}, ${color.saturationl()}%, ${color.lightness()}%)`
+              : `hsl(${hue}, 100%, 50%)`,
+            stroke: 'none',
+            hue,
+          }
+        }
+        return result
+      },
+      // draw () {
+      //   const { center, radius } = this.get()
+
+      //   const canvas = this.refs.canvas
+      //   const cxt = canvas.getContext('2d')
+      //   cxt.clearRect(0, 0, canvas.width, canvas.height)
+
+      //   for (let i = 0; i < 360; i++) {
+      //     cxt.beginPath()
+
+      //     cxt.fillStyle = `hsl(${i}, 100%, 50%)`
+
+      //     cxt.moveTo(...this.positionRd(radius, i))
+      //     cxt.lineTo(...this.positionRd(center - 1, i))
+      //     cxt.lineTo(...this.positionRd(center - 1, i + 1.5))
+      //     cxt.lineTo(...this.positionRd(radius, i + 1.5))
+      //     cxt.closePath()
+      //     cxt.fill()
+      //   }
+      // }
     }
   }
 </script>

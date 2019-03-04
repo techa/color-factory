@@ -1,13 +1,14 @@
 <div class="hsv-picker">
-  <Slider ref:hue
-    value="{color.hue()}" max="359" gradient="{hue}"
-    on:change="set({ color: color.hue(event.value) })"/>
+  <!-- <Slider ref:hue
+    value="{color.hue()}" max="359"
+    gradient="{['red', 'yellow', 'lime', 'cyan', 'blue', 'Magenta', 'red']}"
+    on:change="set({ color: color.hue(event.value) })"/> -->
+  <Wheel bind:color />
+  <Spectrum ref:spectrum bind:color model="hsv" />
+
   <Slider ref:saturation
     value="{color.saturationl()}" gradient="{saturation}" reverse="true"
     on:change="set({ color: color.saturationl(event.value) })"/>
-
-  <Spectrum ref:spectrum bind:color model="hsv" />
-
   <Slider ref:lightness
     value="{color.lightness()}" gradient="{lightness}" reverse="true"
     on:change="set({ color: color.lightness(event.value) })"/>
@@ -22,19 +23,20 @@
     width: 100%;
     height: 100%;
     display: flex;
-    align-items: stretch;
-    justify-content: space-around;
+    justify-content: space-between;
   }
 
-  .hsv-picker > :nth-child(3) {
-    flex: 2 1 auto;
+  .hsv-picker > :global(.wheel) {
+    flex: 1; /* 1 1 0 */
+  }
+  .hsv-picker > :global(.spectrum) {
+    flex: 2 0 auto;
   }
   .hsv-picker > :global(.slider) {
-    flex: 0 1 20px;
+    flex: 0 0 20px;
   }
-  .hsv-picker > :nth-child(2),
-  .hsv-picker > :nth-child(4){
-    margin: 0 8px;
+  .hsv-picker > :not(:last-child) {
+    margin-right: 8px;
   }
 </style>
 
@@ -42,12 +44,12 @@
   export default {
     components: {
       Spectrum: './spectrum.html',
+      Wheel: './wheel.html',
       Slider: './slider.html',
     },
     data () {
       return {
         color: '#000',
-        hue: ['red', 'yellow', 'lime', 'cyan', 'blue', 'Magenta', 'red'],
       }
     },
     computed: {
