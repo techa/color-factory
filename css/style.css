@@ -1,0 +1,242 @@
+html, body, #root {
+  position: relative;
+  margin:0;
+  padding:0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+/* chrome blue */
+textarea, input, button { outline: none; }
+:focus {
+  outline-color: transparent;
+  outline-style: none;
+}
+
+h1 > div,
+h2 > div,
+h3 > div,
+h4 > div,
+h5 > div,
+h6 > div {
+  float: right;
+}
+
+/*
+<ladel class="select-wrapper">
+  <select>
+    <option value=""></option>
+  </select>
+</ladel>
+*/
+.button-set {
+  width: 100%;
+  display: flex;
+  align-content: stretch;
+  flex-direction: row;
+  justify-content: space-around;
+}
+.button-set button,
+.button-set input {
+  height: 100%;
+}
+.button-set.border > * {
+  border-width: 1px 1px 1px 0;
+  border-style: solid;
+}
+.button-set.border > :first-child {
+  border-width: 1px;
+}
+.button-set.border.radius > :first-child {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+.button-set.border.radius > :last-child {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+/*
+<ladel class="select-wrapper">
+  <select>
+    <option value=""></option>
+  </select>
+</ladel>
+*/
+.select-wrapper {
+  position: relative;
+  display: block;
+}
+.select-wrapper > select {
+  /* 三角非表示: https://caniuse.com/#feat=css-appearance */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding: 0 1.5em 0 0;
+  width: 100%;
+  height: 100%;
+}
+.select-wrapper::after {
+  content: '▼';
+  position: absolute;
+  right: 0.5em;
+  top: 0.5em;
+  font-size: 0.7em;
+  pointer-events: none;
+}
+/* IEの下三角非表示 */
+.select-wrapper > select::-ms-expand {
+  display: none;
+}
+
+
+
+/* Menu */
+.context-menu,
+.submenu {
+  position: absolute;
+  font-size:12px;
+  background: #fff;
+  color: black;
+  border: solid 1px silver;
+  z-index: 100000;
+}
+.submenu {
+  width: 100%;
+}
+.menuitem {
+  min-width: 100px;
+  padding: 4px;
+  margin: 0;
+}
+.menuitem:hover,
+.menuitem:active {
+  background: aquamarine;
+}
+.menuitem label {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+
+
+.resize-handle {
+  width: 10px;
+  height: 10px;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  /* https://mdn.mozillademos.org/files/6083/resize.png */
+  background: center center no-repeat url('../../assets/resize.png');
+}
+
+/*!
+ * animate.css -http://daneden.me/animate
+ * Version - 3.6.0
+ * Licensed under the MIT license - http://opensource.org/licenses/MIT
+ *
+ * Copyright (c) 2018 Daniel Eden
+ */
+
+ .animated {
+  -webkit-animation-duration: 1s;
+  animation-duration: 1s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+
+@-webkit-keyframes bounceIn {
+  from,
+  20%,
+  40%,
+  60%,
+  80%,
+  to {
+    -webkit-animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+
+  0% {
+    opacity: 0;
+    -webkit-transform: scale3d(0.3, 0.3, 0.3);
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+
+  20% {
+    -webkit-transform: scale3d(1.1, 1.1, 1.1);
+    transform: scale3d(1.1, 1.1, 1.1);
+  }
+
+  40% {
+    -webkit-transform: scale3d(0.9, 0.9, 0.9);
+    transform: scale3d(0.9, 0.9, 0.9);
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: scale3d(1.03, 1.03, 1.03);
+    transform: scale3d(1.03, 1.03, 1.03);
+  }
+
+  80% {
+    -webkit-transform: scale3d(0.97, 0.97, 0.97);
+    transform: scale3d(0.97, 0.97, 0.97);
+  }
+
+  to {
+    opacity: 1;
+    -webkit-transform: scale3d(1, 1, 1);
+    transform: scale3d(1, 1, 1);
+  }
+}
+@keyframes bounceIn {
+  from,
+  20%,
+  40%,
+  60%,
+  80%,
+  to {
+    -webkit-animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+    animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+  }
+
+  0% {
+    opacity: 0;
+    -webkit-transform: scale3d(0.3, 0.3, 0.3);
+    transform: scale3d(0.3, 0.3, 0.3);
+  }
+
+  20% {
+    -webkit-transform: scale3d(1.1, 1.1, 1.1);
+    transform: scale3d(1.1, 1.1, 1.1);
+  }
+
+  40% {
+    -webkit-transform: scale3d(0.9, 0.9, 0.9);
+    transform: scale3d(0.9, 0.9, 0.9);
+  }
+
+  60% {
+    opacity: 1;
+    -webkit-transform: scale3d(1.03, 1.03, 1.03);
+    transform: scale3d(1.03, 1.03, 1.03);
+  }
+
+  80% {
+    -webkit-transform: scale3d(0.97, 0.97, 0.97);
+    transform: scale3d(0.97, 0.97, 0.97);
+  }
+
+  to {
+    opacity: 1;
+    -webkit-transform: scale3d(1, 1, 1);
+    transform: scale3d(1, 1, 1);
+  }
+}
+.bounceIn {
+  -webkit-animation-duration: 0.75s;
+  animation-duration: 0.75s;
+  -webkit-animation-name: bounceIn;
+  animation-name: bounceIn;
+}
