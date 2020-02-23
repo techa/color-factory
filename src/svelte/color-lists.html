@@ -17,53 +17,73 @@
 </div>
 
 <script>
-  import Color from '../Colorx.js'
-  import WEBCOLOR      from '../constants/webcolor.json'
-  import JISCOLOR_EN   from '../constants/jiscolor_en.json'
-  import JISCOLOR_JA   from '../constants/jiscolor_ja.json'
+  import Color from '../Color.js'
+  import WEBCOLOR from '../constants/webcolor.json'
+  import JISCOLOR_EN from '../constants/jiscolor_en.json'
+  import JISCOLOR_JA from '../constants/jiscolor_ja.json'
   import MATERIALCOLOR from '../constants/materialcolor.json'
-  import RALCOLOUR     from '../constants/ralcolour.json'
-  import GOE_COATED     from '../constants/goe-coated.json'
-  import GOE_UNCOATED   from '../constants/goe-uncoated.json'
-  import SOLID_COATED   from '../constants/solid-coated.json'
+  import RALCOLOUR from '../constants/ralcolour.json'
+  import GOE_COATED from '../constants/goe-coated.json'
+  import GOE_UNCOATED from '../constants/goe-uncoated.json'
+  import SOLID_COATED from '../constants/solid-coated.json'
   import SOLID_UNCOATED from '../constants/solid-uncoated.json'
-  import CRAYOLA   from '../constants/crayola.json'
+  import CRAYOLA from '../constants/crayola.json'
 
   export default {
     data () {
       return {
         colorlists: [
-          { name: 'Web Color',
-            list: parser(WEBCOLOR) },
-          { name: 'GOOGLE MATERIAL',
+          {
+            name: 'Web Color',
+            list: parser(WEBCOLOR),
+          },
+          {
+            name: 'GOOGLE MATERIAL',
             list: Object.keys(MATERIALCOLOR).reduce((ary, key) => {
               MATERIALCOLOR[key].forEach((color, i) => {
                 let name = key
-                if (i === 0)      name += 50
-                else if (i < 10)  name += i * 100
+                if (i === 0) name += 50
+                else if (i < 10) name += i * 100
                 else if (i >= 10) name += ['A100', 'A200', 'A400', 'A700'][i % 10]
                 ary.push({ name, color })
               })
               return ary
-            }, []) },
-          { name: 'RAL',
-            list: parser(RALCOLOUR) },
-          { name: 'CRAYOLA',
-            list: parser(CRAYOLA) },
-          { name: 'PANTONE® Goe™ Coated',
-            list: pantone(GOE_COATED) },
-          { name: 'PANTONE® Goe™ Uncoated',
-            list: pantone(GOE_UNCOATED) },
-          { name: 'PANTONE® solid Coated',
-            list: pantone(SOLID_COATED) },
-          { name: 'PANTONE® solid Uncoated',
-            list: pantone(SOLID_UNCOATED) },
-          { name: 'JIS EN',
-            list: parser(JISCOLOR_EN) },
-          { name: 'JIS JA',
-            list: parser(JISCOLOR_JA) },
+            }, []),
+          },
+          {
+            name: 'RAL',
+            list: parser(RALCOLOUR),
+          },
+          {
+            name: 'CRAYOLA',
+            list: parser(CRAYOLA),
+          },
+          {
+            name: 'PANTONE® Goe™ Coated',
+            list: pantone(GOE_COATED),
+          },
+          {
+            name: 'PANTONE® Goe™ Uncoated',
+            list: pantone(GOE_UNCOATED),
+          },
+          {
+            name: 'PANTONE® solid Coated',
+            list: pantone(SOLID_COATED),
+          },
+          {
+            name: 'PANTONE® solid Uncoated',
+            list: pantone(SOLID_UNCOATED),
+          },
+          {
+            name: 'JIS EN',
+            list: parser(JISCOLOR_EN),
+          },
+          {
+            name: 'JIS JA',
+            list: parser(JISCOLOR_JA),
+          },
         ],
-        colorlistsIndex: 0
+        colorlistsIndex: 0,
       }
     },
     computed: {
@@ -98,7 +118,7 @@
 
           this.store.addCard({
             name,
-            color: new Color(color)
+            color: new Color(color),
           })
         }
       })
@@ -108,13 +128,13 @@
   function parser (list, temp) {
     return Object.keys(list).map(key => ({
       name: temp ? temp(key, list[key]) : key,
-      color: list[key][0]
+      color: list[key][0],
     }))
   }
   function pantone (list) {
     return Object.keys(list).map(key => ({
       name: `${key}`,
-      color: list[key]
+      color: list[key],
     }))
   }
 </script>

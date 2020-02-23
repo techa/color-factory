@@ -2,7 +2,7 @@ import defaultpalette from '../constants/hslcolor-circle'
 import fuji from '../constants/fuji'
 
 import Histore from './svelte-store-ex.js'
-import Color from '../Colorx.js'
+import Color from '../Color.js'
 import { objectToUrl, searchToObject } from '../url.js'
 
 const globalSave = {
@@ -28,6 +28,7 @@ const globalSave = {
     contrast: true,
   },
 }
+
 
 class Store extends Histore {
   constructor () {
@@ -77,31 +78,38 @@ class Store extends Histore {
   }
 
   setBgColor (color) {
-    this.set({ bgColor: (bgColor) => {
-      return color.alpha() < 1
-        ? bgColor.alphaBlending(color)
-        : color
-    } }, true)
+    this.set({
+      bgColor: (bgColor) => {
+        return color.alpha() < 1
+          ? bgColor.alphaBlending(color)
+          : color
+      },
+    }, true)
   }
 
   addCard (card) {
-    this.set({ cards: (cards) => {
-      card.color = new Color(card.color)
-      card.zIndex = cards.length
-      card.index = cards.length
-      return [...cards, this.cardPosition(card)]
-    } })
+    this.set({
+      cards: (cards) => {
+        card.color = new Color(card.color)
+        card.zIndex = cards.length
+        card.index = cards.length
+        return [...cards, this.cardPosition(card)]
+      },
+    })
     this.memo()
   }
 
   editCard (index, param) {
-    this.set({ cards: (cards) => {
-      const card = cards[index]
-      Object.assign(card, param)
-      return cards
-    } })
+    this.set({
+      cards: (cards) => {
+        const card = cards[index]
+        Object.assign(card, param)
+        return cards
+      },
+    })
     this.memo()
   }
+
   /**
    *
    *
@@ -109,29 +117,33 @@ class Store extends Histore {
    * @memberof Store
    */
   duplicateCard (indexs) {
-    this.set({ cards: (cards) => {
-      const newCards = indexs.map((index, i) => {
-        const card = Object.assign({}, cards[index])
-        card.color = new Color(card.color)
-        card.zIndex = cards.length + i
-        card.index = cards.length + i
-        card.left += 30
-        card.top += 30
-        return this.cardPosition(card)
-      })
-      return cards.concat(newCards)
-    } })
+    this.set({
+      cards: (cards) => {
+        const newCards = indexs.map((index, i) => {
+          const card = Object.assign({}, cards[index])
+          card.color = new Color(card.color)
+          card.zIndex = cards.length + i
+          card.index = cards.length + i
+          card.left += 30
+          card.top += 30
+          return this.cardPosition(card)
+        })
+        return cards.concat(newCards)
+      },
+    })
     this.memo()
   }
 
   toggleTextmode (indexs, bool) {
-    this.set({ cards: (cards) => {
-      indexs.map((index) => {
-        const card = cards[index]
-        card.textMode = typeof bool === 'boolean' ? bool : !card.textMode
-      })
-      return cards
-    } })
+    this.set({
+      cards: (cards) => {
+        indexs.map((index) => {
+          const card = cards[index]
+          card.textMode = typeof bool === 'boolean' ? bool : !card.textMode
+        })
+        return cards
+      },
+    })
     this.memo()
   }
 
@@ -143,32 +155,36 @@ class Store extends Histore {
    * [4,2,1,3,5,6]
    */
   removeCard (indexs) {
-    this.set({ cards: (cards) => {
-      const zIndexs = indexs.map((i) => cards[i].zIndex)
-      return cards.reduce((newcards, card, i) => {
-        if (!~indexs.indexOf(i)) {
-          card.index = newcards.length
-          card.zIndex -= zIndexs.reduce((num, zIndex) => num + (card.zIndex > zIndex), 0)
-          newcards.push(card)
-        }
-        return newcards
-      }, [])
-    } })
+    this.set({
+      cards: (cards) => {
+        const zIndexs = indexs.map((i) => cards[i].zIndex)
+        return cards.reduce((newcards, card, i) => {
+          if (!~indexs.indexOf(i)) {
+            card.index = newcards.length
+            card.zIndex -= zIndexs.reduce((num, zIndex) => num + (card.zIndex > zIndex), 0)
+            newcards.push(card)
+          }
+          return newcards
+        }, [])
+      },
+    })
     this.memo()
   }
 
   cardForward (index) {
-    this.set({ cards: (cards) => {
-      const currIndex = +cards[index].zIndex
-      cards.forEach((card, i) => {
-        if (i === index) {
-          card.zIndex = cards.length - 1
-        } else if (card.zIndex > currIndex) {
-          --card.zIndex
-        }
-      })
-      return cards
-    } })
+    this.set({
+      cards: (cards) => {
+        const currIndex = +cards[index].zIndex
+        cards.forEach((card, i) => {
+          if (i === index) {
+            card.zIndex = cards.length - 1
+          } else if (card.zIndex > currIndex) {
+            --card.zIndex
+          }
+        })
+        return cards
+      },
+    })
   }
 }
 
@@ -199,7 +215,7 @@ const store = new Store(
         action: 'delete',
       },
     ],
-  }
+  },
 )
 
 export default store

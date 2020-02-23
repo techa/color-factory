@@ -83,7 +83,7 @@
 </style>
 
 <script>
-  import Color from '../Colorx.js'
+  import Color from '../Color.js'
 
   function colorlist (cards) {
     return cards
@@ -144,7 +144,7 @@
           const { list } = this.get()
           let i = 0
           while (list.some(({ paletteName }) => value === paletteName)) {
-            value =  'Palette ' + (++i)
+            value = 'Palette ' + (++i)
           }
         }
         this.store.set({ paletteName: value })
@@ -153,6 +153,6 @@
           list: this.getList(),
         })
       },
-    }
+    },
   }
 </script>
