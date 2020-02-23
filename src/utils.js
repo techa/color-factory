@@ -14,7 +14,7 @@ export function kebabCase (str) {
 
 export function convertWCName (object) {
   const obj = {}
-  for (let key in object) {
+  for (const key in object) {
     obj[kebabCase(key)] = object[key]
   }
   return obj
@@ -22,12 +22,12 @@ export function convertWCName (object) {
 
 const numStylekey = ['width', 'height', 'top', 'left']
 export function styler (dom, data) {
-  if (dom[0] === void 0) {
+  if (dom[0] == null) {
     dom = [dom]
   }
   dom.forEach((el) => {
     const style = el.style
-    for (let key in data) {
+    for (const key in data) {
       const val = data[key]
       if (typeof val === 'number' && numStylekey.indexOf(key) !== -1) {
         style[key] = val + 'px'
@@ -39,7 +39,7 @@ export function styler (dom, data) {
 }
 export function styleString (data) {
   let style = ''
-  for (let key in data) {
+  for (const key in data) {
     const val = data[key]
     if (typeof val === 'number' && numStylekey.indexOf(key) !== -1) {
       style += kebabCase(key) + `: ${val}px;`
@@ -109,4 +109,20 @@ export function eventer (constructor) {
       return this
     },
   })
+}
+
+function objectSort (obj) {
+  return Object.keys(obj).sort().reduce((map, key) => {
+    let val = obj[key]
+
+    if (typeof val === 'object') {
+      val = objectSort(val)
+    }
+
+    map[key] = val
+    return map
+  }, {})
+}
+export function objectEqual (a, b) {
+  return JSON.stringify(objectSort(a)) === JSON.stringify(objectSort(b))
 }

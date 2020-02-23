@@ -40,7 +40,7 @@ export class PositionManager {
         },
         set (val) {
           position.left = this.adjust(val, 'width')
-        }
+        },
       },
       top: {
         get () {
@@ -48,7 +48,7 @@ export class PositionManager {
         },
         set (val) {
           position.top = this.adjust(val, 'height')
-        }
+        },
       },
     })
   }
@@ -87,14 +87,14 @@ export class PositionManager {
 
     // modify
     this.left = this.handleRect.left - this.parentRect.left + this.vectorX
-    this.top  = this.handleRect.top - this.parentRect.top + this.vectorY
+    this.top = this.handleRect.top - this.parentRect.top + this.vectorY
 
     this.percentLeft = this.percentage(this.x, 'width')
-    this.percentTop  = this.percentage(this.y, 'height')
+    this.percentTop = this.percentage(this.y, 'height')
 
     if (initflg) {
       this.startLeft = this.left
-      this.startTop  = this.top
+      this.startTop = this.top
     }
     return this
   }
@@ -126,16 +126,17 @@ export class PositionManager {
         // fall through
       default:
         el.style.left = this.left + 'px'
-        el.style.top  = this.top + 'px'
+        el.style.top = this.top + 'px'
     }
     if (typeof this.width === 'number') {
-      el.style.width  = this.width + 'px'
+      el.style.width = this.width + 'px'
     }
     if (typeof this.height === 'number') {
       el.style.height = this.height + 'px'
     }
     return this
   }
+
   oneWayMove (either, el = this.options.handle) {
     if (either === 'x') {
       el.style.left = this.left + 'px'
@@ -167,6 +168,7 @@ export class PositionManager {
     offset = Math.round(offset / grid) * grid
     return offset
   }
+
   /**
    * Boxを基準にした％
    *
@@ -207,7 +209,7 @@ export function off (el, eventNames, callback, useCapture) {
  * @param {Object|Element} options
  */
 export class MousePosition {
-  constructor (element,  options) {
+  constructor (element, options) {
     this.options = Object.assign({
       containment: element || document.body,
       handle: null,
@@ -252,6 +254,7 @@ export class MousePosition {
     on(0, 'mousemove touchmove', this._event.mmove)
     this._clickFlg = true
   }
+
   // マウスカーソルが動いたときに発火
   mmove (e) {
     if (!this.options.switch) return
@@ -268,6 +271,7 @@ export class MousePosition {
     on(0, 'mouseleave touchleave', this._event.mup)
     this._clickFlg = false
   }
+
   // マウスボタンが上がったら発火
   mup (e) {
     if (!this.options.switch) return
@@ -301,18 +305,21 @@ export class Movable extends MousePosition {
       draggingClass: 'dragging',
     }, options || {}))
   }
+
   // マウスが押された際の関数
   mdown (e) {
     super.mdown(e)
     // クラス名に .drag を追加
     this.options.handle.classList.add(this.options.draggingClass)
   }
+
   // マウスカーソルが動いたときに発火
   mmove (e) {
     super.mmove(e)
     // マウスが動いた場所に要素を動かす
     this.position.setPosition(e)
   }
+
   // マウスボタンが上がったら発火
   mup (e) {
     super.mup(e)
@@ -339,12 +346,14 @@ export class Resizable extends MousePosition {
       minHeight: parseFloat(style.minHeight) || 10,
     }, options || {}))
   }
+
   // マウスが押された際の関数
   mdown (e) {
     super.mdown(e)
     // クラス名に .drag を追加
     this.options.handle.classList.add(this.options.draggingClass)
   }
+
   // マウスカーソルが動いたときに発火
   mmove (e) {
     super.mmove(e)
@@ -358,6 +367,7 @@ export class Resizable extends MousePosition {
       this.options.containment.style.height = height + 'px'
     }
   }
+
   // マウスボタンが上がったら発火
   mup (e) {
     super.mup(e)
@@ -538,14 +548,17 @@ export class Selectable extends MousePosition {
   select (i) {
     this.toggle(i, true)
   }
+
   selectAll () {
     this.children.forEach((child, i) => {
       this.select(i)
     })
   }
+
   unselect (i) {
     this.toggle(i, false)
   }
+
   unselectAll () {
     this.children.forEach((child, i) => {
       this.unselect(i)
@@ -553,21 +566,21 @@ export class Selectable extends MousePosition {
   }
 
   helperRect (position) {
-    let left, top, width, height
+    let left, top
     if (position.vectorX < 0) {
-      left  = position.startX + position.vectorX
+      left = position.startX + position.vectorX
     }
     if (position.vectorX >= 0) {
-      left  = position.startX
+      left = position.startX
     }
     if (position.vectorY < 0) {
-      top  = position.startY + position.vectorY
+      top = position.startY + position.vectorY
     }
     if (position.vectorY >= 0) {
-      top  = position.startY
+      top = position.startY
     }
-    width  = Math.abs(position.vectorX)
-    height = Math.abs(position.vectorY)
+    const width = Math.abs(position.vectorX)
+    const height = Math.abs(position.vectorY)
     // 選択範囲のRectデータ
     return { left, top, width, height }
   }
@@ -586,8 +599,8 @@ export class Selectable extends MousePosition {
     // helper追加
     el.appendChild(helper)
     helper.style.left = position.startX + 'px'
-    helper.style.top  = position.startY + 'px'
-    helper.style.width  = '0px'
+    helper.style.top = position.startY + 'px'
+    helper.style.width = '0px'
     helper.style.height = '0px'
   }
 
@@ -608,10 +621,11 @@ export class Selectable extends MousePosition {
     })
     // マウスが動いた場所にhelper要素を動かす
     helper.style.left = helperRect.left + 'px'
-    helper.style.top  = helperRect.top + 'px'
-    helper.style.width  = helperRect.width + 'px'
+    helper.style.top = helperRect.top + 'px'
+    helper.style.width = helperRect.width + 'px'
     helper.style.height = helperRect.height + 'px'
   }
+
   // マウスボタンが上がったら発火
   mup (e) {
     super.mup(e)

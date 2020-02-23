@@ -5,7 +5,7 @@ import base64 from 'base64-js'
 export function searchToObject () {
   // modified from https://stackoverflow.com/a/7090123/806777
   return window.location.search.slice(1).split('&').reduce((result, value) => {
-    let parts = value.split('=').map(decodeURIComponent)
+    const parts = value.split('=').map(decodeURIComponent)
     if (parts[0]) {
       let val = parts[1]
       try {

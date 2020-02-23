@@ -80,6 +80,7 @@ export default class Histore extends Store {
 
     this.on('update', this._memo.bind(this))
   }
+
   set (newState, memo) {
     for (const key in newState) {
       if (typeof newState[key] === 'function') {
@@ -92,12 +93,14 @@ export default class Histore extends Store {
       this.save()
     }
   }
+
   memo () {
     this._history.memo = true
     this._memo({
       current: this.get(),
     })
   }
+
   dataList (saveType) {
     const saveList = this.saveLists[saveType]
     const list = []
@@ -109,6 +112,7 @@ export default class Histore extends Store {
     })
     return list
   }
+
   _createStorageKey (saveType, saveName) {
     return this.globalStorageKey + '/' + saveType + '/' + saveName
   }
@@ -127,6 +131,7 @@ export default class Histore extends Store {
       this._save(saveType, saveName, data)
     }
   }
+
   /**
    * LocalStrageからデータを削除
    *
@@ -146,6 +151,7 @@ export default class Histore extends Store {
       throw new Error(`Histore.remove(${saveType}, ${saveName}): save is undefind`)
     }
   }
+
   /**
    * LocalStrageからstateにデータをロード
    *
@@ -163,6 +169,7 @@ export default class Histore extends Store {
       throw new Error(`Histore.load(${saveType}, ${saveName}): savedata is undefind`)
     }
   }
+
   /**
    * LocalStrageにstateのデータを保存
    *
@@ -197,6 +204,7 @@ export default class Histore extends Store {
       this._save(saveType, savename, data)
     }
   }
+
   _save (saveType, saveName, data) {
     const saveList = this.saveLists[saveType]
     if (saveList && !saveList.has(saveName) && saveType !== 'global' && saveName) {
@@ -205,7 +213,6 @@ export default class Histore extends Store {
     }
     save(this._createStorageKey(saveType, saveName), data)
   }
-
 
   _memo ({ changed, current, previous }) {
     const newstateJSON = this._historyState(current)
@@ -254,17 +261,19 @@ export default class Histore extends Store {
       this.set(JSON.parse(history.undostock.pop()), 'undo')
     }
   }
+
   redo () {
     const history = this._history
     if (history.redostock.length) {
       this.set(JSON.parse(history.redostock.pop()), 'redo')
     }
   }
+
   undoCount () {
     return this._history.undostock.length
   }
+
   redoCount () {
     return this._history.redostock.length
   }
 }
-

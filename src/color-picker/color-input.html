@@ -188,17 +188,14 @@
             color = color.alpha(color.alpha() + arrow / 100)
           } else {
             // not alpla
-            switch (model) {
-              case '%':
-                const val = (param[index] + arrow / 100) * 255
-                param = color.rgb().array()
-                param[index] = val
-                color = new Color(param, 'rgb')
-                break
-              default:
-                param[index] += arrow
-                color = new Color(param, model)
-                break
+            if (model === '%') {
+              const val = (param[index] + arrow / 100) * 255
+              param = color.rgb().array()
+              param[index] = val
+              color = new Color(param, 'rgb')
+            } else {
+              param[index] += arrow
+              color = new Color(param, model)
             }
           }
           this.set({ color })

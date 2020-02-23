@@ -219,8 +219,7 @@
             by = (this.store.get().bgColor[sort](card.color) - 1) / 20
             break
           default:
-            const max = sort === 'hue' ? 360 : 100
-            by = card.color[sort]() / max
+            by = card.color[sort]() / (sort === 'hue' ? 360 : 100)
             break
         }
         return dirctionflg === 1 ? by : 1 - by
@@ -383,7 +382,7 @@
         }
 
         this.store.set({
-          cards: result.map((card) => this.store.cardPosition(card, true))
+          cards: result.map((card) => this.store.cardPosition(card, true)),
         })
         this.store.memo()
       },
@@ -407,7 +406,7 @@
         cardViewModels[model] = !bool
         this.store.set({ cardViewModels }, true)
       },
-    }
+    },
   }
 </script>
 
