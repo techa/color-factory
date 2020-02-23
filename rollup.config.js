@@ -1,4 +1,4 @@
-import commonjs    from 'rollup-plugin-commonjs'
+import commonjs from 'rollup-plugin-commonjs'
 import nodeResolve from 'rollup-plugin-node-resolve'
 
 import json from 'rollup-plugin-json'
@@ -7,14 +7,15 @@ import svelte from 'rollup-plugin-svelte'
 
 import babel from 'rollup-plugin-babel'
 import { terser } from 'rollup-plugin-terser'
+import serve from 'rollup-plugin-serve'
+import livereload from 'rollup-plugin-livereload'
 
 const production = !process.env.ROLLUP_WATCH
-const suffix = (production) ? '.min' : ''
 
 export default {
   input: 'src/index.js',
   output: {
-    file: `dist/bundle${suffix}.js`,
+    file: 'dist/bundle.js',
     // https://github.com/rollup/rollup/wiki/JavaScript-API#format
     format: 'iife', // es(default),cjs,iife
     sourcemap: true,
@@ -28,13 +29,16 @@ export default {
       },
       store: true,
     }),
-    commonjs(), // CommonJSモジュールをES6に変換
+
     json({ preferConst: true }),
+
     nodeResolve({
       jsnext: true, // if provided in ES6
       main: true, // if provided in CommonJS
       browser: true, // if provided for browsers
     }), // npmモジュールを`node_modules`から読み込む
+    commonjs(), // CommonJSモジュールをES6に変換
+
     (production && babel({
       // https://github.com/rollup/rollup-plugin-babel/issues/120
       exclude: 'node_modules/**',
@@ -45,7 +49,7 @@ export default {
             targets: {
               browsers: [
                 'last 2 versions',
-                'safari >= 7'
+                'safari >= 7',
               ],
             },
             // https://github.com/babel/babel/tree/master/packages/babel-preset-env#modules
@@ -62,12 +66,11 @@ export default {
     (production && terser({
       compress: {
         // https://github.com/mishoo/UglifyJS2/blob/master/README.md#compress-options
-        drop_console: true
+        drop_console: true,
       },
     })),
+
+    !production && serve('dist'),
+    !production && livereload('dist'),
   ],
-  watch: {
-    chokidar: false,
-    include: 'src/**'
-  },
 }
