@@ -72,23 +72,6 @@
     {/if}
   </div>
 
-  <div class="filter-select button-set border radius" class:active="$filterSwitch">
-    <div><button on:click="$set({filterSwitch: !$filterSwitch})">
-      <svg class="feather">
-        <use xlink:href="#filter"/>
-      </svg>
-    </button></div>
-    <label class="select-wrapper" style="flex: 1 1 auto;">
-      <select bind:value="$selectingFilter" on:change="$set({filterSwitch: true})">
-        {#each filters as {name, value}}
-          <option {value}>{name}</option>
-        {/each}
-      </select>
-    </label>
-  </div>
-
-  <hr>
-
   <!-- カード整列 -->
   <h5>Sort Cards
     <div>
@@ -116,6 +99,24 @@
           {#if $sortX !== value}
           <option {value}>{name}</option>
           {/if}
+        {/each}
+      </select>
+    </label>
+  </div>
+
+  <hr>
+
+  <h5>Filter</h5>
+  <div class="filter-select button-set border radius" class:active="$filterSwitch">
+    <div><button on:click="$set({filterSwitch: !$filterSwitch})">
+      <svg class="feather">
+        <use xlink:href="#filter"/>
+      </svg>
+    </button></div>
+    <label class="select-wrapper" style="flex: 1 1 auto;">
+      <select bind:value="$selectingFilter" on:change="$set({filterSwitch: true})">
+        {#each filters as {name, value}}
+          <option {value}>{name}</option>
         {/each}
       </select>
     </label>
