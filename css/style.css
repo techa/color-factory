@@ -120,6 +120,16 @@ h6 > div {
 }
 
 
+.feather {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
 
 .resize-handle {
   width: 10px;
