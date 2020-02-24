@@ -32,7 +32,7 @@ Object.assign(color.prototype, {
           arr[2] += '%'
         }
         return model +
-          color.valpha !== 1 ? 'a' : '' +
+          (color.valpha !== 1 ? 'a' : '') +
           `(${arr.join(', ')})`
       case 'cmyk':
         arr = color.cmyk().round().array()
