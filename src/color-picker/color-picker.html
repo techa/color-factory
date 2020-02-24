@@ -13,7 +13,7 @@
       <Blender bind:color/>
     </div>
     <div class="button" title="Alpha Blending by BG-color">
-      <button on:click="alphaBlending()">a=1</button>
+      <button class:alpha1="color.alpha() === 1" on:click="alphaBlending()">a=1</button>
     </div>
   </div>
 </div>
@@ -65,6 +65,9 @@
   .contrast.AAA {
     text-decoration: underline;
     font-weight: bolder;
+  }
+  .alpha1 {
+    opacity: .6;
   }
   .alpha-check-bg {
     /* 市松模様 */
