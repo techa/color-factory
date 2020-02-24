@@ -136,15 +136,29 @@
       <button
         on:click="addCard(current, true)"
         title="Add Card: text"
-        style="color: {current.color};">➕</button>
+        style="color: {current.color};"
+      >
+        <svg class="feather">
+          <use xlink:href="#plus"/>
+        </svg>
+      </button>
     </div>
     <div>
       <button
         on:click="addCard(current)"
         title="Add Card: fill"
-        style="color:{current.color.isDark()?'#fff':'#000'};background-color: {current.color};">➕</button>
+        style="color:{current.color.isDark()?'#fff':'#000'};background-color: {current.color};"
+      >
+        <svg class="feather">
+          <use xlink:href="#plus"/>
+        </svg>
+      </button>
     </div>
-    <div><button on:click="$setBgColor(current.color)" title="set Background Color">BG</button></div>
+    <div><button on:click="$setBgColor(current.color)" title="set Background Color">
+      <svg class="feather" style="color:{current.color};fill: {current.color};">
+        <use xlink:href="#droplet"/>
+      </svg>
+    </button></div>
   </div>
 
   <ColorPicker
@@ -509,8 +523,8 @@
   .sort-z.active {
     opacity: 1;
   }
-  .cantUndo>.fa-undo,
-  .cantRedo>.fa-redo,
+  .cantUndo>.feather,
+  .cantRedo>.feather,
   .sort-z {
     opacity: .6;
   }
