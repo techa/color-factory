@@ -23,7 +23,12 @@
     <button class="random-color"
       title="Random Color"
       on:click="randomColor()"
-      style="color: {color.hex()}; background-color: {textColor};">!</button>
+      style="color: {textColor};"
+    >
+      <svg class="feather">
+        <use xlink:href="#shuffle"/>
+      </svg>
+    </button>
   </div>
 {/if}
 
@@ -53,7 +58,6 @@
       display: none;
       height: 1em;
       width: 1em;
-      border-radius: 0.5em;
       margin: 0.5em;
       text-align: center;
       padding: 0;

@@ -15,6 +15,7 @@
   ],
   "main": "src/index.js",
   "scripts": {
+    "icons": "node --experimental-modules scripts/icons.mjs",
     "dev": "rollup -c -w",
     "build": "rollup -c"
   },
@@ -45,6 +46,7 @@
     "@babel/polyfill": "^7.2.5",
     "base64-js": "^1.3.0",
     "color": "^3.1.0",
+    "feather-icons": "^4.26.0",
     "lzma": "^2.3.2",
     "nearest-color": "^0.4.4"
   }

@@ -1,40 +1,65 @@
+<svelte:head><Icons /></svelte:head>
+
 <div id="controller" style="color: {$bgColor.textColor()};"
   on:mouseleave="set({showSubmenu: false})">
   <div class="tool-box">
     <button on:click="set({ showModal: true })" title="Save &amp; Load">
-      <i class="fas fa-hdd"></i>
+      <svg class="feather">
+        <use xlink:href="#hard-drive"/>
+      </svg>
     </button>
     <button class:cantUndo on:click="$undo()" title="Undo: ctrl+z">
-      <i class="fas fa-undo"></i>
+      <svg class="feather">
+        <use xlink:href="#rotate-ccw"/>
+      </svg>
       <!-- ↩️ -->
     </button>
     <button class:cantRedo on:click="$redo()" title="Redo: ctrl+shift+z">
-      <i class="fas fa-redo"></i>
+      <svg class="feather">
+        <use xlink:href="#rotate-cw"/>
+      </svg>
       <!-- ↪️ -->
     </button>
     <button on:click="set({showSubmenu: !showSubmenu})" title="Card Color Models Visible">
-      <i class="fas fa-eye"></i>
+      <svg class="feather">
+        <use xlink:href="#eye"/>
+      </svg>
     </button>
     <button on:click="reverse()" title="Reverse">
-      <i class="fas fa-sync fa-fw"></i>
+      <svg class="feather">
+        <use xlink:href="#refresh-cw"/>
+      </svg>
     </button>
     <button on:click="remove()" title="Delete">
-      <i class="fas fa-trash"></i>
+      <svg class="feather">
+        <use xlink:href="#trash"/>
+      </svg>
     </button>
     {#if showSubmenu}
     <div class="submenu" on:mouseleave="set({showSubmenu: false})">
       <p class="menuitem" on:click="$set({textvisible: !$textvisible}, true)">
-        <i class="fas fa-font fa-fw"></i>
+        <svg class="feather">
+          <use xlink:href="#type"/>
+        </svg>
         Fill-Card Text Visible
       </p>
       <p class="menuitem" on:click="$set({textModeBackground: !$textModeBackground}, true)">
-        <i class="fas fa-font fa-fw"></i>
+        <svg class="feather">
+          <use xlink:href="#droplet"/>
+        </svg>
         Text-Card Background
       </p>
       {#each Object.entries($cardViewModels) as [model, bool]}
       <p class="menuitem">
         <label>
           <input type="checkbox" checked="{bool}" on:click="viewModelChenge(model, bool)">
+          <svg class="feather">
+            {#if bool}
+              <use xlink:href="#check-square"/>
+            {:else}
+              <use xlink:href="#square"/>
+            {/if}
+          </svg>
           {#if (model=='rgbp')}
             RGB(%)
           {:else}
@@ -49,7 +74,9 @@
 
   <div class="filter-select button-set border radius" class:active="$filterSwitch">
     <div><button on:click="$set({filterSwitch: !$filterSwitch})">
-      <i class="fas fa-filter fa-fw"></i>
+      <svg class="feather">
+        <use xlink:href="#filter"/>
+      </svg>
     </button></div>
     <label class="select-wrapper" style="flex: 1 1 auto;">
       <select bind:value="$selectingFilter" on:change="$set({filterSwitch: true})">
@@ -132,7 +159,11 @@
 
   <div class="links">
     2018 &copy; techa
-    <a href="https://github.com/techa/color-factory"><i class="fab fa-github fa-fw"></i></a>
+    <a href="https://github.com/techa/color-factory">
+      <svg class="feather">
+        <use xlink:href="#github"/>
+      </svg>
+    </a>
   </div>
 </div>
 
@@ -176,6 +207,7 @@
       ColorLists: './color-lists.html',
       ContextMenu: './context-menu.html',
       SaveModal: './save-modal.html',
+      Icons: './icons.html',
     },
     data () {
       return {
@@ -486,5 +518,8 @@
     --placeholder: inherit;
     color: var(--placeholder);
     opacity: 1;
+  }
+  [type="checkbox"] {
+    display: none;
   }
 </style>

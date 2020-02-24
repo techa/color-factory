@@ -4,19 +4,27 @@
     <p class="menuitem" on:click="$setBgColor(activeCard.color)">SET BACKGROUND</p>
   {:elseif mode == 'card'}
     <p class="menuitem" on:click="edit()">
-      <i class="fas fa-edit fa-fw"></i>
+      <svg class="feather">
+        <use xlink:href="#edit"/>
+      </svg>
       RENAME
     </p>
     <p class="menuitem" on:click="duplicate()">
-      <i class="fas fa-copy fa-fw"></i>
+      <svg class="feather">
+        <use xlink:href="#copy"/>
+      </svg>
       DUPLICATE
     </p>
     <p class="menuitem" on:click="reverse()">
-      <i class="fas fa-sync fa-fw"></i>
+      <svg class="feather">
+        <use xlink:href="#refresh-cw"/>
+      </svg>
       FILL/TEXT
     </p>
     <p class="menuitem" on:click="remove()">
-      <i class="fas fa-times fa-fw"></i>
+      <svg class="feather">
+        <use xlink:href="#trash"/>
+      </svg>
       DELETE
     </p>
     <!-- <hr>
@@ -30,6 +38,9 @@
   {#if activeCard}
     {#each copys as model}
       <p class="menuitem" on:click="copyColor(model)">
+        <svg class="feather">
+          <use xlink:href="#clipboard"/>
+        </svg>
         COPY: {activeCard.color[model]()}
       </p>
     {/each}
@@ -46,6 +57,13 @@
   </p>
   {/each}
 </div> -->
+
+<style>
+  .feather {
+    width: 12px;
+    height: 12px;
+  }
+</style>
 
 <script>
   import { styler, copyTextToClipboard } from '../utils'
@@ -157,7 +175,7 @@
         cardViewModels[event[0]] = !event[1]
         this.store.set({ cardViewModels }, true)
       },
-    }
+    },
   }
 </script>
 

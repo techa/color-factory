@@ -19,7 +19,9 @@
     </div>
     <div class="btns">
       <button on:click="remove(paletteName)">
-        <i class="fa fa-minus-square"></i>
+        <svg class="feather">
+          <use xlink:href="#trash"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -36,7 +38,6 @@
       {:else}
         New Save
       {/if}
-      <i class="fa fa-plus-square"></i>
     </button>
   </div>
 </Modal>
