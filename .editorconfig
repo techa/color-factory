@@ -20,7 +20,7 @@ insert_final_newline = true
 [*.md]
 trim_trailing_whitespace = false
 
-[*.{html,tag,css,js,yml,yaml}]
+[*.{html,tag,css,js,mjs,yml,yaml}]
 indent_size = 2
 
 [*.{txt,json,csv,tsv}]
