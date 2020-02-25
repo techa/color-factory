@@ -18,14 +18,14 @@ export default {
     file: 'dist/bundle.js',
     // https://github.com/rollup/rollup/wiki/JavaScript-API#format
     format: 'iife', // es(default),cjs,iife
-    sourcemap: true,
+    sourcemap: !production,
   },
   // http://qiita.com/cognitom/items/e3ac0da00241f427dad6#appendix
   plugins: [
     svelte({
       dev: !production,
       css: css => {
-        css.write('dist/bundle.css')
+        css.write('dist/bundle.css', /* sourcemap */ !production)
       },
       store: true,
     }),
@@ -33,9 +33,7 @@ export default {
     json({ preferConst: true }),
 
     nodeResolve({
-      jsnext: true, // if provided in ES6
-      main: true, // if provided in CommonJS
-      browser: true, // if provided for browsers
+      browser: true, // if provided for browsers options.mainFields
     }), // npmモジュールを`node_modules`から読み込む
     commonjs(), // CommonJSモジュールをES6に変換
 
