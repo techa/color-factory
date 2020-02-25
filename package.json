@@ -1,11 +1,14 @@
 {
   "name": "color-factory",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "Color scheme Consideration",
   "author": "techa",
   "license": "MIT",
   "homepage": "https://techa.github.io/color-factory",
-  "repository": "techa/color-factory",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/techa/color-factory.git"
+  },
   "bug": {
     "url": "https://github.com/techa/color-factory/issues"
   },
