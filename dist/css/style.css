@@ -34,7 +34,7 @@ h6 > div {
   display: flex;
   align-content: stretch;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: space-between;
 }
 .button-set button,
 .button-set input {
