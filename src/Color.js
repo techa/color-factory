@@ -1,6 +1,13 @@
 import color from 'color'
-import nearestColor from 'nearest-color'
+import nearestColor from './nearest-color'
+import WEBCOLOR from './constants/webcolor.json'
 import { hsl2zaa, zaa2hsl } from './zaa'
+
+const webcolors = Object.keys(WEBCOLOR).reduce((result, key) => {
+  result[WEBCOLOR[key][0]] = key
+  return result
+}, {})
+
 
 Object.assign(color.prototype, {
   toString (model) {
@@ -86,16 +93,15 @@ export default class Color extends color {
         .then((response) => {
           return response.json()
         })
-        .then((data) => {
-          const colors = data.colors.reduce((map, { name, hex }) => {
-            map[name] = hex
-            return map
-          }, {})
-          return nearestColor.from(colors)
-        })
     }
-    return Color.nearestColor.then((nc) => {
-      return nc(this.hex()).name
+
+    const webcolor = webcolors[this.hex().toUpperCase()]
+
+    return Color.nearestColor.then((data) => {
+      if (webcolor) {
+        return webcolor + '(web)'
+      }
+      return nearestColor(this, data.colors).name
     })
   }
 
