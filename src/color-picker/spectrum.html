@@ -1,55 +1,67 @@
-<div ref:spectrum class="spectrum {model}" style="background-color: hsl({color.hue()},100%,50%);">
+<div ref:spectrum class="spectrum {model}" style="background-color: hsl({color.hue()}, 100%, 50%);">
   <div ref:handle class="color-handle"></div>
 </div>
 
 <style>
   .spectrum {
     position: relative;
+
     cursor: crosshair;
     pointer-events: auto;
   }
+
   .spectrum.hsv {
     background:
-      linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%),
-      linear-gradient(left, #FFF 0%, rgba(255, 255, 255, 0) 100%);
-
-    background: -moz-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -moz-linear-gradient(left, #FFF 0%, rgba(255, 255, 255, 0) 100%);
-    background: -webkit-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -webkit-linear-gradient(left, #FFF 0%, rgba(255, 255, 255, 0) 100%);
-    background: -ms-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -ms-linear-gradient(left, #FFF 0%, rgba(255, 255, 255, 0) 100%);
-    background: -o-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -o-linear-gradient(left, #FFF 0%, rgba(255, 255, 255, 0) 100%);
+      linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0) 100%),
+      linear-gradient(to left, #fff 0%, rgba(255, 255, 255, 0) 100%);
+    background: -moz-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -moz-linear-gradient(left, #fff 0%, rgba(255, 255, 255, 0) 100%);
+    background: -webkit-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -webkit-linear-gradient(left, #fff 0%, rgba(255, 255, 255, 0) 100%);
+    background: -ms-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -ms-linear-gradient(left, #fff 0%, rgba(255, 255, 255, 0) 100%);
+    background: -o-linear-gradient(bottom, #000 0%, rgba(0, 0, 0, 0) 100%), -o-linear-gradient(left, #fff 0%, rgba(255, 255, 255, 0) 100%);
   }
+
   .spectrum.hsl {
     background:
-      linear-gradient(top, #FFF 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, #000 100%),
-      linear-gradient(left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
-
+      linear-gradient(to top, #fff 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, #000 100%),
+      linear-gradient(to left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
     background: -moz-linear-gradient(top, hsl(0, 0%, 100%) 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, hsl(0, 0%, 0%) 100%), -moz-linear-gradient(left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
     background: -webkit-linear-gradient(top, hsl(0, 0%, 100%) 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, hsl(0, 0%, 0%) 100%), -webkit-linear-gradient(left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
-    background-color: rgba(0, 0, 0, 0);
     background: -ms-linear-gradient(top, hsl(0, 0%, 100%) 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, hsl(0, 0%, 0%) 100%), -ms-linear-gradient(left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
     background: -o-linear-gradient(top, hsl(0, 0%, 100%) 0%, hsla(0, 0%, 100%, 0) 50%, hsla(0, 0%, 0%, 0) 50%, hsl(0, 0%, 0%) 100%), -o-linear-gradient(left, hsl(0, 0%, 50%) 0%, hsla(0, 0%, 50%, 0) 100%);
+    background-color: rgba(0, 0, 0, 0);
   }
+
   .color-handle {
-    position: absolute;
     width: 10px;
     height: 10px;
     margin: -5px;
+
+    position: absolute;
     top: 0;
     left: 0;
-    border: 1px solid black;
+
     border-radius: 5px;
+
+    border: 1px solid black;
+
     text-align: left;
+
     pointer-events: none;
   }
+
   .color-handle::before {
     content: '';
-    position: absolute;
+
     width: 8px;
     height: 8px;
+
+    position: absolute;
     top: 0;
     left: 0;
-    border: 1px solid white;
+
     border-radius: 4px;
+
+    border: 1px solid white;
   }
 </style>
 

@@ -7,43 +7,56 @@
   .slider {
     position: relative;
   }
+
   .slider.vertical {
-    cursor: row-resize;
     height: 100%;
+
+    cursor: row-resize;
   }
+
   .slider.horizontal {
-    cursor: col-resize;
     width: 100%;
+
+    cursor: col-resize;
   }
 
   .slider-canvas {
     margin: 0;
     padding: 0;
   }
+
   .slider-handle {
     position: absolute;
     top: 0;
     left: 0;
+
     border: 1px solid black;
+
     pointer-events: none;
   }
+
   .slider-handle.vertical {
-    margin-top: -3px;
     width: 100%;
     height: 6px;
+    margin-top: -3px;
   }
+
   .slider-handle.horizontal {
-    margin-left: -3px;
     width: 6px;
     height: 100%;
+    margin-left: -3px;
   }
+
   .slider-handle::before {
     content: '';
-    position: absolute;
+
     width: 100%;
     height: 100%;
+
+    position: absolute;
     top: 0;
     left: 0;
+
     border: 1px solid white;
   }
 </style>
@@ -101,7 +114,7 @@
           per = 1 - per
         }
         this.set({
-          value: (max - min) * per + min
+          value: (max - min) * per + min,
         })
       },
       setPosition (value) {
@@ -114,6 +127,6 @@
         }
         this.refs.sliderHandle.style[side] = per * (size - 6) + 3 + 'px'
       },
-    }
+    },
   }
 </script>

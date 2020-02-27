@@ -5,7 +5,7 @@
     {#each models as _model}
     <div>
       <button
-        style="{modelStyler(_model, model, color, bgColor, textColor)}"
+        style={modelStyler(_model, model, color, bgColor, textColor)}
         on:click="set({model: _model})">{_model.toUpperCase()}</button>
     </div>
     {/each}
@@ -35,39 +35,53 @@
 <style>
   .models {
     width: 100%;
+
     font-size: 0.8em;
   }
+
   .models button {
     padding: 3px;
   }
+
   .input-wrapper {
     --size: 2em;
     padding: 0;
-    position: relative;
-    /*margin: 10px 0;*/
-    font: normal 1em "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
-    display: flex;
-    flex-direction: column;}
 
-    .color-text {
-      height: var(--size);
-      padding: 0 4px;
-      text-align: center;}
-    .random-color {
-      position: absolute;
-      display: none;
-      height: 1em;
-      width: 1em;
-      margin: 0.5em;
-      text-align: center;
-      padding: 0;
-      font-size-adjust: 0.5em;
-      line-height: 0.5em;
-    }
-    .input-wrapper:hover .random-color {
-      display: block;
-      cursor: pointer;
-    }
+    position: relative;
+    display: flex;
+
+    flex-direction: column;
+
+    /* margin: 10px 0; */
+    font: normal 1em "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
+  }
+
+  .color-text {
+    height: var(--size);
+    padding: 0 4px;
+
+    text-align: center;
+  }
+
+  .random-color {
+    width: 1em;
+    height: 1em;
+    margin: 0.5em;
+    padding: 0;
+
+    position: absolute;
+    display: none;
+
+    font-size-adjust: 0.5em;
+    text-align: center;
+    line-height: 0.5em;
+  }
+
+  .input-wrapper:hover .random-color {
+    display: block;
+
+    cursor: pointer;
+  }
 </style>
 
 <script>

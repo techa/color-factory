@@ -6,7 +6,7 @@
   </select>
 </div>
 
-<div class="colortips scrollbar-wrapper" style="flex: 1;">
+<div class="colortips scrollbar-wrapper">
   <div class="scrollbar-body">
     <div ref:colortips class="scrollbar-content">
       {#each list as {name, color} }
@@ -142,44 +142,60 @@
 <style>
   #colorlists {
     width: 280px;
+
     font-size: 20px;
   }
+
   #colorlists select {
     width: 280px;
   }
+
   #colorlists option {
-    background: #fff;
     color: #111;
+    background: #fff;
   }
+
   #colorlists option:hover {
     background: aquamarine;
   }
+
   .colortips {
     margin: 8px 0;
+
+    flex: 1;
   }
-  .tip{
+
+  .tip {
     width: 20px;
     height: 20px;
-    margin:0;
-    padding:0;
-    display:inline-block;
+    margin: 0;
+    padding: 0;
+
+    display: inline-block;
   }
+
   .scrollbar-wrapper {
-    position: relative;
     height: 100%;
+
+    position: relative;
     overflow: hidden;
   }
+
   .scrollbar-body {
     /* scrillbarの幅17px分余分にとることでバーを隠す */
     width: calc(100% + 17px);
     height: 100%;
-    /*height: inherit;*/
+
+    /* height: inherit; */
     overflow-y: scroll;
   }
+
   .scrollbar-content {
     /* 中身のmarginを含めたサイズを取得するのために必要 */
-    /*overflow-y: auto;*/
+
+    /* overflow-y: auto; */
     display: flex;
+
     flex-wrap: wrap;
   }
 </style>

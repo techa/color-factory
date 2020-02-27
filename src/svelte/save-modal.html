@@ -32,7 +32,7 @@
   <div class="footer button-set">
     <div>Save as:</div>
     <input bind:value placeholder="Palette Name" style="flex: 1;">
-    <button on:click="save(value)" style="background-color: {listContains?'aquamarine':'dodgerblue'};">
+    <button class="save" class:overwrite={listcontains} on:click="save(value)">
       {#if listContains}
         Overwrite
       {:else}
@@ -44,15 +44,19 @@
 
 <style>
   .name {
-    position: relative;
     width: 200px;
+
+    position: relative;
+
     flex: 3 0 200px;
   }
+
   input {
-    border-color: silver;
-    border-style: solid;
     border-width: 1px;
+    border-style: solid;
+    border-color: silver;
   }
+
   .listitem,
   .footer,
   .footer input,
@@ -60,26 +64,43 @@
   .footer div {
     padding: 5px;
   }
+
   .footer button {
     margin: 0 0 0 8px;
+
     border-radius: 4px;
   }
+
   .listitem.active {
     background: aquamarine;
   }
+
   .listitem:hover {
     background: #9edada;
   }
+
   .palette {
     position: relative;
   }
+
   .tip {
     margin: 2px 0;
+
     flex: 1;
   }
+
   .color-num {
     width: 48px;
+
     text-align: right;
+  }
+
+  .save {
+    background-color: dodgerblue;
+  }
+
+  .save.overwrite {
+    background-color: aquamarine;
   }
 </style>
 

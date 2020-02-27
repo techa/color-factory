@@ -20,63 +20,85 @@
 
 <style>
   .color-picker {
-    position: relative;
     padding: 8px;
+
+    position: relative;
+
     text-align: center;
   }
+
   .picker-body {
     height: 90px;
-    display: flex;
-    flex-direction: column;
     padding: 6px 0;
+
+    display: flex;
+
+    flex-direction: column;
   }
+
   .picker-footer {
     width: 100%;
     height: 20px;
+
     display: flex;
-    align-items: stretch;
+
     flex-direction: row;
     justify-content: space-around;
+    align-items: stretch;
+
     font-size: 0.8em;
   }
+
   .picker-footer > :nth-child(2) {
     margin: 0 8px;
+
     flex: 2 1 auto;
   }
+
   .picker-footer > :first-child,
   .picker-footer > :last-child {
     flex: 0 1 48px;
   }
+
   .picker-footer button {
     width: 48px;
     height: 100%;
     padding: 0;
+
     border: 1px solid;
   }
+
   .contrast {
     text-decoration: line-through;
   }
+
   .contrast.A {
     text-decoration: none;
   }
+
   .contrast.AA {
     text-decoration: underline;
   }
+
   .contrast.AAA {
-    text-decoration: underline;
     font-weight: bolder;
+    text-decoration: underline;
   }
+
   .alpha1 {
-    opacity: .6;
+    opacity: 0.6;
   }
+
   .alpha-check-bg {
-    /* 市松模様 */
     background-color: #fff;
-    background-image: linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),
-                      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);
-    background-size: 8px 8px;
-    background-position:0 0, 4px 4px;
+
+    /* 市松模様 */
+    background-image:
+      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd),
+      linear-gradient(45deg, #ddd 25%, transparent 25%, transparent 75%, #ddd 75%, #ddd);
     background-repeat: repeat;
+    background-position: 0 0, 4px 4px;
+    background-size: 8px 8px;
   }
 </style>
 

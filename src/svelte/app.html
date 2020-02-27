@@ -148,7 +148,7 @@
       <button
         on:click="addCard(current)"
         title="Add Card: fill"
-        style="color:{current.color.isDark()?'#fff':'#000'};background-color: {current.color};"
+        style="color: {current.color.isDark() ?'#fff':'#000'}; background-color: {current.color};"
       >
         <svg class="feather">
           <use xlink:href="#plus"/>
@@ -156,7 +156,7 @@
       </button>
     </div>
     <div><button on:click="$setBgColor(current.color)" title="set Background Color">
-      <svg class="feather" style="color:{current.color};fill: {current.color};">
+      <svg class="feather" style="color: {current.color}; fill: {current.color};">
         <use xlink:href="#droplet"/>
       </svg>
     </button></div>
@@ -461,79 +461,100 @@
   option {
     color: #111;
   }
+
   #controller {
     width: 320px;
     height: 100vh;
-    position: absolute;
-    margin:0;
+    margin: 0;
     padding: 10px 20px;
-    top:0;
-    left:0;
 
+    position: absolute;
+    top: 0;
+    left: 0;
     display: flex;
+
     flex-direction: column;
     justify-content: flex-start; /* align items in Main Axis */
     align-items: stretch; /* align items in Cross Axis */
     align-content: stretch; /* Extra space in Cross Axis */
   }
+
   #box {
     width: 100%;
     height: 100%;
   }
+
   h5 {
     margin: 0;
   }
+
   .tool-box {
-    position: relative;
     padding-bottom: 10px;
+
+    position: relative;
   }
+
   .top-input-wrapper {
     width: 100%;
   }
+
   .top-input-wrapper > div {
     height: 2em;
   }
+
   .top-input-wrapper > div > * {
-    height: 100%;
     width: 100%;
+    height: 100%;
   }
+
   .top-input-wrapper input {
     padding: 0 8px;
   }
+
   hr {
     width: 100%;
   }
+
   .links {
     width: 100%;
-    font-size: .8em;
+
+    font-size: 0.8em;
     text-align: center;
   }
-  .links a,.links a:visited,.links a:active  {
+
+  .links a,
+  .links a:visited,
+  .links a:active {
     color: inherit;
   }
 
   .filter-select select,
   .filter-select button,
   .sort-select {
-    font-size: .8em;
-    opacity: .6;
+    opacity: 0.6;
+
+    font-size: 0.8em;
   }
+
   .filter-select.active select,
   .filter-select.active button,
   .sort-select.active,
   .sort-z.active {
     opacity: 1;
   }
-  .cantUndo>.feather,
-  .cantRedo>.feather,
+
+  .cantUndo > .feather,
+  .cantRedo > .feather,
   .sort-z {
-    opacity: .6;
+    opacity: 0.6;
   }
+
   input::placeholder {
     --placeholder: inherit;
     color: var(--placeholder);
     opacity: 1;
   }
+
   [type="checkbox"] {
     display: none;
   }

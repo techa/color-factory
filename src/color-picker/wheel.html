@@ -10,41 +10,55 @@
     {/each}
     <circle cx="{center}" cy="{center}" r="{radius-18}" fill="transparent" on:click="next()"/>
     <text x="{center}" y="{center}" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle"
-      style="fill:{color};font-size:{(radius-12)}px;" class="center-text">{swatchNum}</text>
+    fill={color} font-size={radius-12} class="center-text">{swatchNum}</text>
   </svg>
 </div>
 
 <style>
   .wheel {
     position: relative;
+
     /* width: 100%;
     height: 100%; */
   }
+
   .center-text {
     font-weight: bold;
+
     pointer-events: none;
   }
+
   .color-handle {
-    position: absolute;
     width: 10px;
     height: 10px;
     margin: -5px;
+
+    position: absolute;
     top: 0;
     left: 0;
-    border: 1px solid black;
+
     border-radius: 5px;
+
+    border: 1px solid black;
+
     text-align: left;
+
     pointer-events: none;
   }
+
   .color-handle::before {
     content: '';
-    position: absolute;
+
     width: 8px;
     height: 8px;
+
+    position: absolute;
     top: 0;
     left: 0;
-    border: 1px solid white;
+
     border-radius: 4px;
+
+    border: 1px solid white;
   }
 </style>
 
@@ -78,7 +92,7 @@
     oncreate () {
       const size = Math.min(
         this.refs.wheel.clientWidth,
-        this.refs.wheel.clientHeight
+        this.refs.wheel.clientHeight,
       )
       const rect = {
         width: this.refs.wheel.clientWidth,
@@ -118,15 +132,15 @@
       },
       positionTest (position) {
         const { center, radius } = this.get()
-        const x = center - position.x,
-              y = center - position.y,
-              r = Math.hypot(x, y)
+        const x = center - position.x
+        const y = center - position.y
+        const r = Math.hypot(x, y)
         return radius <= r && r <= center
       },
       setColor (position) {
         const { center, color } = this.get()
-        const x = center - position.x,
-              y = center - position.y
+        const x = center - position.x
+        const y = center - position.y
 
         const hue = Math.round(Math.atan2(y, x) / Math.PI * 180) - 90
 
@@ -198,6 +212,6 @@
       //     cxt.fill()
       //   }
       // }
-    }
+    },
   }
 </script>
