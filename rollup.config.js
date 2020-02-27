@@ -1,6 +1,7 @@
 import commonjs from 'rollup-plugin-commonjs'
 import nodeResolve from 'rollup-plugin-node-resolve'
 
+import css from 'rollup-plugin-css-asset'
 import json from 'rollup-plugin-json'
 
 import svelte from 'rollup-plugin-svelte'
@@ -19,21 +20,26 @@ export default {
     // https://github.com/rollup/rollup/wiki/JavaScript-API#format
     format: 'iife', // es(default),cjs,iife
     sourcemap: !production,
+    // Bundled CSS will observe configured name pattern for emitted assets.
+    // 'assets/[name]-[hash][extname]'
+    assetFileNames: '[name].css',
   },
   // http://qiita.com/cognitom/items/e3ac0da00241f427dad6#appendix
   plugins: [
     svelte({
       dev: !production,
       css: css => {
-        css.write('dist/bundle.css', /* sourcemap */ !production)
+        css.write('dist/svelte.css', /* sourcemap */ !production)
       },
       store: true,
     }),
 
+    css(),
     json({ preferConst: true }),
 
     nodeResolve({
-      browser: true, // if provided for browsers options.mainFields
+      browser: true, // if provided for browsers options.mainFields,
+      dedupe: ['svelte'],
     }), // npmモジュールを`node_modules`から読み込む
     commonjs(), // CommonJSモジュールをES6に変換
 
