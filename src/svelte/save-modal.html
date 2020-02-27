@@ -32,8 +32,8 @@
   <div class="footer button-set">
     <div>Save as:</div>
     <input bind:value placeholder="Palette Name" style="flex: 1;">
-    <button class="save" class:overwrite={listcontains} on:click="save(value)">
-      {#if listContains}
+    <button class="save" class:overwrite on:click="save(value)">
+      {#if overwrite}
         Overwrite
       {:else}
         New Save
@@ -129,7 +129,7 @@
       }
     },
     computed: {
-      listContains: ({ list, value }) => list.some(({ paletteName }) => paletteName === value),
+      overwrite: ({ list, value }) => list.some(({ paletteName }) => paletteName === value),
     },
     oncreate () {
       this.set({
