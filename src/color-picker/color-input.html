@@ -10,16 +10,21 @@
     </div>
     {/each}
   </div>
-  <div class="input-wrapper">
+  <div class="input-wrapper"
+      style="color: {textColor}; background-color: {color.rgb()};">
     <input class="color-text"
       on:input="input(event)"
       on:updown="updown(event)"
       on:wheel="updown(event)"
       on:keydown="keydown(event)"
-      style="color: {textColor}; background-color: {color.rgb()};"
       {value}
       spellcheck=""
       placeholder="keypress: ↑↓">
+    {#if memo}
+      <button class="memo-color"
+        on:click="set({color: memo})"
+        style="background-color: {memo.rgb()};"></button>
+    {/if}
     <button class="random-color"
       title="Random Color"
       on:click="randomColor()"
@@ -48,9 +53,6 @@
     padding: 0;
 
     position: relative;
-    display: flex;
-
-    flex-direction: column;
 
     /* margin: 10px 0; */
     font: normal 1em "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
@@ -63,6 +65,14 @@
     text-align: center;
   }
 
+  .memo-color {
+    width: 32px;
+    height: 32px;
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+
   .random-color {
     width: 1em;
     height: 1em;
@@ -71,6 +81,8 @@
 
     position: absolute;
     display: none;
+    top: 0;
+    left: 0;
 
     font-size-adjust: 0.5em;
     text-align: center;
@@ -101,6 +113,7 @@
       return {
         phone: /iPhone|iPad|Android/.test(window.navigator.userAgent),
         color: new Color('#050'),
+        memo: null,
         bgColor: '',
         models: ['#', 'rgb', '%', 'hsl', '$', 'hsv', 'xyz', 'lab', 'cmyk'],
         model: 'rgb',
@@ -116,6 +129,12 @@
           ? `color: ${textColor}; background-color: ${color};`
           : `color: ${bgColor.mostReadable(['#ccc', '#333'])}; background-color: transparent;`
       },
+    },
+    onstate ({ changed, current }) {
+      console.log('current.memo', current.memo)
+      if (changed.memo) {
+        console.log('changed.memo', current.memo)
+      }
     },
     methods: {
       randomColor () {

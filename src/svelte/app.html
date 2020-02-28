@@ -188,6 +188,7 @@
 
   <ColorPicker
     bind:color="current.color"
+    memo="{memo?memo.color:null}"
     bgColor="{$bgColor}"
     model="{$pickermodel}"
     on:modelChange="$set({pickermodel: event})"

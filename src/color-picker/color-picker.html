@@ -1,5 +1,5 @@
 <div class="color-picker">
-  <ColorInput bind:color bind:model {bgColor} />
+  <ColorInput bind:color bind:model {bgColor} {memo} />
   <div class="picker-body">
     <HsvPicker bind:color />
   </div>
@@ -116,6 +116,7 @@
       return {
         color: '',
         bgColor: '',
+        memo: null,
         model: 'hex',
       }
     },
