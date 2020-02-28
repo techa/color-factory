@@ -154,14 +154,14 @@
       <input ref:name
         bind:value="current.name"
         on:focus="focus(this)"
-        style="--placeholder: {current.color};"
+        style="--placeholder: {filteredColor};"
         placeholder="Loading...">
     </div>
     <div>
       <button
         on:click="addCard(current, true)"
         title="Add Card: text"
-        style="color: {current.color};"
+        style="color: {filteredColor};"
       >
         <svg class="feather">
           <use xlink:href="#plus"/>
@@ -172,7 +172,7 @@
       <button
         on:click="addCard(current)"
         title="Add Card: fill"
-        style="color: {current.color.isDark() ?'#fff':'#000'}; background-color: {current.color};"
+        style="color: {current.color.isDark() ?'#fff':'#000'}; background-color: {filteredColor};"
       >
         <svg class="feather">
           <use xlink:href="#plus"/>
@@ -180,7 +180,7 @@
       </button>
     </div>
     <div><button on:click="$setBgColor(current.color)" title="set Background Color">
-      <svg class="feather" style="color: {current.color}; fill: {current.color};">
+      <svg class="feather" style="color: {filteredColor}; fill: {filteredColor};">
         <use xlink:href="#droplet"/>
       </svg>
     </button></div>
@@ -271,6 +271,11 @@
       bgColor: ({ $bgColor, $filterSwitch, $selectingFilter }) => {
         const filter = $filterSwitch ? $selectingFilter : ''
         return filter ? $bgColor[filter]() : $bgColor
+      },
+      filteredColor: ({ current, $filterSwitch, $selectingFilter }) => {
+        const filter = $filterSwitch ? $selectingFilter : ''
+        const color = filter && current.color[filter] ? current.color[filter]() : current.color
+        return color
       },
     },
     oncreate () {
