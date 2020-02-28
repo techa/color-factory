@@ -79,7 +79,19 @@
     </div>
   </h5>
   <div class="button-set border radius">
-    <div><button on:click="cardsPosition('sortX')">X</button></div>
+    <div><button on:click="cardsPosition('sortX')">
+      {#if $sortXSwitch}
+        <svg class="feather">
+          {#if $sortXSwitch === 1}
+            <use xlink:href="#arrow-right"/>
+          {:elseif $sortXSwitch === 2}
+            <use xlink:href="#arrow-left"/>
+          {/if}
+        </svg>
+      {:else}
+        X
+      {/if}
+    </button></div>
     <label class="select-wrapper" style="flex: 1 1 auto;">
       <select class="sort-select" bind:value="$sortX" on:change="cardsPosition('sortX', this.value)" class:active="$sortXSwitch">
         {#each sort as {name, value}}
@@ -92,7 +104,19 @@
 
     <div><button on:click="swapSort()">⇔</button></div>
 
-    <div><button on:click="cardsPosition('sortY')">Y</button></div>
+    <div><button on:click="cardsPosition('sortY')">
+      {#if $sortYSwitch}
+        <svg class="feather">
+          {#if $sortYSwitch === 1}
+            <use xlink:href="#arrow-down"/>
+          {:elseif $sortYSwitch === 2}
+            <use xlink:href="#arrow-up"/>
+          {/if}
+        </svg>
+      {:else}
+        Y
+      {/if}
+    </button></div>
     <label class="select-wrapper" style="flex: 1 1 auto;">
       <select class="sort-select" bind:value="$sortY" on:change="cardsPosition('sortY', this.value)" class:active="$sortYSwitch">
         {#each sort as {name, value}}
