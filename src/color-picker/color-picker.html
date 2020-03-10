@@ -4,10 +4,16 @@
     <HsvPicker bind:color />
   </div>
   <div class="picker-footer">
-    <div class="button" title="Click: set BG-color. Display: Readable Score(1~21).">
-      <button class="contrast {bgColor.level(color)}" on:click="setBgColor()">
+    <div class="button" on:click="set({luminance:!luminance})">
+      {#if luminance}
+      <button class="luminosity" title="Relative Luminance.">
+        {luminosity}
+      </button>
+      {:else}
+      <button class="contrast {bgColor.level(color)}" title="Readable Score(1~21).">
         {contrast}
       </button>
+      {/if}
     </div>
     <div class="blender-wrapper">
       <Blender bind:color/>
@@ -118,10 +124,12 @@
         bgColor: '',
         memo: null,
         model: 'hex',
+        luminance: false,
       }
     },
     computed: {
       contrast: ({ color, bgColor }) => round(bgColor.contrast(color), 1),
+      luminosity: ({ color, bgColor }) => round(color.luminosity(), 1),
     },
     onstate ({ changed, current }) {
       if (changed.color && !(current.color instanceof Color)) {

@@ -25,6 +25,7 @@ const globalSave = {
     hcg: false,
     hwb: false,
     cmyk: false,
+    luminosity: false,
     contrast: true,
   },
 }
